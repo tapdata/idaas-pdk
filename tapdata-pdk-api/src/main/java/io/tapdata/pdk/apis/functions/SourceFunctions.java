@@ -1,15 +1,36 @@
 package io.tapdata.pdk.apis.functions;
 
-import io.tapdata.pdk.apis.functions.source.BatchCountFunction;
-import io.tapdata.pdk.apis.functions.source.BatchReadFunction;
-import io.tapdata.pdk.apis.functions.source.StreamReadFunction;
-import io.tapdata.pdk.apis.functions.source.WebHookReadFunction;
+import io.tapdata.pdk.apis.functions.source.*;
 
 public class SourceFunctions extends CommonFunctions<SourceFunctions> {
     private BatchReadFunction batchReadFunction;
     private StreamReadFunction streamReadFunction;
     private WebHookReadFunction webHookReadFunction;
     private BatchCountFunction batchCountFunction;
+    private BatchOffsetFunction batchOffsetFunction;
+    private StreamOffsetFunction streamOffsetFunction;
+
+    /**
+     * TODO Not integrated yet.
+     *
+     * @param function
+     * @return
+     */
+    public SourceFunctions withBatchOffsetFunction(BatchOffsetFunction function) {
+        batchOffsetFunction = function;
+        return this;
+    }
+
+    /**
+     * TODO Not integrated yet.
+     *
+     * @param function
+     * @return
+     */
+    public SourceFunctions withStreamOffsetFunction(StreamOffsetFunction function) {
+        streamOffsetFunction = function;
+        return this;
+    }
 
     public SourceFunctions withBatchReadFunction(BatchReadFunction function) {
         batchReadFunction = function;
@@ -45,5 +66,13 @@ public class SourceFunctions extends CommonFunctions<SourceFunctions> {
 
     public BatchCountFunction getBatchCountFunction() {
         return batchCountFunction;
+    }
+
+    public BatchOffsetFunction getBatchOffsetFunction() {
+        return batchOffsetFunction;
+    }
+
+    public StreamOffsetFunction getStreamOffsetFunction() {
+        return streamOffsetFunction;
     }
 }

@@ -26,4 +26,11 @@ public class TapTableOptions {
     public void setSyncModes(List<String> syncModes) {
         this.syncModes = syncModes;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder("TapTableOptions").append(": ");
+        builder.append("table=").append(table);
+        return builder.toString();
+    }
 }

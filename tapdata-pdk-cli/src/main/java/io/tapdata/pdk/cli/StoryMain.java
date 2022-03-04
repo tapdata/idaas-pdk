@@ -1,5 +1,6 @@
 package io.tapdata.pdk.cli;
 
+import io.tapdata.pdk.cli.commands.*;
 import picocli.CommandLine;
 
 /**
@@ -8,11 +9,15 @@ import picocli.CommandLine;
  *
  * @author aplomb
  */
-public class ConnectionTestMain {
+public class StoryMain {
     //
     public static void main(String... args) {
-        args = new String[] {"connectionTest", "-i", "vika-pdk", "-g", "tapdata", "-b", "1", "-c", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"};
+        args = new String[]{"start",
+                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/emptyToFile.json",
+//                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/vikaToVika.json",
+        };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
     }
+
 }

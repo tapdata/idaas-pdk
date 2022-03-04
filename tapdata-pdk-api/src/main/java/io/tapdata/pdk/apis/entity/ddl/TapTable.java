@@ -13,6 +13,14 @@ public class TapTable {
 
     private DefaultMap info;
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder("TapTable").append(": ");
+        builder.append("name=").append(name).append("; ");
+        builder.append("id=").append(id).append("; ");
+        return builder.toString();
+    }
+
     public String getId() {
         return id;
     }

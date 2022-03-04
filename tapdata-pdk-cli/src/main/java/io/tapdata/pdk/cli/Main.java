@@ -12,14 +12,6 @@ import picocli.CommandLine;
 public class Main {
     //
     public static void main(String... args) {
-//        args = new String[]{"start",
-//                "/Users/aplomb/dev/tapdata/AgentProjects/dataflowfiles/empty.json",
-//                "/Users/aplomb/dev/tapdata/AgentProjects/dataflowfiles/mongo.json",
-//                "/Users/aplomb/dev/tapdata/AgentProjects/dataflowfiles/mongoToVika.json",
-//                "/Users/aplomb/dev/tapdata/AgentProjects/dataflowfiles/mongoSimple.json",
-//                "/Users/aplomb/dev/tapdata/AgentProjects/tapdata-pdk/tapdata-pdk-cli/src/main/resources/stories/vikaToVika.json",
-//        };
-
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
     }
 
