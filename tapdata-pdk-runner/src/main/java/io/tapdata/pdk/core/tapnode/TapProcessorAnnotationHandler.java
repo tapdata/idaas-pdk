@@ -25,7 +25,7 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
     public void handle(Set<Class<?>> classes) throws CoreException {
         if(classes != null) {
             newerIdGroupTapNodeInfoMap = new ConcurrentHashMap<>();
-            PDKLogger.info(TAG, "--------------TapProcessor Classes Start-------------");
+            PDKLogger.info(TAG, "--------------TapProcessor Classes Start------------- {}", classes.size());
             for(Class<?> clazz : classes) {
                 TapProcessor tapProcessor = clazz.getAnnotation(TapProcessor.class);
                 if(tapProcessor != null) {

@@ -194,7 +194,8 @@ public class ExternalJarManager {
 //                                .exclude("^.*module-info.class$")
                         )
                         .setUrls(urls)
-                        .addClassLoader(dependencyURLClassLoader));
+                        .addClassLoader(dependencyURLClassLoader.getActualClassLoader()));
+                PDKLogger.info(TAG, "Analyze jar file {}", targetJarFile.getAbsolutePath());
                 PDKLogger.info(TAG, "Tapdata SDK will only scan classes under package 'io' or 'pdk', please ensure your annotated classes are following this rule. ");
                 AnnotationUtils.runClassAnnotationHandlers(reflections, jarAnnotationHandlersListener.annotationHandlers(jar, firstTime), TAG);
 
@@ -252,7 +253,7 @@ public class ExternalJarManager {
 //                                .exclude("^.*module-info.class$")
                   )
                   .setUrls(urls)
-                  .addClassLoader(dependencyURLClassLoader));
+                  .addClassLoader(dependencyURLClassLoader.getActualClassLoader()));
                 Set<Class<?>> connectorClasses = reflections.getTypesAnnotatedWith(TapConnector.class, true);
 //                System.out.println("connectorClasses " + connectorClasses);
             }

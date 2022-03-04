@@ -144,4 +144,8 @@ public class DependencyURLClassLoader extends ClassLoader {
             return super.loadClass(name, resolve);
         }
     }
+
+    public ClassLoader getActualClassLoader() {
+      return childClassLoader;
+    }
 }
