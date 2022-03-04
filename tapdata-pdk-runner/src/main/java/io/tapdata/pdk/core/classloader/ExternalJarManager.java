@@ -222,7 +222,7 @@ public class ExternalJarManager {
 
     public static void main(String... args) {
         List<URL> urls = new ArrayList<>();
-        File sourcePath = new File("/Users/aplomb/dev/tapdata/AgentProjects/tmp/ccc");
+        File sourcePath = new File("/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist");
         if (sourcePath.exists() && sourcePath.isDirectory()) {
             Collection<File> jars = new ArrayList<>(FileUtils.listFiles(sourcePath,
                     FileFilterUtils.suffixFileFilter(".jar"),
