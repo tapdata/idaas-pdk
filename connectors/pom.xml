@@ -19,7 +19,7 @@
         <connector.file.name>${project.artifactId}-v${project.version}</connector.file.name>
         <java.version>8</java.version>
         <tapdata.sdk.engine.verison>0.1-SNAPSHOT</tapdata.sdk.engine.verison>
-        <tapdata.sdk.connector.core.version>1.0.0</tapdata.sdk.connector.core.version>
+        <tapdata.sdk.connector.core.version>0.3-SNAPSHOT</tapdata.sdk.connector.core.version>
     </properties>
     <dependencyManagement>
       <dependencies>
