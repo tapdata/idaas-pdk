@@ -1,0 +1,111 @@
+package io.tapdata.pdk.core.monitor;
+
+import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.pdk.core.utils.CommonUtils;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * TODO start monitor thread for checking slow invocation
+ */
+public class PDKInvocationMonitor {
+    private static volatile PDKInvocationMonitor instance;
+    private static final Object lock = new int[0];
+
+    private Map<PDKMethod, InvocationCollector> methodInvocationCollectorMap = new ConcurrentHashMap<>();
+
+    private PDKInvocationMonitor() {}
+
+    public static PDKInvocationMonitor getInstance() {
+        if(instance == null) {
+            synchronized (lock) {
+                if(instance == null) {
+                    instance = new PDKInvocationMonitor();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
+        invokePDKMethod(method, r, message, logTag, false, 0, 0);
+    }
+    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, boolean async, long retryTimes, long retryPeriodSeconds) {
+        if(async) {
+            new Thread(() -> {
+                if(retryTimes > 0) {
+                    CommonUtils.autoRetryAsync(() -> {
+                        invokePDKMethodPrivate(method, r, message, logTag);
+                    }, logTag, message, retryTimes, retryPeriodSeconds);
+                } else {
+                    invokePDKMethodPrivate(method, r, message, logTag);
+                }
+            }, "async invoke method " + method.name()).start();
+        } else {
+            invokePDKMethodPrivate(method, r, message, logTag);
+        }
+    }
+
+    private void invokePDKMethodPrivate(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
+        String invokeId = methodStart(method);
+        Throwable theError = null;
+        try {
+            r.run();
+        } catch(CoreException coreException) {
+            theError = coreException;
+            throw coreException;
+        } catch(Throwable throwable) {
+            theError = throwable;
+            throw new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
+        } finally {
+            methodEnd(method, invokeId, theError, message, logTag);
+        }
+    }
+
+    public String methodStart(PDKMethod method) {
+        final String invokeId = CommonUtils.processUniqueId();
+        InvocationCollector collector = methodInvocationCollectorMap.computeIfAbsent(method, InvocationCollector::new);
+        collector.getInvokeIdTimeMap().put(invokeId, System.currentTimeMillis());
+        return invokeId;
+    }
+
+    public Long methodEnd(PDKMethod method, String invokeId, Throwable error, String message, String logTag) {
+        InvocationCollector collector = methodInvocationCollectorMap.get(method);
+        if(collector != null) {
+            Long time = collector.getInvokeIdTimeMap().remove(invokeId);
+            if(time != null) {
+                collector.getCounter().increment();
+                long takes = System.currentTimeMillis() - time;
+                collector.getTotalTakes().add(takes);
+                if(error != null) {
+                    PDKLogger.error(logTag, "{} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
+                } else {
+                    PDKLogger.debug(logTag, "{} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
+                }
+                return takes;
+            }
+        }
+        return null;
+    }
+
+    public static void main(String... args) {
+        long time = System.currentTimeMillis();
+        for(int i = 0; i < 1000000; i++) {
+            UUID.randomUUID().toString();
+        }
+        System.out.println("takes " + (System.currentTimeMillis() - time));
+
+        AtomicLong counter = new AtomicLong(0);
+        time = System.currentTimeMillis();
+        String id = null;
+        for(int i = 0; i < 1000000; i++) {
+            id = Long.toHexString(System.currentTimeMillis()) + Long.toHexString(counter.getAndIncrement());
+        }
+        System.out.println("takes " + (System.currentTimeMillis() - time) + " id " + id);
+    }
+}

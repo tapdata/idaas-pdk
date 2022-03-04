@@ -1,0 +1,66 @@
+package io.tapdata.pdk.core.workflow.engine.driver;
+
+import io.tapdata.pdk.apis.functions.processor.ProcessRecordFunction;
+import io.tapdata.pdk.apis.entity.TapEvent;
+import io.tapdata.pdk.apis.entity.dml.TapRecordEvent;
+import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.core.api.ProcessorNode;
+import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
+import io.tapdata.pdk.core.monitor.PDKMethod;
+import io.tapdata.pdk.core.utils.LoggerUtils;
+import io.tapdata.pdk.core.utils.queue.ListHandler;
+import io.tapdata.pdk.core.utils.queue.SingleThreadBlockingQueue;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProcessorNodeDriver extends Driver implements ListHandler<List<TapEvent>> {
+    private static final String TAG = ProcessorNodeDriver.class.getSimpleName();
+
+    private ProcessorNode processorNode;
+    private SingleThreadBlockingQueue<List<TapEvent>> queue;
+
+    @Override
+    public void execute(List<List<TapEvent>> list) throws Throwable {
+        PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+
+        for(List<TapEvent> events : list) {
+            List<TapEvent> recordEvents = new ArrayList<>();
+            for (TapEvent event : events) {
+                if(event instanceof TapRecordEvent) {
+                    recordEvents.add(event);
+                }
+            }
+            ProcessRecordFunction processRecordFunction = processorNode.getProcessorFunctions().getProcessRecordFunction();
+            if(processRecordFunction != null) {
+                PDKLogger.debug(TAG, "Process {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
+                pdkInvocationMonitor.invokePDKMethod(PDKMethod.PROCESSOR_PROCESS_RECORD, () -> {
+                    processRecordFunction.process(processorNode.getProcessorContext(), recordEvents, (event, throwable) -> {
+                        if(throwable != null) {
+                            PDKLogger.error(TAG, "Process record failed, {}, record size, {}, {}", throwable.getMessage(), event.size(), LoggerUtils.processorNodeMessage(processorNode));
+                        } else {
+                            PDKLogger.debug(TAG, "Processed {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
+                            offer(recordEvents);
+                        }
+                    });
+                }, "insert " + LoggerUtils.processorNodeMessage(processorNode), TAG);
+            }
+        }
+    }
+
+    public ProcessorNode getProcessorNode() {
+        return processorNode;
+    }
+
+    public void setProcessorNode(ProcessorNode processorNode) {
+        this.processorNode = processorNode;
+    }
+
+    public SingleThreadBlockingQueue<List<TapEvent>> getQueue() {
+        return queue;
+    }
+
+    public void setQueue(SingleThreadBlockingQueue<List<TapEvent>> queue) {
+        this.queue = queue;
+    }
+}

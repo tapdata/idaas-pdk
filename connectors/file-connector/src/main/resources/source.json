@@ -1,0 +1,58 @@
+{
+  "specification": {
+    "name": "FileSource-PDK",
+    "icon": "icons/sourceIcon.png",
+    "group": "tapdata",
+    "id": "fileSource",
+    "version": "0.1.1",
+    "buildNumber": 123213
+  },
+  "applications": {
+    "connection": {
+      "Connection String": {
+        "type": "string",
+        "description": "Input the connection string",
+        "pattern": "*",
+        "examples": [
+          "a",
+          "b"
+        ],
+        "required": true
+      },
+      "Password": {
+        "type": "password",
+        "description": "Input the password",
+        "pattern": "*",
+        "required": true
+      },
+      "Description": {
+        "type": "text",
+        "description": "This is description",
+        "required": false
+      }
+    },
+    "node": {
+      "Connection String": {
+        "type": "string",
+        "description": "Input the connection string",
+        "pattern": "*",
+        "examples": [
+          "a",
+          "b"
+        ],
+        "required": true
+      },
+      "Password": {
+        "type": "password",
+        "description": "Input the password",
+        "pattern": "*",
+        "required": true
+      },
+      "Description": {
+        "type": "text",
+        "description": "This is description",
+        "required": false
+      }
+    }
+  }
+}

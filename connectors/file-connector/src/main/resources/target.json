@@ -1,0 +1,23 @@
+{
+  "specification": {
+    "name": "FileTarget-PDK",
+    "icon": "icons/targetIcon.png",
+    "group": "tapdata",
+    "id": "fileTarget",
+    "version": "0.1.2",
+    "buildNumber": 1
+  },
+  "applications": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "folderPath": {
+          "type": "string",
+          "title": "Local folder path",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        }
+      }
+    }
+  }
+}

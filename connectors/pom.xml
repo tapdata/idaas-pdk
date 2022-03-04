@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.tapdata.pdk</groupId>
+    <artifactId>connectors</artifactId>
+    <version>1.0.0</version>
+    <name>connectors</name>
+    <packaging>pom</packaging>
+    <modules>
+        <module>connector-core</module>
+        <module>mongodb-connector</module>
+        <module>empty-connector</module>
+        <module>file-connector</module>
+        <module>vika-connector</module>
+    </modules>
+
+    <properties>
+        <connector.file.name>${project.artifactId}-v${project.version}</connector.file.name>
+        <java.version>8</java.version>
+        <tapdata.sdk.engine.verison>0.1-SNAPSHOT</tapdata.sdk.engine.verison>
+        <tapdata.sdk.connector.core.version>1.0.0</tapdata.sdk.connector.core.version>
+    </properties>
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>io.tapdata.pdk</groupId>
+          <artifactId>tapdata-pdk-runner</artifactId>
+          <version>${tapdata.sdk.engine.verison}</version>
+        </dependency>
+        <dependency>
+          <groupId>io.tapdata.pdk</groupId>
+          <artifactId>connector-core</artifactId>
+          <version>${tapdata.sdk.connector.core.version}</version>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>4.2.1</version>
+                <extensions>true</extensions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+    <distributionManagement>
+        <repository>
+            <!--必须与 settings.xml 的 id 一致-->
+            <id>tapdata-tapdata-maven</id>
+            <name>maven</name>
+            <url>https://tapdata-maven.pkg.coding.net/repository/tapdata/maven/</url>
+        </repository>
+    </distributionManagement>
+</project>
