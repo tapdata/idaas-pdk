@@ -117,7 +117,7 @@ public class DependencyURLClassLoader extends ClassLoader {
         URL[] urlArray = new URL[urls.size()];
         urls.toArray(urlArray);
 
-        childClassLoader = new ChildURLClassLoader(urlArray, new FindClassClassLoader(this.getParent()) );
+        childClassLoader = new ChildURLClassLoader(urlArray, new FindClassClassLoader(DependencyURLClassLoader.class.getClassLoader()) );
     }
 
     @Override
