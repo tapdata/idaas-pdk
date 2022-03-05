@@ -143,7 +143,7 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      *  current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
-     * @param offset
+     * @param tapRecordEvents
      * @param tapReadOffsetConsumer
      */
     private void handleDML(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapWriteListConsumer<TapRecordEvent> tapReadOffsetConsumer) {

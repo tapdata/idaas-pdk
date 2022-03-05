@@ -58,33 +58,35 @@ public class SourceNodeDriver extends Driver {
             //TODO 提供方法返回增量断点， 不要使用wait的方式
             Object finalRecoveredOffset = recoveredOffset;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
-                streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events, offsetState, error, completed) -> {
-                    if (!batchCompleted) {
-                        synchronized (streamLock) {
-                            while (!batchCompleted) {
-                                PDKLogger.debug(TAG, "Stream read will wait until batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
-                                try {
-                                    streamLock.wait();
-                                } catch (InterruptedException interruptedException) {
+                while(true) {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events, offsetState, error, completed) -> {
+                        if (!batchCompleted) {
+                            synchronized (streamLock) {
+                                while (!batchCompleted) {
+                                    PDKLogger.debug(TAG, "Stream read will wait until batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
+                                    try {
+                                        streamLock.wait();
+                                    } catch (InterruptedException interruptedException) {
 //                                    interruptedException.printStackTrace();
-                                    Thread.currentThread().interrupt();
+                                        Thread.currentThread().interrupt();
+                                    }
                                 }
+                                PDKLogger.debug(TAG, "Stream read start now, {}", LoggerUtils.sourceNodeMessage(sourceNode));
                             }
-                            PDKLogger.debug(TAG, "Stream read start now, {}", LoggerUtils.sourceNodeMessage(sourceNode));
                         }
-                    }
-                    if (error != null) {
-                        PDKLogger.error(TAG, "Stream read occurred error {}, {}", error.getMessage(), LoggerUtils.sourceNodeMessage(sourceNode));
-                    }
-                    if (events != null) {
-                        PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                        offer(events);
-                    }
-                    if (offsetState != null) {
-                        PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
-                        this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
-                    }
-                });
+                        if (error != null) {
+                            PDKLogger.error(TAG, "Stream read occurred error {}, {}", error.getMessage(), LoggerUtils.sourceNodeMessage(sourceNode));
+                        }
+                        if (events != null) {
+                            PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                            offer(events);
+                        }
+                        if (offsetState != null) {
+                            PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
+                            this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+                        }
+                    });
+                }
             }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, true, Long.MAX_VALUE, 5);
         }
 
