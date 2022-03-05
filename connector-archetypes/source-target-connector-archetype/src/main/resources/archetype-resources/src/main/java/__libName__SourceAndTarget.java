@@ -41,7 +41,7 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      * @return
      */
     @Override
-    public ConnectionTestResult connectionTest(TapConnectionContext databaseContext) {
+    public ConnectionTestResult connectionTest(TapConnectionContext connectionContext) {
         return null;
     }
     /**
