@@ -17,6 +17,9 @@ Maintainer: @Aplomb
 	./bin/tap boot --group io.tapdata --name MyDataSourceConnector --version 0.0.1 --output ./connectors
 
 ## Develop your own data source connector
+### Use IntelliJ IDEA to open idaas-pdk
+### We leave empty methods for you to fill up 
+Method invocation life circle
 
     init
         if(batchEnabled) {

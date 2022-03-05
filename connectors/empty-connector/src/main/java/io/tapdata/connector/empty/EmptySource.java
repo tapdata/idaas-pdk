@@ -224,5 +224,8 @@ public class EmptySource implements TapSource {
         sourceFunctions.withBatchReadFunction(this::batchRead);
         sourceFunctions.withStreamReadFunction(this::streamRead);
         sourceFunctions.withBatchCountFunction(this::batchCount);
+//        sourceFunctions.withBatchOffsetFunction(this::batchOffset);
+//        sourceFunctions.withStreamOffsetFunction(this::streamOffset);
+//        sourceFunctions.withWebHookReadFunction(this::webHook);
     }
 }

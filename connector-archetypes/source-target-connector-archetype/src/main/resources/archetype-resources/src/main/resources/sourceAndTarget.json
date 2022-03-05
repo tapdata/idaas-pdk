@@ -1,9 +1,9 @@
 {
   "specification": {
-    "name": "TestConnector",
-    "icon": "",
+    "name": "YourConnectorName",
+    "icon": "icons/icon.png",
     "group": "io.tapdata",
-    "id": "TestConnector",
+    "id": "your_connector_id",
     "version": "1.0.0",
     "buildNumber": 1
   },

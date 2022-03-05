@@ -41,11 +41,25 @@ public class EmptyTarget implements TapTarget {
 
     }
 
+    /**
+     *
+     * @param targetFunctions
+     * @param supportedTapEvents
+     */
     @Override
     public void targetFunctions(TargetFunctions targetFunctions, SupportedTapEvents supportedTapEvents) {
         targetFunctions.withDMLFunction(this::handleDML);
+//        targetFunctions.withDDLFunction(this::handleDDL);
+//        targetFunctions.withQueryByFilterFunction(this::queryByFilter);
+//        targetFunctions.withTransactionFunction(this::handleTransaction);
     }
 
+    /**
+     *
+     * @param connectorContext
+     * @param tapRecordEvents
+     * @param consumer
+     */
     private void handleDML(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapWriteListConsumer<TapRecordEvent> consumer) {
     }
 }
