@@ -54,12 +54,12 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      * @param tapListConsumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext databaseContext, TapListConsumer<TapTableOptions> tapReadOffsetConsumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, TapListConsumer<TapTableOptions> tapListConsumer) {
 
     }
     /**
      * The method invocation life circle is below,
-     * initiated -> init -> sourceFunctions/targetFunctions -> close -> ended
+     * initiated -> init -> sourceFunctions/targetFunctions -> destroy -> ended
      *
      * In connectorContext,
      *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
@@ -79,7 +79,7 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      *      batchCount -> batchRead
      *  if(streamEnabled)
      *      streamRead
-     * -> close -> ended
+     * -> destroy -> ended
      *
      * In connectorContext,
      *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
@@ -99,7 +99,7 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      *      batchCount -> batchRead
      *  if(streamEnabled)
      *      streamRead
-     * -> close -> ended
+     * -> destroy -> ended
      *
      * In connectorContext,
      *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
@@ -109,7 +109,7 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapEventTapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapReadOffsetConsumer) {
 
     }
     /**
@@ -119,7 +119,7 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      *      batchCount -> batchRead
      *  if(streamEnabled)
      *      streamRead
-     * -> close -> ended
+     * -> destroy -> ended
      *
      * In connectorContext,
      *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
@@ -129,14 +129,14 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapEventTapReadOffsetConsumer) {
+    private void streamRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapReadOffsetConsumer) {
 
     }
     /**
      * The method invocation life circle is below,
      * initiated -> init ->
      *  handleDML
-     * -> close -> ended
+     * -> destroy -> ended
      *
      * In connectorContext,
      *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
@@ -146,13 +146,13 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void handleDML(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapWriteListConsumer<TapRecordEvent> consumer) {
+    private void handleDML(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapWriteListConsumer<TapRecordEvent> tapReadOffsetConsumer) {
 
     }
 
     /**
      * The method invocation life circle is below,
-     *  initiated -> init -> sourceFunctions/targetFunctions -> close -> ended
+     *  initiated -> init -> sourceFunctions/targetFunctions -> destroy -> ended
      *
      * In connectorContext,
      *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
@@ -168,9 +168,7 @@ public class ${libName}SourceAndTarget extends ConnectorBase implements TapTarge
      * Implement the ability functions as a source connector.
      * If the ability function your don't provide in your connector, then don't register the function to Flow Engine.
      *
-     * @param connectorContext
-     * @param tapRecordEvents
-     * @param consumer
+     * @param sourceFunctions
      */
     @Override
     public void sourceFunctions(SourceFunctions sourceFunctions) {
