@@ -19,7 +19,7 @@ public class Main {
         CommandLine commandLine = new CommandLine(new MainCli());
         commandLine.addSubcommand("register", new RegisterCli());
         commandLine.addSubcommand("start", new StartCli());
-        commandLine.addSubcommand("allTables", new AllTablesCli());
+        commandLine.addSubcommand("discoverSchema", new AllTablesCli());
         commandLine.addSubcommand("connectionTest", new ConnectionTestCli());
         commandLine.addSubcommand("boot", new ConnectorProjectBootCli());
         return commandLine;

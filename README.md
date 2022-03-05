@@ -65,5 +65,5 @@ Method invocation life circle
 
 ## CLI Test (Temporary solution)
     io.tapdata.pdk.cli.ConnectionTestMain //To test connection test method
-    io.tapdata.pdk.cli.AllTablesMain //To test all tables test method
+    io.tapdata.pdk.cli.DiscoverSchemaMain //To test all tables test method
     io.tapdata.pdk.cli.StoryMain //To describe a simple DAG to connect source to any target, to test that whether target ge the expected result
