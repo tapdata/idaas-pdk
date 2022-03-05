@@ -238,11 +238,7 @@ public class VikaSourceAndTarget extends ConnectorBase implements TapTarget, Tap
     public void sourceFunctions(SourceFunctions sourceFunctions) {
         sourceFunctions.withBatchCountFunction(this::batchCount);
         sourceFunctions.withBatchReadFunction(this::batchRead);
-        sourceFunctions.withStreamReadFunction(this::streamRead);
-    }
-
-    private void streamRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapEventTapReadOffsetConsumer) {
-
+//        sourceFunctions.withStreamReadFunction(this::streamRead);
     }
 
     private void batchRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapEventTapReadOffsetConsumer) {
