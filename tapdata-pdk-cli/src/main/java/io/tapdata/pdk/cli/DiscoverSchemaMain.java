@@ -11,7 +11,11 @@ import picocli.CommandLine;
 public class DiscoverSchemaMain {
     //
     public static void main(String... args) {
-        args = new String[] {"discoverSchema", "-i", "vika-pdk", "-g", "tapdata", "-b", "1", "-c", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"};
+        args = new String[] {"discoverSchema",
+                "--id", "vika-pdk",
+                "--group", "tapdata",
+                "--buildNumber", "1",
+                "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"};
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
     }

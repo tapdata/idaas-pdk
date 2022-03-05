@@ -2,7 +2,6 @@ package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
 import io.tapdata.pdk.apis.common.DefaultMap;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
 import io.tapdata.pdk.apis.entity.ddl.TapTableOptions;
 import io.tapdata.pdk.apis.functions.consumers.TapListConsumer;
 import io.tapdata.pdk.apis.logger.PDKLogger;
@@ -15,14 +14,13 @@ import picocli.CommandLine;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 @CommandLine.Command(
         description = "Test allTables method",
         subcommands = MainCli.class
 )
-public class AllTablesCli extends CommonCli {
-    private static final String TAG = AllTablesCli.class.getSimpleName();
+public class DiscoverSchemaCli extends CommonCli {
+    private static final String TAG = DiscoverSchemaCli.class.getSimpleName();
 
     @CommandLine.Option(names = { "-i", "--id" }, required = true, description = "Provide PDK id")
     private String pdkId;

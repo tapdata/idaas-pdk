@@ -11,7 +11,12 @@ import picocli.CommandLine;
 public class ConnectionTestMain {
     //
     public static void main(String... args) {
-        args = new String[] {"connectionTest", "-i", "vika-pdk", "-g", "tapdata", "-b", "1", "-c", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"};
+        args = new String[] {"connectionTest",
+                "--id", "vika-pdk",
+                "--group", "tapdata",
+                "--buildNumber", "1",
+                "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
+        };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
     }

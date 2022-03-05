@@ -12,9 +12,10 @@ import picocli.CommandLine;
 public class StoryMain {
     //
     public static void main(String... args) {
+        String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
         args = new String[]{"start",
-                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/emptyToFile.json",
-//                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/vikaToVika.json",
+                rootPath + "emptyToFile.json",
+//                rootPath + "vikaToVika.json",
         };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);

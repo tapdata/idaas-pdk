@@ -64,6 +64,97 @@ Method invocation life circle
 #How to Test
 
 ## CLI Test (Temporary solution)
-    io.tapdata.pdk.cli.ConnectionTestMain //To test connection test method
-    io.tapdata.pdk.cli.DiscoverSchemaMain //To test all tables test method
-    io.tapdata.pdk.cli.StoryMain //To describe a simple DAG to connect source to any target, to test that whether target ge the expected result
+Run connectionTest method
+
+    package io.tapdata.pdk.cli;
+    
+    public class ConnectionTestMain {
+    
+    public static void main(String... args) {
+        args = new String[] {"connectionTest",
+            "--id", "vika-pdk",
+            "--group", "tapdata",
+            "--buildNumber", "1",
+            "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
+        };
+
+        Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
+    }
+
+Run discoverSchema method
+    
+    package io.tapdata.pdk.cli;
+
+    public class DiscoverSchemaMain {
+
+        public static void main(String... args) {
+            args = new String[] {"discoverSchema",
+                "--id", "vika-pdk",
+                "--group", "tapdata",
+                "--buildNumber", "1",
+                "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
+            };
+            
+            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
+        }
+    }
+
+To describe a simple DAG to connect Source to any Target, to test that whether target get the expected result
+
+StoryMain
+    
+    package io.tapdata.pdk.cli;
+
+    public class StoryMain {
+    
+        public static void main(String... args) {
+            String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
+            args = new String[]{"start",
+                    rootPath + "emptyToFile.json",
+            };
+    
+            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
+        }
+
+    }
+
+DAG json file
+
+    {
+        "id" : "dag1",
+        "nodes" : [
+            {
+                "connectionConfig" : {},
+                "table" : {
+                    "name" : "empty-table1",
+                    "id" : "empty-table1"
+                },
+                "id" : "s1",
+                "pdkId" : "emptySource",
+                "group" : "tapdata",
+                "type" : "Source",
+                "minBuildNumber" : 0
+            },
+            {
+                "connectionConfig" : {
+                    "folderPath" : "/Users/aplomb/dev/tapdata/AgentProjects/tmp"
+                },
+                "table" : {
+                    "name" : "target1.txt",
+                    "id" : "target1.txt"
+                },
+                "id" : "t2",
+                "pdkId" : "fileTarget",
+                "group" : "tapdata",
+                "type" : "Target",
+                "minBuildNumber" : 0
+            }
+        ],
+        "dag" : [
+            ["s1", "t2"]
+        ],
+        "jobOptions" : {
+            "queueSize" : 100,
+            "queueBatchSize" : 100
+        }
+    }
