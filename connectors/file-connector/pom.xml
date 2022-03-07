@@ -28,7 +28,6 @@
         <dependency>
             <groupId>io.tapdata.pdk</groupId>
             <artifactId>tapdata-pdk-api</artifactId>
-            <version>0.2-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

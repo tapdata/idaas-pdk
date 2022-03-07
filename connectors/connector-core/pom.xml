@@ -8,8 +8,8 @@
       <version>0.4-SNAPSHOT</version>
     </parent>
     <artifactId>connector-core</artifactId>
-    <version>0.3-SNAPSHOT</version>
     <name>connector-core</name>
+    <packaging>pom</packaging>
     <modules>
 
     </modules>
@@ -29,7 +29,6 @@
             <groupId>io.tapdata.pdk</groupId>
             <artifactId>tapdata-pdk-api</artifactId>
             <scope>provided</scope>
-            <version>0.2-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
