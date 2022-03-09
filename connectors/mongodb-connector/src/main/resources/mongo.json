@@ -1,59 +1,55 @@
 {
   "specification" : {
-    "name" : "My mongodb Source",
-    "icon" : "http://host/1.png",
-    "group" : "tapdata",
-    "id" : "mongoSourceAndTarget",
-    "version" : "0.1.1",
-    "buildNumber" : 123213,
-    "applications": {
-      "connection": {
-        "Connection String": {
-          "type": "string",
-          "description": "Input the connection string",
-          "pattern": "*",
-          "examples": [
-            "a",
-            "b"
-          ],
-          "required": true
-        },
-        "Password": {
-          "type": "password",
-          "description": "Input the password",
-          "pattern": "*",
-          "required": true
-        },
-        "Description": {
-          "type": "text",
-          "description": "This is description",
-          "required": false
-        }
+    "name": "My mongodb Source",
+    "icon": "http://host/1.png",
+    "id": "mongoSourceAndTarget"
+  },
+  "applications": {
+    "connection": {
+      "Connection String": {
+        "type": "string",
+        "description": "Input the connection string",
+        "pattern": "*",
+        "examples": [
+          "a",
+          "b"
+        ],
+        "required": true
       },
-      "node": {
-        "Connection String": {
-          "type": "string",
-          "description": "Input the connection string",
-          "pattern": "*",
-          "examples": [
-            "a",
-            "b"
-          ],
-          "required": true
-        },
-        "Password": {
-          "type": "password",
-          "description": "Input the password",
-          "pattern": "*",
-          "required": true
-        },
-        "Description": {
-          "type": "text",
-          "description": "This is description",
-          "required": false
-        }
+      "Password": {
+        "type": "password",
+        "description": "Input the password",
+        "pattern": "*",
+        "required": true
+      },
+      "Description": {
+        "type": "text",
+        "description": "This is description",
+        "required": false
+      }
+    },
+    "node": {
+      "Connection String": {
+        "type": "string",
+        "description": "Input the connection string",
+        "pattern": "*",
+        "examples": [
+          "a",
+          "b"
+        ],
+        "required": true
+      },
+      "Password": {
+        "type": "password",
+        "description": "Input the password",
+        "pattern": "*",
+        "required": true
+      },
+      "Description": {
+        "type": "text",
+        "description": "This is description",
+        "required": false
       }
     }
   }
-
 }

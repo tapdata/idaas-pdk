@@ -7,6 +7,7 @@
         <artifactId>connectors</artifactId>
         <version>0.4-SNAPSHOT</version>
     </parent>
+    <groupId>io.tapdata.connector.empty</groupId>
     <artifactId>empty-connector</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>empty-connector</name>
@@ -42,6 +43,13 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <archive>
+                        <manifestEntries>
+                            <Implementation-Title>${project.artifactId}</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Vendor>${project.groupId}</Implementation-Vendor>
+                        </manifestEntries>
+                    </archive>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
 

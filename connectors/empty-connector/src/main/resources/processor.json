@@ -2,10 +2,7 @@
   "specification": {
     "name": "My Customized Processor",
     "icon": "icons/processorIcon.png",
-    "group": "tapdata",
     "id": "emptyProcessor",
-    "version": "0.1.1",
-    "buildNumber": 123213
   },
   "applications": {
     "node": {
