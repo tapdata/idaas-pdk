@@ -2,10 +2,7 @@
   "specification": {
     "name": "Vika-PDK",
     "icon": "vika.jpeg",
-    "group": "tapdata",
-    "id": "vika-pdk",
-    "version": "0.1.1",
-    "buildNumber": 1
+    "id": "vika-pdk"
   },
   "applications": {
     "connection": {

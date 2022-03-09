@@ -20,14 +20,8 @@ public class TapNodeSpecification {
     public String verify() {
         if(name == null)
             return "missing name";
-        if(group == null)
-            return "missing group";
         if(id == null)
             return "missing id";
-        if(version == null)
-            return "missing version";
-        if(buildNumber == null)
-            return "missing buildNumber";
         return null;
     }
 

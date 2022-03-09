@@ -2,10 +2,7 @@
   "specification": {
     "name": "EmptySource-PDK",
     "icon": "icons/sourceIcon.png",
-    "group": "tapdata",
-    "id": "emptySource",
-    "version": "0.1.1",
-    "buildNumber": 123213
+    "id": "emptySource"
   },
   "applications": {
     "connection": {

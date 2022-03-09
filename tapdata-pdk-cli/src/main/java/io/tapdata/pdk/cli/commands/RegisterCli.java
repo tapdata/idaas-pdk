@@ -10,10 +10,7 @@ import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
-import io.tapdata.pdk.core.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -58,6 +55,9 @@ public class RegisterCli extends CommonCli {
                 }
                 JSONObject o = (JSONObject)JSON.toJSON(specification);
                 o.put("type", nodeInfo.getNodeType());
+                // get the version info and group info from jar
+                o.put("version", nodeInfo.getNodeClass().getPackage().getImplementationVersion());
+                o.put("group", nodeInfo.getNodeClass().getPackage().getImplementationVendor());
                 String jsonString = o.toJSONString();
                 jsons.add(jsonString);
               }

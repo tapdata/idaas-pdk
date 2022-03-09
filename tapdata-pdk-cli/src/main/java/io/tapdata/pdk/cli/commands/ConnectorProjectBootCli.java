@@ -44,7 +44,7 @@ public class ConnectorProjectBootCli extends CommonCli {
     //debug only
     paramsList.add("-DarchetypeCatalog=local");
     paramsList.add(String.format("-DgroupId=%s", groupId));
-    paramsList.add(String.format("-DartifactId=%s-lib", artifactId.toLowerCase()));
+    paramsList.add(String.format("-DartifactId=%s-connector", artifactId.toLowerCase()));
     paramsList.add(String.format("-Dpackage=%s.%s", groupId, artifactId.toLowerCase()));
     paramsList.add(String.format("-DlibName=%s", artifactId));
 

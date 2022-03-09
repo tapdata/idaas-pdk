@@ -58,6 +58,11 @@ public class UploadFileService {
       for (String json : jsons) {
         builder.addFormDataPart("source", json);
       }
+      // if the jsons size == 1, the data received by TM will be weird, adding an empty string helps TM receive the
+      // proper data; the empty string should be dealt in TM.
+      if (jsons.size() == 1) {
+        builder.addFormDataPart("source", "");
+      }
     }
 
     String url = hostAndPort + "/api/pdk/upload/source?access_token=" + token;

@@ -2,10 +2,7 @@
   "specification": {
     "name": "FileTarget-PDK",
     "icon": "icons/targetIcon.png",
-    "group": "tapdata",
-    "id": "fileTarget",
-    "version": "0.1.2",
-    "buildNumber": 1
+    "id": "fileTarget"
   },
   "applications": {
     "connection": {

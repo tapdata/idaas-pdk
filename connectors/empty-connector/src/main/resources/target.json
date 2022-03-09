@@ -2,10 +2,7 @@
   "specification": {
     "name": "EmptyTarget-PDK",
     "icon": "icons/targetIcon.png",
-    "group": "tapdata",
-    "id": "emptyTarget",
-    "version": "0.1.2",
-    "buildNumber": 123213
+    "id": "emptyTarget"
   },
   "applications": {
     "connection": {
