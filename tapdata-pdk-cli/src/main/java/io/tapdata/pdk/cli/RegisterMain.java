@@ -21,7 +21,7 @@ public class RegisterMain {
 
 //                "/Users/aplomb/dev/tapdata/AgentProjects/tapdata-pdk/dist/empty-connector-v1.0.0.jar",
 //                "/Users/aplomb/dev/tapdata/AgentProjects/tapdata-pdk/dist/file-connector-v1.0.0.jar",
-                "/Users/aplomb/dev/tapdata/AgentProjects/tmp/tapdata-sdk/dist/sample-lib-v1.0-SNAPSHOT.jar",
+                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/vika-connector-v1.0-SNAPSHOT.jar",
 //                "/Users/aplomb/dev/tapdata/AgentProjects/tapdata-pdk/dist/vika-connector-v1.0.0.jar",
         };
 

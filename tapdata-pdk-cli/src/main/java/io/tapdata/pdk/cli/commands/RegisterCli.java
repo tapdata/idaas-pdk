@@ -11,11 +11,26 @@ import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.TestExecutionListener;
+import org.junit.platform.launcher.TestPlan;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.*;
+
+import static org.junit.platform.engine.discovery.ClassNameFilter.includeClassNamePatterns;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage;
 
 @CommandLine.Command(
         description = "Push PDK jar file into Tapdata",
@@ -34,8 +49,35 @@ public class RegisterCli extends CommonCli {
 
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "TapData cli help")
     private boolean helpRequested = false;
-
+//    private SummaryGeneratingListener listener = new SummaryGeneratingListener();
+//    public void runOne() {
+//        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+//                .selectors(selectClass("io.tapdata.pdk.tdd.tests.ConnectionTestTest"))
+//                .build();
+//        Launcher launcher = LauncherFactory.create();
+//        TestPlan testPlan = launcher.discover(request);
+//        launcher.registerTestExecutionListeners(listener);
+//        launcher.execute(request);
+//
+//        TestExecutionSummary summary = listener.getSummary();
+//        summary.printTo(new PrintWriter(System.out));
+//    }
+//
+//    public void runAll() {
+//        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+//                .selectors(selectPackage("io.tapdata.pdk.tdd.tests"))
+//                .filters(includeClassNamePatterns(".*Test"))
+//                .build();
+//        Launcher launcher = LauncherFactory.create();
+//        TestPlan testPlan = launcher.discover(request);
+//        launcher.registerTestExecutionListeners(listener);
+//        launcher.execute(request);
+//
+//        TestExecutionSummary summary = listener.getSummary();
+//        summary.printTo(new PrintWriter(System.out));
+//    }
     public Integer execute() throws Exception {
+//        runOne();
         try {
             TapConnectorManager.getInstance().start(Arrays.asList(files));
 

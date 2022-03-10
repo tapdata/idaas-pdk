@@ -304,9 +304,7 @@ public class PDKIntegration {
             sourceNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
 //            sourceNode.connectorContext.setLogger(LogManager.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
 
-            TapConnectionContext connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), sourceNode.getConnectorContext().getConnectionConfig());
-//            connectionContext.setLogger(sourceNode.getConnectorContext().getLogger());
-            sourceNode.getSource().discoverSchema(connectionContext, (events, error) -> {
+            sourceNode.getSource().discoverSchema(sourceNode.connectorContext, (events, error) -> {
                 if(events != null) {
                     for(TapTableOptions tableOptions : events) {
                         TapTable table = tableOptions.getTable();
@@ -347,9 +345,8 @@ public class PDKIntegration {
             targetNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
 //            targetNode.connectorContext.setLogger(LoggerFactory.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
 
-            TapConnectionContext connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), targetNode.getConnectorContext().getConnectionConfig());
 //            connectionContext.setLogger(targetNode.getConnectorContext().getLogger());
-            targetNode.getTarget().discoverSchema(connectionContext, (events, error) -> {
+            targetNode.getTarget().discoverSchema(targetNode.connectorContext, (events, error) -> {
                 if(events != null) {
                     for(TapTableOptions tableOptions : events) {
                         TapTable table = tableOptions.getTable();
@@ -426,9 +423,8 @@ public class PDKIntegration {
             targetNode.connectorContext = nodeContext;
 //            targetNode.connectorContext.setLogger(LoggerFactory.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
 
-            TapConnectionContext connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), sourceNode.getConnectorContext().getConnectionConfig());
 //            connectionContext.setLogger(sourceNode.getConnectorContext().getLogger());
-            sourceNode.getSource().discoverSchema(connectionContext, (events, error) -> {
+            sourceNode.getSource().discoverSchema(targetNode.connectorContext, (events, error) -> {
                 if(events != null) {
                     for(TapTableOptions tableOptions : events) {
                         TapTable table = tableOptions.getTable();

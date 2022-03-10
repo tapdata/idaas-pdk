@@ -19,18 +19,14 @@
     <properties>
         <connector.file.name>${project.artifactId}-v${project.version}</connector.file.name>
         <java.version>8</java.version>
-        <idaas.pdk.verison>0.1-SNAPSHOT</idaas.pdk.verison>
-        <tapdata.pdk.runner.verison>0.1-SNAPSHOT</tapdata.pdk.runner.verison>
-        <tapdata.pdk.api.verison>0.2-SNAPSHOT</tapdata.pdk.api.verison>
-        <tapdata.pdk.connector.core.version>0.3-SNAPSHOT</tapdata.pdk.connector.core.version>
+        <tapdata.pdk.runner.verison>1.0-SNAPSHOT</tapdata.pdk.runner.verison>
+        <tapdata.pdk.api.verison>1.0-SNAPSHOT</tapdata.pdk.api.verison>
+        <tapdata.pdk.connector.core.version>1.0-SNAPSHOT</tapdata.pdk.connector.core.version>
+        <junit.jupiter.version>5.8.1</junit.jupiter.version>
+        <junit.platform.version>1.8.1</junit.platform.version>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>io.tapdata.pdk</groupId>
-                <artifactId>idaas-pdk</artifactId>
-                <version>${idaas.pdk.verison}</version>
-            </dependency>
             <dependency>
                 <groupId>io.tapdata.pdk</groupId>
                 <artifactId>tapdata-pdk-api</artifactId>
@@ -45,6 +41,36 @@
                 <groupId>io.tapdata.pdk</groupId>
                 <artifactId>connector-core</artifactId>
                 <version>${tapdata.pdk.connector.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -65,15 +91,8 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
             </plugin>
         </plugins>
 

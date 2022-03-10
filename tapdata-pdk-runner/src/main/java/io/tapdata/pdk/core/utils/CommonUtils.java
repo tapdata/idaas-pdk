@@ -167,4 +167,8 @@ public class CommonUtils {
             valueLong = defaultValue;
         return valueLong;
     }
+
+    public static void setProperty(String key, String value) {
+        System.setProperty(key, value);
+    }
 }

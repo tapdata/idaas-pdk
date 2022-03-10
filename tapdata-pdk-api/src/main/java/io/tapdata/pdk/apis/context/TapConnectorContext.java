@@ -4,23 +4,13 @@ import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.entity.ddl.TapTable;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
-public class TapConnectorContext extends TapContext {
-    protected DefaultMap connectionConfig;
+public class TapConnectorContext extends TapConnectionContext {
     protected DefaultMap nodeConfig;
     private TapTable table;
     public TapConnectorContext(TapNodeSpecification specification, TapTable table, DefaultMap connectionConfig, DefaultMap nodeConfig) {
-        super(specification);
+        super(specification, connectionConfig);
         this.table = table;
         this.nodeConfig = nodeConfig;
-        this.connectionConfig = connectionConfig;
-    }
-
-    public DefaultMap getConnectionConfig() {
-        return connectionConfig;
-    }
-
-    public void setConnectionConfig(DefaultMap connectionConfig) {
-        this.connectionConfig = connectionConfig;
     }
 
     public DefaultMap getNodeConfig() {
