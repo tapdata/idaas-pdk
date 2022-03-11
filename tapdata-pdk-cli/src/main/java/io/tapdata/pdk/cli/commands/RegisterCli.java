@@ -26,6 +26,9 @@ public class RegisterCli extends CommonCli {
     @CommandLine.Parameters(paramLabel = "FILE", description = "One ore more pdk jar files")
     File[] files;
 
+    @CommandLine.Option(names = { "-l", "--latest" }, required = false, defaultValue = "true", description = "whether replace the latest version")
+    private boolean latest;
+
     @CommandLine.Option(names = { "-a", "--auth" }, required = true, description = "Provide auth token to register")
     private String authToken;
 
@@ -62,7 +65,7 @@ public class RegisterCli extends CommonCli {
                 jsons.add(jsonString);
               }
               System.out.println(tapNodeInfoCollection);
-              UploadFileService.upload(inputStreamMap, file, jsons, tmUrl, authToken);
+              UploadFileService.upload(inputStreamMap, file, jsons, latest, tmUrl, authToken);
             }
         } catch (Throwable throwable) {
             CommonUtils.logError(TAG, "Start failed", throwable);

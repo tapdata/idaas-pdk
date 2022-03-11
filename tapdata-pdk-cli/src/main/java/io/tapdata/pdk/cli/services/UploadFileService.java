@@ -24,8 +24,7 @@ import java.util.Map;
  */
 public class UploadFileService {
 
-  public static void upload(Map<String, InputStream> inputStreamMap, File file, List<String> jsons, String hostAndPort, String accessCode) {
-
+  public static void upload(Map<String, InputStream> inputStreamMap, File file, List<String> jsons, boolean latest, String hostAndPort, String accessCode) {
     String tokenUrl = hostAndPort + "/api/users/generatetoken";
     Map<String, String> param = new HashMap<>();
     param.put("accesscode", accessCode);
@@ -64,6 +63,9 @@ public class UploadFileService {
         builder.addFormDataPart("source", "");
       }
     }
+
+    // whether replace the latest version
+    builder.addFormDataPart("latest", String.valueOf(latest));
 
     String url = hostAndPort + "/api/pdk/upload/source?access_token=" + token;
 
