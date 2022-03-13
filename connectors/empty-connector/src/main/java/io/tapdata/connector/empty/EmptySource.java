@@ -1,26 +1,25 @@
 package io.tapdata.connector.empty;
 
+import io.tapdata.base.ConnectorBase;
+import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapInsertDMLEvent;
+import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.ConnectionTestResult;
-import io.tapdata.pdk.apis.entity.ddl.TapField;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
-import io.tapdata.pdk.apis.functions.consumers.TapListConsumer;
-import io.tapdata.pdk.apis.functions.consumers.TapReadOffsetConsumer;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
-import io.tapdata.pdk.apis.TapSource;
-import io.tapdata.pdk.apis.annotations.TapConnector;
+import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import io.tapdata.pdk.apis.functions.SourceFunctions;
-import io.tapdata.pdk.apis.entity.TapEvent;
-import io.tapdata.pdk.apis.entity.dml.TapRecordEvent;
-import io.tapdata.pdk.apis.entity.ddl.TapTableOptions;
-import io.tapdata.pdk.apis.typemapping.TapType;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
-@TapConnector("source.json")
-public class EmptySource implements TapSource {
+@TapConnectorClass("source.json")
+public class EmptySource extends ConnectorBase implements TapConnector {
     private AtomicLong counter = new AtomicLong();
     /**
      * The method invocation life circle is below,
@@ -29,34 +28,33 @@ public class EmptySource implements TapSource {
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *  @param connectionContext
-     * @param tapListConsumer
+     * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, TapListConsumer<TapTableOptions> tapListConsumer) {
-        TapTableOptions tableOptions1 = new TapTableOptions();
-        TapTable table1 = new TapTable();
-        LinkedHashMap<String, TapField> fieldMap = new LinkedHashMap<>();
-        tableOptions1.setTable(table1);
-        table1.setId("empty-table1");
-        table1.setName("empty-table1");
-        TapField idField = new TapField();
-        idField.setName("id");
-        idField.setTapType(TapType.Number.name());
-        fieldMap.put(idField.getName(), idField);
-        TapField aField = new TapField();
-        aField.setName("a");
-        aField.setTapType(TapType.String.name());
-        fieldMap.put(aField.getName(), aField);
-        TapField bField = new TapField();
-        bField.setName("b");
-        bField.setTapType(TapType.String.name());
-        fieldMap.put(bField.getName(), bField);
-        TapField cField = new TapField();
-        cField.setName("c");
-        cField.setTapType(TapType.String.name());
-        table1.setNameFieldMap(fieldMap);
-        tapListConsumer.accept(Arrays.asList(tableOptions1), null);
+    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+//        TapTable table1 = new TapTable();
+//        LinkedHashMap<String, TapField> fieldMap = new LinkedHashMap<>();
+//        table1.setId("empty-table1");
+//        table1.setName("empty-table1");
+//        TapField idField = new TapField();
+//        idField.setName("id");
+//        idField.setTapType(TapType.Number.name());
+//        fieldMap.put(idField.getName(), idField);
+//        TapField aField = new TapField();
+//        aField.setName("a");
+//        aField.setTapType(TapType.String.name());
+//        fieldMap.put(aField.getName(), aField);
+//        TapField bField = new TapField();
+//        bField.setName("b");
+//        bField.setTapType(TapType.String.name());
+//        fieldMap.put(bField.getName(), bField);
+//        TapField cField = new TapField();
+//        cField.setName("c");
+//        cField.setTapType(TapType.String.name());
+//        table1.setNameFieldMap(fieldMap);
+//        tapListConsumer.accept(Arrays.asList(tableOptions1), null);
     }
+
 
     /**
      * The method invocation life circle is below,
@@ -72,23 +70,6 @@ public class EmptySource implements TapSource {
     public ConnectionTestResult connectionTest(TapConnectionContext connectionContext) {
         return null;
     }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated -> init -> sourceFunctions/targetFunctions -> close -> ended
-     *
-     * In connectorContext,
-     *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     *  current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param specification
-     */
-    @Override
-    public void init(TapConnectorContext connectorContext, TapNodeSpecification specification) {
-
-    }
-
 
 
     /**
@@ -127,14 +108,13 @@ public class EmptySource implements TapSource {
      *
      * @param connectorContext
      * @param offset
-     * @param tapReadOffsetConsumer
+     * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapReadOffsetConsumer) {
+    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
         for(int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = new ArrayList<>();
             for(int i = 0; i < 10; i++) {
-              TapRecordEvent recordEvent = new TapRecordEvent();
-              recordEvent.setType(TapRecordEvent.TYPE_INSERT);
+              TapInsertDMLEvent recordEvent = new TapInsertDMLEvent();
               recordEvent.setTime(System.currentTimeMillis());
               int finalI = i;
               recordEvent.setAfter(new HashMap<String, Object>(){{
@@ -151,7 +131,7 @@ public class EmptySource implements TapSource {
             } catch (InterruptedException interruptedException) {
                 interruptedException.printStackTrace();
             }
-            tapReadOffsetConsumer.accept(tapEvents, null, null, false);
+            consumer.accept(tapEvents);
         }
     }
 
@@ -172,12 +152,11 @@ public class EmptySource implements TapSource {
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, TapReadOffsetConsumer<TapEvent> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         for(int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = new ArrayList<>();
             for(int i = 0; i < 20; i++) {
-                TapRecordEvent recordEvent = new TapRecordEvent();
-                recordEvent.setType(TapRecordEvent.TYPE_INSERT);
+                TapInsertDMLEvent recordEvent = new TapInsertDMLEvent();
                 recordEvent.setTime(System.currentTimeMillis());
                 int finalI = i;
                 recordEvent.setAfter(new HashMap<String, Object>(){{
@@ -188,9 +167,8 @@ public class EmptySource implements TapSource {
                 }});
                 tapEvents.add(recordEvent);
             }
-            tapReadOffsetConsumer.accept(tapEvents, null, null, false);
+            tapReadOffsetConsumer.accept(tapEvents);
         }
-        tapReadOffsetConsumer.accept(null, null, null, true);
     }
 
     /**
@@ -207,25 +185,11 @@ public class EmptySource implements TapSource {
 
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated -> connectionTest -> init -> sourceFunctions/targetFunctions -> close -> ended
-     *
-     * sourceFunctions provide the way for you to register callback functions to implement features that you may want to implement.
-     * like batch read, stream read, etc.
-     *
-     * @param sourceFunctions
-     */
+
     @Override
-    public void sourceFunctions(SourceFunctions sourceFunctions) {
-        /**
-         *
-         */
-        sourceFunctions.withBatchReadFunction(this::batchRead);
-        sourceFunctions.withStreamReadFunction(this::streamRead);
-        sourceFunctions.withBatchCountFunction(this::batchCount);
-//        sourceFunctions.withBatchOffsetFunction(this::batchOffset);
-//        sourceFunctions.withStreamOffsetFunction(this::streamOffset);
-//        sourceFunctions.withWebHookReadFunction(this::webHook);
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+        connectorFunctions.supportBatchRead(this::batchRead);
+        connectorFunctions.supportStreamRead(this::streamRead);
+        connectorFunctions.supportBatchCount(this::batchCount);
     }
 }

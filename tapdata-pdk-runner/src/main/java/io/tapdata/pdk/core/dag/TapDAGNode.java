@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.dag;
 
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.common.DefaultMap;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 
 import java.util.List;

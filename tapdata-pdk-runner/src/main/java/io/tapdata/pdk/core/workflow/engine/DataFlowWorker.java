@@ -79,7 +79,7 @@ public class DataFlowWorker {
                     .configState(STATE_INITIALIZED, stateMachine.execute(this::handleInitialized).nextStates(STATE_TERMINATED))
                     .configState(STATE_TERMINATED, stateMachine.execute(this::handleTerminated).nextStates(STATE_INITIALIZING, STATE_NONE))
                     .errorOccurred(this::handleError);
-            stateMachine.enableAsync(Executors.newSingleThreadExecutor());
+            stateMachine.enableAsync(Executors.newSingleThreadExecutor()); //Use one thread for a worker
         }
     }
 
@@ -151,9 +151,6 @@ public class DataFlowWorker {
 
         this.jobOptions = jobOptions;
         initStateMachine();
-        //TODO not necessary to use one thread for a worker.
-//        workerThread = ExecutorsManager.getInstance().newSingleThreadExecutorService("Dataflow " + dag.getId());
-//        stateMachine.enableAsync(workerThread);
     }
 
     public String getCurrentState() {

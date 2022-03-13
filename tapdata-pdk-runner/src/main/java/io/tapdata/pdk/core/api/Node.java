@@ -2,7 +2,6 @@ package io.tapdata.pdk.core.api;
 
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 
-import java.util.Map;
 
 public abstract class Node {
     String dagId;

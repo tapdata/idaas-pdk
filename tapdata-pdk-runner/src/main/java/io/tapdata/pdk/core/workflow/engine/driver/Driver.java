@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
-import io.tapdata.pdk.apis.entity.TapEvent;
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.core.utils.queue.SingleThreadBlockingQueue;
 
 import java.util.List;

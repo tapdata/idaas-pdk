@@ -2,15 +2,25 @@ package io.tapdata.pdk.core.workflow.engine.driver;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
-import com.alibaba.fastjson.serializer.SerializerFeature;
-import io.tapdata.pdk.apis.functions.source.BatchCountFunction;
-import io.tapdata.pdk.apis.functions.source.BatchReadFunction;
-import io.tapdata.pdk.apis.functions.source.StreamReadFunction;
+import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapDeleteDMLEvent;
+import io.tapdata.entity.event.dml.TapInsertDMLEvent;
+import io.tapdata.entity.event.dml.TapUpdateDMLEvent;
+import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
+import io.tapdata.pdk.apis.functions.connector.source.BatchReadFunction;
+import io.tapdata.pdk.apis.functions.connector.source.StreamReadFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.LoggerUtils;
+
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
@@ -34,21 +44,31 @@ public class SourceNodeDriver extends Driver {
 
     public void start() {
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-//        ConnectFunction connectFunction = sourceNode.getSourceFunctions().getConnectFunction();
-//        if (connectFunction != null) {
-//            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_CONNECT, () -> {
-//                connectFunction.connect(sourceNode.getConnectorContext());
-//            }, "connect", logger);
-//        }
 
-        BatchCountFunction batchCountFunction = sourceNode.getSourceFunctions().getBatchCountFunction();
+        //Fill the discovered table back into connector context
+        //The table user input has to be one in the discovered tables. Otherwise we need create table logic which currently we don't have.
+        sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), (tables) -> {
+            if(tables != null) {
+                for(TapTable table : tables) {
+                    if(table != null) {
+                        TapTable targetTable = sourceNode.getConnectorContext().getTable();
+                        if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
+                            sourceNode.getConnectorContext().setTable(table);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
         if (batchCountFunction != null) {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_COUNT, () -> {
                 batchCount = batchCountFunction.count(sourceNode.getConnectorContext(), null);
             }, "Batch count " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
         }
 
-        StreamReadFunction streamReadFunction = sourceNode.getSourceFunctions().getStreamReadFunction();
+        StreamReadFunction streamReadFunction = sourceNode.getConnectorFunctions().getStreamReadFunction();
         if (streamReadFunction != null) {
             Object recoveredOffset = null;
             if(streamOffsetStr != null) {
@@ -59,7 +79,7 @@ public class SourceNodeDriver extends Driver {
             Object finalRecoveredOffset = recoveredOffset;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
                 while(true) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events, offsetState, error, completed) -> {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
                         if (!batchCompleted) {
                             synchronized (streamLock) {
                                 while (!batchCompleted) {
@@ -74,60 +94,66 @@ public class SourceNodeDriver extends Driver {
                                 PDKLogger.debug(TAG, "Stream read start now, {}", LoggerUtils.sourceNodeMessage(sourceNode));
                             }
                         }
-                        if (error != null) {
-                            PDKLogger.error(TAG, "Stream read occurred error {}, {}", error.getMessage(), LoggerUtils.sourceNodeMessage(sourceNode));
-                        }
                         if (events != null) {
                             PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                            offer(events);
+                            offer(filterEvents(events));
                         }
-                        if (offsetState != null) {
-                            PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
-                            this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
-                        }
+//                        if (offsetState != null) {
+//                            PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
+//                            this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+//                        }
                     });
                 }
             }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, true, Long.MAX_VALUE, 5);
         }
 
-        BatchReadFunction batchReadFunction = sourceNode.getSourceFunctions().getBatchReadFunction();
+        BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
         if (batchReadFunction != null) {
-            while (!batchCompleted) {
-                Object recoveredOffset = null;
-                if(batchOffsetStr != null) {
-                    recoveredOffset = JSON.parse(batchOffsetStr, Feature.SupportAutoType);
+            Object recoveredOffset = null;
+            if(batchOffsetStr != null) {
+                recoveredOffset = JSON.parse(batchOffsetStr, Feature.SupportAutoType);
+            }
+            Object finalRecoveredOffset = recoveredOffset;
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
+                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
+                        if (events != null && !events.isEmpty()) {
+                            PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                            offer(filterEvents(events));
+
+//                                if (offsetState != null) {
+//                                    PDKLogger.debug(TAG, "Batch read update offset from {} to {}", this.batchOffsetStr, offsetState);
+//                                    batchOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+//                                }
+                        }
+                    }), "Batch read " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+            if (!batchCompleted) {
+                synchronized (streamLock) {
+                    if (!batchCompleted) {
+                        batchCompleted = true;
+                        PDKLogger.debug(TAG, "Batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
+                        streamLock.notifyAll();
+                    }
                 }
-                Object finalRecoveredOffset = recoveredOffset;
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
-                        () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events, offsetState, error, completed) -> {
-                            if (error != null) {
-                                PDKLogger.error(TAG, "Batch read occurred error {} batchOffset {}, {}", error.getMessage(), batchOffsetStr, LoggerUtils.sourceNodeMessage(sourceNode));
-                            }
-                            if (events != null && !events.isEmpty()) {
-                                PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                                offer(events);
-
-                                if (offsetState != null) {
-                                    PDKLogger.debug(TAG, "Batch read update offset from {} to {}", this.batchOffsetStr, offsetState);
-                                    batchOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
-                                }
-                            }
-
-                            if (!batchCompleted && completed) {
-                                synchronized (streamLock) {
-                                    if (!batchCompleted) {
-                                        batchCompleted = true;
-                                        PDKLogger.debug(TAG, "Batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
-                                        streamLock.notifyAll();
-                                    }
-                                }
-                            }
-                        }), "Batch read " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
             }
         }
+    }
 
-//        PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.TARGET_FUNCTIONS,
-//                () -> targetNode.target.targetFunctions(targetNode.targetFunctions),
-//                MessageFormat.format("call target functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), logger);
+    private List<TapEvent> filterEvents(List<TapEvent> events) {
+        LinkedHashMap<String, TapField> nameFieldMap = sourceNode.getConnectorContext().getTable().getNameFieldMap();
+        TapCodecFilterManager codecFilterManager = sourceNode.getCodecFilterManager();
+        for(TapEvent tapEvent : events) {
+            if(tapEvent instanceof TapInsertDMLEvent) {
+                TapInsertDMLEvent insertDMLEvent = (TapInsertDMLEvent) tapEvent;
+                codecFilterManager.transformToTapValueMap(insertDMLEvent.getAfter(), nameFieldMap);
+            } else if(tapEvent instanceof TapUpdateDMLEvent) {
+                TapUpdateDMLEvent updateDMLEvent = (TapUpdateDMLEvent) tapEvent;
+                codecFilterManager.transformToTapValueMap(updateDMLEvent.getAfter(), nameFieldMap);
+                codecFilterManager.transformToTapValueMap(updateDMLEvent.getBefore(), nameFieldMap);
+            } else if(tapEvent instanceof TapDeleteDMLEvent) {
+                TapDeleteDMLEvent deleteDMLEvent = (TapDeleteDMLEvent) tapEvent;
+                codecFilterManager.transformToTapValueMap(deleteDMLEvent.getBefore(), nameFieldMap);
+            }
+        }
+        return events;
     }
 }

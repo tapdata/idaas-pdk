@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.workflow.engine;
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
-import io.tapdata.pdk.apis.entity.TapEvent;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.api.SourceAndTargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;

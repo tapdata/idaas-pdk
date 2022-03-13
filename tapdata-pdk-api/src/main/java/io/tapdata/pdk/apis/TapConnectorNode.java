@@ -1,10 +1,8 @@
 package io.tapdata.pdk.apis;
 
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.ConnectionTestResult;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
-import io.tapdata.pdk.apis.entity.ddl.TapTableOptions;
-import io.tapdata.pdk.apis.functions.consumers.TapListConsumer;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -19,7 +17,7 @@ public interface TapConnectorNode extends TapNode  {
      *  @param connectionContext
      * @param consumer
      */
-    void discoverSchema(TapConnectionContext connectionContext, TapListConsumer<TapTableOptions> consumer);
+    void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer);
 
     /**
      * Test connection

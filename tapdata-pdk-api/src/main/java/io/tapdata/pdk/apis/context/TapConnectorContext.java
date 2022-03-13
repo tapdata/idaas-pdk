@@ -1,7 +1,7 @@
 package io.tapdata.pdk.apis.context;
 
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.common.DefaultMap;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 public class TapConnectorContext extends TapConnectionContext {

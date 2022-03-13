@@ -12,7 +12,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>connector-core</module>
-        <module>mongodb-connector</module>
         <module>empty-connector</module>
         <module>file-connector</module>
         <module>vika-connector</module>

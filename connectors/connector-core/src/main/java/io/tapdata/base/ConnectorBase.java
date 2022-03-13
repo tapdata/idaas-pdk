@@ -1,10 +1,6 @@
 package io.tapdata.base;
 
 import io.tapdata.pdk.apis.common.DefaultMap;
-import io.tapdata.pdk.apis.entity.ddl.FieldConvertor;
-import io.tapdata.pdk.apis.entity.ddl.TapField;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
-import io.tapdata.pdk.apis.entity.dml.TapRecordEvent;
 import io.tapdata.pdk.apis.utils.FormatUtils;
 import io.tapdata.pdk.apis.utils.ImplementationUtils;
 import io.tapdata.pdk.apis.utils.TapUtils;
@@ -20,6 +16,14 @@ public class ConnectorBase {
     private TapUtils tapUtils = ImplementationUtils.getTapUtils();
     private TypeConverter typeConverter = ImplementationUtils.getTypeConverter();
 
+    /**
+     * @XXX
+     * This CURL lib has bug, need bug fixing
+     *
+     * @param curl
+     * @param params
+     * @return
+     */
     public DefaultMap curl(String curl, Object... params) {
         String result = Curl.$(format(curl, params));
         return fromJson(result, DefaultMap.class);

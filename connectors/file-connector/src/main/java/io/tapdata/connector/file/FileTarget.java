@@ -1,20 +1,18 @@
 package io.tapdata.connector.file;
 
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapDMLEvent;
+import io.tapdata.entity.event.dml.TapInsertDMLEvent;
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.ConnectionTestResult;
-import io.tapdata.pdk.apis.entity.SupportedTapEvents;
 import io.tapdata.pdk.apis.entity.WriteListResult;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
-import io.tapdata.pdk.apis.entity.dml.TapRecordEvent;
-import io.tapdata.pdk.apis.functions.consumers.TapListConsumer;
-import io.tapdata.pdk.apis.functions.consumers.TapWriteListConsumer;
-import io.tapdata.pdk.apis.spec.TapNodeSpecification;
-import io.tapdata.pdk.apis.TapTarget;
-import io.tapdata.pdk.apis.annotations.TapConnector;
+import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import io.tapdata.pdk.apis.functions.TargetFunctions;
-import io.tapdata.pdk.apis.entity.ddl.TapTableOptions;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -27,32 +25,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@TapConnector("target.json")
-public class FileTarget extends ConnectorBase implements TapTarget {
+@TapConnectorClass("target.json")
+public class FileTarget extends ConnectorBase implements TapConnector {
 
     @Override
     public void destroy() {
 
     }
 
-    @Override
-    public void init(TapConnectorContext connectorContext, TapNodeSpecification specification) {
-
-    }
 
     @Override
-    public void discoverSchema(TapConnectionContext databaseContext, TapListConsumer<TapTableOptions> tapReadOffsetConsumer) {
-        TapTableOptions tableOptions1 = new TapTableOptions();
-        TapTable table1 = new TapTable();
-        tableOptions1.setTable(table1);
-        table1.setId("target1.txt");
-        table1.setName("target1.txt");
-        TapTableOptions tableOptions2 = new TapTableOptions();
-        TapTable table2 = new TapTable();
-        tableOptions2.setTable(table2);
-        table2.setId("target2.txt");
-        table2.setName("target2.txt");
-        tapReadOffsetConsumer.accept(Arrays.asList(tableOptions1, tableOptions2), null);
+    public void discoverSchema(TapConnectionContext databaseContext, Consumer<List<TapTable>> consumer) {
+//        TapTableOptions tableOptions1 = new TapTableOptions();
+//        TapTable table1 = new TapTable();
+//        tableOptions1.setTable(table1);
+//        table1.setId("target1.txt");
+//        table1.setName("target1.txt");
+//        TapTableOptions tableOptions2 = new TapTableOptions();
+//        TapTable table2 = new TapTable();
+//        tableOptions2.setTable(table2);
+//        table2.setId("target2.txt");
+//        table2.setName("target2.txt");
+//        tapReadOffsetConsumer.accept(Arrays.asList(tableOptions1, tableOptions2), null);
     }
 
     @Override
@@ -60,12 +54,9 @@ public class FileTarget extends ConnectorBase implements TapTarget {
         return null;
     }
 
-    @Override
-    public void targetFunctions(TargetFunctions targetFunctions, SupportedTapEvents supportedTapEvents) {
-        targetFunctions.withDMLFunction(this::handleDML);
-    }
 
-    private void handleDML(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapWriteListConsumer<TapRecordEvent> consumer) {
+
+    private void handleDML(TapConnectorContext connectorContext, List<TapDMLEvent> tapRecordEvents, Consumer<WriteListResult<TapDMLEvent>> consumer) {
         TapTable table = connectorContext.getTable();
         String folderPath = (String) connectorContext.getConnectionConfig().get("folderPath");
         if(table == null || table.getName() == null)
@@ -80,28 +71,32 @@ public class FileTarget extends ConnectorBase implements TapTarget {
         try {
             try (FileOutputStream fis = FileUtils.openOutputStream(file, true)) {
                 if (tapRecordEvents != null) {
-                    for (TapRecordEvent recordEvent : tapRecordEvents) {
-                        switch (recordEvent.getType()) {
-                            case TapRecordEvent.TYPE_INSERT:
-                                Map<String, Object> recordValue = recordEvent.getAfter();
-                                fis.write(toJson(recordValue).getBytes(StandardCharsets.UTF_8));
-                                fis.write("\r\n".getBytes(StandardCharsets.UTF_8));
-                                try {
-                                    Thread.sleep(1000L);
-                                } catch (InterruptedException interruptedException) {
-                                    interruptedException.printStackTrace();
-                                }
-                                break;
+                    for (TapDMLEvent recordEvent : tapRecordEvents) {
+                        if(recordEvent instanceof TapInsertDMLEvent) {
+                            TapInsertDMLEvent insertDMLEvent = (TapInsertDMLEvent) recordEvent;
+                            Map<String, Object> recordValue = insertDMLEvent.getAfter();
+                            fis.write(toJson(recordValue).getBytes(StandardCharsets.UTF_8));
+                            fis.write("\r\n".getBytes(StandardCharsets.UTF_8));
+                            try {
+                                Thread.sleep(1000L);
+                            } catch (InterruptedException interruptedException) {
+                                interruptedException.printStackTrace();
+                            }
                         }
                     }
-                    WriteListResult<TapRecordEvent> writeListResult = new WriteListResult<>();
+                    WriteListResult<TapDMLEvent> writeListResult = new WriteListResult<>();
                     writeListResult.setInsertedCount(tapRecordEvents.size());
-                    consumer.accept(writeListResult, null);
+                    consumer.accept(writeListResult);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+        connectorFunctions.supportDML(this::handleDML);
     }
 }

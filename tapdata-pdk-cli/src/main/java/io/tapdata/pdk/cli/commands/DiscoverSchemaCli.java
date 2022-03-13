@@ -1,9 +1,8 @@
 package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.common.DefaultMap;
-import io.tapdata.pdk.apis.entity.ddl.TapTableOptions;
-import io.tapdata.pdk.apis.functions.consumers.TapListConsumer;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -14,6 +13,7 @@ import picocli.CommandLine;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @CommandLine.Command(
         description = "Test allTables method",
@@ -50,10 +50,10 @@ public class DiscoverSchemaCli extends CommonCli {
                     .withPdkId(pdkId)
                     .withConnectionConfig(defaultMap)
                     .build();
-            databaseNode.getConnectorNode().discoverSchema(databaseNode.getDatabaseContext(), new TapListConsumer<TapTableOptions>() {
+            databaseNode.getConnectorNode().discoverSchema(databaseNode.getDatabaseContext(), new Consumer<List<TapTable>>() {
                 @Override
-                public void accept(List<TapTableOptions> tables, Throwable error) {
-                    for(TapTableOptions tableOptions : tables) {
+                public void accept(List<TapTable> tables) {
+                    for(TapTable tableOptions : tables) {
                         PDKLogger.info(TAG, "tableOptions {}", tableOptions);
                     }
                 }

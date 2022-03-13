@@ -1,20 +1,17 @@
 package io.tapdata.pdk.core.api;
 
+import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.TapConnectorNode;
 import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
-import io.tapdata.pdk.apis.entity.SupportedTapEvents;
-import io.tapdata.pdk.apis.entity.ddl.TapTableOptions;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
-import io.tapdata.pdk.apis.TapRecordProcessor;
-import io.tapdata.pdk.apis.TapSource;
-import io.tapdata.pdk.apis.TapTarget;
+import io.tapdata.pdk.apis.TapProcessor;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.context.TapProcessorContext;
 import io.tapdata.pdk.apis.functions.ProcessorFunctions;
-import io.tapdata.pdk.apis.functions.SourceFunctions;
-import io.tapdata.pdk.apis.functions.TargetFunctions;
-import io.tapdata.pdk.apis.entity.ddl.TapTable;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.error.CoreException;
@@ -32,7 +29,7 @@ public class PDKIntegration {
 
     private PDKIntegration() {}
 
-    public abstract static class DatabaseBuilder<T extends Node> {
+    public abstract static class ConnectionBuilder<T extends Node> {
         protected String associateId;
         protected DefaultMap connectionConfig;
         protected String pdkId;
@@ -56,32 +53,32 @@ public class PDKIntegration {
          * @param associateId
          * @return
          */
-        public DatabaseBuilder<T> withAssociateId(String associateId) {
+        public ConnectionBuilder<T> withAssociateId(String associateId) {
             this.associateId = associateId;
             return this;
         }
 
-        public DatabaseBuilder<T> withPdkId(String pdkId) {
+        public ConnectionBuilder<T> withPdkId(String pdkId) {
             this.pdkId = pdkId;
             return this;
         }
 
-        public DatabaseBuilder<T> withGroup(String group) {
+        public ConnectionBuilder<T> withGroup(String group) {
             this.group = group;
             return this;
         }
 
-        public DatabaseBuilder<T> withMinBuildNumber(Integer minBuildNumber) {
+        public ConnectionBuilder<T> withMinBuildNumber(Integer minBuildNumber) {
             this.minBuildNumber = minBuildNumber;
             return this;
         }
 
-        public DatabaseBuilder<T> withConnectionConfig(DefaultMap connectionConfig) {
+        public ConnectionBuilder<T> withConnectionConfig(DefaultMap connectionConfig) {
             this.connectionConfig = connectionConfig;
             return this;
         }
 
-        public DatabaseBuilder<T> withTapDAGNode(TapDAGNode node) {
+        public ConnectionBuilder<T> withTapDAGNode(TapDAGNode node) {
             this.pdkId = node.getPdkId();
             this.group = node.getGroup();
             this.minBuildNumber = node.getMinBuildNumber();
@@ -273,17 +270,17 @@ public class PDKIntegration {
         public abstract T build();
     }
 
-    public static class DatabaseConnectorBuilder extends DatabaseBuilder<DatabaseNode> {
-        public DatabaseNode build() {
+    public static class ConnectionConnectorBuilder extends ConnectionBuilder<ConnectionNode> {
+        public ConnectionNode build() {
             checkParams();
             TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, minBuildNumber);
             if(nodeInstance == null)
                 throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} minBuildNumber {2} for associateId {3}", pdkId, group, minBuildNumber, associateId));
-            DatabaseNode sourceNode = new DatabaseNode();
+            ConnectionNode sourceNode = new ConnectionNode();
             sourceNode.connectorNode = (TapConnectorNode) nodeInstance.getTapNode();
             sourceNode.associateId = associateId;
             sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            sourceNode.databaseContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig);
+            sourceNode.connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig);
 //            sourceNode.databaseContext.setLogger(LogManager.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
             return sourceNode;
         }
@@ -296,34 +293,14 @@ public class PDKIntegration {
             if(nodeInstance == null)
                 throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} minBuildNumber {2} for associateId {3}", pdkId, group, minBuildNumber, associateId));
             SourceNode sourceNode = new SourceNode();
-            sourceNode.source = (TapSource) nodeInstance.getTapNode();
+            sourceNode.init((TapConnector) nodeInstance.getTapNode());
             sourceNode.dagId = dagId;
             sourceNode.associateId = associateId;
-            sourceNode.sourceFunctions = new SourceFunctions();
             sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             sourceNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
-//            sourceNode.connectorContext.setLogger(LogManager.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
 
-            sourceNode.getSource().discoverSchema(sourceNode.connectorContext, (events, error) -> {
-                if(events != null) {
-                    for(TapTableOptions tableOptions : events) {
-                        TapTable table = tableOptions.getTable();
-                        if(table != null) {
-                            TapTable targetTable = sourceNode.getConnectorContext().getTable();
-                            if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
-                                sourceNode.getConnectorContext().setTable(table);
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
-
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.SOURCE_INIT,
-                    () -> sourceNode.init(sourceNode.tapNodeInfo.getTapNodeSpecification()),
-                    MessageFormat.format("create source {0} associate with id {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.SOURCE_FUNCTIONS,
-                    () -> sourceNode.sourceFunctions(sourceNode.sourceFunctions),
+            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+                    sourceNode::registerCapabilities,
                     MessageFormat.format("call source functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
             return sourceNode;
         }
@@ -338,34 +315,12 @@ public class PDKIntegration {
             TargetNode targetNode = new TargetNode();
             targetNode.dagId = dagId;
             targetNode.associateId = associateId;
-            targetNode.target = (TapTarget) nodeInstance.getTapNode();
-            targetNode.targetFunctions = new TargetFunctions();
-            targetNode.supportedTapEvents = new SupportedTapEvents();
+            targetNode.init((TapConnector) nodeInstance.getTapNode());
             targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             targetNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
-//            targetNode.connectorContext.setLogger(LoggerFactory.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
 
-//            connectionContext.setLogger(targetNode.getConnectorContext().getLogger());
-            targetNode.getTarget().discoverSchema(targetNode.connectorContext, (events, error) -> {
-                if(events != null) {
-                    for(TapTableOptions tableOptions : events) {
-                        TapTable table = tableOptions.getTable();
-                        if(table != null) {
-                            TapTable targetTable = targetNode.getConnectorContext().getTable();
-                            if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
-                                targetNode.getConnectorContext().setTable(table);
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
-
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.TARGET_INIT,
-                    () -> targetNode.init(targetNode.tapNodeInfo.getTapNodeSpecification()),
-                    MessageFormat.format("create target {0} associate with id {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.TARGET_FUNCTIONS,
-                    () -> targetNode.targetFunctions(targetNode.targetFunctions),
+            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+                    targetNode::registerCapabilities,
                     MessageFormat.format("call target functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
             return targetNode;
         }
@@ -380,14 +335,10 @@ public class PDKIntegration {
             ProcessorNode processorNode = new ProcessorNode();
             processorNode.dagId = dagId;
             processorNode.associateId = associateId;
-            processorNode.processor = (TapRecordProcessor) nodeInstance.getTapNode();
+            processorNode.processor = (TapProcessor) nodeInstance.getTapNode();
             processorNode.processorFunctions = new ProcessorFunctions();
             processorNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             processorNode.processorContext = new TapProcessorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig);
-//            processorNode.processorContext.setLogger(LoggerFactory.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.PROCESSOR_INIT,
-                    () -> processorNode.init(processorNode.tapNodeInfo.getTapNodeSpecification()),
-                    MessageFormat.format("create processor {0} associate with id {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.PROCESSOR_FUNCTIONS,
                     () -> processorNode.processorFunctions(processorNode.processorFunctions),
                     MessageFormat.format("call processor functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
@@ -404,51 +355,27 @@ public class PDKIntegration {
 
             TapConnectorContext nodeContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
 
+            ConnectorFunctions connectorFunctions = new ConnectorFunctions();
+            TapCodecRegistry codecRegistry = new TapCodecRegistry();
+
             SourceNode sourceNode = new SourceNode();
-            sourceNode.source = (TapSource) nodeInstance.getTapNode();
+            sourceNode.init((TapConnector) nodeInstance.getTapNode(), codecRegistry, connectorFunctions);
             sourceNode.dagId = dagId;
             sourceNode.associateId = associateId;
-            sourceNode.sourceFunctions = new SourceFunctions();
             sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             sourceNode.connectorContext = nodeContext;
-//            sourceNode.connectorContext.setLogger(LoggerFactory.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
 
             TargetNode targetNode = new TargetNode();
             targetNode.dagId = dagId;
             targetNode.associateId = associateId;
-            targetNode.target = (TapTarget) nodeInstance.getTapNode();
-            targetNode.targetFunctions = new TargetFunctions();
-            targetNode.supportedTapEvents = new SupportedTapEvents();
+            targetNode.init((TapConnector) nodeInstance.getTapNode(), codecRegistry, connectorFunctions);
             targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             targetNode.connectorContext = nodeContext;
-//            targetNode.connectorContext.setLogger(LoggerFactory.getLogger(nodeInstance.getTapNodeInfo().getNodeClass()));
-
-//            connectionContext.setLogger(sourceNode.getConnectorContext().getLogger());
-            sourceNode.getSource().discoverSchema(targetNode.connectorContext, (events, error) -> {
-                if(events != null) {
-                    for(TapTableOptions tableOptions : events) {
-                        TapTable table = tableOptions.getTable();
-                        if(table != null) {
-                            TapTable targetTable = sourceNode.getConnectorContext().getTable();
-                            if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
-                                sourceNode.getConnectorContext().setTable(table);
-                                targetNode.getConnectorContext().setTable(table);
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
 
             //Source and Target are the same object, will only invoke the method once, no matter source or target, the method is the same.
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.SOURCE_TARGET_INIT,
-                    () -> sourceNode.init(sourceNode.tapNodeInfo.getTapNodeSpecification()),
-                    MessageFormat.format("create target {0} associate with id {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.SOURCE_FUNCTIONS,
-                    () -> sourceNode.sourceFunctions(sourceNode.sourceFunctions),
-                    MessageFormat.format("call source functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.TARGET_FUNCTIONS,
-                    () -> targetNode.targetFunctions(targetNode.targetFunctions),
+
+            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+                    targetNode::registerCapabilities,
                     MessageFormat.format("call target functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group), associateId), TAG);
             SourceAndTargetNode sourceAndTargetNode = new SourceAndTargetNode();
             sourceAndTargetNode.dagId = dagId;
@@ -494,9 +421,9 @@ public class PDKIntegration {
         return new ProcessorConnectorBuilder();
     }
 
-    public static DatabaseConnectorBuilder createDatabaseConnectorBuilder() {
+    public static ConnectionConnectorBuilder createDatabaseConnectorBuilder() {
         init();
-        return new DatabaseConnectorBuilder();
+        return new ConnectionConnectorBuilder();
     }
 
 }
