@@ -27,6 +27,14 @@ public class TapTable extends TapItem<TapField> {
      */
     private String charset;
 
+    public String toString() {
+        return "TapTable id " + id +
+                " name " + name +
+                " storageEngine " + storageEngine +
+                " charset " + charset +
+                " number of fields " + (nameFieldMap != null ? nameFieldMap.size() : 0);
+    }
+
     public TapTable add(TapField field) {
         fieldCheck(field);
         if(nameFieldMap == null) {

@@ -53,8 +53,8 @@ public class DiscoverSchemaCli extends CommonCli {
             connectionNode.getConnectorNode().discoverSchema(connectionNode.getConnectionContext(), new Consumer<List<TapTable>>() {
                 @Override
                 public void accept(List<TapTable> tables) {
-                    for(TapTable tableOptions : tables) {
-                        PDKLogger.info(TAG, "tableOptions {}", tableOptions);
+                    for(TapTable table : tables) {
+                        PDKLogger.info(TAG, "Table: {}", table);
                     }
                 }
             });
