@@ -58,7 +58,7 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      */
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
-
+        consumer.accept(testItem("OK", TestResult.Successfully));
     }
 
 

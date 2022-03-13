@@ -33,7 +33,7 @@
         <dependency>
             <groupId>io.tapdata.pdk</groupId>
             <artifactId>tapdata-pdk-runner</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>

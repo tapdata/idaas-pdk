@@ -87,7 +87,7 @@ public class TapDAGNodeWithWorker extends TapDAGNode {
     }
 
     private void buildPath(TapDAGNodeWithWorker parent, TapDAGNodeWithWorker child, JobOptions jobOptions) {
-        String queueName = parent.id + " pdk " + TapNodeSpecification.idAndGroup(parent.pdkId, parent.group);
+        String queueName = parent.id + " pdk " + TapNodeSpecification.idAndGroup(parent.pdkId, parent.group, parent.version);
         if(parent.sourceNodeDriver != null) {
             connect(parent.sourceNodeDriver, child.processorNodeDriver, jobOptions, "Source queue " + queueName + " to processor " + child.id);
             connect(parent.sourceNodeDriver, child.targetNodeDriver, jobOptions, "Source queue " + queueName + " to target " + child.id);

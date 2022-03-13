@@ -22,14 +22,10 @@ public abstract class TapBaseAnnotationHandler extends ClassAnnotationHandler {
         }
     }
 
-    public TapNodeInfo getTapNodeInfo(String id, String group) {
-        return getTapNodeInfo(id, group, 0);
-    }
-    public TapNodeInfo getTapNodeInfo(String id, String group, int minBuildNumber) {
-        TapNodeInfo tapNodeInfo = idGroupTapNodeInfoMap.get(TapNodeSpecification.idAndGroup(id, group));
-        if(tapNodeInfo != null && tapNodeInfo.getTapNodeSpecification() != null && tapNodeInfo.getTapNodeSpecification().getBuildNumber() != null) {
-            if(tapNodeInfo.getTapNodeSpecification().getBuildNumber() >= minBuildNumber)
-                return tapNodeInfo;
+    public TapNodeInfo getTapNodeInfo(String id, String group, String version) {
+        TapNodeInfo tapNodeInfo = idGroupTapNodeInfoMap.get(TapNodeSpecification.idAndGroup(id, group, version));
+        if(tapNodeInfo != null && tapNodeInfo.getTapNodeSpecification() != null) {
+            return tapNodeInfo;
         }
         return null;
     }

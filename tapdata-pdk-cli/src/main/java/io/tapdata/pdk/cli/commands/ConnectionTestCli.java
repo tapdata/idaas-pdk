@@ -5,13 +5,12 @@ import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
-import io.tapdata.pdk.core.api.DatabaseNode;
+import io.tapdata.pdk.core.api.ConnectionNode;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import picocli.CommandLine;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
 @CommandLine.Command(
         description = "Connection test method",
@@ -26,8 +25,8 @@ public class ConnectionTestCli extends CommonCli {
     @CommandLine.Option(names = { "-g", "--group" }, required = true, description = "Provide PDK group")
     private String pdkGroup;
 
-    @CommandLine.Option(names = { "-b", "--buildNumber" }, required = true, description = "Provide PDK buildNumber")
-    private Integer buildNumber;
+    @CommandLine.Option(names = { "-v", "--version" }, required = true, description = "Provide PDK buildNumber")
+    private String version;
 
     @CommandLine.Option(names = { "-c", "--connectionConfig" }, required = false, description = "Provide PDK connection config json string")
     private String connectionConfigStr;
@@ -41,14 +40,14 @@ public class ConnectionTestCli extends CommonCli {
             if(connectionConfigStr != null) {
                 defaultMap = JSON.parseObject(connectionConfigStr, DefaultMap.class);
             }
-            DatabaseNode databaseNode = PDKIntegration.createDatabaseConnectorBuilder()
+            ConnectionNode connectionNode = PDKIntegration.createConnectionConnectorBuilder()
                     .withAssociateId(UUID.randomUUID().toString())
                     .withGroup(pdkGroup)
-                    .withMinBuildNumber(buildNumber)
+                    .withVersion(version)
                     .withPdkId(pdkId)
                     .withConnectionConfig(defaultMap)
                     .build();
-            databaseNode.getConnectorNode().connectionTest(databaseNode.getDatabaseContext(), testItem -> PDKLogger.info(TAG, "testItem {}", testItem));
+            connectionNode.getConnectorNode().connectionTest(connectionNode.getConnectionContext(), testItem -> PDKLogger.info(TAG, "testItem {}", testItem));
 
         } catch (Throwable throwable) {
             CommonUtils.logError(TAG, "AllTables failed", throwable);

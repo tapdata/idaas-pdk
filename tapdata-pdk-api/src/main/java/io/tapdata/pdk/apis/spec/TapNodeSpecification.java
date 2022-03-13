@@ -14,7 +14,6 @@ public class TapNodeSpecification {
     private String group; //Unique key for each enterprise.
     private String version;
     private String icon;
-    private Integer buildNumber;
     private Map<String, Object> applications;
 
     public String verify() {
@@ -31,14 +30,6 @@ public class TapNodeSpecification {
 
     public void setGroup(String group) {
         this.group = group;
-    }
-
-    public Integer getBuildNumber() {
-        return buildNumber;
-    }
-
-    public void setBuildNumber(Integer buildNumber) {
-        this.buildNumber = buildNumber;
     }
 
     public String getName() {
@@ -58,11 +49,11 @@ public class TapNodeSpecification {
     }
 
     public String idAndGroup() {
-        return id + "@" + group;
+        return id + "@" + group + "-v" + version;
     }
 
-    public static String idAndGroup(String id, String group) {
-        return id + "@" + group;
+    public static String idAndGroup(String id, String group, String version) {
+        return id + "@" + group + "-v" + version;
     }
 
     public String getVersion() {

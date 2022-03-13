@@ -58,17 +58,13 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
                                 tapNodeInfo.setNodeType(connectorType);
                                 tapNodeInfo.setNodeClass(clazz);
                                 newerIdGroupTapNodeInfoMap.put(tapNodeSpecification.idAndGroup(), tapNodeInfo);
-                                PDKLogger.info(TAG, "Found new processor {} type {} version {} buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getBuildNumber());
+                                PDKLogger.info(TAG, "Found new processor {} type {} version {} buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getVersion());
                             } else {
                                 TapNodeSpecification specification = tapNodeInfo.getTapNodeSpecification();
-                                if(specification.getBuildNumber() < tapNodeSpecification.getBuildNumber()) {
-                                    tapNodeInfo.setTapNodeSpecification(tapNodeSpecification);
-                                    tapNodeInfo.setNodeType(connectorType);
-                                    tapNodeInfo.setNodeClass(clazz);
-                                    PDKLogger.warn(TAG, "Found newer processor {} type {} version {} buildNumber {} replaced buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getBuildNumber(), specification.getBuildNumber());
-                                } else {
-                                    PDKLogger.warn(TAG, "Older processor will be ignored, processor {} type {} version {} buildNumber {}", specification.idAndGroup(), tapNodeInfo.getNodeType(), specification.getVersion(), specification.getBuildNumber());
-                                }
+                                tapNodeInfo.setTapNodeSpecification(specification);
+                                tapNodeInfo.setNodeType(connectorType);
+                                tapNodeInfo.setNodeClass(clazz);
+                                PDKLogger.warn(TAG, "Found newer processor {} type {}", tapNodeSpecification.idAndGroup(), connectorType);
                             }
                         } catch(Throwable throwable) {
                             PDKLogger.error(TAG, "Handle tap node specification failed, path {} error {}", tapProcessorClass.value(), throwable.getMessage());
