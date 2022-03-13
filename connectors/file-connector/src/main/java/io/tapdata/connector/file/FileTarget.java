@@ -2,13 +2,12 @@ package io.tapdata.connector.file;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDMLEvent;
 import io.tapdata.entity.event.dml.TapInsertDMLEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
-import io.tapdata.pdk.apis.entity.ConnectionTestResult;
+import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -20,7 +19,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -47,13 +45,22 @@ public class FileTarget extends ConnectorBase implements TapConnector {
 //        table2.setId("target2.txt");
 //        table2.setName("target2.txt");
 //        tapReadOffsetConsumer.accept(Arrays.asList(tableOptions1, tableOptions2), null);
+
+        consumer.accept(list(
+                table("target1.txt")
+                        .add(field("id", tapString())),
+                table("target2.txt")
+                        .add(field("id", tapString())),
+                table("empty-table2.txt")
+                        .add(field("id", tapString()))
+        ));
     }
 
     @Override
-    public ConnectionTestResult connectionTest(TapConnectionContext databaseContext) {
-        return null;
+    public void connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer) {
+        consumer.accept(testItem("Connection", TestResult.Successfully));
+        consumer.accept(testItem("Login", TestResult.Successfully));
     }
-
 
 
     private void handleDML(TapConnectorContext connectorContext, List<TapDMLEvent> tapRecordEvents, Consumer<WriteListResult<TapDMLEvent>> consumer) {

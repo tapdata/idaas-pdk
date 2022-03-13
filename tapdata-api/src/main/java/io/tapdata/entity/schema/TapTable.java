@@ -5,8 +5,12 @@ import java.util.LinkedHashMap;
 
 public class TapTable extends TapItem<TapField> {
     public TapTable() {}
-    public TapTable(String name) {
+    public TapTable(String nameAndId) {
+        this(nameAndId, nameAndId);
+    }
+    public TapTable(String id, String name) {
         this.name = name;
+        this.id = id;
     }
 
     private LinkedHashMap<String, TapField> nameFieldMap;
@@ -23,12 +27,13 @@ public class TapTable extends TapItem<TapField> {
      */
     private String charset;
 
-    public void addField(TapField field) {
+    public TapTable add(TapField field) {
         fieldCheck(field);
         if(nameFieldMap == null) {
             nameFieldMap = new LinkedHashMap<>();
         }
         nameFieldMap.put(field.getName(), field);
+        return this;
     }
 
     private void fieldCheck(TapField field) {
@@ -55,7 +60,7 @@ public class TapTable extends TapItem<TapField> {
 
     public void putField(String name, TapField field) {
         field.setName(name);
-        addField(field);
+        add(field);
     }
 
     public LinkedHashMap<String, TapField> getNameFieldMap() {

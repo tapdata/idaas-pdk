@@ -2,7 +2,6 @@ package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
 import io.tapdata.pdk.apis.common.DefaultMap;
-import io.tapdata.pdk.apis.entity.ConnectionTestResult;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -12,6 +11,7 @@ import io.tapdata.pdk.core.utils.CommonUtils;
 import picocli.CommandLine;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @CommandLine.Command(
         description = "Connection test method",
@@ -48,8 +48,8 @@ public class ConnectionTestCli extends CommonCli {
                     .withPdkId(pdkId)
                     .withConnectionConfig(defaultMap)
                     .build();
-            ConnectionTestResult testResult = databaseNode.getConnectorNode().connectionTest(databaseNode.getDatabaseContext());
-            PDKLogger.info(TAG, "testResult {}", testResult);
+            databaseNode.getConnectorNode().connectionTest(databaseNode.getDatabaseContext(), testItem -> PDKLogger.info(TAG, "testItem {}", testItem));
+
         } catch (Throwable throwable) {
             CommonUtils.logError(TAG, "AllTables failed", throwable);
         }

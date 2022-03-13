@@ -8,10 +8,9 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
-import io.tapdata.pdk.apis.entity.ConnectionTestResult;
-import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.util.*;
@@ -32,27 +31,18 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
-//        TapTable table1 = new TapTable();
-//        LinkedHashMap<String, TapField> fieldMap = new LinkedHashMap<>();
-//        table1.setId("empty-table1");
-//        table1.setName("empty-table1");
-//        TapField idField = new TapField();
-//        idField.setName("id");
-//        idField.setTapType(TapType.Number.name());
-//        fieldMap.put(idField.getName(), idField);
-//        TapField aField = new TapField();
-//        aField.setName("a");
-//        aField.setTapType(TapType.String.name());
-//        fieldMap.put(aField.getName(), aField);
-//        TapField bField = new TapField();
-//        bField.setName("b");
-//        bField.setTapType(TapType.String.name());
-//        fieldMap.put(bField.getName(), bField);
-//        TapField cField = new TapField();
-//        cField.setName("c");
-//        cField.setTapType(TapType.String.name());
-//        table1.setNameFieldMap(fieldMap);
-//        tapListConsumer.accept(Arrays.asList(tableOptions1), null);
+        consumer.accept(list(
+                table("empty-table2")
+                    .add(field("id", tapString()))
+                    .add(field("abc", tapString()))
+                    .add(field("bbb", tapString()))
+                    .add(field("number", tapNumber())),
+                table("empty-table2")
+                    .add(field("id", tapString()))
+                    .add(field("abc", tapString()))
+                    .add(field("bbb", tapString()))
+                    .add(field("number", tapNumber()))
+                ));
     }
 
 
@@ -67,8 +57,8 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      * @return
      */
     @Override
-    public ConnectionTestResult connectionTest(TapConnectionContext connectionContext) {
-        return null;
+    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+
     }
 
 

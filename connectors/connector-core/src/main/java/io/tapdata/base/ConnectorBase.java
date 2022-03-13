@@ -1,16 +1,19 @@
 package io.tapdata.base;
 
+import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.type.TapNumber;
+import io.tapdata.entity.type.TapString;
+import io.tapdata.entity.type.TapType;
 import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.utils.FormatUtils;
 import io.tapdata.pdk.apis.utils.ImplementationUtils;
 import io.tapdata.pdk.apis.utils.TapUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
 import org.toilelibre.libe.curl.Curl;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ConnectorBase {
     private TapUtils tapUtils = ImplementationUtils.getTapUtils();
@@ -83,5 +86,48 @@ public class ConnectorBase {
 
     public String format(String message, Object... args) {
         return FormatUtils.format(message, args);
+    }
+
+    public TapField field(String name, TapType tapType) {
+        return new TapField(name, tapType);
+    }
+    public TapTable table(String tableName, String id) {
+        return new TapTable(tableName, id);
+    }
+
+    public TapTable table(String nameAndId) {
+        return new TapTable(nameAndId);
+    }
+
+    public TapString tapString() {
+        return new TapString();
+    }
+
+    public TapNumber tapNumber() {
+        return new TapNumber();
+    }
+
+    public <T> List<T> list(T... ts) {
+        return Arrays.asList(ts);
+    }
+
+    public enum TestResult {
+        Successfully(TestItem.RESULT_SUCCESSFULLY),
+        SuccessfullyWithWarn(TestItem.RESULT_SUCCESSFULLY_WITH_WARN),
+        Failed(TestItem.RESULT_FAILED)
+        ;
+        int code;
+        TestResult(int code) {
+            this.code = code;
+        }
+    }
+
+    public static final String ITEM_RESULT_PASS = "pass";
+    public static final String ITEM_RESULT_FAILED = "failed";
+    public TestItem testItem(String item, TestResult testResult) {
+        return testItem(item, testResult, null);
+    }
+    public TestItem testItem(String item, TestResult testResult, String information) {
+        return new TestItem(item, testResult.code, information);
     }
 }
