@@ -53,14 +53,14 @@ public class TapDefaultCodecs {
 
     ToTapValueCodec<?> getToTapValueCodec(Class<?> clazz) {
         ToTapValueCodec<?> codec = classToTapValueCodecMap.get(clazz);
-        if(codec == null) {
-            if(Collection.class.isAssignableFrom(clazz)) {
-                return arrayCodec;
-            } else if(Map.class.isAssignableFrom(clazz)) {
-                return mapCodec;
-            } else if(Number.class.isAssignableFrom(clazz)) {
-                return numberCodec;
-            }
+        if(codec != null)
+            return codec;
+        if(Collection.class.isAssignableFrom(clazz)) {
+            return arrayCodec;
+        } else if(Map.class.isAssignableFrom(clazz)) {
+            return mapCodec;
+        } else if(Number.class.isAssignableFrom(clazz)) {
+            return numberCodec;
         }
         return rawCodec;
     }

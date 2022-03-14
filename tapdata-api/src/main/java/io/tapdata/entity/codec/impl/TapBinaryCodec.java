@@ -16,21 +16,12 @@ public class TapBinaryCodec implements ToTapValueCodec<TapBinaryValue>, FromTapV
     }
 
     @Override
-    public TapBinaryValue toTapValue(Object value, String originType, TapType typeFromSchema) {
+    public TapBinaryValue toTapValue(Object value) {
         if(value == null)
             return null;
-        TapType tapType;
-        if(typeFromSchema instanceof TapBinary) {
-            tapType = typeFromSchema;
-        } else {
-            //type is not found in schema
-            //type is not expected as schema wanted. type and value will be reserved
-            tapType = new TapBinary();
-        }
+
         TapBinaryValue arrayValue = new TapBinaryValue((byte[]) value);
-        arrayValue.setTapType((TapBinary) tapType);
-        arrayValue.setOriginValue(value);
-        arrayValue.setOriginType(originType);
+
         return arrayValue;
     }
 }

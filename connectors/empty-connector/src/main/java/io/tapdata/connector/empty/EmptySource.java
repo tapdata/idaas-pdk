@@ -20,36 +20,38 @@ import java.util.function.Consumer;
 @TapConnectorClass("source.json")
 public class EmptySource extends ConnectorBase implements TapConnector {
     private AtomicLong counter = new AtomicLong();
+
     /**
      * The method invocation life circle is below,
      * initiated -> allTables -> ended
-     *
+     * <p>
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     *  @param connectionContext
+     *
+     * @param connectionContext
      * @param consumer
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         consumer.accept(list(
+                table("empty-table1")
+                        .add(field("id", tapString()))
+                        .add(field("abc", tapString()))
+                        .add(field("bbb", tapString()))
+                        .add(field("number", tapNumber())),
                 table("empty-table2")
-                    .add(field("id", tapString()))
-                    .add(field("abc", tapString()))
-                    .add(field("bbb", tapString()))
-                    .add(field("number", tapNumber())),
-                table("empty-table2")
-                    .add(field("id", tapString()))
-                    .add(field("abc", tapString()))
-                    .add(field("bbb", tapString()))
-                    .add(field("number", tapNumber()))
-                ));
+                        .add(field("id", tapString()))
+                        .add(field("abc", tapString()))
+                        .add(field("bbb", tapString()))
+                        .add(field("number", tapNumber()))
+        ));
     }
 
 
     /**
      * The method invocation life circle is below,
      * initiated -> connectionTest -> ended
-     *
+     * <p>
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
@@ -65,15 +67,15 @@ public class EmptySource extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated -> init ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
+     * if(batchEnabled)
+     * batchCount -> batchRead
+     * if(streamEnabled)
+     * streamRead
      * -> close -> ended
-     *
+     * <p>
      * In connectorContext,
-     *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     *  current instance is serving for the table from connectorContext.
+     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+     * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
      * @param offset
@@ -86,34 +88,37 @@ public class EmptySource extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated -> connectionTest -> init ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
+     * if(batchEnabled)
+     * batchCount -> batchRead
+     * if(streamEnabled)
+     * streamRead
      * -> close -> ended
-     *
+     * <p>
      * In connectorContext,
-     *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     *  current instance is serving for the table from connectorContext.
+     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+     * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
      * @param offset
      * @param consumer
      */
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        for(int j = 0; j < 1; j++) {
+        for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = new ArrayList<>();
-            for(int i = 0; i < 10; i++) {
-              TapInsertDMLEvent recordEvent = new TapInsertDMLEvent();
-              recordEvent.setTime(System.currentTimeMillis());
-              int finalI = i;
-              recordEvent.setAfter(new HashMap<String, Object>(){{
-                put("id", counter.incrementAndGet());
-                put("a", "123");
-                put("b", "123");
-                put("c", "123");
-              }});
-              tapEvents.add(recordEvent);
+            for (int i = 0; i < 10; i++) {
+                TapInsertDMLEvent recordEvent = new TapInsertDMLEvent();
+                recordEvent.setTime(System.currentTimeMillis());
+                int finalI = i;
+                recordEvent.setAfter(new HashMap<String, Object>() {{
+                    put("id", counter.incrementAndGet());
+                    put("a", "123");
+                    put("b", "123");
+                    put("c", "123");
+                    put("abc", "dsafasdf");
+                    put("bbb", "aaaaa");
+                    put("number", 123123123);
+                }});
+                tapEvents.add(recordEvent);
             }
             try {
                 Thread.sleep(1000L);
@@ -128,32 +133,35 @@ public class EmptySource extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated -> connectionTest -> init ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
+     * if(batchEnabled)
+     * batchCount -> batchRead
+     * if(streamEnabled)
+     * streamRead
      * -> close -> ended
-     *
+     * <p>
      * In connectorContext,
-     *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     *  current instance is serving for the table from connectorContext.
+     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+     * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
      * @param offset
      * @param tapReadOffsetConsumer
      */
     private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
-        for(int j = 0; j < 1; j++) {
+        for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = new ArrayList<>();
-            for(int i = 0; i < 20; i++) {
+            for (int i = 0; i < 20; i++) {
                 TapInsertDMLEvent recordEvent = new TapInsertDMLEvent();
                 recordEvent.setTime(System.currentTimeMillis());
                 int finalI = i;
-                recordEvent.setAfter(new HashMap<String, Object>(){{
-                  put("id", counter.incrementAndGet());
-                  put("a", "123");
-                  put("b", "123");
-                  put("c", "123");
+                recordEvent.setAfter(new HashMap<String, Object>() {{
+                    put("id", counter.incrementAndGet());
+                    put("a", "123");
+                    put("b", "123");
+                    put("c", "123");
+                    put("abc", "123213213");
+                    put("bbb", "44444444");
+                    put("number", 555555);
                 }});
                 tapEvents.add(recordEvent);
             }
@@ -163,12 +171,11 @@ public class EmptySource extends ConnectorBase implements TapConnector {
 
     /**
      * The method invocation life circle is below,
-     *  initiated -> connectionTest -> init -> sourceFunctions/targetFunctions -> close -> ended
-     *
+     * initiated -> connectionTest -> init -> sourceFunctions/targetFunctions -> close -> ended
+     * <p>
      * In connectorContext,
-     *  you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     *  current instance is serving for the table from connectorContext.
-     *
+     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+     * current instance is serving for the table from connectorContext.
      */
     @Override
     public void destroy() {
@@ -181,5 +188,7 @@ public class EmptySource extends ConnectorBase implements TapConnector {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
+
+//        codecRegistry.registerToTapValue(Object.class)
     }
 }

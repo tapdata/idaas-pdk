@@ -11,7 +11,11 @@ public class TapNumberCodec implements ToTapValueCodec<TapNumberValue>, FromTapV
     public Object fromTapValue(TapNumberValue tapValue) {
         if(tapValue == null)
             return null;
-        TapNumber tapNumber = tapValue.getTapType();
+        TapType tapType = tapValue.getTapType();
+        TapNumber tapNumber = null;
+        if(tapType instanceof TapNumber) {
+            tapNumber = (TapNumber) tapType;
+        }
         if(tapNumber != null) {
             Long scale = tapNumber.getScale();
             //TODO need more code
@@ -24,23 +28,13 @@ public class TapNumberCodec implements ToTapValueCodec<TapNumberValue>, FromTapV
     }
 
     @Override
-    public TapNumberValue toTapValue(Object value, String originType, TapType typeFromSchema) {
+    public TapNumberValue toTapValue(Object value) {
         if(value == null)
             return null;
-        TapType tapType;
-        if(typeFromSchema instanceof TapNumber) {
-            tapType = typeFromSchema;
-        } else {
-            //type is not found in schema
-            //type is not expected as schema wanted. type and value will be reserved
-            tapType = new TapNumber();
-        }
+
         TapNumberValue numberValue = null;
         if(value instanceof Number) {
             numberValue = new TapNumberValue(((Number) value).doubleValue());
-            numberValue.setTapType((TapNumber) tapType);
-            numberValue.setOriginValue(value);
-            numberValue.setOriginType(originType);
         }
 
         return numberValue;

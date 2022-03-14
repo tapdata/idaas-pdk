@@ -42,7 +42,11 @@ public class TapCodecFilterManager {
                         typeFromSchema = field.getTapType();
                     }
                 }
-                entry.setValue(valueCodec.toTapValue(theValue, originType, typeFromSchema));
+                TapValue tapValue = valueCodec.toTapValue(theValue);
+                tapValue.setOriginType(originType);
+                tapValue.setTapType(typeFromSchema);
+                tapValue.setOriginValue(theValue);
+                entry.setValue(tapValue);
             }
         });
     }

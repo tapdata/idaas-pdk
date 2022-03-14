@@ -16,21 +16,12 @@ public class TapRawCodec implements ToTapValueCodec<TapRawValue>, FromTapValueCo
     }
 
     @Override
-    public TapRawValue toTapValue(Object value, String originType, TapType typeFromSchema) {
+    public TapRawValue toTapValue(Object value) {
         if(value == null)
             return null;
-        TapType tapType;
-        if(typeFromSchema instanceof TapRaw) {
-            tapType = typeFromSchema;
-        } else {
-            //type is not found in schema
-            //type is not expected as schema wanted. type and value will be reserved
-            tapType = new TapRaw();
-        }
+
         TapRawValue arrayValue = new TapRawValue(value);
-        arrayValue.setTapType((TapRaw) tapType);
-        arrayValue.setOriginValue(value);
-        arrayValue.setOriginType(originType);
+
         return arrayValue;
     }
 }

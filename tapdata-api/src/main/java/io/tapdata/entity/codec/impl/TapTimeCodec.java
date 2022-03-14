@@ -19,17 +19,10 @@ public class TapTimeCodec implements ToTapValueCodec<TapTimeValue>, FromTapValue
     }
 
     @Override
-    public TapTimeValue toTapValue(Object value, String originType, TapType typeFromSchema) {
+    public TapTimeValue toTapValue(Object value) {
         if(value == null)
             return null;
-        TapType tapType;
-        if(typeFromSchema instanceof TapTime) {
-            tapType = typeFromSchema;
-        } else {
-            //type is not found in schema
-            //type is not expected as schema wanted. type and value will be reserved
-            tapType = new TapTime();
-        }
+
         DateTime dateTime = null;
         if(value instanceof DateTime) {
             dateTime = (DateTime) value;
@@ -42,9 +35,6 @@ public class TapTimeCodec implements ToTapValueCodec<TapTimeValue>, FromTapValue
 
         if(dateTime != null) {
             TapTimeValue dateTimeValue = new TapTimeValue(dateTime);
-            dateTimeValue.setTapType((TapTime) tapType);
-            dateTimeValue.setOriginValue(value);
-            dateTimeValue.setOriginType(originType);
             return dateTimeValue;
         }
         return null;

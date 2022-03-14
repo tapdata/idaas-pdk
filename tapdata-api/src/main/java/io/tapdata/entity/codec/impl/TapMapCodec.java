@@ -18,21 +18,12 @@ public class TapMapCodec implements ToTapValueCodec<TapMapValue>, FromTapValueCo
     }
 
     @Override
-    public TapMapValue toTapValue(Object value, String originType, TapType typeFromSchema) {
+    public TapMapValue toTapValue(Object value) {
         if(value == null)
             return null;
-        TapType tapType;
-        if(typeFromSchema instanceof TapMap) {
-            tapType = typeFromSchema;
-        } else {
-            //type is not found in schema
-            //type is not expected as schema wanted. type and value will be reserved
-            tapType = new TapMap();
-        }
+
         TapMapValue arrayValue = new TapMapValue((Map<?, ?>) value);
-        arrayValue.setTapType((TapMap) tapType);
-        arrayValue.setOriginValue(value);
-        arrayValue.setOriginType(originType);
+
         return arrayValue;
     }
 }

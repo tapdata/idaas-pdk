@@ -18,26 +18,13 @@ public class TapArrayCodec implements ToTapValueCodec<TapArrayValue>, FromTapVal
     }
 
     @Override
-    public TapArrayValue toTapValue(Object value, String originType, TapType typeFromSchema) {
+    public TapArrayValue toTapValue(Object value) {
         if(value == null)
             return null;
-        TapType tapType;
-        if(typeFromSchema instanceof TapArray) {
-            tapType = typeFromSchema;
-        } else {
-            //type is not found in schema
-            //type is not expected as schema wanted. type and value will be reserved
-            tapType = new TapArray();
-        }
+
         TapArrayValue arrayValue = null;
         if (List.class.isAssignableFrom(value.getClass())) {
             arrayValue = new TapArrayValue((List<?>) value);
-        }
-
-        if(arrayValue != null) {
-            arrayValue.setTapType((TapArray) tapType);
-            arrayValue.setOriginValue(value);
-            arrayValue.setOriginType(originType);
         }
 
         return arrayValue;
