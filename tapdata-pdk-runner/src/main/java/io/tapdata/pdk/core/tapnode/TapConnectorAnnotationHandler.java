@@ -40,20 +40,24 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
                             TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
                             tapNodeSpecification = tapNodeContainer.getSpecification();
+
                             String errorMessage = null;
-                            if (tapNodeSpecification == null)
+                            if (tapNodeSpecification == null) {
                                 errorMessage = "Specification not found";
+                            } else {
+                                if(tapNodeSpecification.getGroup() == null) {
+                                    tapNodeSpecification.setGroup(clazz.getPackage().getImplementationVendor());
+                                }
+                                if(tapNodeSpecification.getVersion() == null) {
+                                    tapNodeSpecification.setVersion(clazz.getPackage().getImplementationVersion());
+                                }
+                            }
+
                             if (errorMessage == null)
                                 errorMessage = tapNodeSpecification.verify();
                             if (errorMessage != null) {
                                 PDKLogger.warn(TAG, "Tap node specification is illegal, will be ignored, path {} content {} errorMessage {}", tapConnectorClass.value(), json, errorMessage);
                                 continue;
-                            }
-                            if(tapNodeSpecification.getGroup() == null) {
-                                tapNodeSpecification.setGroup(clazz.getPackage().getImplementationVendor());
-                            }
-                            if(tapNodeSpecification.getVersion() == null) {
-                                tapNodeSpecification.setVersion(clazz.getPackage().getImplementationVersion());
                             }
 
                             tapNodeSpecification.setApplications(tapNodeContainer.getApplications());
