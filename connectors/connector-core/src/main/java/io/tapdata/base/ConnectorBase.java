@@ -150,7 +150,7 @@ public class ConnectorBase {
         return map;
     }
 
-    public TapInsertDMLEvent insertDMLEvent(Map<String, Object> after) {
-        TapInsertDMLEvent insertDMLEvent = new TapInsertDMLEvent();
-    }
+//    public TapInsertDMLEvent insertDMLEvent(Map<String, Object> after) {
+//        TapInsertDMLEvent insertDMLEvent = new TapInsertDMLEvent();
+//    }
 }

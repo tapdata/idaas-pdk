@@ -6,18 +6,18 @@ public class TapEvent {
     /**
      * The time when the event is created
      */
-    private Long time;
+    protected Long time;
     /**
      * The reference time read from source, maybe some difference as sources are different
      * Used for CDC in most cases.
      * <p>
      * For example, MongoDB as source, when initial stage, referenceTime is null, when cdc stage, referenceTime is the clusterTime read from CDC stream
      */
-    private Long referenceTime;
+    protected Long referenceTime;
 
-    private String pdkId;
-    private String pdkGroup;
-    private String pdkVersion;
+    protected String pdkId;
+    protected String pdkGroup;
+    protected String pdkVersion;
 
     public Map<String, Object> info;
 

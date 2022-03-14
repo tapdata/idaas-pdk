@@ -7,6 +7,10 @@ public enum PDKMethod {
 
     PROCESSOR_FUNCTIONS(TimeUnit.SECONDS.toMillis(3)),
 
+    DISCOVER_SCHEMA,
+    CONNECTION_TEST,
+    DESTROY,
+    BATCH_OFFSET,
     SOURCE_CONNECTION_TEST(TimeUnit.SECONDS.toMillis(10)),
     TARGET_CONNECTION_TEST(TimeUnit.SECONDS.toMillis(10)),
 

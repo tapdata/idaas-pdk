@@ -12,7 +12,7 @@ public class ConnectionNode extends Node {
     TapConnectorNode connectorNode;
     TapConnectionContext connectionContext;
 
-    public void allTables(Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(Consumer<List<TapTable>> consumer) {
         connectorNode.discoverSchema(connectionContext, consumer);
     }
 

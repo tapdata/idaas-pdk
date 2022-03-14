@@ -104,7 +104,7 @@ public class SourceNodeDriver extends Driver {
 //                        }
                     });
                 }
-            }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, true, Long.MAX_VALUE, 5);
+            }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
         }
 
         BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();

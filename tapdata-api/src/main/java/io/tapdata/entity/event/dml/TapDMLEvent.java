@@ -1,16 +1,9 @@
 package io.tapdata.entity.event.dml;
 
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.value.TapValue;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 public class TapDMLEvent extends TapEvent {
-    private List<String> primaryKeys;
     /**
      * 数据源的类型， mysql一类
      */
@@ -23,7 +16,7 @@ public class TapDMLEvent extends TapEvent {
     /**
      * Table name of the record
      */
-    private TapTable table;
+    protected TapTable table;
 
     public TapTable getTable() {
         return table;
@@ -31,14 +24,6 @@ public class TapDMLEvent extends TapEvent {
 
     public void setTable(TapTable table) {
         this.table = table;
-    }
-
-    public List<String> getPrimaryKeys() {
-        return primaryKeys;
-    }
-
-    public void setPrimaryKeys(List<String> primaryKeys) {
-        this.primaryKeys = primaryKeys;
     }
 
     public String getConnector() {

@@ -171,4 +171,28 @@ public class CommonUtils {
     public static void setProperty(String key, String value) {
         System.setProperty(key, value);
     }
+
+    public static void main(String[] args) {
+        AtomicLong counter = new AtomicLong();
+
+        int times = 2000000;
+        long time = System.currentTimeMillis();
+        for(int i = 0; i < times; i++) {
+            Runnable r = new Runnable() {
+                @Override
+                public void run() {
+                    counter.incrementAndGet();
+                }
+            };
+            r.run();
+        }
+        System.out.println("1takes " + (System.currentTimeMillis() - time));
+
+        time = System.currentTimeMillis();
+        for(int i = 0; i < times; i++) {
+            Runnable r = () -> counter.incrementAndGet();
+            r.run();
+        }
+        System.out.println("2takes " + (System.currentTimeMillis() - time));
+    }
 }

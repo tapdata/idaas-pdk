@@ -21,7 +21,15 @@ public class TapNodeSpecification {
             return "missing name";
         if(id == null)
             return "missing id";
+        if(group == null)
+            return "missing group";
+        if(version == null)
+            return "missing version";
         return null;
+    }
+
+    public String toString() {
+        return "TapNodeSpecification name: " + name + " id: " + id + " group: " + group + " version: " + version;
     }
 
     public String getGroup() {
