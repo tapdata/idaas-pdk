@@ -35,15 +35,15 @@ public class EmptySource extends ConnectorBase implements TapConnector {
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         consumer.accept(list(
                 table("empty-table1")
-                        .add(field("id", tapString()))
-                        .add(field("abc", tapString()))
-                        .add(field("bbb", tapString()))
-                        .add(field("number", tapNumber())),
+                        .add(field("id", tapString(), "VARCHAR").comment("This is comment"))
+                        .add(field("abc", tapString(), "VARCHAR").comment("Another comment"))
+                        .add(field("bbb", tapString(), "VARCHAR"))
+                        .add(field("number", tapNumber(), "NUMBER")),
                 table("empty-table2")
-                        .add(field("id", tapString()))
-                        .add(field("abc", tapString()))
-                        .add(field("bbb", tapString()))
-                        .add(field("number", tapNumber()))
+                        .add(field("id", tapString(), "VARCHAR"))
+                        .add(field("abc", tapString(), "VARCHAR"))
+                        .add(field("bbb", tapString(), "VARCHAR"))
+                        .add(field("number", tapNumber(), "NUMBER"))
         ));
     }
 
@@ -62,7 +62,6 @@ public class EmptySource extends ConnectorBase implements TapConnector {
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         consumer.accept(testItem("OK", TestResult.Successfully));
     }
-
 
     /**
      * The method invocation life circle is below,
@@ -164,6 +163,7 @@ public class EmptySource extends ConnectorBase implements TapConnector {
                     put("number", 555555);
                 }});
                 tapEvents.add(recordEvent);
+
             }
             tapReadOffsetConsumer.accept(tapEvents);
         }

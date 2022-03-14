@@ -10,19 +10,39 @@ public class TapNumber extends TapType {
      * 双精度， float(8, 2), length没有值， precision是8， scale是2， 小数点前8位， 小数点后2位
      */
     private Long length;
+    public TapNumber length(Long length) {
+        this.length = length;
+        return this;
+    }
     /**
      * 最小值
      */
     private Long min;
+    public TapNumber min(Long min) {
+        this.min = min;
+        return this;
+    }
     /**
      * 最大值
      */
     private Long max;
+    public TapNumber max(Long max) {
+        this.max = max;
+        return this;
+    }
     /**
      *
      */
     private Long precision;
+    public TapNumber precision(Long precision) {
+        this.precision = precision;
+        return this;
+    }
     private Long scale;
+    public TapNumber scale(Long scale) {
+        this.scale = scale;
+        return this;
+    }
 
     public Long getLength() {
         return length;

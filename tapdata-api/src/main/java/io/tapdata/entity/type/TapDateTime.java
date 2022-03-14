@@ -8,10 +8,18 @@ public class TapDateTime extends TapType {
      *
      */
     private Long scale;
+    public TapDateTime scale(Long scale) {
+        this.scale = scale;
+        return this;
+    }
     /**
      * 字段是否有时区信息
      */
     private Boolean hasTimeZone;
+    public TapDateTime hasTimeZone(Boolean hasTimeZone) {
+        this.hasTimeZone = hasTimeZone;
+        return this;
+    }
 
     public Long getScale() {
         return scale;

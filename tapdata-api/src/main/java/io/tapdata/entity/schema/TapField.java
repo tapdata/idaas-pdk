@@ -5,80 +5,159 @@ import io.tapdata.entity.type.TapType;
 
 public class TapField {
     public TapField() {}
+
     public TapField(String name, TapType tapType) {
+        this(name, tapType, null);
+    }
+
+    public TapField(String name, TapType tapType, String originType) {
         this.name = name;
         this.tapType = tapType;
+        this.originType = originType;
     }
 
     private String originType;
+    public TapField originType(String originType) {
+        this.originType = originType;
+        return this;
+    }
     /**
      * 可以为空
      */
     private Boolean nullable;
+    public TapField nullable(Boolean nullable) {
+        this.nullable = nullable;
+        return this;
+    }
     /**
      * 字段名字
      */
     private String name;
+    public TapField name(String name) {
+        this.name = name;
+        return this;
+    }
     /**
      * 主键
      */
     private Boolean isPrimaryKey;
+    public TapField isPrimaryKey(Boolean isPrimaryKey) {
+        this.isPrimaryKey = isPrimaryKey;
+        return this;
+    }
     /**
      * 分区主键
      */
     private Boolean isPartitionKey;
+    public TapField isPartitionKey(Boolean isPartitionKey) {
+        this.isPartitionKey = isPartitionKey;
+        return this;
+    }
     /**
      * 分区主键的位置
      */
     private Long partitionKeyPos;
+    public TapField partitionKeyPos(Long partitionKeyPos) {
+        this.partitionKeyPos = partitionKeyPos;
+        return this;
+    }
     /**
      * 字段位置
      */
     private Long pos;
+    public TapField pos(Long pos) {
+        this.pos = pos;
+        return this;
+    }
     /**
      * 主键位置
      */
     private Long primaryKeyPos;
+    public TapField primaryKeyPos(Long primaryKeyPos) {
+        this.primaryKeyPos = primaryKeyPos;
+        return this;
+    }
     /**
      * 外键表名
      */
     private String foreignKeyTable;
+    public TapField foreignKeyTable(String foreignKeyTable) {
+        this.foreignKeyTable = foreignKeyTable;
+        return this;
+    }
     /**
      * 外键字段
      */
     private String foreignKeyField;
+    public TapField foreignKeyField(String foreignKeyField) {
+        this.foreignKeyField = foreignKeyField;
+        return this;
+    }
     /**
      * 默认值
      */
     private Object defaultValue;
+    public TapField defaultValue(Object defaultValue) {
+        this.defaultValue = defaultValue;
+        return this;
+    }
     /**
      * 是否自增
      */
     private Boolean autoInc;
+    public TapField autoInc(Boolean autoInc) {
+        this.autoInc = autoInc;
+        return this;
+    }
     /**
      * 自增默认值， 自增起始值
      */
     private Long autoIncStartValue;
+    public TapField autoIncStartValue(Long autoIncStartValue) {
+        this.autoIncStartValue = autoIncStartValue;
+        return this;
+    }
     /**
      * 唯一主键
      */
     private Boolean unique;
+    public TapField unique(Boolean unique) {
+        this.unique = unique;
+        return this;
+    }
     /**
      * 检查表达式， 例如a > 9这样的检查， 不满足条件就写不进去
      */
     private String check;
+    public TapField check(String check) {
+        this.check = check;
+        return this;
+    }
     /**
      * 字段注释
      */
     private String comment;
+    public TapField comment(String comment) {
+        this.comment = comment;
+        return this;
+    }
+
     /**
      * 暂时不管
      */
     private String constraint;
+    public TapField constraint(String constraint) {
+        this.constraint = constraint;
+        return this;
+    }
     /**
      * 字段类型
      */
     private TapType tapType;
+    public TapField tapType(TapType tapType) {
+        this.tapType = tapType;
+        return this;
+    }
 
     public Object getDefaultValue() {
         return defaultValue;

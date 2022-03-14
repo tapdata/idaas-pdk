@@ -1,5 +1,7 @@
 package io.tapdata.base;
 
+import io.tapdata.base.utils.Entry;
+import io.tapdata.entity.event.dml.TapInsertDMLEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.type.TapNumber;
@@ -88,6 +90,10 @@ public class ConnectorBase {
         return FormatUtils.format(message, args);
     }
 
+    public TapField field(String name, TapType tapType, String originType) {
+        return new TapField(name, tapType, originType);
+    }
+
     public TapField field(String name, TapType tapType) {
         return new TapField(name, tapType);
     }
@@ -122,12 +128,29 @@ public class ConnectorBase {
         }
     }
 
-    public static final String ITEM_RESULT_PASS = "pass";
-    public static final String ITEM_RESULT_FAILED = "failed";
     public TestItem testItem(String item, TestResult testResult) {
         return testItem(item, testResult, null);
     }
     public TestItem testItem(String item, TestResult testResult, String information) {
         return new TestItem(item, testResult.code, information);
+    }
+
+    public Entry entry(String key, Object value) {
+        return new Entry(key, value);
+    }
+
+    public Map<String, Object> map(Entry... entries) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if(entries != null) {
+            for(Entry entry : entries) {
+                if(entry.getKey() != null && entry.getValue() != null)
+                    map.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return map;
+    }
+
+    public TapInsertDMLEvent insertDMLEvent(Map<String, Object> after) {
+        TapInsertDMLEvent insertDMLEvent = new TapInsertDMLEvent();
     }
 }
