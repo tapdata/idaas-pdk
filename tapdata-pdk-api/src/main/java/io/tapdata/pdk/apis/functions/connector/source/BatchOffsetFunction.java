@@ -7,5 +7,5 @@ public interface BatchOffsetFunction {
      *
      * @param connectorContext the node context in a DAG
      */
-    Object batchOffset(TapConnectorContext connectorContext);
+    Object batchOffset(TapConnectorContext connectorContext) throws Throwable;
 }

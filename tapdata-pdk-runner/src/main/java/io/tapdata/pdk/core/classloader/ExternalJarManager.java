@@ -177,6 +177,9 @@ public class ExternalJarManager {
                         PDKLogger.warn(TAG, "tap-running is not a directory, will delete it, create a directory again");
                         FileUtils.forceDelete(finalTheRunningFolder);
                         FileUtils.forceMkdir(finalTheRunningFolder);
+                    } else {
+                        FileUtils.forceDelete(finalTheRunningFolder);
+                        FileUtils.forceMkdir(finalTheRunningFolder);
                     }
 
                     String fileNameWithoutExtension = jar.getName().substring(0, jar.getName().length() - ".jar".length());

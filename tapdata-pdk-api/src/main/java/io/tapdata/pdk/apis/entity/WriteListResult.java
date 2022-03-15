@@ -4,8 +4,20 @@ import java.util.Map;
 
 public class WriteListResult<T> {
     private int insertedCount;
+    public WriteListResult<T> insertedCount(int insertedCount) {
+        this.insertedCount = insertedCount;
+        return this;
+    }
     private int removedCount;
+    public WriteListResult<T> removedCount(int removedCount) {
+        this.removedCount = removedCount;
+        return this;
+    }
     private int modifiedCount;
+    public WriteListResult<T> modifiedCount(int modifiedCount) {
+        this.modifiedCount = modifiedCount;
+        return this;
+    }
 
     private Map<T, Throwable> errorMap;
 

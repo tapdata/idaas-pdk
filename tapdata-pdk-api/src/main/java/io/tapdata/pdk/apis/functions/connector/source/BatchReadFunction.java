@@ -13,5 +13,5 @@ public interface BatchReadFunction {
      *                    type can be any that comfortable for saving offset state.
      * @param consumer accept the record and offsetState for the record.
      */
-    void batchRead(TapConnectorContext connectorContext, Object offsetState, Consumer<List<TapEvent>> consumer);
+    void batchRead(TapConnectorContext connectorContext, Object offsetState, Consumer<List<TapEvent>> consumer) throws Throwable;
 }

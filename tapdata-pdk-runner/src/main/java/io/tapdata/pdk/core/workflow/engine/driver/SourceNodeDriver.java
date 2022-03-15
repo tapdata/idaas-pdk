@@ -2,6 +2,7 @@ package io.tapdata.pdk.core.workflow.engine.driver;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.event.TapEvent;
@@ -12,6 +13,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
 import io.tapdata.pdk.apis.functions.connector.source.BatchReadFunction;
+import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.source.StreamReadFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.SourceNode;
@@ -68,44 +70,44 @@ public class SourceNodeDriver extends Driver {
             }, "Batch count " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
         }
 
-        StreamReadFunction streamReadFunction = sourceNode.getConnectorFunctions().getStreamReadFunction();
-        if (streamReadFunction != null) {
-            Object recoveredOffset = null;
-            if(streamOffsetStr != null) {
-                recoveredOffset = JSON.parse(streamOffsetStr, Feature.SupportAutoType);
-            }
-
-            //TODO 提供方法返回增量断点， 不要使用wait的方式
-            Object finalRecoveredOffset = recoveredOffset;
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
-                while(true) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
-                        if (!batchCompleted) {
-                            synchronized (streamLock) {
-                                while (!batchCompleted) {
-                                    PDKLogger.debug(TAG, "Stream read will wait until batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
-                                    try {
-                                        streamLock.wait();
-                                    } catch (InterruptedException interruptedException) {
-//                                    interruptedException.printStackTrace();
-                                        Thread.currentThread().interrupt();
-                                    }
-                                }
-                                PDKLogger.debug(TAG, "Stream read start now, {}", LoggerUtils.sourceNodeMessage(sourceNode));
-                            }
-                        }
-                        if (events != null) {
-                            PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                            offer(filterEvents(events));
-                        }
-//                        if (offsetState != null) {
-//                            PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
-//                            this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+//        StreamReadFunction streamReadFunction = sourceNode.getConnectorFunctions().getStreamReadFunction();
+//        if (streamReadFunction != null) {
+//            Object recoveredOffset = null;
+//            if(streamOffsetStr != null) {
+//                recoveredOffset = JSON.parse(streamOffsetStr, Feature.SupportAutoType);
+//            }
+//
+//            //TODO 提供方法返回增量断点， 不要使用wait的方式
+//            Object finalRecoveredOffset = recoveredOffset;
+//            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
+//                while(true) {
+//                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
+//                        if (!batchCompleted) {
+//                            synchronized (streamLock) {
+//                                while (!batchCompleted) {
+//                                    PDKLogger.debug(TAG, "Stream read will wait until batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
+//                                    try {
+//                                        streamLock.wait();
+//                                    } catch (InterruptedException interruptedException) {
+////                                    interruptedException.printStackTrace();
+//                                        Thread.currentThread().interrupt();
+//                                    }
+//                                }
+//                                PDKLogger.debug(TAG, "Stream read start now, {}", LoggerUtils.sourceNodeMessage(sourceNode));
+//                            }
 //                        }
-                    });
-                }
-            }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
-        }
+//                        if (events != null) {
+//                            PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+//                            offer(filterEvents(events));
+//                        }
+////                        if (offsetState != null) {
+////                            PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
+////                            this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+////                        }
+//                    });
+//                }
+//            }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
+//        }
 
         BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
         if (batchReadFunction != null) {
@@ -131,10 +133,43 @@ public class SourceNodeDriver extends Driver {
                     if (!batchCompleted) {
                         batchCompleted = true;
                         PDKLogger.debug(TAG, "Batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
-                        streamLock.notifyAll();
+//                        streamLock.notifyAll();
                     }
                 }
             }
+        }
+
+        StreamReadFunction streamReadFunction = sourceNode.getConnectorFunctions().getStreamReadFunction();
+        if (streamReadFunction != null) {
+            Object recoveredOffset = null;
+            if(streamOffsetStr != null) {
+                recoveredOffset = JSON.parse(streamOffsetStr, Feature.SupportAutoType);
+            }
+
+            Object finalRecoveredOffset = recoveredOffset;
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
+                while(true) {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
+                        if (events != null) {
+                            PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                            offer(filterEvents(events));
+                        }
+
+                        StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
+                        if(streamOffsetFunction != null) {
+                            pdkInvocationMonitor.invokePDKMethod(PDKMethod.STREAM_OFFSET, () -> {
+                                Object offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), null);
+                                if (offsetState != null) {
+                                    PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
+                                    this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+                                }
+                            }, "Batch read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
+                                PDKLogger.error("batchOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
+                            });
+                        }
+                    });
+                }
+            }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
         }
     }
 

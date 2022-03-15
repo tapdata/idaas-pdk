@@ -10,5 +10,5 @@ import java.util.function.Consumer;
  * Process every record
  */
 public interface ProcessRecordFunction {
-    void process(TapProcessorContext tapProcessorContext, List<TapEvent> recordEvents, Consumer<List<TapEvent>> consumer);
+    void process(TapProcessorContext tapProcessorContext, List<TapEvent> recordEvents, Consumer<List<TapEvent>> consumer) throws Throwable;
 }

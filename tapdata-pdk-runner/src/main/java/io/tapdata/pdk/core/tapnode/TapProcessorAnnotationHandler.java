@@ -36,7 +36,7 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
                             InputStream is = url.openStream();
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
                             TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
-                            tapNodeSpecification = tapNodeContainer.getSpecification();
+                            tapNodeSpecification = tapNodeContainer.getProperties();
                             String errorMessage = null;
                             if(tapNodeSpecification == null)
                                 errorMessage = "Specification not found";

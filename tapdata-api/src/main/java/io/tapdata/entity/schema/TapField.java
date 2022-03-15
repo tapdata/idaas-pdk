@@ -6,13 +6,8 @@ import io.tapdata.entity.type.TapType;
 public class TapField {
     public TapField() {}
 
-    public TapField(String name, TapType tapType) {
-        this(name, tapType, null);
-    }
-
-    public TapField(String name, TapType tapType, String originType) {
+    public TapField(String name, String originType) {
         this.name = name;
-        this.tapType = tapType;
         this.originType = originType;
     }
 
@@ -22,7 +17,7 @@ public class TapField {
         return this;
     }
     /**
-     * 可以为空
+     * Field value can be null
      */
     private Boolean nullable;
     public TapField nullable(Boolean nullable) {
@@ -30,7 +25,7 @@ public class TapField {
         return this;
     }
     /**
-     * 字段名字
+     * Field name
      */
     private String name;
     public TapField name(String name) {
@@ -38,7 +33,7 @@ public class TapField {
         return this;
     }
     /**
-     * 主键
+     * Primary key
      */
     private Boolean isPrimaryKey;
     public TapField isPrimaryKey(Boolean isPrimaryKey) {
@@ -46,7 +41,7 @@ public class TapField {
         return this;
     }
     /**
-     * 分区主键
+     * Partition key
      */
     private Boolean isPartitionKey;
     public TapField isPartitionKey(Boolean isPartitionKey) {
@@ -54,23 +49,23 @@ public class TapField {
         return this;
     }
     /**
-     * 分区主键的位置
+     * Partition key position, start from 1.
      */
-    private Long partitionKeyPos;
-    public TapField partitionKeyPos(Long partitionKeyPos) {
+    private Integer partitionKeyPos;
+    public TapField partitionKeyPos(Integer partitionKeyPos) {
         this.partitionKeyPos = partitionKeyPos;
         return this;
     }
     /**
-     * 字段位置
+     * Field position, start from 1.
      */
-    private Long pos;
-    public TapField pos(Long pos) {
+    private Integer pos;
+    public TapField pos(Integer pos) {
         this.pos = pos;
         return this;
     }
     /**
-     * 主键位置
+     * Primary key position, start from 1.
      */
     private Long primaryKeyPos;
     public TapField primaryKeyPos(Long primaryKeyPos) {
@@ -78,7 +73,7 @@ public class TapField {
         return this;
     }
     /**
-     * 外键表名
+     * Foreign key table name.
      */
     private String foreignKeyTable;
     public TapField foreignKeyTable(String foreignKeyTable) {
@@ -86,7 +81,7 @@ public class TapField {
         return this;
     }
     /**
-     * 外键字段
+     * Foreign key field name.
      */
     private String foreignKeyField;
     public TapField foreignKeyField(String foreignKeyField) {
@@ -94,7 +89,7 @@ public class TapField {
         return this;
     }
     /**
-     * 默认值
+     * Field default value.
      */
     private Object defaultValue;
     public TapField defaultValue(Object defaultValue) {
@@ -102,7 +97,7 @@ public class TapField {
         return this;
     }
     /**
-     * 是否自增
+     * Auto incremental
      */
     private Boolean autoInc;
     public TapField autoInc(Boolean autoInc) {
@@ -110,7 +105,7 @@ public class TapField {
         return this;
     }
     /**
-     * 自增默认值， 自增起始值
+     * Increment start value
      */
     private Long autoIncStartValue;
     public TapField autoIncStartValue(Long autoIncStartValue) {
@@ -118,7 +113,7 @@ public class TapField {
         return this;
     }
     /**
-     * 唯一主键
+     * Unique field
      */
     private Boolean unique;
     public TapField unique(Boolean unique) {
@@ -126,7 +121,7 @@ public class TapField {
         return this;
     }
     /**
-     * 检查表达式， 例如a > 9这样的检查， 不满足条件就写不进去
+     * Check expression, ensure the data can only be write when satisfy the check expression.
      */
     private String check;
     public TapField check(String check) {
@@ -134,7 +129,7 @@ public class TapField {
         return this;
     }
     /**
-     * 字段注释
+     * Field comment
      */
     private String comment;
     public TapField comment(String comment) {
@@ -143,7 +138,7 @@ public class TapField {
     }
 
     /**
-     * 暂时不管
+     *
      */
     private String constraint;
     public TapField constraint(String constraint) {
@@ -151,7 +146,8 @@ public class TapField {
         return this;
     }
     /**
-     * 字段类型
+     * Standard types
+     * TapType, TapString, TapNumber, TapArray, etc
      */
     private TapType tapType;
     public TapField tapType(TapType tapType) {
@@ -190,19 +186,19 @@ public class TapField {
     public void setName(String name) {
         this.name = name;
     }
-    public Long getPartitionKeyPos() {
+    public Integer getPartitionKeyPos() {
         return partitionKeyPos;
     }
 
-    public void setPartitionKeyPos(Long partitionKeyPos) {
+    public void setPartitionKeyPos(Integer partitionKeyPos) {
         this.partitionKeyPos = partitionKeyPos;
     }
 
-    public Long getPos() {
+    public Integer getPos() {
         return pos;
     }
 
-    public void setPos(Long pos) {
+    public void setPos(Integer pos) {
         this.pos = pos;
     }
 

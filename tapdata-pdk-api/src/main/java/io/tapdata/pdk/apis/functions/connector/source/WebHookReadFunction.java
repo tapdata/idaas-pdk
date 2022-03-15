@@ -13,5 +13,5 @@ public interface WebHookReadFunction {
      * @param jsonObjects received record event pushed from webhook
      * @param consumer accept the table and offsetState for the record.
      */
-    void read(TapConnectorContext nodeContext, List<Map<String, Object>> jsonObjects, Consumer<List<Map<String, Object>>> consumer);
+    void read(TapConnectorContext nodeContext, List<Map<String, Object>> jsonObjects, Consumer<List<Map<String, Object>>> consumer) throws Throwable;
 }

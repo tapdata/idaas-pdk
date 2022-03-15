@@ -1,6 +1,11 @@
 package io.tapdata.pdk.apis.entity;
 
 public class TestItem {
+    public static final String ITEM_CONNECTION = "Connection";
+    public static final String ITEM_LOGIN = "Login";
+    public static final String ITEM_READ = "Read";
+    public static final String ITEM_WRITE = "Write";
+    public static final String ITEM_READ_LOG = "Read log";
 
     public TestItem(String item, int result, String information) {
         this.item = item;

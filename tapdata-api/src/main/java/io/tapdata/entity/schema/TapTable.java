@@ -41,6 +41,9 @@ public class TapTable extends TapItem<TapField> {
             nameFieldMap = new LinkedHashMap<>();
         }
         nameFieldMap.put(field.getName(), field);
+        if(field.getPos() == null) {
+            field.pos(nameFieldMap.size());
+        }
         return this;
     }
 

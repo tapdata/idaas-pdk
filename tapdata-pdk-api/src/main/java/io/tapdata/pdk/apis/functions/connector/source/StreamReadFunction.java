@@ -14,5 +14,5 @@ public interface StreamReadFunction {
      *                    type can be any that comfortable for saving offset state.
      * @param consumer accept the table and offsetState for the record.
      */
-    void streamRead(TapConnectorContext nodeContext, Object offsetState, Consumer<List<TapEvent>> consumer);
+    void streamRead(TapConnectorContext nodeContext, Object offsetState, Consumer<List<TapEvent>> consumer) throws Throwable;
 }

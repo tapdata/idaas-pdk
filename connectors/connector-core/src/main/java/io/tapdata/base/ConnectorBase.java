@@ -1,7 +1,9 @@
 package io.tapdata.base;
 
 import io.tapdata.base.utils.Entry;
+import io.tapdata.entity.event.dml.TapDeleteDMLEvent;
 import io.tapdata.entity.event.dml.TapInsertDMLEvent;
+import io.tapdata.entity.event.dml.TapUpdateDMLEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.type.TapNumber;
@@ -9,6 +11,7 @@ import io.tapdata.entity.type.TapString;
 import io.tapdata.entity.type.TapType;
 import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.entity.TestItem;
+import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.utils.FormatUtils;
 import io.tapdata.pdk.apis.utils.ImplementationUtils;
 import io.tapdata.pdk.apis.utils.TapUtils;
@@ -90,13 +93,10 @@ public class ConnectorBase {
         return FormatUtils.format(message, args);
     }
 
-    public TapField field(String name, TapType tapType, String originType) {
-        return new TapField(name, tapType, originType);
+    public TapField field(String name, String originType) {
+        return new TapField(name, originType);
     }
 
-    public TapField field(String name, TapType tapType) {
-        return new TapField(name, tapType);
-    }
     public TapTable table(String tableName, String id) {
         return new TapTable(tableName, id);
     }
@@ -113,22 +113,11 @@ public class ConnectorBase {
         return new TapNumber();
     }
 
-    public enum TestResult {
-        Successfully(TestItem.RESULT_SUCCESSFULLY),
-        SuccessfullyWithWarn(TestItem.RESULT_SUCCESSFULLY_WITH_WARN),
-        Failed(TestItem.RESULT_FAILED)
-        ;
-        int code;
-        TestResult(int code) {
-            this.code = code;
-        }
+    public TestItem testItem(String item, int resultCode) {
+        return testItem(item, resultCode, null);
     }
-
-    public TestItem testItem(String item, TestResult testResult) {
-        return testItem(item, testResult, null);
-    }
-    public TestItem testItem(String item, TestResult testResult, String information) {
-        return new TestItem(item, testResult.code, information);
+    public TestItem testItem(String item, int resultCode, String information) {
+        return new TestItem(item, resultCode, information);
     }
 
     public Entry entry(String key, Object value) {
@@ -160,5 +149,27 @@ public class ConnectorBase {
 
     public TapInsertDMLEvent insertDMLEvent(Map<String, Object> after, TapTable tapTable) {
         return new TapInsertDMLEvent().init().after(after).table(tapTable);
+    }
+
+    public TapDeleteDMLEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
+        return new TapDeleteDMLEvent().init().before(before).table(tapTable);
+    }
+
+    public TapUpdateDMLEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
+        return new TapUpdateDMLEvent().init().before(before).after(after).table(tapTable);
+    }
+
+    public <T> WriteListResult<T> writeListResult(Class<T> tClass) {
+        return new WriteListResult<T>();
+    }
+
+    public void sleep(long milliseconds) {
+        if(milliseconds < 0)
+            return;
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException interruptedException) {
+            interruptedException.printStackTrace();
+        }
     }
 }

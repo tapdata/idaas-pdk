@@ -1,10 +1,10 @@
 {
-  "specification": {
+  "properties": {
     "name": "FileTarget-PDK",
     "icon": "icons/targetIcon.png",
     "id": "fileTarget"
   },
-  "applications": {
+  "configOptions": {
     "connection": {
       "type": "object",
       "properties": {

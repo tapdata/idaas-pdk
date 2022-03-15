@@ -1,160 +1,86 @@
-# Installation
+# iDaaS PDK
 
-Maintainer: @Aplomb
+![GitHub stars](https://img.shields.io/github/stars/tapdata/idaas-pdk?style=social&label=Star&maxAge=2592000)
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-## Requirements
-	install java 8 and above
-    install maven
 
-## Install from source
+## What is iDaaS
 
-	git clone https://github.com/tapdata/idaas-pdk.git
-    cd idaas-pdk
-    mvn clean install
+Data as a service (DaaS) is a data management strategy that uses the cloud(or centralized data platform) to deliver data storage, integration, processing, and servicing capabilities in an on demand fashion.
 
-## Create connector project 
+Tapdata iDaaS, or Incremental Data as a Service, is an open source implementation of the DaaS architecture that puts focus on the incremental updating capability of the data platform.  In essense, iDaaS provides following capabilities:
 
-	./bin/tap boot --group io.tapdata --name MyDataSourceConnector --version 0.0.1 --output ./connectors
 
-## Develop your own data source connector
-### Use IntelliJ IDEA to open idaas-pdk
-### We leave empty methods for you to fill up 
-Method invocation life circle
+- Searchable data catalog, allows you to collect/manage/organize and search for all your data assets across your organization
 
-    init
-        if(batchEnabled) {
-            batchCount  
-            batchRead
+- "Any to Any" real time data integration platform, allows you to move data from source systems to DaaS or to destinations like data warehouses or kafka
+
+- Programmable data platform, every data related tasks can be managed & programmed via API or Shell
+
+- Code-less API generation, instantly turn your managed data asset into discoverable services
+
+## What is PDK for iDaaS
+
+**PDK is Plugin Development Kit for iDaaS.** Provide an easier way to develop data source connectors  
+* **Database connectors** 
+  * MySql, Oracle, Postgres, etc. 
+* **SaaS connectors** 
+  * Facebook, Salesforce, Google docs, etc.
+* **Custom connectors**
+  * Connect your custom data sources.
+
+PDK connectors provide data source and target into iDaaS Flow Engine.
+
+
+## Quick Start
+how simple to development
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    
+}
+```
+
+```json
+{
+  "properties": {
+    "name": "PDK Sample Connector",
+    "icon": "icon.jpeg",
+    "id": "pdk-sample"
+  },
+  "configOptions": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "title": "API Token",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "spaceId": {
+          "type": "string",
+          "title": "Space ID",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
         }
-        while(streamEnabled)
-            streamRead
-    destroy
-
-## After development
-    cd yourConnector
-    mvn package
-
-## Register your connector into Tapdata
-    ./bin/tap register -a 3324cfdf-7d3e-4792-bd32-571638d4562f -t http://192.168.1.126:3004 dist/your-connector-v1.0-SNAPSHOT.jar
-
-## Now you can use your PDK connector in Tapdata website
-
-# Project structure
-
-## Modules
-    connectors 
-    //Parent module to put all the connectors below.
-        connector-core 
-        //Common core is the parent module for every connector module
-        empty-connector 
-        //Empty connector to output dummy records
-        file-connector 
-        //File connector to append record in user specified local file
-        mongodb-connector 
-        //Mongodb connector, not finished
-        vika-connector 
-        //Vika connector, support batchRead and write to a datasheet. API token and spaceId must be specified in connector form
-    tapdata-pdk-api 
-    //PDK API, every connector depend on the API
-    tapdata-pdk-cli 
-    //Run PDK in CLI, like register to Tapdata, test methods, etc
-    tapdata-pdk-runner 
-    //Provide integration API to Tapdata FlowEngine, also provide a tiny flow engine for test purpose
-
-# How to Test
-
-## CLI Test (Temporary solution)
-Run connectionTest method
-
-    package io.tapdata.pdk.cli;
-    
-    public class ConnectionTestMain {
-    
-    public static void main(String... args) {
-        args = new String[] {"connectionTest",
-            "--id", "vika-pdk",
-            "--group", "tapdata",
-            "--buildNumber", "1",
-            "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
-        };
-
-        Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
+      }
     }
+  }
+}
 
-Run discoverSchema method
-    
-    package io.tapdata.pdk.cli;
+```
 
-    public class DiscoverSchemaMain {
+## Installation
 
-        public static void main(String... args) {
-            args = new String[] {"discoverSchema",
-                "--id", "vika-pdk",
-                "--group", "tapdata",
-                "--buildNumber", "1",
-                "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
-            };
-            
-            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-        }
-    }
+**[How to install?](docs/deployment.md)**
 
-To describe a simple DAG to connect Source to any Target, to test that whether target get the expected result
+## Open type
+[Open type](docs/open-type.md)
 
-StoryMain
-    
-    package io.tapdata.pdk.cli;
+## Development Guide
 
-    public class StoryMain {
-    
-        public static void main(String... args) {
-            String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
-            args = new String[]{"start",
-                    rootPath + "emptyToFile.json",
-            };
-    
-            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-        }
+## Test Driven Development
 
-    }
+## PDK Registration
 
-DAG json file
-
-    {
-        "id" : "dag1",
-        "nodes" : [
-            {
-                "connectionConfig" : {},
-                "table" : {
-                    "name" : "empty-table1",
-                    "id" : "empty-table1"
-                },
-                "id" : "s1",
-                "pdkId" : "emptySource",
-                "group" : "tapdata",
-                "type" : "Source",
-                "minBuildNumber" : 0
-            },
-            {
-                "connectionConfig" : {
-                    "folderPath" : "/Users/aplomb/dev/tapdata/AgentProjects/tmp"
-                },
-                "table" : {
-                    "name" : "target1.txt",
-                    "id" : "target1.txt"
-                },
-                "id" : "t2",
-                "pdkId" : "fileTarget",
-                "group" : "tapdata",
-                "type" : "Target",
-                "minBuildNumber" : 0
-            }
-        ],
-        "dag" : [
-            ["s1", "t2"]
-        ],
-        "jobOptions" : {
-            "queueSize" : 100,
-            "queueBatchSize" : 100
-        }
-    }

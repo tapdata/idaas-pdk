@@ -11,6 +11,7 @@ public enum PDKMethod {
     CONNECTION_TEST,
     DESTROY,
     BATCH_OFFSET,
+    STREAM_OFFSET,
     SOURCE_CONNECTION_TEST(TimeUnit.SECONDS.toMillis(10)),
     TARGET_CONNECTION_TEST(TimeUnit.SECONDS.toMillis(10)),
 

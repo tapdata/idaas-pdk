@@ -39,7 +39,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                             InputStream is = url.openStream();
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
                             TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
-                            tapNodeSpecification = tapNodeContainer.getSpecification();
+                            tapNodeSpecification = tapNodeContainer.getProperties();
 
                             String errorMessage = null;
                             if (tapNodeSpecification == null) {
@@ -60,7 +60,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                                 continue;
                             }
 
-                            tapNodeSpecification.setApplications(tapNodeContainer.getApplications());
+                            tapNodeSpecification.setConfigOptions(tapNodeContainer.getConfigOptions());
                             String connectorType = findConnectorType(clazz);
                             if (connectorType == null) {
                                 PDKLogger.error(TAG, "Connector class for id {} title {} only have TapConnector annotation, but not implement either TapSource or TapTarget which is must, {} will be ignored...", tapNodeSpecification.idAndGroup(), tapNodeSpecification.getName(), clazz);

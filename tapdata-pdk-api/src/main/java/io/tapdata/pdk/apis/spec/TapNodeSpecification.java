@@ -14,7 +14,7 @@ public class TapNodeSpecification {
     private String group; //Unique key for each enterprise.
     private String version;
     private String icon;
-    private Map<String, Object> applications;
+    private Map<String, Object> configOptions;
 
     public String verify() {
         if(name == null)
@@ -80,11 +80,11 @@ public class TapNodeSpecification {
         this.icon = icon;
     }
 
-    public Map<String, Object> getApplications() {
-        return applications;
+    public Map<String, Object> getConfigOptions() {
+        return configOptions;
     }
 
-    public void setApplications(Map<String, Object> applications) {
-        this.applications = applications;
+    public void setConfigOptions(Map<String, Object> configOptions) {
+        this.configOptions = configOptions;
     }
 }

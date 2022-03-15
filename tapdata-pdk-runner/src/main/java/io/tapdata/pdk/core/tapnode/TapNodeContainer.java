@@ -5,24 +5,24 @@ import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import java.util.Map;
 
 public class TapNodeContainer {
-    private TapNodeSpecification specification;
+    private TapNodeSpecification properties;
 
-    private Map<String, Object> applications;
+    private Map<String, Object> configOptions;
 
-    public Map<String, Object> getApplications() {
-        return applications;
+    public Map<String, Object> getConfigOptions() {
+        return configOptions;
     }
 
-    public void setApplications(Map<String, Object> applications) {
-        this.applications = applications;
+    public void setConfigOptions(Map<String, Object> configOptions) {
+        this.configOptions = configOptions;
     }
 
-    public TapNodeSpecification getSpecification() {
-        return specification;
+    public TapNodeSpecification getProperties() {
+        return properties;
     }
 
-    public void setSpecification(TapNodeSpecification specification) {
-        this.specification = specification;
+    public void setProperties(TapNodeSpecification properties) {
+        this.properties = properties;
     }
 
 }
