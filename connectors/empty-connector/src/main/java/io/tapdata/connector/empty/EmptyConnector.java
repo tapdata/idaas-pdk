@@ -102,7 +102,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      * Register connector capabilities here.
      *
      * To be as a source, please implement at least one of batchReadFunction or streamReadFunction.
-     * To be as a target, please implement DMLFunction.
+     * To be as a target, please implement WriteRecordFunction.
      * To be as a source and target, please implement the functions that source and target required.
      *
      * @param connectorFunctions
@@ -114,7 +114,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
 
-        connectorFunctions.supportDML(this::dml);
+        connectorFunctions.supportWriteRecord(this::writeRecord);
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
@@ -132,30 +132,30 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      *      createTable
      *  if(needClearTable)
      *      clearTable
-     *  dml
+     *  writeRecord
      * -> destroy -> ended
      *
      * @param connectorContext
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void dml(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
         //TODO write records into database
 
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
-        for(TapRecordEvent dmlEvent : tapRecordEvents) {
-            if(dmlEvent instanceof TapInsertRecordEvent) {
+        for(TapRecordEvent recordEvent : tapRecordEvents) {
+            if(recordEvent instanceof TapInsertRecordEvent) {
                 inserted.incrementAndGet();
-                PDKLogger.info(TAG, "DML Write TapInsertDMLEvent {}", toJson(dmlEvent));
-            } else if(dmlEvent instanceof TapUpdateRecordEvent) {
+                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
+            } else if(recordEvent instanceof TapUpdateRecordEvent) {
                 updated.incrementAndGet();
-                PDKLogger.info(TAG, "DML Write TapUpdateDMLEvent {}", toJson(dmlEvent));
-            } else if(dmlEvent instanceof TapDeleteRecordEvent) {
+                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+            } else if(recordEvent instanceof TapDeleteRecordEvent) {
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "DML Write TapDeleteDMLEvent {}", toJson(dmlEvent));
+                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
         //Need to tell flow engine the write result
@@ -211,7 +211,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 20; i++) {
-                TapInsertRecordEvent recordEvent = insertDMLEvent(map(
+                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
                         entry("name", "123"),
@@ -248,7 +248,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         while(!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 10; i++) {
-                TapInsertRecordEvent event = insertDMLEvent(map(
+                TapInsertRecordEvent event = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
                         entry("name", "123"),

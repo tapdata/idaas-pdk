@@ -146,7 +146,7 @@ public class ConnectorBase {
         return map;
     }
 
-    public TapInsertRecordEvent insertDMLEvent(Map<String, Object> after, TapTable tapTable) {
+    public TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, TapTable tapTable) {
         return new TapInsertRecordEvent().init().after(after).table(tapTable);
     }
 

@@ -90,15 +90,15 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
      *
      * @param connectorContext
      * @param offset
-     * @param tapReadOffsetConsumer
+     * @param consumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 20; i++) {
-                TapInsertDMLEvent recordEvent = insertDMLEvent(map(
+                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
                         entry("name", "123"),
@@ -106,7 +106,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
                 ), connectorContext.getTable());
                 tapEvents.add(recordEvent);
             }
-            tapReadOffsetConsumer.accept(tapEvents);
+            consumer.accept(tapEvents);
         }
     }
 
@@ -133,7 +133,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
         while(!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 10; i++) {
-                TapInsertDMLEvent event = insertDMLEvent(map(
+                TapInsertRecordEvent event = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
                         entry("name", "123"),
@@ -152,17 +152,17 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
      *      createTable
      *  if(needClearTable)
      *      clearTable
-     *  dml
+     *  writeRecord
      * -> destroy -> ended
      *
      * @param connectorContext
      * @param tapRecordEvents
-     * @param writeListResultConsumer
+     * @param consumer
      */
-    private void dml(TapConnectorContext connectorContext, List<TapDMLEvent> tapRecordEvents, Consumer<WriteListResult<TapDMLEvent>> writeListResultConsumer) {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> consumer) {
         //TODO write records into database
         //Need to tell flow engine the write result
-        writeListResultConsumer.accept(writeListResult()
+        consumer.accept(writeListResult()
                 .insertedCount(tapRecordEvents.size()));
     }
 }

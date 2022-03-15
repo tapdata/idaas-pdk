@@ -67,7 +67,7 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return this;
     }
 
-    public ConnectorFunctions supportDML(WriteRecordFunction function) {
+    public ConnectorFunctions supportWriteRecord(WriteRecordFunction function) {
         this.writeRecordFunction = function;
         return this;
     }

@@ -83,6 +83,6 @@ public class FileTarget extends ConnectorBase implements TapConnector {
 
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
-        connectorFunctions.supportDML(this::handleDML);
+        connectorFunctions.supportWriteRecord(this::handleDML);
     }
 }
