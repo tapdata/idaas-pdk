@@ -1,23 +1,11 @@
-# Installation
-
-
-## Requirements
-	install java 8 and above
-    install maven
-
-## Install from source
-
-	git clone https://github.com/tapdata/idaas-pdk.git
-    cd idaas-pdk
-    mvn clean install
-
-## Create connector project 
-
-	./bin/tap template --group io.tapdata --name MyDataSourceConnector --version 0.0.1 --output ./connectors
+# Development Guide
 
 ## Develop your own data source connector
 ### Use IntelliJ IDEA to open idaas-pdk
 ### We leave empty methods for you to fill up 
+
+![This is an image](images/sourceMethodsStateDiagram.png)
+
 Method invocation life circle
 
     init
