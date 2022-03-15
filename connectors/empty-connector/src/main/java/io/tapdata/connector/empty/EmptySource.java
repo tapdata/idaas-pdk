@@ -103,21 +103,18 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      */
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
         for (int j = 0; j < 1; j++) {
-            List<TapEvent> tapEvents = new ArrayList<>();
+            List<TapEvent> tapEvents = list();
             for (int i = 0; i < 10; i++) {
-                TapInsertDMLEvent recordEvent = new TapInsertDMLEvent();
-                recordEvent.setTime(System.currentTimeMillis());
-                int finalI = i;
-                recordEvent.setAfter(new HashMap<String, Object>() {{
-                    put("id", counter.incrementAndGet());
-                    put("a", "123");
-                    put("b", "123");
-                    put("c", "123");
-                    put("abc", "dsafasdf");
-                    put("bbb", "aaaaa");
-                    put("number", 123123123);
-                }});
-                tapEvents.add(recordEvent);
+                TapInsertDMLEvent event = insertDMLEvent(map(
+                        entry("id", counter.incrementAndGet()),
+                        entry("a", "123"),
+                        entry("b", "123"),
+                        entry("c", "123"),
+                        entry("abc", "dsafasdf"),
+                        entry("bbb", "aaaaa"),
+                        entry("number", 123123123)
+                ), connectorContext.getTable());
+                tapEvents.add(event);
             }
             try {
                 Thread.sleep(1000L);
@@ -148,22 +145,18 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      */
     private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         for (int j = 0; j < 1; j++) {
-            List<TapEvent> tapEvents = new ArrayList<>();
+            List<TapEvent> tapEvents = list();
             for (int i = 0; i < 20; i++) {
-                TapInsertDMLEvent recordEvent = new TapInsertDMLEvent();
-                recordEvent.setTime(System.currentTimeMillis());
-                int finalI = i;
-                recordEvent.setAfter(new HashMap<String, Object>() {{
-                    put("id", counter.incrementAndGet());
-                    put("a", "123");
-                    put("b", "123");
-                    put("c", "123");
-                    put("abc", "123213213");
-                    put("bbb", "44444444");
-                    put("number", 555555);
-                }});
+                TapInsertDMLEvent recordEvent = insertDMLEvent(map(
+                        entry("id", counter.incrementAndGet()),
+                        entry("a", "123"),
+                        entry("b", "123"),
+                        entry("c", "123"),
+                        entry("abc", "dsafasdf"),
+                        entry("bbb", "aaaaa"),
+                        entry("number", 123123123)
+                ), connectorContext.getTable());
                 tapEvents.add(recordEvent);
-
             }
             tapReadOffsetConsumer.accept(tapEvents);
         }

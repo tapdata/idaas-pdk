@@ -113,10 +113,6 @@ public class ConnectorBase {
         return new TapNumber();
     }
 
-    public <T> List<T> list(T... ts) {
-        return Arrays.asList(ts);
-    }
-
     public enum TestResult {
         Successfully(TestItem.RESULT_SUCCESSFULLY),
         SuccessfullyWithWarn(TestItem.RESULT_SUCCESSFULLY_WITH_WARN),
@@ -139,6 +135,18 @@ public class ConnectorBase {
         return new Entry(key, value);
     }
 
+    public <T> List<T> list(T... ts) {
+        return Arrays.asList(ts);
+    }
+
+    public <T> List<T> list() {
+        return new ArrayList<T>();
+    }
+
+    public Map<String, Object> map() {
+        return new LinkedHashMap<>();
+    }
+
     public Map<String, Object> map(Entry... entries) {
         Map<String, Object> map = new LinkedHashMap<>();
         if(entries != null) {
@@ -150,7 +158,7 @@ public class ConnectorBase {
         return map;
     }
 
-//    public TapInsertDMLEvent insertDMLEvent(Map<String, Object> after) {
-//        TapInsertDMLEvent insertDMLEvent = new TapInsertDMLEvent();
-//    }
+    public TapInsertDMLEvent insertDMLEvent(Map<String, Object> after, TapTable tapTable) {
+        return new TapInsertDMLEvent().init().after(after).table(tapTable);
+    }
 }

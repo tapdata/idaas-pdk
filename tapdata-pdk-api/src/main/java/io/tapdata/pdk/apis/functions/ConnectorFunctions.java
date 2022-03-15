@@ -17,7 +17,8 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private ClearTableFunction clearTableFunction;
     private DropTableFunction dropTableFunction;
     /**
-     * TODO Not integrated yet.
+     * Flow engine may get current batch offset at any time.
+     * To continue batch read for the batch offset when job resumed from pause or stopped accidentally.
      *
      * @param function
      * @return
@@ -28,7 +29,8 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     }
 
     /**
-     * TODO Not integrated yet.
+     * Flow engine may get current stream offset at any time.
+     * To continue stream read for the stream offset when job resumed from pause or stopped accidentally.
      *
      * @param function
      * @return
@@ -38,11 +40,23 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return this;
     }
 
+    /**
+     * Flow engine will call this method when batch read is started.
+     * You need implement the batch feature in this method synchronously, once this method finished, Flow engine will consider the batch read is ended.
+     *
+     * Exception can be throw in this method, Flow engine will consider there is an error occurred in batch read.
+     *
+     * @param function
+     * @return
+     */
     public ConnectorFunctions supportBatchRead(BatchReadFunction function) {
         batchReadFunction = function;
         return this;
     }
 
+    /**
+     *
+     */
     public ConnectorFunctions supportStreamRead(StreamReadFunction function) {
         streamReadFunction = function;
         return this;
