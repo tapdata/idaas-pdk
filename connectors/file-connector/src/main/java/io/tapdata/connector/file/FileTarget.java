@@ -77,7 +77,7 @@ public class FileTarget extends ConnectorBase implements TapConnector {
                     }
                 }
 
-                consumer.accept(writeListResult(TapDMLEvent.class).insertedCount(tapRecordEvents.size()));
+                consumer.accept(writeListResult().insertedCount(tapRecordEvents.size()));
             }
         }
     }

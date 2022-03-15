@@ -42,24 +42,4 @@ public class TapDMLEvent extends TapEvent {
         this.connectorVersion = connectorVersion;
     }
 
-//    public Map<String, Object> formatValue(Map<String, Object> record, Map<String, TapField> fieldMap) {
-//        if(fieldMap == null)
-//            return record;
-//        Collection<TapField> fields = fieldMap.values();
-//        for(TapField field : fields) {
-//            Object value = record.get(field.getName());
-//            if(value != null) {
-//                FieldConvertor fieldConvertor = field.getOriginConverter();
-//                if(fieldConvertor != null) {
-//                    TapValue<?, ?> newValue = fieldConvertor.convert(value);
-//                    if(newValue != null) {
-//                        newValue.setOriginValue(value);
-//                        newValue.setOriginValue(field.getName());
-//                        record.put(field.getName(), newValue);
-//                    }
-//                }
-//            }
-//        }
-//        return record;
-//    }
 }

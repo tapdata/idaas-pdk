@@ -3,18 +3,18 @@ package io.tapdata.pdk.apis.entity;
 import java.util.Map;
 
 public class WriteListResult<T> {
-    private int insertedCount;
-    public WriteListResult<T> insertedCount(int insertedCount) {
+    private long insertedCount;
+    public WriteListResult<T> insertedCount(long insertedCount) {
         this.insertedCount = insertedCount;
         return this;
     }
-    private int removedCount;
-    public WriteListResult<T> removedCount(int removedCount) {
+    private long removedCount;
+    public WriteListResult<T> removedCount(long removedCount) {
         this.removedCount = removedCount;
         return this;
     }
-    private int modifiedCount;
-    public WriteListResult<T> modifiedCount(int modifiedCount) {
+    private long modifiedCount;
+    public WriteListResult<T> modifiedCount(long modifiedCount) {
         this.modifiedCount = modifiedCount;
         return this;
     }
@@ -22,37 +22,37 @@ public class WriteListResult<T> {
     private Map<T, Throwable> errorMap;
 
     public WriteListResult() {}
-    public WriteListResult(int insertedCount, int modifiedCount, int removedCount) {
+    public WriteListResult(long insertedCount, long modifiedCount, long removedCount) {
         this(insertedCount, modifiedCount, removedCount, null);
     }
-    public WriteListResult(int insertedCount, int modifiedCount, int removedCount, Map<T, Throwable> errorMap) {
+    public WriteListResult(long insertedCount, long modifiedCount, long removedCount, Map<T, Throwable> errorMap) {
         this.insertedCount = insertedCount;
         this.modifiedCount = modifiedCount;
         this.removedCount = removedCount;
         this.errorMap = errorMap;
     }
 
-    public int getInsertedCount() {
+    public long getInsertedCount() {
         return insertedCount;
     }
 
-    public void setInsertedCount(int insertedCount) {
+    public void setInsertedCount(long insertedCount) {
         this.insertedCount = insertedCount;
     }
 
-    public int getRemovedCount() {
+    public long getRemovedCount() {
         return removedCount;
     }
 
-    public void setRemovedCount(int removedCount) {
+    public void setRemovedCount(long removedCount) {
         this.removedCount = removedCount;
     }
 
-    public int getModifiedCount() {
+    public long getModifiedCount() {
         return modifiedCount;
     }
 
-    public void setModifiedCount(int modifiedCount) {
+    public void setModifiedCount(long modifiedCount) {
         this.modifiedCount = modifiedCount;
     }
 

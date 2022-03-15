@@ -1,6 +1,7 @@
 package io.tapdata.pdk.core.workflow.engine;
 
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.api.SourceAndTargetNode;
@@ -16,6 +17,7 @@ import io.tapdata.pdk.core.workflow.engine.driver.TargetNodeDriver;
 import java.util.List;
 
 public class TapDAGNodeWithWorker extends TapDAGNode {
+    private static final String TAG = TapDAGNodeWithWorker.class.getSimpleName();
     ProcessorNodeDriver processorNodeDriver;
     SourceNodeDriver sourceNodeDriver;
     TargetNodeDriver targetNodeDriver;
@@ -89,12 +91,20 @@ public class TapDAGNodeWithWorker extends TapDAGNode {
     private void buildPath(TapDAGNodeWithWorker parent, TapDAGNodeWithWorker child, JobOptions jobOptions) {
         String queueName = parent.id + " pdk " + TapNodeSpecification.idAndGroup(parent.pdkId, parent.group, parent.version);
         if(parent.sourceNodeDriver != null) {
-            connect(parent.sourceNodeDriver, child.processorNodeDriver, jobOptions, "Source queue " + queueName + " to processor " + child.id);
-            connect(parent.sourceNodeDriver, child.targetNodeDriver, jobOptions, "Source queue " + queueName + " to target " + child.id);
+            if(child.processorNodeDriver != null || child.targetNodeDriver != null) {
+                connect(parent.sourceNodeDriver, child.processorNodeDriver, jobOptions, "Source queue " + queueName + " to processor " + child.id);
+                connect(parent.sourceNodeDriver, child.targetNodeDriver, jobOptions, "Source queue " + queueName + " to target " + child.id);
+            } else {
+                PDKLogger.error(TAG, "Source build path failed, child's processorNodeDriver or targetNodeDriver not found, nodeId {} type {} pdkId {} pdkGroup {} pdkVersion {}", child.id, child.type, child.pdkId, child.group, child.version);
+            }
         }
         if(parent.processorNodeDriver != null) {
-            connect(parent.processorNodeDriver, child.processorNodeDriver, jobOptions, "Processor queue " + queueName + " to processor " + child.id);
-            connect(parent.processorNodeDriver, child.targetNodeDriver, jobOptions, "Processor queue " + queueName + " to target " + child.id);
+            if(child.processorNodeDriver != null || child.targetNodeDriver != null) {
+                connect(parent.processorNodeDriver, child.processorNodeDriver, jobOptions, "Processor queue " + queueName + " to processor " + child.id);
+                connect(parent.processorNodeDriver, child.targetNodeDriver, jobOptions, "Processor queue " + queueName + " to target " + child.id);
+            } else {
+                PDKLogger.error(TAG, "Processor build path failed, child's processorNodeDriver or targetNodeDriver not found, nodeId {} type {} pdkId {} pdkGroup {} pdkVersion {}", child.id, child.type, child.pdkId, child.group, child.version);
+            }
         }
     }
 

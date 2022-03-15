@@ -4,8 +4,9 @@ import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDMLEvent;
+import io.tapdata.entity.event.dml.TapDeleteDMLEvent;
 import io.tapdata.entity.event.dml.TapInsertDMLEvent;
-import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.event.dml.TapUpdateDMLEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -21,8 +22,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-@TapConnectorClass("source.json")
-public class EmptySource extends ConnectorBase implements TapConnector {
+@TapConnectorClass("spec.json")
+public class EmptyConnector extends ConnectorBase implements TapConnector {
+    public static final String TAG = EmptyConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
 
@@ -50,13 +52,13 @@ public class EmptySource extends ConnectorBase implements TapConnector {
                         .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
                         .add(field("description", "TEXT"))
                         .add(field("name", "VARCHAR"))
-                        .add(field("age", "NUMBER")),
+                        .add(field("age", "DOUBLE")),
                 //Define second table
                 table("empty-table2")
                         .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
                         .add(field("description", "TEXT"))
                         .add(field("name", "VARCHAR"))
-                        .add(field("age", "NUMBER"))
+                        .add(field("age", "DOUBLE"))
         ));
     }
 
@@ -113,19 +115,56 @@ public class EmptySource extends ConnectorBase implements TapConnector {
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
 
+        connectorFunctions.supportDML(this::dml);
+        //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
 //        connectorFunctions.supportCreateTable(this::createTable);
-//        connectorFunctions.supportDML(this::dml);
 //        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
     }
 
-//    private void dml(TapConnectorContext connectorContext, List<TapDMLEvent> tapDMLEvents, Consumer<WriteListResult<TapDMLEvent>> writeListResultConsumer) {
-//
-//    }
+    /**
+     * The method invocation life circle is below,
+     * initiated ->
+     *  if(needCreateTable)
+     *      createTable
+     *  if(needClearTable)
+     *      clearTable
+     *  dml
+     * -> destroy -> ended
+     *
+     * @param connectorContext
+     * @param tapDMLEvents
+     * @param writeListResultConsumer
+     */
+    private void dml(TapConnectorContext connectorContext, List<TapDMLEvent> tapDMLEvents, Consumer<WriteListResult<TapDMLEvent>> writeListResultConsumer) {
+        //TODO write records into database
+
+        //Below is sample code to print received events which suppose to write to database.
+        AtomicLong inserted = new AtomicLong(0); //insert count
+        AtomicLong updated = new AtomicLong(0); //update count
+        AtomicLong deleted = new AtomicLong(0); //delete count
+        for(TapDMLEvent dmlEvent : tapDMLEvents) {
+            if(dmlEvent instanceof TapInsertDMLEvent) {
+                inserted.incrementAndGet();
+                PDKLogger.info(TAG, "DML Write TapInsertDMLEvent {}", toJson(dmlEvent));
+            } else if(dmlEvent instanceof TapUpdateDMLEvent) {
+                updated.incrementAndGet();
+                PDKLogger.info(TAG, "DML Write TapUpdateDMLEvent {}", toJson(dmlEvent));
+            } else if(dmlEvent instanceof TapDeleteDMLEvent) {
+                deleted.incrementAndGet();
+                PDKLogger.info(TAG, "DML Write TapDeleteDMLEvent {}", toJson(dmlEvent));
+            }
+        }
+        //Need to tell flow engine the write result
+        writeListResultConsumer.accept(writeListResult()
+                .insertedCount(tapDMLEvents.size())
+                .modifiedCount(updated.get())
+                .removedCount(deleted.get()));
+    }
 
     /**
      * The method invocation life circle is below,
@@ -145,6 +184,7 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      * @return
      */
     private long batchCount(TapConnectorContext connectorContext, Object offset) {
+        //TODO Count the batch size.
         return 20L;
     }
 
@@ -166,6 +206,9 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      * @param tapReadOffsetConsumer
      */
     private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+        //TODO batch read all records from database, use consumer#accept to send to flow engine.
+
+        //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 20; i++) {
@@ -200,6 +243,9 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
+        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
+
+        //Below is sample code to generate stream records directly
         while(!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 10; i++) {
@@ -219,7 +265,7 @@ public class EmptySource extends ConnectorBase implements TapConnector {
 
     /**
      * The method invocation life circle is below,
-     * initiated -> connectionTest -> init -> sourceFunctions/targetFunctions -> close -> ended
+     * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
      * <p>
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
@@ -227,6 +273,7 @@ public class EmptySource extends ConnectorBase implements TapConnector {
      */
     @Override
     public void destroy() {
+        //TODO release resources
         isShutDown.set(true);
     }
 }

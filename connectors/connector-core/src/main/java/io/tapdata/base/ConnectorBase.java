@@ -1,6 +1,7 @@
 package io.tapdata.base;
 
 import io.tapdata.base.utils.Entry;
+import io.tapdata.entity.event.dml.TapDMLEvent;
 import io.tapdata.entity.event.dml.TapDeleteDMLEvent;
 import io.tapdata.entity.event.dml.TapInsertDMLEvent;
 import io.tapdata.entity.event.dml.TapUpdateDMLEvent;
@@ -159,8 +160,8 @@ public class ConnectorBase {
         return new TapUpdateDMLEvent().init().before(before).after(after).table(tapTable);
     }
 
-    public <T> WriteListResult<T> writeListResult(Class<T> tClass) {
-        return new WriteListResult<T>();
+    public WriteListResult<TapDMLEvent> writeListResult() {
+        return new WriteListResult<TapDMLEvent>();
     }
 
     public void sleep(long milliseconds) {
