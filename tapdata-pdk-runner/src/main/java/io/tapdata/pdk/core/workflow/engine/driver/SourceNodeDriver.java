@@ -3,12 +3,11 @@ package io.tapdata.pdk.core.workflow.engine.driver;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.dml.TapDeleteDMLEvent;
-import io.tapdata.entity.event.dml.TapInsertDMLEvent;
-import io.tapdata.entity.event.dml.TapUpdateDMLEvent;
+import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
@@ -177,15 +176,15 @@ public class SourceNodeDriver extends Driver {
         LinkedHashMap<String, TapField> nameFieldMap = sourceNode.getConnectorContext().getTable().getNameFieldMap();
         TapCodecFilterManager codecFilterManager = sourceNode.getCodecFilterManager();
         for(TapEvent tapEvent : events) {
-            if(tapEvent instanceof TapInsertDMLEvent) {
-                TapInsertDMLEvent insertDMLEvent = (TapInsertDMLEvent) tapEvent;
+            if(tapEvent instanceof TapInsertRecordEvent) {
+                TapInsertRecordEvent insertDMLEvent = (TapInsertRecordEvent) tapEvent;
                 codecFilterManager.transformToTapValueMap(insertDMLEvent.getAfter(), nameFieldMap);
-            } else if(tapEvent instanceof TapUpdateDMLEvent) {
-                TapUpdateDMLEvent updateDMLEvent = (TapUpdateDMLEvent) tapEvent;
+            } else if(tapEvent instanceof TapUpdateRecordEvent) {
+                TapUpdateRecordEvent updateDMLEvent = (TapUpdateRecordEvent) tapEvent;
                 codecFilterManager.transformToTapValueMap(updateDMLEvent.getAfter(), nameFieldMap);
                 codecFilterManager.transformToTapValueMap(updateDMLEvent.getBefore(), nameFieldMap);
-            } else if(tapEvent instanceof TapDeleteDMLEvent) {
-                TapDeleteDMLEvent deleteDMLEvent = (TapDeleteDMLEvent) tapEvent;
+            } else if(tapEvent instanceof TapDeleteRecordEvent) {
+                TapDeleteRecordEvent deleteDMLEvent = (TapDeleteRecordEvent) tapEvent;
                 codecFilterManager.transformToTapValueMap(deleteDMLEvent.getBefore(), nameFieldMap);
             }
         }

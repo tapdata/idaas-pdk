@@ -3,7 +3,7 @@ package io.tapdata.entity.event.dml;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.schema.TapTable;
 
-public class TapDMLEvent extends TapEvent {
+public class TapRecordEvent extends TapEvent {
     /**
      * 数据源的类型， mysql一类
      */

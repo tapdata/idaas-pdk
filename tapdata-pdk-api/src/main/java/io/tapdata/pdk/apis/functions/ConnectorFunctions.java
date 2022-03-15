@@ -9,7 +9,7 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private BatchCountFunction batchCountFunction;
     private BatchOffsetFunction batchOffsetFunction;
     private StreamOffsetFunction streamOffsetFunction;
-    private DMLFunction dmlFunction;
+    private WriteRecordFunction writeRecordFunction;
     private QueryByFilterFunction queryByFilterFunction;
     private TransactionFunction transactionFunction;
     private CreateTableFunction createTableFunction;
@@ -67,8 +67,8 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return this;
     }
 
-    public ConnectorFunctions supportDML(DMLFunction function) {
-        this.dmlFunction = function;
+    public ConnectorFunctions supportDML(WriteRecordFunction function) {
+        this.writeRecordFunction = function;
         return this;
     }
 
@@ -117,8 +117,8 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return streamOffsetFunction;
     }
 
-    public DMLFunction getDmlFunction() {
-        return dmlFunction;
+    public WriteRecordFunction getDmlFunction() {
+        return writeRecordFunction;
     }
 
     public QueryByFilterFunction getQueryByFilterFunction() {

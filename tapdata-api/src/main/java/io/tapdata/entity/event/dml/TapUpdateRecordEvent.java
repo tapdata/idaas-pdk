@@ -2,32 +2,31 @@ package io.tapdata.entity.event.dml;
 
 
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.value.TapValue;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class TapUpdateDMLEvent extends TapDMLEvent {
+public class TapUpdateRecordEvent extends TapRecordEvent {
     /**
      * The latest record, after insert and update
      * Value format should follow TapType formats
      */
     private Map<String, Object> after;
-    public TapUpdateDMLEvent after(Map<String, Object> after) {
+    public TapUpdateRecordEvent after(Map<String, Object> after) {
         this.after = after;
         return this;
     }
 
-    public TapUpdateDMLEvent table(TapTable table) {
+    public TapUpdateRecordEvent table(TapTable table) {
         this.table = table;
         return this;
     }
-    public TapUpdateDMLEvent init() {
+    public TapUpdateRecordEvent init() {
         time = System.currentTimeMillis();
         return this;
     }
 
-    public TapUpdateDMLEvent referenceTime(Long referenceTime) {
+    public TapUpdateRecordEvent referenceTime(Long referenceTime) {
         this.referenceTime = referenceTime;
         return this;
     }
@@ -37,7 +36,7 @@ public class TapUpdateDMLEvent extends TapDMLEvent {
      * Value format should follow TapType formats
      */
     private Map<String, Object> before;
-    public TapUpdateDMLEvent before(Map<String, Object> before) {
+    public TapUpdateRecordEvent before(Map<String, Object> before) {
         this.before = before;
         return this;
     }

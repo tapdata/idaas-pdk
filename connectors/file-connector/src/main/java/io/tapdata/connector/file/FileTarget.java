@@ -2,8 +2,8 @@ package io.tapdata.connector.file;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.event.dml.TapDMLEvent;
-import io.tapdata.entity.event.dml.TapInsertDMLEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -17,7 +17,6 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,7 @@ public class FileTarget extends ConnectorBase implements TapConnector {
     }
 
 
-    private void handleDML(TapConnectorContext connectorContext, List<TapDMLEvent> tapRecordEvents, Consumer<WriteListResult<TapDMLEvent>> consumer) throws Throwable {
+    private void handleDML(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> consumer) throws Throwable {
         TapTable table = connectorContext.getTable();
         String folderPath = (String) connectorContext.getConnectionConfig().get("folderPath");
         if(table == null || table.getName() == null)
@@ -66,9 +65,9 @@ public class FileTarget extends ConnectorBase implements TapConnector {
 
         try (FileOutputStream fis = FileUtils.openOutputStream(file, true)) {
             if (tapRecordEvents != null) {
-                for (TapDMLEvent recordEvent : tapRecordEvents) {
-                    if(recordEvent instanceof TapInsertDMLEvent) {
-                        TapInsertDMLEvent insertDMLEvent = (TapInsertDMLEvent) recordEvent;
+                for (TapRecordEvent recordEvent : tapRecordEvents) {
+                    if(recordEvent instanceof TapInsertRecordEvent) {
+                        TapInsertRecordEvent insertDMLEvent = (TapInsertRecordEvent) recordEvent;
                         Map<String, Object> recordValue = insertDMLEvent.getAfter();
                         fis.write(toJson(recordValue).getBytes(StandardCharsets.UTF_8));
                         fis.write("\r\n".getBytes(StandardCharsets.UTF_8));

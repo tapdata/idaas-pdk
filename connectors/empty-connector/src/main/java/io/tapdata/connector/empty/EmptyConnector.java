@@ -3,10 +3,9 @@ package io.tapdata.connector.empty;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.dml.TapDMLEvent;
-import io.tapdata.entity.event.dml.TapDeleteDMLEvent;
-import io.tapdata.entity.event.dml.TapInsertDMLEvent;
-import io.tapdata.entity.event.dml.TapUpdateDMLEvent;
+import io.tapdata.entity.event.dml.*;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -65,11 +64,11 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated -> connectionTest -> ended
-     * <p>
+     *
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
-     * consumer can call accept method multiple times to test
+     * consumer can call accept method multiple times to test different items
      *
      * @param connectionContext
      * @return
@@ -137,31 +136,31 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      * -> destroy -> ended
      *
      * @param connectorContext
-     * @param tapDMLEvents
+     * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void dml(TapConnectorContext connectorContext, List<TapDMLEvent> tapDMLEvents, Consumer<WriteListResult<TapDMLEvent>> writeListResultConsumer) {
+    private void dml(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
         //TODO write records into database
 
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
-        for(TapDMLEvent dmlEvent : tapDMLEvents) {
-            if(dmlEvent instanceof TapInsertDMLEvent) {
+        for(TapRecordEvent dmlEvent : tapRecordEvents) {
+            if(dmlEvent instanceof TapInsertRecordEvent) {
                 inserted.incrementAndGet();
                 PDKLogger.info(TAG, "DML Write TapInsertDMLEvent {}", toJson(dmlEvent));
-            } else if(dmlEvent instanceof TapUpdateDMLEvent) {
+            } else if(dmlEvent instanceof TapUpdateRecordEvent) {
                 updated.incrementAndGet();
                 PDKLogger.info(TAG, "DML Write TapUpdateDMLEvent {}", toJson(dmlEvent));
-            } else if(dmlEvent instanceof TapDeleteDMLEvent) {
+            } else if(dmlEvent instanceof TapDeleteRecordEvent) {
                 deleted.incrementAndGet();
                 PDKLogger.info(TAG, "DML Write TapDeleteDMLEvent {}", toJson(dmlEvent));
             }
         }
         //Need to tell flow engine the write result
         writeListResultConsumer.accept(writeListResult()
-                .insertedCount(tapDMLEvents.size())
+                .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
     }
@@ -212,7 +211,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 20; i++) {
-                TapInsertDMLEvent recordEvent = insertDMLEvent(map(
+                TapInsertRecordEvent recordEvent = insertDMLEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
                         entry("name", "123"),
@@ -249,7 +248,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         while(!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 10; i++) {
-                TapInsertDMLEvent event = insertDMLEvent(map(
+                TapInsertRecordEvent event = insertDMLEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
                         entry("name", "123"),

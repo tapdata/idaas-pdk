@@ -5,28 +5,28 @@ import io.tapdata.entity.schema.TapTable;
 
 import java.util.Map;
 
-public class TapInsertDMLEvent extends TapDMLEvent {
+public class TapInsertRecordEvent extends TapRecordEvent {
     /**
      * The latest record, after insert and update
      * Value format should follow TapType formats
      */
     private Map<String, Object> after;
-    public TapInsertDMLEvent init() {
+    public TapInsertRecordEvent init() {
         time = System.currentTimeMillis();
         return this;
     }
 
-    public TapInsertDMLEvent referenceTime(Long referenceTime) {
+    public TapInsertRecordEvent referenceTime(Long referenceTime) {
         this.referenceTime = referenceTime;
         return this;
     }
 
-    public TapInsertDMLEvent after(Map<String, Object> after) {
+    public TapInsertRecordEvent after(Map<String, Object> after) {
         this.after = after;
         return this;
     }
 
-    public TapInsertDMLEvent table(TapTable table) {
+    public TapInsertRecordEvent table(TapTable table) {
         this.table = table;
         return this;
     }

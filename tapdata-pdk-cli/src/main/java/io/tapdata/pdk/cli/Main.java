@@ -21,7 +21,7 @@ public class Main {
         commandLine.addSubcommand("start", new StartCli());
         commandLine.addSubcommand("discoverSchema", new DiscoverSchemaCli());
         commandLine.addSubcommand("connectionTest", new ConnectionTestCli());
-        commandLine.addSubcommand("boot", new ConnectorProjectBootCli());
+        commandLine.addSubcommand("template", new ConnectorProjectBootCli());
         return commandLine;
     }
 }

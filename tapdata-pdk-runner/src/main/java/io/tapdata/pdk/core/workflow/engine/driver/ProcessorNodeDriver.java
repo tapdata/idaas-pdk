@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.dml.TapInsertDMLEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.pdk.apis.functions.processor.ProcessRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.ProcessorNode;
@@ -27,7 +27,7 @@ public class ProcessorNodeDriver extends Driver implements ListHandler<List<TapE
         for(List<TapEvent> events : list) {
             List<TapEvent> recordEvents = new ArrayList<>();
             for (TapEvent event : events) {
-                if(event instanceof TapInsertDMLEvent) {
+                if(event instanceof TapInsertRecordEvent) {
                     recordEvents.add(event);
                 }
             }

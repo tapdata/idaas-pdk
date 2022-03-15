@@ -1,15 +1,13 @@
 package io.tapdata.base;
 
 import io.tapdata.base.utils.Entry;
-import io.tapdata.entity.event.dml.TapDMLEvent;
-import io.tapdata.entity.event.dml.TapDeleteDMLEvent;
-import io.tapdata.entity.event.dml.TapInsertDMLEvent;
-import io.tapdata.entity.event.dml.TapUpdateDMLEvent;
+import io.tapdata.entity.event.dml.*;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.type.TapNumber;
 import io.tapdata.entity.type.TapString;
-import io.tapdata.entity.type.TapType;
 import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
@@ -148,20 +146,20 @@ public class ConnectorBase {
         return map;
     }
 
-    public TapInsertDMLEvent insertDMLEvent(Map<String, Object> after, TapTable tapTable) {
-        return new TapInsertDMLEvent().init().after(after).table(tapTable);
+    public TapInsertRecordEvent insertDMLEvent(Map<String, Object> after, TapTable tapTable) {
+        return new TapInsertRecordEvent().init().after(after).table(tapTable);
     }
 
-    public TapDeleteDMLEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
-        return new TapDeleteDMLEvent().init().before(before).table(tapTable);
+    public TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
+        return new TapDeleteRecordEvent().init().before(before).table(tapTable);
     }
 
-    public TapUpdateDMLEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
-        return new TapUpdateDMLEvent().init().before(before).after(after).table(tapTable);
+    public TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
+        return new TapUpdateRecordEvent().init().before(before).after(after).table(tapTable);
     }
 
-    public WriteListResult<TapDMLEvent> writeListResult() {
-        return new WriteListResult<TapDMLEvent>();
+    public WriteListResult<TapRecordEvent> writeListResult() {
+        return new WriteListResult<TapRecordEvent>();
     }
 
     public void sleep(long milliseconds) {

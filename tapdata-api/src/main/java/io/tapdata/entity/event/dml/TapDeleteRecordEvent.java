@@ -2,29 +2,27 @@ package io.tapdata.entity.event.dml;
 
 
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.value.TapValue;
 
-import java.util.List;
 import java.util.Map;
 
-public class TapDeleteDMLEvent extends TapDMLEvent {
+public class TapDeleteRecordEvent extends TapRecordEvent {
 
     private Map<String, Object> before;
-    public TapDeleteDMLEvent init() {
+    public TapDeleteRecordEvent init() {
         time = System.currentTimeMillis();
         return this;
     }
 
-    public TapDeleteDMLEvent referenceTime(Long referenceTime) {
+    public TapDeleteRecordEvent referenceTime(Long referenceTime) {
         this.referenceTime = referenceTime;
         return this;
     }
 
-    public TapDeleteDMLEvent before(Map<String, Object> before) {
+    public TapDeleteRecordEvent before(Map<String, Object> before) {
         this.before = before;
         return this;
     }
-    public TapDeleteDMLEvent table(TapTable table) {
+    public TapDeleteRecordEvent table(TapTable table) {
         this.table = table;
         return this;
     }
