@@ -3,17 +3,19 @@
 ![GitHub stars](https://img.shields.io/github/stars/tapdata/idaas-pdk?style=social&label=Star&maxAge=2592000)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-
 ## What is iDaaS
 
-Data as a service (DaaS) is a data management strategy that uses the cloud(or centralized data platform) to deliver data storage, integration, processing, and servicing capabilities in an on demand fashion.
+Data as a service (DaaS) is a data management strategy that uses the cloud(or centralized data platform) to deliver data
+storage, integration, processing, and servicing capabilities in an on demand fashion.
 
-Tapdata iDaaS, or Incremental Data as a Service, is an open source implementation of the DaaS architecture that puts focus on the incremental updating capability of the data platform.  In essense, iDaaS provides following capabilities:
+Tapdata iDaaS, or Incremental Data as a Service, is an open source implementation of the DaaS architecture that puts
+focus on the incremental updating capability of the data platform. In essense, iDaaS provides following capabilities:
 
+- Searchable data catalog, allows you to collect/manage/organize and search for all your data assets across your
+  organization
 
-- Searchable data catalog, allows you to collect/manage/organize and search for all your data assets across your organization
-
-- "Any to Any" real time data integration platform, allows you to move data from source systems to DaaS or to destinations like data warehouses or kafka
+- "Any to Any" real time data integration platform, allows you to move data from source systems to DaaS or to
+  destinations like data warehouses or kafka
 
 - Programmable data platform, every data related tasks can be managed & programmed via API or Shell
 
@@ -21,25 +23,28 @@ Tapdata iDaaS, or Incremental Data as a Service, is an open source implementatio
 
 ## What is PDK for iDaaS
 
-**PDK is Plugin Development Kit for iDaaS.** Provide an easier way to develop data source connectors  
-* **Database connectors** 
-  * MySql, Oracle, Postgres, etc. 
-* **SaaS connectors** 
-  * Facebook, Salesforce, Google docs, etc.
-* **Custom connectors**
-  * Connect your custom data sources.
+**PDK is Plugin Development Kit for iDaaS.** Provide an easier way to develop data source connectors
 
-PDK connectors provide data source to flow in iDaaS pipeline to process, join, etc, and flow in a target which is also provided by PDK connectors.
+* **Database connectors**
+    * MySql, Oracle, Postgres, etc.
+* **SaaS connectors**
+    * Facebook, Salesforce, Google docs, etc.
+* **Custom connectors**
+    * Connect your custom data sources.
+
+PDK connectors provide data source to flow in iDaaS pipeline to process, join, etc, and flow in a target which is also
+provided by PDK connectors.
 
 ![This is an image](docs/images/pdkFlowDiagram.gif)
-**Should have a diagram to help people understand** that PDK connectors are the leaf nodes in iDaaS DAG
-
 
 ## Quick Start
+
 Java 8+ and Maven need to be installed.
 
-Generate Java Sample Project, then start filling the necessary methods to implement a PDK connector. 
+Generate Java Sample Project, then start filling the necessary methods to implement a PDK connector.
+
 ```java
+
 @TapConnectorClass("spec.json")
 public class SampleConnector extends ConnectorBase implements TapConnector {
     /**
@@ -73,7 +78,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated -> connectionTest -> ended
-     * 
+     *
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
@@ -97,7 +102,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
      *  if(streamEnabled)
      *      streamRead
      * -> destroy -> ended
-     * 
+     *
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
@@ -132,7 +137,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
      *  if(streamEnabled)
      *      streamRead
      * -> destroy -> ended
-     * 
+     *
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
@@ -144,7 +149,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate stream records directly
-        while(!isShutDown.get()) {
+        while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 10; i++) {
                 TapInsertRecordEvent event = insertRecordEvent(map(
@@ -181,18 +186,21 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
     }
 }
 ```
-Each connector need to provide a json file like above, described in TapConnector annotation. 
 
-spec.json describes three types information,  
+Each connector need to provide a json file like above, described in TapConnector annotation.
+
+spec.json describes three types information,
+
 * properties
     - Connector name, icon and id.
 * configOptions
-    - Describe a form for user to input the information for how to connect and which database to open. 
+    - Describe a form for user to input the information for how to connect and which database to open.
 * openTypes (Not ready yet)
-    - This will be required when current data source need create table with proper types before insert records. Otherwise this key can be empty.    
-    - Describe the capability of types for current data source. 
-    - iDaaS Flow Engine will generate proper types when table creation is needed. 
-    
+    - This will be required when current data source need create table with proper types before insert records.
+      Otherwise this key can be empty.
+    - Describe the capability of types for current data source.
+    - iDaaS Flow Engine will generate proper types when table creation is needed.
+
 ```json
 {
   "properties": {
@@ -218,32 +226,58 @@ spec.json describes three types information,
         }
       }
     }
-  }, 
-  "openTypes" : {
-    
+  },
+  "openTypes": {
+    "varchar[($width)]": {
+      "byte": "64k",
+      "fixed": false,
+      "to": "typeString"
+    },
+    "smallint[($m)][unsigned][zerofill]": {
+      "bit": 4,
+      "unsigned": "unsigned",
+      "to": "typeNumber"
+    }
   }
 }
 
 ```
 
 ## Installation
+
 Java 8+ and Maven need to be installed.
 
 **[How to build my own PDK connector?](docs/deployment.md)**
 
 ## Open types
-Open types are the middle types across all data sources. 
 
-The open types we call [TapType](docs/open-type.md).  
+Open types are the middle types across all data sources.
 
+The open types we call [TapType](docs/open-type.md).
+
+If without TapType, the conversion lines is like below, 
 ![This is an image](docs/images/withoutTapType.png)
+
+With TapType in the middle of type conversion, the conversion can be maintainable and the fundamental for data processing, join, etc.  
+
 ![This is an image](docs/images/withTapType.png)
 
-
 ## Development Guide
-[TapType](docs/development.md)
+
+* iDaaS PDK provide the methods for developers to implement the corresponding source and target features.
+* iDaaS PDK provide many easy using API for developers to develop connectors in modern script style.  
+
+
+[Get started](docs/development.md)
 
 ## Test Driven Development
 
 ## PDK Registration
+
+## Roadmap
+
+Check out our [Roadmap for Core](https://github.com/tapdata/idaas-pdk/milestones) and
+our [Roadmap for Connectors](https://github.com/tapdata/idaas-pdk/projects/2) on GitHub. You'll see the features we're
+currently working on or about to. You may also give us insights, by adding your own issues and voting for specific
+features / integrations.
 
