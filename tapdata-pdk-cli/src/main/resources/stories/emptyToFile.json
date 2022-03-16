@@ -10,9 +10,9 @@
             },
             "id" : "s1",
             "pdkId" : "emptySource",
-            "group" : "tapdata",
+            "group" : "io.tapdata.connector.empty",
             "type" : "Source",
-            "minBuildNumber" : 0
+            "version" : "1.1-SNAPSHOT"
         },
         {
             "connectionConfig" : {
@@ -24,9 +24,9 @@
             },
             "id" : "t2",
             "pdkId" : "fileTarget",
-            "group" : "tapdata",
+            "group" : "io.tapdata.connector.file",
             "type" : "Target",
-            "minBuildNumber" : 0
+            "version" : "1.0-SNAPSHOT"
         }
     ],
     "dag" : [

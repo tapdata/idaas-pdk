@@ -24,8 +24,7 @@ import java.util.Map;
  */
 public class UploadFileService {
 
-  public static void upload(Map<String, InputStream> inputStreamMap, File file, List<String> jsons, String hostAndPort, String accessCode) {
-
+  public static void upload(Map<String, InputStream> inputStreamMap, File file, List<String> jsons, boolean latest, String hostAndPort, String accessCode) {
     String tokenUrl = hostAndPort + "/api/users/generatetoken";
     Map<String, String> param = new HashMap<>();
     param.put("accesscode", accessCode);
@@ -58,7 +57,15 @@ public class UploadFileService {
       for (String json : jsons) {
         builder.addFormDataPart("source", json);
       }
+      // if the jsons size == 1, the data received by TM will be weird, adding an empty string helps TM receive the
+      // proper data; the empty string should be dealt in TM.
+      if (jsons.size() == 1) {
+        builder.addFormDataPart("source", "");
+      }
     }
+
+    // whether replace the latest version
+    builder.addFormDataPart("latest", String.valueOf(latest));
 
     String url = hostAndPort + "/api/pdk/upload/source?access_token=" + token;
 

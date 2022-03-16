@@ -32,18 +32,18 @@ public class TapNodeClassFactory {
 
     }
 
-    public boolean hasTapConnectorNodeId(String pdkId, String group, int minBuildVersion) {
-        TapNodeInfo info = tapConnectorAnnotationHandler.getTapNodeInfo(pdkId, group, minBuildVersion);
+    public boolean hasTapConnectorNodeId(String pdkId, String group, String version) {
+        TapNodeInfo info = tapConnectorAnnotationHandler.getTapNodeInfo(pdkId, group, version);
         return info != null;
     }
 
-    public boolean hasTapProcessorNodeId(String pdkId, String group, int minBuildVersion) {
-        TapNodeInfo info = tapProcessorAnnotationHandler.getTapNodeInfo(pdkId, group, minBuildVersion);
+    public boolean hasTapProcessorNodeId(String pdkId, String group, String version) {
+        TapNodeInfo info = tapProcessorAnnotationHandler.getTapNodeInfo(pdkId, group, version);
         return info != null;
     }
 
-    public TapNodeInstance createTapConnector(String associateId, String pdkId, String group, int minBuildVersion) {
-        TapNodeInfo tapNodeInfo = tapConnectorAnnotationHandler.getTapNodeInfo(pdkId, group, minBuildVersion);
+    public TapNodeInstance createTapConnector(String associateId, String pdkId, String group, String version) {
+        TapNodeInfo tapNodeInfo = tapConnectorAnnotationHandler.getTapNodeInfo(pdkId, group, version);
         TapNodeInstance instance = create(tapNodeInfo, associateId, pdkId);
         if(instance != null) {
             return instance;
@@ -51,8 +51,8 @@ public class TapNodeClassFactory {
         throw new CoreException(ErrorCodes.NODE_CREATE_CONNECTOR_NOT_EXISTS, "Connector TapNodeId " + pdkId + " not found for associateId " + associateId);
     }
 
-    public TapNodeInstance createTapProcessor(String associateId, String tapNodeId, String group, int minBuildVersion) {
-        TapNodeInfo tapNodeInfo = tapProcessorAnnotationHandler.getTapNodeInfo(tapNodeId, group, minBuildVersion);
+    public TapNodeInstance createTapProcessor(String associateId, String tapNodeId, String group, String version) {
+        TapNodeInfo tapNodeInfo = tapProcessorAnnotationHandler.getTapNodeInfo(tapNodeId, group, version);
         TapNodeInstance instance = create(tapNodeInfo, associateId, tapNodeId);
         if(instance != null) {
             return instance;
@@ -159,16 +159,16 @@ public class TapNodeClassFactory {
 
     }
 
-    public TapNodeInfo getTapNodeInfoForConnector(String pdkId, String group, Integer minBuildNumber) {
-        return tapConnectorAnnotationHandler.getTapNodeInfo(pdkId, group, minBuildNumber);
+    public TapNodeInfo getTapNodeInfoForConnector(String pdkId, String group, String version) {
+        return tapConnectorAnnotationHandler.getTapNodeInfo(pdkId, group, version);
     }
 
     public Collection<TapNodeInfo> getConnectorTapNodeInfos() {
         return tapConnectorAnnotationHandler.getTapNodeInfos();
     }
 
-    public TapNodeInfo getTapNodeInfoForProcessor(String id, String group, Integer minBuildNumber) {
-        return tapProcessorAnnotationHandler.getTapNodeInfo(id, group, minBuildNumber);
+    public TapNodeInfo getTapNodeInfoForProcessor(String id, String group, String version) {
+        return tapProcessorAnnotationHandler.getTapNodeInfo(id, group, version);
     }
 
     public Collection<TapNodeInfo> getProcessorTapNodeInfos() {

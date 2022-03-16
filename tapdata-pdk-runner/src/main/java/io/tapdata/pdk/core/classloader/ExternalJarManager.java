@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.classloader;
 
 import com.google.common.collect.Lists;
-import io.tapdata.pdk.apis.annotations.TapConnector;
+import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.AnnotationUtils;
@@ -10,7 +10,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
@@ -178,6 +177,9 @@ public class ExternalJarManager {
                         PDKLogger.warn(TAG, "tap-running is not a directory, will delete it, create a directory again");
                         FileUtils.forceDelete(finalTheRunningFolder);
                         FileUtils.forceMkdir(finalTheRunningFolder);
+                    } else {
+                        FileUtils.forceDelete(finalTheRunningFolder);
+                        FileUtils.forceMkdir(finalTheRunningFolder);
                     }
 
                     String fileNameWithoutExtension = jar.getName().substring(0, jar.getName().length() - ".jar".length());
@@ -254,7 +256,7 @@ public class ExternalJarManager {
                   )
                   .setUrls(urls)
                   .addClassLoader(dependencyURLClassLoader.getActualClassLoader()));
-                Set<Class<?>> connectorClasses = reflections.getTypesAnnotatedWith(TapConnector.class, true);
+                Set<Class<?>> connectorClasses = reflections.getTypesAnnotatedWith(TapConnectorClass.class, true);
 //                System.out.println("connectorClasses " + connectorClasses);
             }
         }

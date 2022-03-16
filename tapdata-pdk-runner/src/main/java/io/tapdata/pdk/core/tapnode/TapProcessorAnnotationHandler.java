@@ -3,8 +3,8 @@ package io.tapdata.pdk.core.tapnode;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
-import io.tapdata.pdk.apis.TapRecordProcessor;
-import io.tapdata.pdk.apis.annotations.TapProcessor;
+import io.tapdata.pdk.apis.TapProcessor;
+import io.tapdata.pdk.apis.annotations.TapProcessorClass;
 import io.tapdata.pdk.core.error.CoreException;
 import org.apache.commons.io.IOUtils;
 
@@ -27,23 +27,23 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
             newerIdGroupTapNodeInfoMap = new ConcurrentHashMap<>();
             PDKLogger.info(TAG, "--------------TapProcessor Classes Start------------- {}", classes.size());
             for(Class<?> clazz : classes) {
-                TapProcessor tapProcessor = clazz.getAnnotation(TapProcessor.class);
-                if(tapProcessor != null) {
-                    URL url = clazz.getClassLoader().getResource(tapProcessor.value());
+                TapProcessorClass tapProcessorClass = clazz.getAnnotation(TapProcessorClass.class);
+                if(tapProcessorClass != null) {
+                    URL url = clazz.getClassLoader().getResource(tapProcessorClass.value());
                     if(url != null) {
                         TapNodeSpecification tapNodeSpecification = null;
                         try {
                             InputStream is = url.openStream();
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
                             TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
-                            tapNodeSpecification = tapNodeContainer.getSpecification();
+                            tapNodeSpecification = tapNodeContainer.getProperties();
                             String errorMessage = null;
                             if(tapNodeSpecification == null)
                                 errorMessage = "Specification not found";
                             if(errorMessage == null)
                                 errorMessage = tapNodeSpecification.verify();
                             if(errorMessage != null) {
-                                PDKLogger.warn(TAG, "Tap node specification is illegal, will be ignored, path {} content {} errorMessage {}", tapProcessor.value(), json, errorMessage);
+                                PDKLogger.warn(TAG, "Tap node specification is illegal, will be ignored, path {} content {} errorMessage {}", tapProcessorClass.value(), json, errorMessage);
                                 continue;
                             }
                             String connectorType = findConnectorType(clazz);
@@ -58,23 +58,19 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
                                 tapNodeInfo.setNodeType(connectorType);
                                 tapNodeInfo.setNodeClass(clazz);
                                 newerIdGroupTapNodeInfoMap.put(tapNodeSpecification.idAndGroup(), tapNodeInfo);
-                                PDKLogger.info(TAG, "Found new processor {} type {} version {} buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getBuildNumber());
+                                PDKLogger.info(TAG, "Found new processor {} type {} version {} buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getVersion());
                             } else {
                                 TapNodeSpecification specification = tapNodeInfo.getTapNodeSpecification();
-                                if(specification.getBuildNumber() < tapNodeSpecification.getBuildNumber()) {
-                                    tapNodeInfo.setTapNodeSpecification(tapNodeSpecification);
-                                    tapNodeInfo.setNodeType(connectorType);
-                                    tapNodeInfo.setNodeClass(clazz);
-                                    PDKLogger.warn(TAG, "Found newer processor {} type {} version {} buildNumber {} replaced buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getBuildNumber(), specification.getBuildNumber());
-                                } else {
-                                    PDKLogger.warn(TAG, "Older processor will be ignored, processor {} type {} version {} buildNumber {}", specification.idAndGroup(), tapNodeInfo.getNodeType(), specification.getVersion(), specification.getBuildNumber());
-                                }
+                                tapNodeInfo.setTapNodeSpecification(specification);
+                                tapNodeInfo.setNodeType(connectorType);
+                                tapNodeInfo.setNodeClass(clazz);
+                                PDKLogger.warn(TAG, "Found newer processor {} type {}", tapNodeSpecification.idAndGroup(), connectorType);
                             }
                         } catch(Throwable throwable) {
-                            PDKLogger.error(TAG, "Handle tap node specification failed, path {} error {}", tapProcessor.value(), throwable.getMessage());
+                            PDKLogger.error(TAG, "Handle tap node specification failed, path {} error {}", tapProcessorClass.value(), throwable.getMessage());
                         }
                     } else {
-                        PDKLogger.error(TAG, "Resource {} doesn't be found, processor class {} will be ignored", tapProcessor.value(), clazz);
+                        PDKLogger.error(TAG, "Resource {} doesn't be found, processor class {} will be ignored", tapProcessorClass.value(), clazz);
                     }
                 }
             }
@@ -84,7 +80,7 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
 
     private String findConnectorType(Class<?> clazz) {
         boolean isProcessor = false;
-        if(TapRecordProcessor.class.isAssignableFrom(clazz)) {
+        if(TapProcessor.class.isAssignableFrom(clazz)) {
             isProcessor = true;
         }
         if(isProcessor) {
@@ -95,7 +91,7 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
 
     @Override
     public Class<? extends Annotation> watchAnnotation() {
-        return TapProcessor.class;
+        return TapProcessorClass.class;
     }
 
 }

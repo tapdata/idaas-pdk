@@ -11,7 +11,6 @@
       <dependency>
         <groupId>io.tapdata.pdk</groupId>
         <artifactId>tapdata-pdk-api</artifactId>
-        <version>0.2-SNAPSHOT</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
@@ -32,6 +31,13 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <archive>
+                        <manifestEntries>
+                            <Implementation-Title>${project.artifactId}</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Vendor>${project.groupId}</Implementation-Vendor>
+                        </manifestEntries>
+                    </archive>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
 

@@ -5,7 +5,6 @@ import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 public class TapContext {
     protected TapNodeSpecification specification;
-//    protected Logger logger;
 
     protected final DefaultConcurrentMap attributes = new DefaultConcurrentMap();
 
@@ -33,11 +32,4 @@ public class TapContext {
         this.specification = specification;
     }
 
-    //    public Logger getLogger() {
-//        return logger;
-//    }
-//
-//    public void setLogger(Logger logger) {
-//        this.logger = logger;
-//    }
 }

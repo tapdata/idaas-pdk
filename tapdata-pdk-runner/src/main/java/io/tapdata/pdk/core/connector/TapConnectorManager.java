@@ -58,23 +58,23 @@ public class TapConnectorManager {
         return jarNameTapConnectorMap.get(jarName);
     }
 
-    public TapNodeInstance createConnectorInstance(String associateId, String pdkId, String group, int minBuildVersion) {
+    public TapNodeInstance createConnectorInstance(String associateId, String pdkId, String group, String version) {
         Collection<TapConnector> connectors = jarNameTapConnectorMap.values();
         for(TapConnector connector : connectors) {
-            if(connector.hasTapConnectorNodeId(pdkId, group, minBuildVersion)) {
-                TapNodeInstance nodeInstance = connector.createTapConnector(associateId, pdkId, group, minBuildVersion);
+            if(connector.hasTapConnectorNodeId(pdkId, group, version)) {
+                TapNodeInstance nodeInstance = connector.createTapConnector(associateId, pdkId, group, version);
                 if(nodeInstance != null)
                     return nodeInstance;
             }
         }
         return null;
     }
-    public TapNodeInstance createProcessorInstance(String associateId, String pdkId, String group, int minBuildVersion) {
+    public TapNodeInstance createProcessorInstance(String associateId, String pdkId, String group, String version) {
         //TODO can be optimized for performance
         Collection<TapConnector> connectors = jarNameTapConnectorMap.values();
         for(TapConnector connector : connectors) {
-            if(connector.hasTapProcessorNodeId(pdkId, group, minBuildVersion)) {
-                TapNodeInstance nodeInstance = connector.createTapProcessor(associateId, pdkId, group, minBuildVersion);
+            if(connector.hasTapProcessorNodeId(pdkId, group, version)) {
+                TapNodeInstance nodeInstance = connector.createTapProcessor(associateId, pdkId, group, version);
                 if(nodeInstance != null)
                     return nodeInstance;
             }

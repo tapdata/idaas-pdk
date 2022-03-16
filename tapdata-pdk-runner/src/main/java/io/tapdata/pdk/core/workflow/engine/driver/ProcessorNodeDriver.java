@@ -1,8 +1,8 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.pdk.apis.functions.processor.ProcessRecordFunction;
-import io.tapdata.pdk.apis.entity.TapEvent;
-import io.tapdata.pdk.apis.entity.dml.TapRecordEvent;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.ProcessorNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
@@ -27,7 +27,7 @@ public class ProcessorNodeDriver extends Driver implements ListHandler<List<TapE
         for(List<TapEvent> events : list) {
             List<TapEvent> recordEvents = new ArrayList<>();
             for (TapEvent event : events) {
-                if(event instanceof TapRecordEvent) {
+                if(event instanceof TapInsertRecordEvent) {
                     recordEvents.add(event);
                 }
             }
@@ -35,13 +35,9 @@ public class ProcessorNodeDriver extends Driver implements ListHandler<List<TapE
             if(processRecordFunction != null) {
                 PDKLogger.debug(TAG, "Process {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.PROCESSOR_PROCESS_RECORD, () -> {
-                    processRecordFunction.process(processorNode.getProcessorContext(), recordEvents, (event, throwable) -> {
-                        if(throwable != null) {
-                            PDKLogger.error(TAG, "Process record failed, {}, record size, {}, {}", throwable.getMessage(), event.size(), LoggerUtils.processorNodeMessage(processorNode));
-                        } else {
-                            PDKLogger.debug(TAG, "Processed {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
-                            offer(recordEvents);
-                        }
+                    processRecordFunction.process(processorNode.getProcessorContext(), recordEvents, (event) -> {
+                        PDKLogger.debug(TAG, "Processed {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
+                        offer(recordEvents);
                     });
                 }, "insert " + LoggerUtils.processorNodeMessage(processorNode), TAG);
             }

@@ -12,9 +12,9 @@ public class DiscoverSchemaMain {
     //
     public static void main(String... args) {
         args = new String[] {"discoverSchema",
-                "--id", "vika-pdk",
-                "--group", "tapdata",
-                "--buildNumber", "1",
+                "--id", "emptySource",
+                "--group", "io.tapdata.connector.empty",
+                "--version", "1.0-SNAPSHOT",
                 "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"};
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);

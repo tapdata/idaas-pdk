@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * TODO start monitor thread for checking slow invocation
@@ -31,37 +32,48 @@ public class PDKInvocationMonitor {
         }
         return instance;
     }
-
     public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
-        invokePDKMethod(method, r, message, logTag, false, 0, 0);
+        invokePDKMethod(method, r, message, logTag, null, false, 0, 0);
     }
-    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, boolean async, long retryTimes, long retryPeriodSeconds) {
+    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
+        invokePDKMethod(method, r, message, logTag, errorConsumer, false, 0, 0);
+    }
+    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
         if(async) {
             new Thread(() -> {
                 if(retryTimes > 0) {
                     CommonUtils.autoRetryAsync(() -> {
-                        invokePDKMethodPrivate(method, r, message, logTag);
+                        invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
                     }, logTag, message, retryTimes, retryPeriodSeconds);
                 } else {
-                    invokePDKMethodPrivate(method, r, message, logTag);
+                    invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
                 }
             }, "async invoke method " + method.name()).start();
         } else {
-            invokePDKMethodPrivate(method, r, message, logTag);
+            invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
         }
     }
 
-    private void invokePDKMethodPrivate(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
+    private void invokePDKMethodPrivate(PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
         String invokeId = methodStart(method);
         Throwable theError = null;
         try {
             r.run();
         } catch(CoreException coreException) {
             theError = coreException;
-            throw coreException;
+            if(errorConsumer != null) {
+                errorConsumer.accept(coreException);
+            } else {
+                throw coreException;
+            }
         } catch(Throwable throwable) {
             theError = throwable;
-            throw new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
+            CoreException coreException = new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
+            if(errorConsumer != null) {
+                errorConsumer.accept(coreException);
+            } else {
+                throw coreException;
+            }
         } finally {
             methodEnd(method, invokeId, theError, message, logTag);
         }

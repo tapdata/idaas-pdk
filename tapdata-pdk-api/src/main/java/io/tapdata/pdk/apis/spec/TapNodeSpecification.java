@@ -14,21 +14,22 @@ public class TapNodeSpecification {
     private String group; //Unique key for each enterprise.
     private String version;
     private String icon;
-    private Integer buildNumber;
-    private Map<String, Object> applications;
+    private Map<String, Object> configOptions;
 
     public String verify() {
         if(name == null)
             return "missing name";
-        if(group == null)
-            return "missing group";
         if(id == null)
             return "missing id";
+        if(group == null)
+            return "missing group";
         if(version == null)
             return "missing version";
-        if(buildNumber == null)
-            return "missing buildNumber";
         return null;
+    }
+
+    public String toString() {
+        return "TapNodeSpecification name: " + name + " id: " + id + " group: " + group + " version: " + version;
     }
 
     public String getGroup() {
@@ -37,14 +38,6 @@ public class TapNodeSpecification {
 
     public void setGroup(String group) {
         this.group = group;
-    }
-
-    public Integer getBuildNumber() {
-        return buildNumber;
-    }
-
-    public void setBuildNumber(Integer buildNumber) {
-        this.buildNumber = buildNumber;
     }
 
     public String getName() {
@@ -64,11 +57,11 @@ public class TapNodeSpecification {
     }
 
     public String idAndGroup() {
-        return id + "@" + group;
+        return id + "@" + group + "-v" + version;
     }
 
-    public static String idAndGroup(String id, String group) {
-        return id + "@" + group;
+    public static String idAndGroup(String id, String group, String version) {
+        return id + "@" + group + "-v" + version;
     }
 
     public String getVersion() {
@@ -87,11 +80,11 @@ public class TapNodeSpecification {
         this.icon = icon;
     }
 
-    public Map<String, Object> getApplications() {
-        return applications;
+    public Map<String, Object> getConfigOptions() {
+        return configOptions;
     }
 
-    public void setApplications(Map<String, Object> applications) {
-        this.applications = applications;
+    public void setConfigOptions(Map<String, Object> configOptions) {
+        this.configOptions = configOptions;
     }
 }

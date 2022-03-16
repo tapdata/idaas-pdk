@@ -14,7 +14,8 @@ public class StoryMain {
     public static void main(String... args) {
         String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
         args = new String[]{"start",
-                rootPath + "emptyToFile.json",
+//                rootPath + "emptyToFile.json",
+                rootPath + "emptyToEmpty.json",
 //                rootPath + "vikaToVika.json",
         };
 

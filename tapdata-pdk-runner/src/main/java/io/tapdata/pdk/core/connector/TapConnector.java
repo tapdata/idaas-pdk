@@ -86,28 +86,28 @@ public class TapConnector {
         }
     }
 
-    public boolean hasTapConnectorNodeId(String pdkId, String group, int minBuildVersion) {
-        return getTapNodeClassFactory().hasTapConnectorNodeId(pdkId, group, minBuildVersion);
+    public boolean hasTapConnectorNodeId(String pdkId, String group, String version) {
+        return getTapNodeClassFactory().hasTapConnectorNodeId(pdkId, group, version);
     }
 
-    public boolean hasTapProcessorNodeId(String pdkId, String group, int minBuildVersion) {
-        return getTapNodeClassFactory().hasTapProcessorNodeId(pdkId, group, minBuildVersion);
+    public boolean hasTapProcessorNodeId(String pdkId, String group, String version) {
+        return getTapNodeClassFactory().hasTapProcessorNodeId(pdkId, group, version);
     }
 
-    public TapNodeInstance createTapConnector(String associateId, String pdkId, String group, int minBuildVersion) {
+    public TapNodeInstance createTapConnector(String associateId, String pdkId, String group, String version) {
         synchronized (stateMachine) {
             try {
-                return tapNodeClassFactory.createTapConnector(associateId, pdkId, group, minBuildVersion);
+                return tapNodeClassFactory.createTapConnector(associateId, pdkId, group, version);
             } finally {
                 checkUsedOrNot();
             }
         }
     }
 
-    public TapNodeInstance createTapProcessor(String associateId, String pdkId, String group, int minBuildVersion) {
+    public TapNodeInstance createTapProcessor(String associateId, String pdkId, String group, String version) {
         synchronized (stateMachine) {
             try {
-                return tapNodeClassFactory.createTapProcessor(associateId, pdkId, group, minBuildVersion);
+                return tapNodeClassFactory.createTapProcessor(associateId, pdkId, group, version);
             } finally {
                 checkUsedOrNot();
             }
