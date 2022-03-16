@@ -197,7 +197,7 @@ spec.json describes three types information,
     - Describe a form for user to input the information for how to connect and which database to open.
 * openTypes (Not ready yet)
     - This will be required when current data source need create table with proper types before insert records.
-      Otherwise this key can be empty.
+      Otherwise, this key can be empty.
     - Describe the capability of types for current data source.
     - iDaaS Flow Engine will generate proper types when table creation is needed.
 
@@ -243,36 +243,50 @@ spec.json describes three types information,
 
 ```
 
-## Installation
+## How to create PDK java project?
 
-Java 8+ and Maven need to be installed.
+Requirements
+*	install java 8 and above
+*   install maven
 
-**[How to build my own PDK connector?](docs/deployment.md)**
+Install from source
 
-## Open types
+```shell
+  git clone https://github.com/tapdata/idaas-pdk.git
+  cd idaas-pdk
+  mvn clean install
+```
+Create connector project
+```shell
+./bin/tap template --group io.tapdata --name MyDataSourceConnector --version 0.0.1 --output ./connectors
+```
+Use IntelliJ IDE to open idaas-pdk, you can find your project under connectors module. 
+* IntelliJ download: [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
 
-Open types are the middle types across all data sources.
-
-The open types we call [TapType](docs/open-type.md).
-
-If without TapType, the conversion lines is like below, 
-![This is an image](docs/images/withoutTapType.png)
-
-With TapType in the middle of type conversion, the conversion can be maintainable and the fundamental for data processing, join, etc.  
-
-![This is an image](docs/images/withTapType.png)
 
 ## Development Guide
-
-* iDaaS PDK provide the methods for developers to implement the corresponding source and target features.
-* iDaaS PDK provide many easy using API for developers to develop connectors in modern script style.  
-
+PDK need developer to provide below, 
+* Provide open types json mapping for data types to TapTypes.
+* Provide the methods for developers to implement the corresponding source and target features.
 
 [Get started](docs/development.md)
 
 ## Test Driven Development
+[TDD guide](docs/tdd.md)
 
 ## PDK Registration
+```
+./bin/tap register
+  Push PDK jar file into Tapdata
+      [FILE...]            One ore more pdk jar files
+  -a, --auth=<authToken>   Provide auth token to register
+  -h, --help               TapData cli help
+  -l, --latest             whether replace the latest version, default is true
+  -t, --tm=<tmUrl>         Tapdata TM url
+```
+```
+./bin/tap register -a 3324cfdf-7d3e-4792-bd32-571638d4562f -t http://192.168.1.126:3004 dist/your-connector-v1.0-SNAPSHOT.jar
+```
 
 ## Roadmap
 

@@ -68,11 +68,11 @@ json 右侧为对这个类型的能力边界描述, 与数据库类型预计转�
     "float[($float)][unsigned][zerofill]": {"fbit": 16, "unsigned": "unsigned", "to": "typeNumber"},
     "double[($float)][unsigned][zerofill]": {"float": 256, "unsigned": "unsigned", "to": "typeNumber"},
     "decimal($precision, $scale)[unsigned][zerofill]": {"precision":[1, 65], "scale": [0, 30], "unsigned": "unsigned", "to": "typeNumber"},
-    "date": {range": ["1000-01-01", "9999-12-31"], "to": "typeDate"},
-    "time": {range": ["-838:59:59","838:59:59"], "to": "typeInterval:typeNumber"},
-    "year[($m)]": {range": [1901, 2155], "to": "typeYear:typeNumber"},
-    "datetime": {range": ["1000-01-01 00:00:00", "9999-12-31 23:59:59"], "to": "typeDateTime"},
-    "timestamp": {to": "typeDateTime"},
+    "date": {"range": ["1000-01-01", "9999-12-31"], "to": "typeDate"},
+    "time": {"range": ["-838:59:59","838:59:59"], "to": "typeInterval:typeNumber"},
+    "year[($m)]": {"range": [1901, 2155], "to": "typeYear:typeNumber"},
+    "datetime": {"range": ["1000-01-01 00:00:00", "9999-12-31 23:59:59"], "to": "typeDateTime"},
+    "timestamp": {"to": "typeDateTime"},
     "char[($width)]": {"byte": 255, "to": "typeString"},
     "varchar[($width)]": {"byte": "64k", "fixed": false, "to": "typeString"},
     "tinyblob": {"byte": 255, "to": "typeBinary"},
@@ -85,5 +85,5 @@ json 右侧为对这个类型的能力边界描述, 与数据库类型预计转�
     "longtext": {"byte": "4g", "to": "typeString"},
     "bit($width)": {"byte": 8, "to": "typeBinary"},
     "binary($width)": {"byte": 255, "to": "typeBinary"},
-    "varbinary($width)": {"byte": 255, fixed": false, "to": "typeBinary"}
+    "varbinary($width)": {"byte": 255, "fixed": false, "to": "typeBinary"}
 }
