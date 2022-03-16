@@ -4,8 +4,8 @@
 ### Use IntelliJ IDEA to open idaas-pdk
 ### We leave empty methods for you to fill up 
 
-![This is an image](images/sourceStateDiagram.svg)
-![This is an image](images/targetStateDiagram.svg)
+![This is an image](images/sourceStateDiagram.jpg)
+![This is an image](images/targetStateDiagram.jpg)
 Method invocation life circle
 
     init

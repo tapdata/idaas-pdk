@@ -31,6 +31,7 @@ Tapdata iDaaS, or Incremental Data as a Service, is an open source implementatio
 
 PDK connectors provide data source to flow in iDaaS pipeline to process, join, etc, and flow in a target which is also provided by PDK connectors.
 
+![This is an image](docs/images/pdkFlowDiagram.gif)
 **Should have a diagram to help people understand** that PDK connectors are the leaf nodes in iDaaS DAG
 
 
