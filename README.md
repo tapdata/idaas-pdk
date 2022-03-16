@@ -41,6 +41,19 @@ Generate Java Sample Project, then start filling the necessary methods to implem
 ```java
 @TapConnectorClass("spec.json")
 public class SampleConnector extends ConnectorBase implements TapConnector {
+    /**
+     * The method invocation life circle is below,
+     * initiated -> discoverSchema -> ended
+     *
+     * You need to create the connection to your data source and release the connection after usage in this method.
+     * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
+     *
+     * Consumer can accept multiple times, especially huge number of table list.
+     * This is sync method, once the method return, Flow engine will consider schema has been discovered.
+     *
+     * @param connectionContext
+     * @param consumer
+     */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig

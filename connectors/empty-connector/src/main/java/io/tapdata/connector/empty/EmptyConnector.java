@@ -30,7 +30,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated -> discoverSchema -> ended
-     * <p>
+     *
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
@@ -173,7 +173,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      *  if(streamEnabled)
      *      streamRead
      * -> destroy -> ended
-     * <p>
+     *
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
@@ -195,7 +195,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      *  if(streamEnabled)
      *      streamRead
      * -> destroy -> ended
-     * <p>
+     *
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
@@ -232,7 +232,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      *  if(streamEnabled)
      *      streamRead
      * -> destroy -> ended
-     * <p>
+     *
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
@@ -265,7 +265,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
-     * <p>
+     *
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
