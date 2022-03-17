@@ -13,6 +13,7 @@ import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
@@ -113,16 +114,32 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
+        connectorFunctions.supportBatchOffset(this::batchOffset);
+        connectorFunctions.supportStreamOffset(this::streamOffset);
 
         connectorFunctions.supportWriteRecord(this::writeRecord);
+
         //Below capabilities, developer can decide to implement or not.
-//        connectorFunctions.supportBatchOffset(this::batchOffset);
-//        connectorFunctions.supportStreamOffset(this::streamOffset);
 //        connectorFunctions.supportCreateTable(this::createTable);
 //        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
+    }
+
+    /**
+     *
+     * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
+     * @param connectorContext the node context in a DAG
+     */
+    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
+        if(offsetStartTime != null)
+            throw new NotSupportedException();
+        return null;
+    }
+
+    private Object batchOffset(TapConnectorContext connectorContext) {
+        return null;
     }
 
     /**

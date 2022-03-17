@@ -125,7 +125,6 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
-
         connectorFunctions.supportWriteRecord(this::writeRecord);
 
         codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));

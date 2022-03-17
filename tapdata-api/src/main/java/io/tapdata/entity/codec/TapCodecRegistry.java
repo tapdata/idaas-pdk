@@ -9,7 +9,7 @@ public class TapCodecRegistry {
     private final Map<Class<?>, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<? extends TapValue<?, ?>>, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
 
-    private final Map<String, ToTapValueCodec<?>> fieldToTapValueCodecMap = new ConcurrentHashMap<>();
+//    private final Map<String, ToTapValueCodec<?>> fieldToTapValueCodecMap = new ConcurrentHashMap<>();
 
     public TapCodecRegistry() {
     }
@@ -32,14 +32,14 @@ public class TapCodecRegistry {
         classFromTapValueCodecMap.remove(tapTypeClass);
     }
 
-    public <T extends TapValue<?, ?>> TapCodecRegistry registerFieldToTapValue(String fieldName, ToTapValueCodec<T> toTapValueCodec) {
-        fieldToTapValueCodecMap.put(fieldName, toTapValueCodec);
-        return this;
-    }
-
-    public void unregisterFieldToTapValue(String fieldName) {
-        fieldToTapValueCodecMap.remove(fieldName);
-    }
+//    public <T extends TapValue<?, ?>> TapCodecRegistry registerFieldToTapValue(String fieldName, ToTapValueCodec<T> toTapValueCodec) {
+//        fieldToTapValueCodecMap.put(fieldName, toTapValueCodec);
+//        return this;
+//    }
+//
+//    public void unregisterFieldToTapValue(String fieldName) {
+//        fieldToTapValueCodecMap.remove(fieldName);
+//    }
 
 
     public ToTapValueCodec<?> getToTapValueCodec(Class<?> clazz) {
@@ -58,8 +58,8 @@ public class TapCodecRegistry {
         return codec;
     }
 
-    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
-        ToTapValueCodec<?> codec = fieldToTapValueCodecMap.get(fieldName);
-        return codec;
-    }
+//    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
+//        ToTapValueCodec<?> codec = fieldToTapValueCodecMap.get(fieldName);
+//        return codec;
+//    }
 }

@@ -22,16 +22,60 @@ With TapType in the middle of type conversion, the conversion can be maintainabl
 
 Above is the important concept to implement PDK connector, especially for the data source which need create table for insert records. 
 
+### TapType
+There are 10 types of TapType. 
+* TapBoolean
+* TapDate
+* TapArray
+* TapRaw
+* TapNumber
+* TapBinary
+* TapTime
+* TapMap
+* TapString
+* TapDateTime
+
+We also have 10 types of TapValue for each TapType to combine value with it's TapType.
+* TapBooleanValue
+* TapDateValue
+* TapArrayValue
+* TapRawValue
+* TapNumberValue
+* TapBinaryValue
+* TapTimeValue
+* TapMapValue
+* TapStringValue
+* TapDateTimeValue
+
+
+## idaas-pdk modules
+* **connectors**
+    - **connector-core**
+        - The common core is the parent module for every connector module, provide convenient API to connectors
+    - **empty-connector**
+        - Empty connector to output dummy records
+    - **file-connector**
+        - File connector to append record in user specified local file
+    - **tdd-connector**
+        - TDD Connector provide sample data for PDK tests
+* **tapdata-pdk-api**
+    - PDK API, every connector depend on the API
+* **tapdata-pdk-cli**
+    - Run PDK in CLI, like register to Tapdata, test methods, etc
+* **tapdata-pdk-runner**
+    - Provide integration API to Tapdata FlowEngine, also provide a tiny flow engine for test purpose
+    
 ## Develop PDK connector
 
 There are 11 methods to implement. The more developer implement, the more features that your connector provides. 
 * PDK Source methods to implement
-    - BatchCount (must as a source)
-        - Return the total record size for batch read. 
     - BatchOffset
-        - Return current batch offset, PDK developer define what is batch offset. Batch offset will be provided in batch read method when recover the batch read.  
+      - Return current batch offset, PDK developer define what is batch offset. Batch offset will be provided in batch read method when recover the batch read.
+        
+    - BatchCount (must as a source)
+        - Return the total record size for batch read.
     - BatchRead (must as a source)
-        - Return the record events from batch read, once this method end, flow engine will consider batch read is finished. 
+        - Return the record events from batch read, once this method end, flow engine will consider batch read is finished.
     - StreamRead
         - Return the record events or ddl events from stream read, this method will always be called once it returns.       
     - StreamOffset
@@ -55,13 +99,247 @@ Source methods invocation state diagram
 ![This is an image](images/sourceStateDiagram.jpg)
 Target methods invocation state diagram
 ![This is an image](images/targetStateDiagram.jpg)
+### Batch Read
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    /**
+     * In connectorContext,
+     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+     * current instance is serving for the table from connectorContext.
+     *
+     * @param connectorContext
+     * @param offset
+     * @param tapReadOffsetConsumer
+     */
+    private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+        //TODO batch read all records from database when offset == null, use consumer#accept to send to flow engine.
+        //TODO if offset != null, batch read records started from the offset condition. 
+        
+        //Below is sample code to generate records directly.
+        for (int j = 0; j < 1; j++) {
+            List<TapEvent> tapEvents = list();
+            for (int i = 0; i < 20; i++) {
+                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
+                        entry("id", counter.incrementAndGet()),
+                        entry("description", "123"),
+                        entry("name", "123"),
+                        entry("age", 12)
+                ), connectorContext.getTable());
+                tapEvents.add(recordEvent);
+            }
+            tapReadOffsetConsumer.accept(tapEvents);
+        }
+    }
+}
+```
+### Batch Offset
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    /**
+     * Record the offset for batch read. 
+     * Every time consumer#accept a batch of records, need update offset here. 
+     * 
+     * In this case batchOffset method can return the offset in runtime.
+     */
+    private Object offset;
+    
+    /**
+     * Get batch offset in runtime. 
+     * If null, mean no offset, batch read start from beginning. 
+     * 
+     * @param connectorContext
+     * @return
+     */
+    private Object batchOffset(TapConnectorContext connectorContext) {
+        return offset;
+    }
+}
+```
+### Batch Count
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    /**
+     * In connectorContext,
+     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+     * current instance is serving for the table from connectorContext.
+     *
+     * @param connectorContext
+     * @param offset
+     * @return
+     */
+    private long batchCount(TapConnectorContext connectorContext, Object offset) {
+        //TODO Count the batch size. 
+        //TODO if offset != null, mean batch read is recovered from a offset, the count must consider the offset condition.
+        
+        //if don't support count by offset condition
+//        if(offset != null)
+//            throw new NotSupportedException();
+        
+        return 20L;
+    }
+}
+``` 
+### Stream Read
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    /**
+     * In connectorContext,
+     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+     * current instance is serving for the table from connectorContext.
+     *
+     * @param connectorContext
+     * @param offset
+     * @param consumer
+     */
+    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
+        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
+        //TODO if offset != null, stream read will continue from offset condition. 
+        
+        //Below is sample code to generate stream records directly
+        while (!isShutDown.get()) {
+            List<TapEvent> tapEvents = list();
+            for (int i = 0; i < 10; i++) {
+                TapInsertRecordEvent event = insertRecordEvent(map(
+                        entry("id", counter.incrementAndGet()),
+                        entry("description", "123"),
+                        entry("name", "123"),
+                        entry("age", 12)
+                ), connectorContext.getTable());
+                tapEvents.add(event);
+            }
+            consumer.accept(tapEvents);
+        }
+    }
+}
+```
 
+### Stream Offset
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    /**
+     * Record the offset for stream read. 
+     * Every time consumer#accept a batch of records, need update offset here. 
+     *
+     * In this case streamOffset method can return the offset in runtime.
+     */
+    private Object streamOffset;
+
+    /**
+     * Get stream offset in runtime. 
+     * If null, mean no offset, stream read start from beginning. 
+     *
+     * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
+     * @param connectorContext the node context in a DAG
+     */
+    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
+        //TODO return the offset of stream read in runtime. 
+        //TODO offsetStartTime != null, return offset information by start time.
+        
+        //If don't support return offset information by start time, need throw NotSupportedException. 
+//        if(offsetStartTime != null)
+//            throw new NotSupportedException();
+        return streamOffset;
+    }
+}
+```
+### Register Capabilities
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    /**
+     * Register connector capabilities here.
+     *
+     * To be as a source, please implement at least one of batchReadFunction or streamReadFunction.
+     * To be as a target, please implement WriteRecordFunction.
+     * To be as a source and target, please implement the functions that source and target required.
+     *
+     * @param connectorFunctions
+     * @param codecRegistry
+     */
+    @Override
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+        //Register the 11 methods to implement. 
+        //If connector don't provide the capability, need remove this method registration. 
+        connectorFunctions.supportBatchRead(this::batchRead);
+        connectorFunctions.supportStreamRead(this::streamRead);
+        connectorFunctions.supportBatchCount(this::batchCount);
+        connectorFunctions.supportBatchOffset(this::batchOffset);
+        connectorFunctions.supportStreamOffset(this::streamOffset);
+        connectorFunctions.supportWriteRecord(this::writeRecord);
+        
+        //Below capabilities, developer can decide to implement or not.
+//        connectorFunctions.supportCreateTable(this::createTable);
+//        connectorFunctions.supportQueryByFilter(this::queryByFilter);
+//        connectorFunctions.supportAlterTable(this::alterTable);
+//        connectorFunctions.supportDropTable(this::dropTable);
+//        connectorFunctions.supportClearTable(this::clearTable);
+
+        codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));
+    }
+}
+```
+
+### Custom Codec
+PDK can recognize generic types in your records and convert them into TapValue.
+
+To convert custom class, developer need to provide the codec for how to convert the custom class into a type of TapValue. So that different data source can be able to insert this value. 
+
+The origin object will be stored in the field originValue of TapValue, if the target is the same data source, connector can still get the original value to insert. 
+
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    @Override
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+        //TDDUser object will be convert into json string.  
+        codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));
+    }
+}
+```
+### Write Record
+```java
+@TapConnectorClass("spec.json")
+public class SampleConnector extends ConnectorBase implements TapConnector {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+        //TODO write records into database
+
+        //Below is sample code to print received events which suppose to write to database.
+        AtomicLong inserted = new AtomicLong(0); //insert count
+        AtomicLong updated = new AtomicLong(0); //update count
+        AtomicLong deleted = new AtomicLong(0); //delete count
+        for(TapRecordEvent recordEvent : tapRecordEvents) {
+            if(recordEvent instanceof TapInsertRecordEvent) {
+                inserted.incrementAndGet();
+                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
+            } else if(recordEvent instanceof TapUpdateRecordEvent) {
+                updated.incrementAndGet();
+                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+            } else if(recordEvent instanceof TapDeleteRecordEvent) {
+                deleted.incrementAndGet();
+                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
+            }
+        }
+        //Need to tell flow engine the write result
+        writeListResultConsumer.accept(writeListResult()
+                .insertedCount(inserted.get())
+                .modifiedCount(updated.get())
+                .removedCount(deleted.get()));
+    }
+}
+```
 
 ## After development
 ```shell
   cd yourConnector
   mvn package
 ```
+During mvn package, [TDD](tdd.md) unit tests will be executed, developer need to fix the unit test errors before register to Tapdata. 
+
 The PDK connector jar will be generated under idaas-pdk/dist directory. 
 
 
@@ -79,122 +357,4 @@ The PDK connector jar will be generated under idaas-pdk/dist directory.
 
 ## Now you can use your PDK connector in Tapdata website
 
-# Project structure
 
-## Modules
-    connectors 
-    //Parent module to put all the connectors below.
-        connector-core 
-        //Common core is the parent module for every connector module
-        empty-connector 
-        //Empty connector to output dummy records
-        file-connector 
-        //File connector to append record in user specified local file
-        mongodb-connector 
-        //Mongodb connector, not finished
-        vika-connector 
-        //Vika connector, support batchRead and write to a datasheet. API token and spaceId must be specified in connector form
-    tapdata-pdk-api 
-    //PDK API, every connector depend on the API
-    tapdata-pdk-cli 
-    //Run PDK in CLI, like register to Tapdata, test methods, etc
-    tapdata-pdk-runner 
-    //Provide integration API to Tapdata FlowEngine, also provide a tiny flow engine for test purpose
-
-# How to Test
-
-## CLI Test (Temporary solution)
-Run connectionTest method
-
-    package io.tapdata.pdk.cli;
-    
-    public class ConnectionTestMain {
-    
-    public static void main(String... args) {
-        args = new String[] {"connectionTest",
-            "--id", "vika-pdk",
-            "--group", "tapdata",
-            "--buildNumber", "1",
-            "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
-        };
-
-        Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-    }
-
-Run discoverSchema method
-    
-    package io.tapdata.pdk.cli;
-
-    public class DiscoverSchemaMain {
-
-        public static void main(String... args) {
-            args = new String[] {"discoverSchema",
-                "--id", "vika-pdk",
-                "--group", "tapdata",
-                "--buildNumber", "1",
-                "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
-            };
-            
-            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-        }
-    }
-
-To describe a simple DAG to connect Source to any Target, to test that whether target get the expected result
-
-StoryMain
-    
-    package io.tapdata.pdk.cli;
-
-    public class StoryMain {
-    
-        public static void main(String... args) {
-            String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
-            args = new String[]{"start",
-                    rootPath + "emptyToFile.json",
-            };
-    
-            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-        }
-
-    }
-
-DAG json file
-
-    {
-        "id" : "dag1",
-        "nodes" : [
-            {
-                "connectionConfig" : {},
-                "table" : {
-                    "name" : "empty-table1",
-                    "id" : "empty-table1"
-                },
-                "id" : "s1",
-                "pdkId" : "emptySource",
-                "group" : "tapdata",
-                "type" : "Source",
-                "minBuildNumber" : 0
-            },
-            {
-                "connectionConfig" : {
-                    "folderPath" : "/Users/aplomb/dev/tapdata/AgentProjects/tmp"
-                },
-                "table" : {
-                    "name" : "target1.txt",
-                    "id" : "target1.txt"
-                },
-                "id" : "t2",
-                "pdkId" : "fileTarget",
-                "group" : "tapdata",
-                "type" : "Target",
-                "minBuildNumber" : 0
-            }
-        ],
-        "dag" : [
-            ["s1", "t2"]
-        ],
-        "jobOptions" : {
-            "queueSize" : 100,
-            "queueBatchSize" : 100
-        }
-    }
