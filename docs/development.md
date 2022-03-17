@@ -109,10 +109,11 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
-     * @param offset
-     * @param tapReadOffsetConsumer
+     * @param offset the offset that batch read start from
+     * @param batchSize the batch size for the max record list size when consumer#accept a batch
+     * @param consumer push records in Flow engine
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> consumer) {
         //TODO batch read all records from database when offset == null, use consumer#accept to send to flow engine.
         //TODO if offset != null, batch read records started from the offset condition. 
         
@@ -128,7 +129,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
                 ), connectorContext.getTable());
                 tapEvents.add(recordEvent);
             }
-            tapReadOffsetConsumer.accept(tapEvents);
+            consumer.accept(tapEvents);
         }
     }
 }
@@ -353,7 +354,7 @@ The PDK connector jar will be generated under idaas-pdk/dist directory.
   -l, --latest             whether replace the latest version, default is true
   -t, --tm=<tmUrl>         Tapdata TM url
 ```
-    ./bin/tap register -a 3324cfdf-7d3e-4792-bd32-571638d4562f -t http://192.168.1.126:3004 dist/your-connector-v1.0-SNAPSHOT.jar
+    ./bin/tap register -a token-abcdefg-hijklmnop -t http://host:port dist/your-connector-v1.0-SNAPSHOT.jar
 
 ## Now you can use your PDK connector in Tapdata website
 

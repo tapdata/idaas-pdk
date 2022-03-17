@@ -52,119 +52,84 @@ Then the connection.json under src/test/resources/config directory should be lik
 ## Unit tests
 Below are the unit tests that every PDK connector has to pass.  
 * ConnectionTestTest
-    - Input:
+    - Precondition:
         - connection.json, "table" key in connection.json will not be used. 
-    - Expect: 
+    - Test steps: 
         - connectionTest method return at least on successfully Test Item or return list of non-failed Test Items
+    
 * DiscoverSchemaTest
-    - Input:
+    - Precondition:
       - connection.json, "table" key in connection.json will not be used.
-    - Expect:
+    - Test steps:
       - discoverSchema method return at least one table. 
+    
 * BatchOffsetTest
+    - Precondition:
+        - connection.json, prepare empty table
+        - batch read only      
+        - writeRecord method is implemented
+    - Test steps:
+        - batchCount, make sure count is 0, if not, clearTable to remove all records
+        - create another job, insert 10 records
+        - prepare a dag job, flow records into tdd-connector target
+        - batchRead with batchSize is 6, first time batchRead record list size should be 6
+        - job stop, call batchOffset method to save batch offset
+        - job start again, given the recovered offset
+        - batchCount with recovered offset, return 4 or throw NotSupportedException, batchCount with null offset to redo again
+        - if supported, batchRead with recovered write 4 records into tdd connect target
+        - if not support, batchRead write 10 records into tdd connector target
+        - create another job, delete the 10 records
+        - batchCount, make sure count is 0 again
+        
 * StreamOffsetTest
-* CreateTableWithOpenTypesTest
-* DifferentStructureDatabaseTest
-* SameStructureDatabaseTest
-
-
-
-
-
-# How to Test
-
-## CLI Test (Temporary solution)
-Run connectionTest method
-
-    package io.tapdata.pdk.cli;
-    
-    public class ConnectionTestMain {
-    
-    public static void main(String... args) {
-        args = new String[] {"connectionTest",
-            "--id", "vika-pdk",
-            "--group", "tapdata",
-            "--buildNumber", "1",
-            "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
-        };
-
-        Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-    }
-
-Run discoverSchema method
-
-    package io.tapdata.pdk.cli;
-
-    public class DiscoverSchemaMain {
-
-        public static void main(String... args) {
-            args = new String[] {"discoverSchema",
-                "--id", "vika-pdk",
-                "--group", "tapdata",
-                "--buildNumber", "1",
-                "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"
-            };
-            
-            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-        }
-    }
-
-To describe a simple DAG to connect Source to any Target, to test that whether target get the expected result
-
-StoryMain
-
-    package io.tapdata.pdk.cli;
-
-    public class StoryMain {
-    
-        public static void main(String... args) {
-            String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
-            args = new String[]{"start",
-                    rootPath + "emptyToFile.json",
-            };
-    
-            Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
-        }
-
-    }
-
-DAG json file
-
-    {
-        "id" : "dag1",
-        "nodes" : [
-            {
-                "connectionConfig" : {},
-                "table" : {
-                    "name" : "empty-table1",
-                    "id" : "empty-table1"
-                },
-                "id" : "s1",
-                "pdkId" : "emptySource",
-                "group" : "tapdata",
-                "type" : "Source",
-                "minBuildNumber" : 0
-            },
-            {
-                "connectionConfig" : {
-                    "folderPath" : "/Users/aplomb/dev/tapdata/AgentProjects/tmp"
-                },
-                "table" : {
-                    "name" : "target1.txt",
-                    "id" : "target1.txt"
-                },
-                "id" : "t2",
-                "pdkId" : "fileTarget",
-                "group" : "tapdata",
-                "type" : "Target",
-                "minBuildNumber" : 0
-            }
-        ],
-        "dag" : [
-            ["s1", "t2"]
-        ],
-        "jobOptions" : {
-            "queueSize" : 100,
-            "queueBatchSize" : 100
-        }
-    }
+    - Precondition:
+        - connection.json, prepare empty table
+        - batch read only      
+        - writeRecord method is implemented
+    - Test steps:
+        - batchCount, make sure count is 0, if not, clearTable to remove all records
+        - prepare a dag job, flow records into tdd-connector target        
+        - enter stream read state  
+        - create another job, insert 3 records, update 2, delete 1
+        - tdd connector target verify the stream events are correct
+        - stop job, call streamOffset method to save stream offset
+        - create another job, insert 9 records, update 2, delete 1
+        - job start again, given the recovered stream offset
+        - enter stream read state
+        - tdd connector target verify the stream events are correct
+        - create another job, delete the 10 records
+        - batchCount, make sure count is 0 again  
+        
+* CreateTableWithOpenTypesTest (Not ready yet)
+        
+* SourceTest
+    - Precondition:
+        - connection.json, prepare empty table
+        - writeRecord method is implemented
+        - enable the batch and stream
+    - Test steps:
+        - batchCount, make sure count is 0, if not, clearTable to remove all records
+        - create another job, insert 10 records with many fields cover all the TapTypes
+        - prepare a dag job, flow records into tdd-connector target
+        - batchRead with batchSize is 6, every time batchRead record list size can not exceed 6
+        - batchRead second time, all 10 records have been inserted into tdd connector target
+        - tdd connector target verify all records with correct values and types
+        - enter stream state
+        - create another job, insert one, update one, delete one
+        - tdd connector target verify the stream events are correct
+        - create another job, delete the 10 records
+        - batchCount , make sure count is 0 again   
+  
+* TargetTest
+    - Precondition:
+        - connection.json, prepare empty table
+        - queryByFilter method is implemented
+    - Test steps: 
+        - batchCount, make sure count is 0, if not, clearTable to remove all records
+        - prepare a dag job, use tdd-connector source insert 10 records (with many fields cover all the TapTypes) into current connector
+        - use queryByFilter to verify the 10 records are correct values and types
+        - tdd-connector source update 5 records in 10
+        - use queryByFilter to verify the 5 records are update correctly
+        - tdd-connector source delete the 10 records  
+        - use queryByFilter to verify the 10 records are deleted
+        - batchCount , make sure count is 0 again
