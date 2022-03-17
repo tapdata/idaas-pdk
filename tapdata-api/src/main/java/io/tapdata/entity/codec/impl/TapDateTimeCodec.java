@@ -20,8 +20,6 @@ public class TapDateTimeCodec implements ToTapValueCodec<TapDateTimeValue>, From
 
     @Override
     public TapDateTimeValue toTapValue(Object value) {
-        if(value == null)
-            return null;
 
         DateTime dateTime = null;
         if(value instanceof DateTime) {

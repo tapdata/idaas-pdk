@@ -116,7 +116,7 @@ public class SourceNodeDriver extends Driver {
             }
             Object finalRecoveredOffset = recoveredOffset;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
-                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
+                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, 100, (events) -> {
                         if (events != null && !events.isEmpty()) {
                             PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offer(filterEvents(events));

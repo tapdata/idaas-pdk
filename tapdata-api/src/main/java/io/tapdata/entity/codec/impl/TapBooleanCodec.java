@@ -18,9 +18,6 @@ public class TapBooleanCodec implements ToTapValueCodec<TapBooleanValue>, FromTa
 
     @Override
     public TapBooleanValue toTapValue(Object value) {
-        if(value == null)
-            return null;
-
         TapBooleanValue numberValue = null;
         if(value instanceof Number) {
             numberValue = new TapBooleanValue(((Number) value).intValue() != 0);

@@ -17,8 +17,6 @@ public class TapBinaryCodec implements ToTapValueCodec<TapBinaryValue>, FromTapV
 
     @Override
     public TapBinaryValue toTapValue(Object value) {
-        if(value == null)
-            return null;
 
         TapBinaryValue arrayValue = new TapBinaryValue((byte[]) value);
 

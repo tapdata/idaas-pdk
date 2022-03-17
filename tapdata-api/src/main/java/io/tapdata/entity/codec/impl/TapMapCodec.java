@@ -19,8 +19,6 @@ public class TapMapCodec implements ToTapValueCodec<TapMapValue>, FromTapValueCo
 
     @Override
     public TapMapValue toTapValue(Object value) {
-        if(value == null)
-            return null;
 
         TapMapValue arrayValue = new TapMapValue((Map<?, ?>) value);
 

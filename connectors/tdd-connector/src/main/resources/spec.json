@@ -1,0 +1,12 @@
+{
+  "properties": {
+    "name": "TDDSource",
+    "icon": "icons/icon.png",
+    "id": "tdd-source"
+  },
+  "configOptions": {
+  },
+  "openTypes": {
+
+  }
+}
