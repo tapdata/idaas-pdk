@@ -202,7 +202,10 @@ PDK need developer to provide below,
 [Get started](docs/development.md)
 
 ## Test Driven Development
-[TDD guide](docs/tdd.md)
+PDK connector will run unit tests during maven package. Also when register to Tapdata, your connector must pass those unit tests before the register to Tapdata.
+This is the way we ensure our PDK connector quality. 
+
+[TDD tests](docs/tdd.md)
 
 ## PDK Registration
 ```
@@ -213,8 +216,7 @@ PDK need developer to provide below,
   -h, --help               TapData cli help
   -l, --latest             whether replace the latest version, default is true
   -t, --tm=<tmUrl>         Tapdata TM url
-```
-```
+  
 ./bin/tap register -a token-abcdefg-hijklmnop -t http://host:port dist/your-connector-v1.0-SNAPSHOT.jar
 ```
 
