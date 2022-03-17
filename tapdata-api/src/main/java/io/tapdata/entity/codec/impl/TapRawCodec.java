@@ -17,8 +17,6 @@ public class TapRawCodec implements ToTapValueCodec<TapRawValue>, FromTapValueCo
 
     @Override
     public TapRawValue toTapValue(Object value) {
-        if(value == null)
-            return null;
 
         TapRawValue arrayValue = new TapRawValue(value);
 

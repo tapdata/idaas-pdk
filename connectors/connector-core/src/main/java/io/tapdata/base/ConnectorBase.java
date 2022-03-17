@@ -6,8 +6,7 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.type.TapNumber;
-import io.tapdata.entity.type.TapString;
+import io.tapdata.entity.type.*;
 import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
@@ -110,6 +109,38 @@ public class ConnectorBase {
 
     public TapNumber tapNumber() {
         return new TapNumber();
+    }
+
+    public TapRaw tapRaw() {
+        return new TapRaw();
+    }
+
+    public TapArray tapArray() {
+        return new TapArray();
+    }
+
+    public TapMap tapMap() {
+        return new TapMap();
+    }
+
+    public TapDate tapDate() {
+        return new TapDate();
+    }
+
+    public TapBoolean tapBoolean() {
+        return new TapBoolean();
+    }
+
+    public TapBinary tapBinary() {
+        return new TapBinary();
+    }
+
+    public TapTime tapTime() {
+        return new TapTime();
+    }
+
+    public TapDateTime tapDateTime() {
+        return new TapDateTime();
     }
 
     public TestItem testItem(String item, int resultCode) {
