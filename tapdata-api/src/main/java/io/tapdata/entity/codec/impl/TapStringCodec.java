@@ -17,8 +17,6 @@ public class TapStringCodec implements FromTapValueCodec<TapStringValue>, ToTapV
 
     @Override
     public TapStringValue toTapValue(Object value) {
-        if(value == null)
-            return null;
         TapStringValue stringValue;
         Class<?> clazz = value.getClass();
         if(value instanceof String) {

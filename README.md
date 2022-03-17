@@ -35,7 +35,7 @@ focus on the incremental updating capability of the data platform. In essense, i
 PDK connectors provide data source to flow in iDaaS pipeline to process, join, etc, and flow in a target which is also
 provided by PDK connectors.
 
-![This is an image](docs/images/pdkFlowDiagram.gif)
+[comment]: <> (![This is an image]&#40;docs/images/pdkFlowDiagram.gif&#41;)
 
 ## Quick Start
 
@@ -47,19 +47,7 @@ Generate Java Sample Project, then start filling the necessary methods to implem
 
 @TapConnectorClass("spec.json")
 public class SampleConnector extends ConnectorBase implements TapConnector {
-    /**
-     * The method invocation life circle is below,
-     * initiated -> discoverSchema -> ended
-     *
-     * You need to create the connection to your data source and release the connection after usage in this method.
-     * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     *
-     * Consumer can accept multiple times, especially huge number of table list.
-     * This is sync method, once the method return, Flow engine will consider schema has been discovered.
-     *
-     * @param connectionContext
-     * @param consumer
-     */
+    
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
@@ -75,18 +63,6 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
         ));
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated -> connectionTest -> ended
-     *
-     * You need to create the connection to your data source and release the connection after usage in this method.
-     * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     *
-     * consumer can call accept method multiple times to test different items
-     *
-     * @param connectionContext
-     * @return
-     */
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         //Connection test
@@ -94,24 +70,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
         consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param consumer
-     */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> consumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
@@ -129,23 +88,6 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
         }
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param consumer
-     */
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate stream records directly
@@ -164,20 +106,6 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
         }
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(needCreateTable)
-     *      createTable
-     *  if(needClearTable)
-     *      clearTable
-     *  writeRecord
-     * -> destroy -> ended
-     *
-     * @param connectorContext
-     * @param tapRecordEvents
-     * @param consumer
-     */
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> consumer) {
         //TODO write records into database
         //Need to tell flow engine the write result
@@ -193,9 +121,9 @@ spec.json describes three types information,
 
 * properties
     - Connector name, icon and id.
-* configOptions
+* [configOptions](docs/configOptions.md)
     - Describe a form for user to input the information for how to connect and which database to open.
-* openTypes (Not ready yet)
+* [openTypes](docs/open-type.md) (Not ready yet)
     - This will be required when current data source need create table with proper types before insert records.
       Otherwise, this key can be empty.
     - Describe the capability of types for current data source.
@@ -243,6 +171,8 @@ spec.json describes three types information,
 
 ```
 
+
+
 ## How to create PDK java project?
 
 Requirements
@@ -272,7 +202,10 @@ PDK need developer to provide below,
 [Get started](docs/development.md)
 
 ## Test Driven Development
-[TDD guide](docs/tdd.md)
+PDK connector will run unit tests during maven package. Also when register to Tapdata, your connector must pass those unit tests before the register to Tapdata.
+This is the way we ensure our PDK connector quality. 
+
+[TDD tests](docs/tdd.md)
 
 ## PDK Registration
 ```
@@ -283,9 +216,8 @@ PDK need developer to provide below,
   -h, --help               TapData cli help
   -l, --latest             whether replace the latest version, default is true
   -t, --tm=<tmUrl>         Tapdata TM url
-```
-```
-./bin/tap register -a 3324cfdf-7d3e-4792-bd32-571638d4562f -t http://192.168.1.126:3004 dist/your-connector-v1.0-SNAPSHOT.jar
+  
+./bin/tap register -a token-abcdefg-hijklmnop -t http://host:port dist/your-connector-v1.0-SNAPSHOT.jar
 ```
 
 ## Roadmap

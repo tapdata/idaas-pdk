@@ -29,8 +29,6 @@ public class TapNumberCodec implements ToTapValueCodec<TapNumberValue>, FromTapV
 
     @Override
     public TapNumberValue toTapValue(Object value) {
-        if(value == null)
-            return null;
 
         TapNumberValue numberValue = null;
         if(value instanceof Number) {

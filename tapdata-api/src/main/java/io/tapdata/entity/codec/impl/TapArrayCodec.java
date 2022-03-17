@@ -19,8 +19,6 @@ public class TapArrayCodec implements ToTapValueCodec<TapArrayValue>, FromTapVal
 
     @Override
     public TapArrayValue toTapValue(Object value) {
-        if(value == null)
-            return null;
 
         TapArrayValue arrayValue = null;
         if (List.class.isAssignableFrom(value.getClass())) {

@@ -15,6 +15,7 @@
         <module>empty-connector</module>
         <module>file-connector</module>
         <module>vika-connector</module>
+        <module>tdd-connector</module>
     </modules>
 
     <build>
