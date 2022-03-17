@@ -1,4 +1,4 @@
-package io.tapdata.connector.tdd;
+package ${package};
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
@@ -7,13 +7,13 @@ import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.value.TapStringValue;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
@@ -22,9 +22,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+/**
+ * Implemented both TapTarget and TapSource, means the connector can be Source and Target at the same time.
+ * If the connector want to be only Source or Target, then only implement one interface, TapSource or TapTarget.
+ *
+ * Please revise "spec.json" under resources directory, to specify your connector's id, group, icon and user input form etc.
+ */
 @TapConnectorClass("spec.json")
-public class TDDConnector extends ConnectorBase implements TapConnector {
-    public static final String TAG = TDDConnector.class.getSimpleName();
+public class ${libName}Connector extends ConnectorBase implements TapConnector {
+    public static final String TAG = ${libName}Connector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
 
@@ -47,29 +53,18 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
         //Sample code shows how to define tables with specified fields.
         consumer.accept(list(
                 //Define first table
-                table("tdd-table")
+                table("empty-table1")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "tapString").tapType(tapString()).isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("tddUser", "tddUser").tapType(tapString()))
-                        .add(field("tapString", "tapString").tapType(tapString()))
-                        .add(field("tapString(100)", "tapString(100)").tapType(tapString().length(100L).fixed(false)))
-                        .add(field("tapString(100)Fixed", "tapString(100) fixed").tapType(tapString().length(100L).fixed(true)))
-                        .add(field("tapBoolean", "tapBoolean").tapType(tapBoolean()))
-                        .add(field("tapDate", "tapDate").tapType(tapDate()))
-                        .add(field("tapArray-String", "tapArray").tapType(tapArray()))
-                        .add(field("tapArray-Double", "tapArray").tapType(tapArray()))
-                        .add(field("tapArray-TDDUser", "tapArray").tapType(tapArray()))
-                        .add(field("tapRaw-TDDUser", "tapRaw").tapType(tapRaw()))
-                        .add(field("tapNumber", "tapNumber").tapType(tapNumber()))
-                        .add(field("tapNumber(8)", "tapNumber(8)").tapType(tapNumber().length(8L)))
-                        .add(field("tapNumber(5,2)", "tapNumber(5,2)").tapType(tapNumber().precision(5L).scale(2L)))
-                        .add(field("tapBinary", "tapBinary").tapType(tapBinary()))
-                        .add(field("tapTime", "tapTime").tapType(tapTime()))
-                        .add(field("tapMap-String-String", "tapMap").tapType(tapMap()))
-                        .add(field("tapMap-String-Double", "tapMap").tapType(tapMap()))
-                        .add(field("tapMap-String-TDDUser", "tapMap").tapType(tapMap()))
-                        .add(field("tapDateTime", "tapDateTime").tapType(tapDateTime()))
-                        .add(field("tapDateTimeTimeZone", "tapDateTime").tapType(tapDateTime().hasTimeZone(true)))
+                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
+                        .add(field("description", "TEXT"))
+                        .add(field("name", "VARCHAR"))
+                        .add(field("age", "DOUBLE")),
+                //Define second table
+                table("empty-table2")
+                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
+                        .add(field("description", "TEXT"))
+                        .add(field("name", "VARCHAR"))
+                        .add(field("age", "DOUBLE"))
         ));
     }
 
@@ -107,7 +102,7 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
         //When test failed
 //        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
         //When test successfully, but some warn is reported.
- //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
+        //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
     }
 
     /**
@@ -125,18 +120,32 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
+        connectorFunctions.supportBatchOffset(this::batchOffset);
+        connectorFunctions.supportStreamOffset(this::streamOffset);
+
         connectorFunctions.supportWriteRecord(this::writeRecord);
 
-        codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));
-
         //Below capabilities, developer can decide to implement or not.
-//        connectorFunctions.supportBatchOffset(this::batchOffset);
-//        connectorFunctions.supportStreamOffset(this::streamOffset);
 //        connectorFunctions.supportCreateTable(this::createTable);
 //        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
+    }
+
+    /**
+     *
+     * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
+     * @param connectorContext the node context in a DAG
+     */
+    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
+        if(offsetStartTime != null)
+            throw new NotSupportedException();
+        return null;
+    }
+
+    private Object batchOffset(TapConnectorContext connectorContext) {
+        return null;
     }
 
     /**
