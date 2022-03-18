@@ -1,45 +1,18 @@
 {
-  "specification": {
+  "properties": {
     "name": "YourConnectorName",
     "icon": "icons/icon.png",
     "id": "your_connector_id"
   },
-  "applications": {
+  "configOptions": {
     "connection": {
       "type": "object",
       "properties": {
         "token": {
           "type": "string",
-          "title": "API Token",
+          "title": "Connection",
           "x-decorator": "FormItem",
           "x-component": "Input"
-        },
-        "spaceId": {
-          "type": "string",
-          "title": "Space ID",
-          "x-decorator": "FormItem",
-          "x-component": "Input"
-        }
-      }
-    },
-    "node": {
-      "type": "object",
-      "properties": {
-        "checkboxGroup": {
-          "type": "array",
-          "title": "复选",
-          "x-decorator": "FormItem",
-          "x-component": "Checkbox.Group",
-          "enum": [
-            {
-              "label": "选项1",
-              "value": 1
-            },
-            {
-              "label": "选项2",
-              "value": 2
-            }
-          ]
         }
       }
     }
