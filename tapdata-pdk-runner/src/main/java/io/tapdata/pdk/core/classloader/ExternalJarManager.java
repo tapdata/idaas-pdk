@@ -178,8 +178,8 @@ public class ExternalJarManager {
                         FileUtils.forceDelete(finalTheRunningFolder);
                         FileUtils.forceMkdir(finalTheRunningFolder);
                     } else {
-                        FileUtils.forceDelete(finalTheRunningFolder);
-                        FileUtils.forceMkdir(finalTheRunningFolder);
+//                        FileUtils.forceDelete(finalTheRunningFolder);
+//                        FileUtils.forceMkdir(finalTheRunningFolder);
                     }
 
                     String fileNameWithoutExtension = jar.getName().substring(0, jar.getName().length() - ".jar".length());
