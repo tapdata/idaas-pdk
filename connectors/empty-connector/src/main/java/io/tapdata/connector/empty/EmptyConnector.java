@@ -128,16 +128,27 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
     }
 
     /**
+     * This method will be invoked any time when Flow engine need to save stream offset.
+     * If stream read has started, this method need return current stream offset, otherwise return null.
      *
      * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
      * @param connectorContext the node context in a DAG
      */
     Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
-        if(offsetStartTime != null)
-            throw new NotSupportedException();
+        //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Flow engine knows, otherwise the result will be unpredictable.
+//        if(offsetStartTime != null)
+//            throw new NotSupportedException();
+        //TODO return stream offset
         return null;
     }
 
+    /**
+     * The method will be invoked any time when Flow engine need to save batch offset.
+     * If batch read has started, this method need return current batch offset, otherwise return null.
+     *
+     * @param connectorContext the node context in a DAG
+     * @return
+     */
     private Object batchOffset(TapConnectorContext connectorContext) {
         return null;
     }

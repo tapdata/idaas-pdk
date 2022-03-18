@@ -63,33 +63,8 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
         ));
     }
 
-    @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
-        //Connection test
-        //TODO execute connection test here
-        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
-    }
-
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> consumer) {
-        //TODO batch read all records from database, use consumer#accept to send to flow engine.
-        //Below is sample code to generate records directly.
-        for (int j = 0; j < 1; j++) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 20; i++) {
-                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                        entry("id", counter.incrementAndGet()),
-                        entry("description", "123"),
-                        entry("name", "123"),
-                        entry("age", 12)
-                ), connectorContext.getTable());
-                tapEvents.add(recordEvent);
-            }
-            consumer.accept(tapEvents);
-        }
-    }
-
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
+        //TODO using CDC API or log to read stream records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate stream records directly
         while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
@@ -188,7 +163,7 @@ Install from source
 ```
 Create connector project
 ```shell
-./bin/tap template --group io.tapdata --name MyDataSourceConnector --version 0.0.1 --output ./connectors
+./bin/tap template --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
 ```
 Use IntelliJ IDE to open idaas-pdk, you can find your project under connectors module. 
 * IntelliJ download: [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)

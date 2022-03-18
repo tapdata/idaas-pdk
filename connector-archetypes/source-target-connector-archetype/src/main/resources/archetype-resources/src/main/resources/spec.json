@@ -2,7 +2,7 @@
   "specification": {
     "name": "YourConnectorName",
     "icon": "icons/icon.png",
-    "id": "your_connector_id",
+    "id": "your_connector_id"
   },
   "applications": {
     "connection": {
