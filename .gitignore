@@ -26,10 +26,9 @@ hs_err_pid*
 
 .gradle
 .idea/
-!.idea/icon*.png
 *.iml
 target/
-!/tapdata-pdk-api/src/main/java/io/tapdata/pdk/apis/functions/target/
+!/tapdata-pdk-api/src/main/java/io/tapdata/pdk/apis/functions/connector/target/
 build/
 src/main/gen
 src/main/resources/templates.list
