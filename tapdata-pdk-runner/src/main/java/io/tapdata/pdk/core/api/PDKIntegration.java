@@ -397,6 +397,7 @@ public class PDKIntegration {
     }
 
     public static void refreshJars() {
+        init();
         tapConnectorManager.refreshJars();
     }
 
