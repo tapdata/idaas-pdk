@@ -81,6 +81,7 @@ public class ConnectionTestTest {
         Assert.assertEquals("{age=12.0}",aerospikeStringSink.client.get(policy, key, "age").bins.toString());
 
         clearKeyInKeySet(sinkConfig,keyStr);
+        aerospikeStringSink.close();
 
     }
 }

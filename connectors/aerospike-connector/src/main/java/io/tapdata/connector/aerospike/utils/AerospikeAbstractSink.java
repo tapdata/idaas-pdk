@@ -66,6 +66,11 @@ public abstract class AerospikeAbstractSink<K, V> {
     }
 
     public void write(IRecord<String> record) {
+        /*TODO
+           对于key record bin 的关系有一些疑问
+           在pulasr的实现中只能指定column(bin)后进行写入，IRecord中record相当于column value，即按列写
+           对于empty生成的json的数据是一行一行的，所以在IRecord中使用binValuesMap记录键值对信息，再进行写入，即按行写
+        */
         KeyValue<K, V> keyValue = this.extractKeyValue(record);
         Key key = new Key(this.aerospikeSinkConfig.getKeyspace(), this.aerospikeSinkConfig.getKeySet(), keyValue.getKey().toString());
 
