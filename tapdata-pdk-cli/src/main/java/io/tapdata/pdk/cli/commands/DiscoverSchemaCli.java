@@ -2,7 +2,7 @@ package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.entity.utils.DefaultMap;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;

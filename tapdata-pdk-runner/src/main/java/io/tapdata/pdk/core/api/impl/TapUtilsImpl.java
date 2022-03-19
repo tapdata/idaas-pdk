@@ -1,8 +1,5 @@
 package io.tapdata.pdk.core.api.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
-import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.utils.TapUtils;
 import io.tapdata.pdk.core.annotations.Implementation;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
@@ -17,20 +14,7 @@ public class TapUtilsImpl implements TapUtils {
         ExecutorsManager.getInstance().getScheduledExecutorService().schedule(runnable, seconds, TimeUnit.SECONDS);
     }
 
-    @Override
-    public String toJson(Object obj) {
-        return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect);
-    }
 
-    @Override
-    public DefaultMap fromJson(String json) {
-        return JSON.parseObject(json, DefaultMap.class);
-    }
-
-    @Override
-    public <T> T fromJson(String json, Class<T> clazz) {
-        return JSON.parseObject(json, clazz);
-    }
 
     public static void main(String... args) {
 //        String str = new TapUtilsImpl().format("{}sadfdf{} sakldfjlaf{}", "a{}a", "{}}", "d{}d");

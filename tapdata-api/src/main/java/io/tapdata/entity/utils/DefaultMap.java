@@ -1,4 +1,4 @@
-package io.tapdata.pdk.apis.common;
+package io.tapdata.entity.utils;
 
 
 import java.util.LinkedHashMap;
