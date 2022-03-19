@@ -1,0 +1,11 @@
+{
+  "seedHosts": "192.168.153.131:3000",
+  "keyspace": "test",
+  "columnName": "description",
+  "userName": "",
+  "password": "",
+  "keySet": "test_set_name",
+  "maxConcurrentRequests": 5,
+  "timeoutMs": 100,
+  "retries": 1
+}
