@@ -13,7 +13,6 @@ import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
-import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
@@ -62,18 +61,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         ));
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated -> connectionTest -> ended
-     *
-     * You need to create the connection to your data source and release the connection after usage in this method.
-     * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     *
-     * consumer can call accept method multiple times to test different items
-     *
-     * @param connectionContext
-     * @return
-     */
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         //Assume below tests are successfully, below tests are recommended, but not required.

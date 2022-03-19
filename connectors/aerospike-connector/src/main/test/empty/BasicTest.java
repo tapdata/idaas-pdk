@@ -5,21 +5,23 @@ import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
 import com.aerospike.client.Record;
 import com.aerospike.client.policy.WritePolicy;
-import io.tapdata.pdk.apis.annotations.TapConnectorClass;
+import io.tapdata.connector.aerospike.utils.AerospikeSinkConfig;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-//@TapConnectorClass("source.json")
+import java.io.*;
+
 public class BasicTest {
-    @BeforeClass
-    public void init(){
-
-    }
-
     @Test
-    public void BasicConnection() {
-        AerospikeClient client = new AerospikeClient("192.168.153.131", 3000);
+    public void BasicConnectionTest() throws IOException {
+        // load Aerospike config
+        String config_path = "B:\\code\\tapdata\\idaas-pdk\\connectors\\aerospike-connector\\src\\main\\resources\\target.json";
+
+        AerospikeSinkConfig sinkConfig = AerospikeSinkConfig.load(config_path);
+        Assert.assertEquals(sinkConfig.getSeedHosts(),"192.168.153.131:3000");
+
+        String[] host_port = sinkConfig.getSeedHosts().split(":");
+        AerospikeClient client = new AerospikeClient(host_port[0], Integer.parseInt(host_port[1]));
         Assert.assertNotNull(client);
         WritePolicy policy = new WritePolicy();
         policy.timeoutDelay = 20;
@@ -76,6 +78,35 @@ public class BasicTest {
         client.delete(policy, key);
         record = client.get(policy, key);
         Assert.assertNull(record);
+    }
 
+    @Test
+    public void BasicExec() throws IOException {
+        String config_path = "B:\\code\\tapdata\\idaas-pdk\\connectors\\aerospike-connector\\src\\main\\resources\\target.json";
+
+        AerospikeSinkConfig sinkConfig = AerospikeSinkConfig.load(config_path);
+        Assert.assertEquals(sinkConfig.getSeedHosts(),"192.168.153.131:3000");
+
+        String[] host_port = sinkConfig.getSeedHosts().split(":");
+        AerospikeClient client = new AerospikeClient(host_port[0], Integer.parseInt(host_port[1]));
+        WritePolicy policy = new WritePolicy();
+        policy.timeoutDelay = 20;
+
+        Key key = new Key("test", "test_set_name", "20.0");
+
+        // insert data
+//        Bin b = new Bin("PK", "20.0");
+//        client.put(policy, key, b);
+//        b = new Bin("id", "20.0");
+//        client.put(policy, key, b);
+//        b = new Bin("description", "des123");
+//        client.put(policy, key, b);
+//        b = new Bin("name", "name123");
+//        client.put(policy, key, b);
+//        b = new Bin("age", "10.0");
+//        client.put(policy, key, b);
+
+        // delete data
+        client.delete(policy,key);
     }
 }
