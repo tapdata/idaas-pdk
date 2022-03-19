@@ -22,7 +22,7 @@
         "userName": "",
         "password": "",
         "keySet": "test_set_name",
-        "maxConcurrentRequests": 100,
+        "maxConcurrentRequests": 10,
         "timeoutMs": 100,
         "retries": 1
       },

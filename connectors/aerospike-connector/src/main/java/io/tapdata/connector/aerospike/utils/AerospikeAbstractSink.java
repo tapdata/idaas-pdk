@@ -78,22 +78,21 @@ public abstract class AerospikeAbstractSink<K, V> {
         AerospikeAbstractSink.AWriteListener listener = null;
 
         try {
-            listener = (AerospikeAbstractSink.AWriteListener)this.queue.take();
+            listener = this.queue.take();
         } catch (InterruptedException var7) {
             record.fail();
             return;
         }
 
         listener.setContext(record);
-
         Bin key_bin = new Bin("PK", keyValue.getKey());
         this.client.put(this.writePolicy,key, key_bin);
+//        Bin[] bins = new Bin[record.getBinValuesMap().size()];
         for(Map.Entry<String, String> entry: record.getBinValuesMap().entrySet()){
             Bin bin = new Bin(entry.getKey(), String.valueOf(entry.getValue()));
             this.client.put(this.writePolicy,key,bin);
         }
-//        this.client.put(this.writePolicy,key, bin);
-
+        listener.onSuccess(key);
 //        this.client.put(this.eventLoop, listener, this.writePolicy, key, new Bin[]{bin});
     }
 
@@ -106,7 +105,7 @@ public abstract class AerospikeAbstractSink<K, V> {
 
             for(int i = 0; i < hosts.length; ++i) {
                 String[] hostPort = hosts[i].split(":");
-                aeroSpikeHosts[i] = new Host(hostPort[0], Integer.valueOf(hostPort[1]));
+                aeroSpikeHosts[i] = new Host(hostPort[0], Integer.parseInt(hostPort[1]));
             }
 
             ClientPolicy policy = new ClientPolicy();
@@ -158,4 +157,3 @@ public abstract class AerospikeAbstractSink<K, V> {
         }
     }
 }
-
