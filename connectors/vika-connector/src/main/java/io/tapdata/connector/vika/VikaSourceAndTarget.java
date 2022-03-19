@@ -6,7 +6,7 @@
 //import io.tapdata.pdk.apis.TapTarget;
 //import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 //import io.tapdata.base.ConnectorBase;
-//import io.tapdata.pdk.apis.common.DefaultMap;
+//import io.tapdata.entity.utils.DefaultMap;
 //import io.tapdata.pdk.apis.context.TapConnectorContext;
 //import io.tapdata.pdk.apis.context.TapConnectionContext;
 //import io.tapdata.pdk.apis.entity.ConnectionTestResult;

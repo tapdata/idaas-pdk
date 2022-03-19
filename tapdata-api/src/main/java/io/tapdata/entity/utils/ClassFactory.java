@@ -1,17 +1,16 @@
-package io.tapdata.pdk.apis.utils;
+package io.tapdata.entity.utils;
 
 import java.lang.reflect.Method;
 
-public class ImplementationUtils {
+public class ClassFactory {
     private static volatile Object classFactory;
     private static Method createMethod;
-    private static TapUtils tapUtils;
-    private static TypeConverter typeConverter;
     private static final Object lock = new int[0];
+    private ClassFactory() {}
 
-    private static Object create(Class<?> clazz) {
+    public static <T> T create(Class<T> clazz) {
         if(classFactory == null) {
-            synchronized (ImplementationUtils.class) {
+            synchronized (ClassFactory.class) {
                 if(classFactory == null) {
                     String classFactoryStr = "io.tapdata.pdk.core.runtime.TapRuntime";
                     try {
@@ -28,32 +27,11 @@ public class ImplementationUtils {
             }
         }
         try {
-            return createMethod.invoke(classFactory, clazz);
+            return (T) createMethod.invoke(classFactory, clazz);
         } catch (Throwable e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static TapUtils getTapUtils() {
-        if(tapUtils == null) {
-            synchronized (lock) {
-                if(tapUtils == null) {
-                    tapUtils = (TapUtils) create(TapUtils.class);
-                }
-            }
-        }
-        return tapUtils;
-    }
-
-    public static TypeConverter getTypeConverter() {
-        if(typeConverter == null) {
-            synchronized (lock) {
-                if(typeConverter == null) {
-                    typeConverter = (TypeConverter) create(TypeConverter.class);
-                }
-            }
-        }
-        return typeConverter;
-    }
 }

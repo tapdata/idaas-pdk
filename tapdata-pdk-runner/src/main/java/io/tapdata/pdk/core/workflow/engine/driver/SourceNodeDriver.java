@@ -162,8 +162,8 @@ public class SourceNodeDriver extends Driver {
                                     PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
                                     this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
                                 }
-                            }, "Batch read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
-                                PDKLogger.error("batchOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
+                            }, "Stream read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
+                                PDKLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
                             });
                         }
                     });
