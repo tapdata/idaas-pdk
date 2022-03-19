@@ -4,6 +4,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
