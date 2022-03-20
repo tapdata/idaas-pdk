@@ -1,6 +1,6 @@
 package io.tapdata.pdk.apis.entity;
 
-import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.entity.utils.DefaultMap;
 
 public class TapFilter extends DefaultMap {
 

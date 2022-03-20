@@ -112,14 +112,14 @@ public class TapField {
         this.autoIncStartValue = autoIncStartValue;
         return this;
     }
-    /**
-     * Unique field
-     */
-    private Boolean unique;
-    public TapField unique(Boolean unique) {
-        this.unique = unique;
-        return this;
-    }
+//    /**
+//     * Unique field
+//     */
+//    private Boolean unique;
+//    public TapField unique(Boolean unique) {
+//        this.unique = unique;
+//        return this;
+//    }
     /**
      * Check expression, ensure the data can only be write when satisfy the check expression.
      */
@@ -242,13 +242,13 @@ public class TapField {
         this.autoIncStartValue = autoIncStartValue;
     }
 
-    public Boolean getUnique() {
-        return unique;
-    }
-
-    public void setUnique(Boolean unique) {
-        this.unique = unique;
-    }
+//    public Boolean getUnique() {
+//        return unique;
+//    }
+//
+//    public void setUnique(Boolean unique) {
+//        this.unique = unique;
+//    }
 
     public String getCheck() {
         return check;

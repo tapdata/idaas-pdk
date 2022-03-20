@@ -12,6 +12,7 @@
     </properties>
     <!--<dependencyManagement>-->
     <dependencies>
+
     </dependencies>
     <build>
         <plugins>

@@ -1,9 +1,9 @@
 package io.tapdata.pdk.apis.context;
 
-import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
-import io.tapdata.pdk.apis.utils.ImplementationUtils;
-import io.tapdata.pdk.apis.utils.TapUtils;
 
 public class TapConnectionContext extends TapContext {
     protected DefaultMap connectionConfig;
@@ -22,6 +22,6 @@ public class TapConnectionContext extends TapContext {
     }
 
     public String toString() {
-        return "TapConnectionContext connectionConfig: " + (connectionConfig != null ? ImplementationUtils.getTapUtils().toJson(connectionConfig) : "") + " spec: " + specification;
+        return "TapConnectionContext connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " spec: " + specification;
     }
 }

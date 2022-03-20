@@ -1,5 +1,5 @@
 package io.tapdata.pdk.apis.context;
-import io.tapdata.pdk.apis.common.DefaultConcurrentMap;
+import io.tapdata.entity.utils.DefaultConcurrentMap;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 
