@@ -1,7 +1,9 @@
 package io.tapdata.entity.schema;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class TapTable extends TapItem<TapField> {
     public TapTable() {}
@@ -14,6 +16,8 @@ public class TapTable extends TapItem<TapField> {
     }
 
     private LinkedHashMap<String, TapField> nameFieldMap;
+
+    private List<TapIndex> indexList;
 
     private String id;
 
@@ -35,6 +39,15 @@ public class TapTable extends TapItem<TapField> {
                 " number of fields " + (nameFieldMap != null ? nameFieldMap.size() : 0);
     }
 
+    public TapTable add(TapIndex index) {
+        indexCheck(index);
+        if(indexList == null) {
+            indexList = new ArrayList<>();
+        }
+        indexList.add(index);
+        return this;
+    }
+
     public TapTable add(TapField field) {
         fieldCheck(field);
         if(nameFieldMap == null) {
@@ -47,11 +60,18 @@ public class TapTable extends TapItem<TapField> {
         return this;
     }
 
+    private void indexCheck(TapIndex index) {
+        if(index == null)
+            throw new IllegalArgumentException("index is null when add into table " + name);
+        if(index.getFields() == null || index.getFields().isEmpty())
+            throw new IllegalArgumentException("index fields is null or empty when add into table " + name);
+    }
+
     private void fieldCheck(TapField field) {
         if(field == null)
             throw new IllegalArgumentException("field is null when add into table " + name);
         if(field.getName() == null)
-            throw new NullPointerException("field name is null when add into table " + name);
+            throw new IllegalArgumentException("field name is null when add into table " + name);
     }
 
     @Override
@@ -104,5 +124,13 @@ public class TapTable extends TapItem<TapField> {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public List<TapIndex> getIndexList() {
+        return indexList;
+    }
+
+    public void setIndexList(List<TapIndex> indexList) {
+        this.indexList = indexList;
     }
 }
