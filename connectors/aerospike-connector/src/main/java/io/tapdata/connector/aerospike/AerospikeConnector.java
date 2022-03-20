@@ -68,13 +68,13 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 //        String seedHosts = (String) connectionConfig.get("seedHosts");
 //        String keyspace = (String) connectionConfig.get("keyspace");
 //        String columnName = (String) connectionConfig.get("columnName");
-        //TODO 在这里新建连接， 获得表信息。
+
         try {
             initConnection(connectionContext.getConnectionConfig());
         } catch (Exception e) {
             throw new RuntimeException("Create Connection Failed!");
         }
-        //获得真实的AS表数据
+        //TODO 获得表信息,获得真实的AS表数据
 //        consumer.accept(list(
 //                //Define first table
 //                table("aerospike-table1")
@@ -109,17 +109,16 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
         //Write test
         //TODO execute Write test here
-        //TODO 写入数据在真实环境下容易出大问题。 应该是通过检测有没有写权限来判定。
-
+        //TODO 检测写权限
         consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
+
         //Read test
-        //TODO execute Write test here
+        //TODO execute Read test here
         consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
 
 
         try {
             aerospikeStringSink.close();
-            aerospikeStringSink = null;
         } catch (Exception e) {
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection Close failed"));
         }
@@ -171,9 +170,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Exception {
         //write records into database
-        if (aerospikeStringSink == null) {
-            initConnection(connectorContext.getConnectionConfig());
-        }
+        initConnection(connectorContext.getConnectionConfig());
 
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
@@ -238,7 +235,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void destroy() {
-        //TODO release resources
         try {
             aerospikeStringSink.close();
             aerospikeStringSink = null;

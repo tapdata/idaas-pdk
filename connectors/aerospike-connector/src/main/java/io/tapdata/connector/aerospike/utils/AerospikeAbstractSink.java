@@ -12,12 +12,12 @@ import com.aerospike.client.listener.WriteListener;
 import com.aerospike.client.policy.ClientPolicy;
 import com.aerospike.client.policy.WritePolicy;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import io.tapdata.connector.aerospike.bean.IRecord;
-import io.tapdata.connector.aerospike.bean.KeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,6 @@ public abstract class AerospikeAbstractSink<K, V> {
             this.writePolicy = new WritePolicy();
             this.writePolicy.maxRetries = this.aerospikeSinkConfig.getRetries();
             this.writePolicy.setTimeout(this.aerospikeSinkConfig.getTimeoutMs());
-            this.createClient();
             this.queue = new LinkedBlockingDeque(this.aerospikeSinkConfig.getMaxConcurrentRequests());
 
             for (int i = 0; i < this.aerospikeSinkConfig.getMaxConcurrentRequests(); ++i) {
@@ -49,6 +48,7 @@ public abstract class AerospikeAbstractSink<K, V> {
 
             this.eventLoops = new NioEventLoops(new EventPolicy(), 1);
             this.eventLoop = this.eventLoops.next();
+            this.createClient();
         } else {
             throw new IllegalArgumentException("Required property not set.");
         }
@@ -71,14 +71,8 @@ public abstract class AerospikeAbstractSink<K, V> {
     }
 
     public void write(IRecord<String> record) {
-        /*TODO
-           对于key record bin 的关系有一些疑问
-           在pulasr的实现中只能指定column(bin)后进行写入，IRecord中record相当于column value，即按列写
-           对于empty生成的json的数据是一行一行的，所以在IRecord中使用binValuesMap记录键值对信息，再进行写入，即按行写
-        */
         Key key = new Key(this.aerospikeSinkConfig.getKeyspace(), this.aerospikeSinkConfig.getKeySet(), record.getKey().get());
 
-//        Bin bin = new Bin(this.aerospikeSinkConfig.getColumnName(), keyValue.getValue());
         AerospikeAbstractSink.AWriteListener listener = null;
 
         try {
@@ -93,15 +87,18 @@ public abstract class AerospikeAbstractSink<K, V> {
         if (record.getKey().isPresent()) {
             Bin key_bin = new Bin("PK", record.getKey().get());
             this.client.put(this.writePolicy, key, key_bin);
+            //            this.client.put(this.eventLoop, listener, this.writePolicy, key, key_bin);
         }
 
-//        Bin[] bins = new Bin[record.getBinValuesMap().size()];
+        Bin[] bins = new Bin[record.getBinValuesMap().size()];
+        int idx = 0;
         for (Map.Entry<String, String> entry : record.getBinValuesMap().entrySet()) {
             Bin bin = new Bin(entry.getKey(), String.valueOf(entry.getValue()));
-            this.client.put(this.writePolicy, key, bin);
+            bins[idx++] = bin;
         }
+        this.client.put(this.writePolicy, key, bins);
         listener.onSuccess(key);
-//        this.client.put(this.eventLoop, listener, this.writePolicy, key, new Bin[]{bin});
+//        this.client.put(this.eventLoop, listener, this.writePolicy, key, bins);
     }
 
     private void createClient() {
@@ -117,6 +114,7 @@ public abstract class AerospikeAbstractSink<K, V> {
             }
 
             ClientPolicy policy = new ClientPolicy();
+//            policy.eventLoops = this.eventLoops;
             if (this.aerospikeSinkConfig.getUserName() != null && !this.aerospikeSinkConfig.getUserName().isEmpty() && this.aerospikeSinkConfig.getPassword() != null && !this.aerospikeSinkConfig.getPassword().isEmpty()) {
                 policy.user = this.aerospikeSinkConfig.getUserName();
                 policy.password = this.aerospikeSinkConfig.getPassword();
@@ -125,8 +123,6 @@ public abstract class AerospikeAbstractSink<K, V> {
             this.client = new AerospikeClient(policy, aeroSpikeHosts);
         }
     }
-
-    public abstract KeyValue<K, V> extractKeyValue(IRecord<String> var1);
 
     private class AWriteListener implements WriteListener {
         private IRecord<byte[]> context;

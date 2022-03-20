@@ -9,7 +9,7 @@ import io.tapdata.connector.aerospike.bean.IRecord;
 import io.tapdata.connector.aerospike.bean.TapAerospikeRecord;
 import io.tapdata.connector.aerospike.utils.AerospikeSinkConfig;
 import io.tapdata.connector.aerospike.utils.AerospikeStringSink;
-import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.entity.utils.DefaultMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -18,7 +18,7 @@ import java.io.IOException;
 public class ConnectionTestTest {
     private AerospikeSinkConfig sinkConfig;
     private final AerospikeStringSink aerospikeStringSink = new AerospikeStringSink();
-    private final WritePolicy policy = new WritePolicy();
+    private WritePolicy policy = new WritePolicy();
 
 
     public boolean isConnected() {
