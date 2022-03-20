@@ -50,7 +50,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
                 table("empty-table1")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
                         .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
+                        .add(field("description", "TEXT").isPrimaryKey(true).partitionKeyPos(2))
                         .add(field("name", "VARCHAR"))
                         .add(field("age", "DOUBLE")),
                 //Define second table
