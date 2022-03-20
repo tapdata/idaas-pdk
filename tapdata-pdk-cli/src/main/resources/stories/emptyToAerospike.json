@@ -27,8 +27,8 @@
         "retries": 1
       },
       "table" : {
-        "name" : "tablename from aerospike",
-        "id" : "tablename from aerospike"
+        "name" : "aerospike-table1",
+        "id" : "aerospike-table1"
       },
       "id" : "t2",
       "pdkId" : "aerospike",

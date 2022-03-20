@@ -14,11 +14,6 @@ public class TapAerospikeRecord implements IRecord<String> {
     private TapAerospikeRecord() {
     }
 
-    public TapAerospikeRecord(String json) {
-        this.binValuesMap = JSON.parseObject(json, DefaultMap.class);
-        this.record = json;
-    }
-
     public TapAerospikeRecord(String json, String key) {
         this.binValuesMap = JSON.parseObject(json, DefaultMap.class);
         this.record = json;

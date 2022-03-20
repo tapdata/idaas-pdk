@@ -15,6 +15,7 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.common.DefaultMap;
@@ -27,7 +28,6 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import org.junit.Assert;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,32 +43,15 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
     private AerospikeStringSink aerospikeStringSink;
     private final WritePolicy policy = new WritePolicy();
 
-
-    public boolean isConnected() {
-        return aerospikeStringSink.client != null && aerospikeStringSink.client.isConnected();
-    }
-
-    public void initConnection(Map<String, Object> configMap) throws IOException {
-        if (aerospikeStringSink != null && isConnected()) {
+    public void initConnection(Map<String, Object> configMap) throws Exception {
+        if (aerospikeStringSink != null && this.aerospikeStringSink.isConnected()) {
             aerospikeStringSink.client.close();
         }
         aerospikeStringSink = new AerospikeStringSink();
         sinkConfig = AerospikeSinkConfig.load(configMap);
         policy.timeoutDelay = 20;
+        aerospikeStringSink.open(sinkConfig);
 
-        try {
-            aerospikeStringSink.open(sinkConfig);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void clearKeyInKeySet(AerospikeSinkConfig sinkConfig, String keyStr) throws Exception {
-        if (!isConnected()) {
-            throw new Exception("connection is not established");
-        }
-        Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
-        aerospikeStringSink.client.delete(policy, key);
     }
 
     /**
@@ -90,29 +73,20 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         //Sample code shows how to define tables with specified fields.
         consumer.accept(list(
                 //Define first table
-                table("empty-table1")
+                table("aerospike-table1")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE")),
-                //Define second table
-                table("empty-table2")
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE"))
+                        .add(field("id", "VARCHAR").isPrimaryKey(true))
         ));
     }
 
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer){
+    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         //Assume below tests are successfully, below tests are recommended, but not required.
         //Connection test
         try {
             initConnection(connectionContext.getConnectionConfig());
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
         }
         Assert.assertTrue(aerospikeStringSink.client.isConnected());
         consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
@@ -123,44 +97,37 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
 
         //Write test
-        String json = "{\"after\":{\"id\":1.0,\"description\":\"description123\",\"name\":\"name123\",\"age\":12.0},\"table\":{\"id\":\"empty-table1\",\"name\":\"empty-table1\",\"nameFieldMap\":{\"id\":{\"name\":\"id\",\"originType\":\"VARCHAR\",\"partitionKeyPos\":1,\"pos\":1,\"primaryKey\":true},\"description\":{\"name\":\"description\",\"originType\":\"TEXT\",\"pos\":2},\"name\":{\"name\":\"name\",\"originType\":\"VARCHAR\",\"pos\":3},\"age\":{\"name\":\"age\",\"originType\":\"DOUBLE\",\"pos\":4}}},\"time\":1647660346515}";
-        DefaultMap defaultMap = this.fromJson(json);
-        JSONObject after_json_obj = (JSONObject) defaultMap.get("after");
+        String mock_source_data = "{\"id\":1.0,\"description\":\"description123\",\"name\":\"name123\",\"age\":12.0}";
 
-        String keyStr = after_json_obj.get("id").toString();
-        String after_json = after_json_obj.toString();
-
-        try {
-            clearKeyInKeySet(sinkConfig, keyStr);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        IRecord<String> tapAerospikeRecord = new TapAerospikeRecord(after_json, keyStr);
+        DefaultMap defaultMap = this.fromJson(mock_source_data);
+        // Aerospike does not store primary key by default
+        String keyStr = defaultMap.get("id").toString();
+        Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
+        aerospikeStringSink.client.delete(policy, key);
+        IRecord<String> tapAerospikeRecord = new TapAerospikeRecord(mock_source_data, keyStr);
         aerospikeStringSink.write(tapAerospikeRecord);
+
         consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
 
         //Read test
-        Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
-        Assert.assertEquals("{PK=1.0}",aerospikeStringSink.client.get(policy, key, "PK").bins.toString());
-        Assert.assertEquals("{id=1.0}",aerospikeStringSink.client.get(policy, key, "id").bins.toString());
-        Assert.assertEquals("{description=description123}",aerospikeStringSink.client.get(policy, key, "description").bins.toString());
-        Assert.assertEquals("{name=name123}",aerospikeStringSink.client.get(policy, key, "name").bins.toString());
-        Assert.assertEquals("{age=12.0}",aerospikeStringSink.client.get(policy, key, "age").bins.toString());
-        try {
-            clearKeyInKeySet(sinkConfig,keyStr);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Assert.assertEquals("{PK=1.0}", aerospikeStringSink.client.get(policy, key, "PK").bins.toString());
+        Assert.assertEquals("{id=1.0}", aerospikeStringSink.client.get(policy, key, "id").bins.toString());
+        Assert.assertEquals("{description=description123}", aerospikeStringSink.client.get(policy, key, "description").bins.toString());
+        Assert.assertEquals("{name=name123}", aerospikeStringSink.client.get(policy, key, "name").bins.toString());
+        Assert.assertEquals("{age=12.0}", aerospikeStringSink.client.get(policy, key, "age").bins.toString());
+
+        aerospikeStringSink.client.delete(policy, key);
+
         consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
 
         //Read log test to check CDC capability
-        //TODO execute read log test here
+        //TODO execute read log test here  Aerospike log?
         consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY));
 
         //When test failed
 //        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
         //When test successfully, but some warn is reported.
- //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
+        //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
     }
 
     /**
@@ -195,7 +162,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      * This method will be invoked any time when Flow engine need to save stream offset.
      * If stream read has started, this method need return current stream offset, otherwise return null.
      *
-     * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
+     * @param offsetStartTime  specify the expected start time to return the offset. If null, return current offset.
      * @param connectorContext the node context in a DAG
      */
     Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
@@ -231,44 +198,48 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Exception {
         //write records into database
-        if(aerospikeStringSink == null){
-            try {
-                initConnection(connectorContext.getConnectionConfig());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if (aerospikeStringSink == null) {
+            initConnection(connectorContext.getConnectionConfig());
         }
 
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
-        for(TapRecordEvent recordEvent : tapRecordEvents) {
+        for (TapRecordEvent recordEvent : tapRecordEvents) {
             String json = toJson(recordEvent);
             DefaultMap defaultMap = JSON.parseObject(json, DefaultMap.class);
             JSONObject after_json_obj = (JSONObject) defaultMap.get("after");
 
-            String keyStr = after_json_obj.get("id").toString();
+            TapTable table = recordEvent.getTable();
+            LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
+            String keyStr = null;
+            for (TapField field : nameFieldMap.values()) {
+                if (field.getPrimaryKey())
+                    keyStr = after_json_obj.get(field.getName()).toString();
+                    break;
+            }
+
             String after_json = after_json_obj.toString();
             IRecord<String> tapAerospikeRecord = new TapAerospikeRecord(after_json, keyStr);
-            if(recordEvent instanceof TapInsertRecordEvent) {
+            if (recordEvent instanceof TapInsertRecordEvent) {
                 inserted.incrementAndGet();
                 aerospikeStringSink.write(tapAerospikeRecord);
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
-            } else if(recordEvent instanceof TapUpdateRecordEvent) {
+            } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 updated.incrementAndGet(); // TODO success update ?
                 Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
                 Record record = aerospikeStringSink.client.get(policy, key);
-                if(record == null) continue;
+                if (record == null) continue;
                 aerospikeStringSink.write(tapAerospikeRecord);
                 PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
-            } else if(recordEvent instanceof TapDeleteRecordEvent) {
+            } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 deleted.incrementAndGet(); // TODO delete update ?
                 Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
                 Record record = aerospikeStringSink.client.get(policy, key);
-                if(record == null) continue;
+                if (record == null) continue;
                 aerospikeStringSink.client.delete(policy, key);
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
@@ -361,7 +332,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate stream records directly
-        while(!isShutDown.get()) {
+        while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 10; i++) {
                 TapInsertRecordEvent event = insertRecordEvent(map(
