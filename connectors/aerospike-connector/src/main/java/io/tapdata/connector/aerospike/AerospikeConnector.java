@@ -17,8 +17,8 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.DefaultMap;
 import io.tapdata.pdk.apis.TapConnector;
-import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -44,14 +44,15 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
     private final WritePolicy policy = new WritePolicy();
 
     public void initConnection(Map<String, Object> configMap) throws Exception {
-        if (aerospikeStringSink != null && this.aerospikeStringSink.isConnected()) {
-            aerospikeStringSink.client.close();
+        if (aerospikeStringSink == null) {
+//            if (aerospikeStringSink != null && this.aerospikeStringSink.isConnected()) {
+//                aerospikeStringSink.client.close();
+//            }
+            aerospikeStringSink = new AerospikeStringSink();
+            sinkConfig = AerospikeSinkConfig.load(configMap);
+            policy.timeoutDelay = 20;
+            aerospikeStringSink.open(sinkConfig);
         }
-        aerospikeStringSink = new AerospikeStringSink();
-        sinkConfig = AerospikeSinkConfig.load(configMap);
-        policy.timeoutDelay = 20;
-        aerospikeStringSink.open(sinkConfig);
-
     }
 
     /**
@@ -71,12 +72,21 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
-        consumer.accept(list(
-                //Define first table
-                table("aerospike-table1")
-                        //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "VARCHAR").isPrimaryKey(true))
-        ));
+        DefaultMap connectionConfig = connectionContext.getConnectionConfig();
+        String seedHosts = (String) connectionConfig.get("seedHosts");
+        String keyspace = (String) connectionConfig.get("keyspace");
+        String columnName = (String) connectionConfig.get("columnName");
+        //TODO 在这里新建连接， 获得表信息。
+
+        //获得真实的AS表数据
+//        consumer.accept(list(
+//                //Define first table
+//                table("aerospike-table1")
+//                        //Define a field named "id", origin field type, whether is primary key and primary key position
+//                        .add(field("id", "VARCHAR").isPrimaryKey(true))
+//        ));
+
+        //TODO 释放连接
     }
 
     @Override
@@ -97,6 +107,8 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
 
         //Write test
+
+        //TODO 写入数据在真实环境下容易出大问题。 应该是通过检测有没有写权限来判定。
         String mock_source_data = "{\"id\":1.0,\"description\":\"description123\",\"name\":\"name123\",\"age\":12.0}";
 
         DefaultMap defaultMap = this.fromJson(mock_source_data);
@@ -109,6 +121,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
         consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
 
+        //TODO Assert只能用于测试代码， 正式代码不应该使用了。 这里如果出错应该使用consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_FAILED, "error message"));
         //Read test
         Assert.assertEquals("{PK=1.0}", aerospikeStringSink.client.get(policy, key, "PK").bins.toString());
         Assert.assertEquals("{id=1.0}", aerospikeStringSink.client.get(policy, key, "id").bins.toString());
@@ -121,7 +134,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
 
         //Read log test to check CDC capability
-        //TODO execute read log test here  Aerospike log?
+        //TODO execute read log test here  Aerospike log? 作为目标端可以不用做这个测试， 这是源端做增量读取用的。 删掉就行
         consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY));
 
         //When test failed
@@ -142,11 +155,12 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
-        connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportBatchCount(this::batchCount);
-        connectorFunctions.supportBatchOffset(this::batchOffset);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
+        //TODO 不做数据源， 就不用实现以下方法
+//        connectorFunctions.supportBatchRead(this::batchRead);
+//        connectorFunctions.supportStreamRead(this::streamRead);
+//        connectorFunctions.supportBatchCount(this::batchCount);
+//        connectorFunctions.supportBatchOffset(this::batchOffset);
+//        connectorFunctions.supportStreamOffset(this::streamOffset);
 
         connectorFunctions.supportWriteRecord(this::writeRecord);
 
@@ -156,32 +170,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
-    }
-
-    /**
-     * This method will be invoked any time when Flow engine need to save stream offset.
-     * If stream read has started, this method need return current stream offset, otherwise return null.
-     *
-     * @param offsetStartTime  specify the expected start time to return the offset. If null, return current offset.
-     * @param connectorContext the node context in a DAG
-     */
-    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
-        //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Flow engine knows, otherwise the result will be unpredictable.
-//        if(offsetStartTime != null)
-//            throw new NotSupportedException();
-        //TODO return stream offset
-        return null;
-    }
-
-    /**
-     * The method will be invoked any time when Flow engine need to save batch offset.
-     * If batch read has started, this method need return current batch offset, otherwise return null.
-     *
-     * @param connectorContext the node context in a DAG
-     * @return
-     */
-    private Object batchOffset(TapConnectorContext connectorContext) {
-        return null;
     }
 
     /**
@@ -200,15 +188,18 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Exception {
         //write records into database
-        if (aerospikeStringSink == null) {
-            initConnection(connectorContext.getConnectionConfig());
-        }
+        //TODO 这样写会清晰点
+        initConnection(connectorContext.getConnectionConfig());
+//        if (aerospikeStringSink == null) {
+//          initConnection(connectorContext.getConnectionConfig());
+//        }
 
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
         for (TapRecordEvent recordEvent : tapRecordEvents) {
+            //TODO 这个地方做的早了点， 应该在判断是insert， update或者delete时候取出after来toJson。 TapRecordEvent里面还有table， 是不必要tojson的
             String json = toJson(recordEvent);
             DefaultMap defaultMap = JSON.parseObject(json, DefaultMap.class);
             JSONObject after_json_obj = (JSONObject) defaultMap.get("after");
@@ -218,29 +209,44 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
             String keyStr = null;
             for (TapField field : nameFieldMap.values()) {
                 if (field.getPrimaryKey())
+                    //TODO 两个问题， 多主键的时候应该拼接；field.primaryKeyPos有可能影响顺序， 不能采用nameFieldMap.values()顺序。
                     keyStr = after_json_obj.get(field.getName()).toString();
                     break;
             }
 
             String after_json = after_json_obj.toString();
             IRecord<String> tapAerospikeRecord = new TapAerospikeRecord(after_json, keyStr);
+
+
+            IRecord<String> newRecord;
             if (recordEvent instanceof TapInsertRecordEvent) {
+
+                TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
+                newRecord = new TapAerospikeRecord(toJson(insertRecordEvent.getAfter()), keyStr);
+                aerospikeStringSink.write(newRecord);
+                //插入成功之后再计数器加一
                 inserted.incrementAndGet();
-                aerospikeStringSink.write(tapAerospikeRecord);
+
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
+
+                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
+                newRecord = new TapAerospikeRecord(toJson(updateRecordEvent.getAfter()), keyStr);
+                aerospikeStringSink.write(newRecord); //有更新能直接写入吧？ 不用再查出来， 直接覆盖写入就行
+
                 updated.incrementAndGet(); // TODO success update ?
-                Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
-                Record record = aerospikeStringSink.client.get(policy, key);
-                if (record == null) continue;
-                aerospikeStringSink.write(tapAerospikeRecord);
+
+//                Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
+//                Record record = aerospikeStringSink.client.get(policy, key);
+//                if (record == null) continue;
+//                aerospikeStringSink.write(tapAerospikeRecord);
                 PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
-                deleted.incrementAndGet(); // TODO delete update ?
                 Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), keyStr);
-                Record record = aerospikeStringSink.client.get(policy, key);
-                if (record == null) continue;
+//                Record record = aerospikeStringSink.client.get(policy, key);
+//                if (record == null) continue;
                 aerospikeStringSink.client.delete(policy, key);
+                deleted.incrementAndGet(); // TODO delete update ?
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
@@ -250,103 +256,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @return
-     */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
-        //TODO Count the batch size.
-        return 20L;
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param tapReadOffsetConsumer
-     */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
-        //TODO batch read all records from database, use consumer#accept to send to flow engine.
-
-        //Below is sample code to generate records directly.
-        for (int j = 0; j < 1; j++) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 20; i++) {
-                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                        entry("id", counter.incrementAndGet()),
-                        entry("description", "123"),
-                        entry("name", "123"),
-                        entry("age", 12)
-                ), connectorContext.getTable());
-                tapEvents.add(recordEvent);
-            }
-            tapReadOffsetConsumer.accept(tapEvents);
-        }
-        counter.set(counter.get() + 1000);
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param consumer
-     */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
-
-        //Below is sample code to generate stream records directly
-        while (!isShutDown.get()) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 10; i++) {
-                TapInsertRecordEvent event = insertRecordEvent(map(
-                        entry("id", counter.incrementAndGet()),
-                        entry("description", "123"),
-                        entry("name", "123"),
-                        entry("age", 12)
-                ), connectorContext.getTable());
-                tapEvents.add(event);
-            }
-
-            sleep(1000L);
-            consumer.accept(tapEvents);
-        }
     }
 
     /**
