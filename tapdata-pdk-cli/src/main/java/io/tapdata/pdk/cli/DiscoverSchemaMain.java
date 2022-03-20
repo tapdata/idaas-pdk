@@ -12,8 +12,8 @@ public class DiscoverSchemaMain {
     //
     public static void main(String... args) {
         args = new String[] {"discoverSchema",
-                "--id", "emptySource",
-                "--group", "io.tapdata.connector.empty",
+                "--id", "aerospike",
+                "--group", "io.tapdata.connector.aerospike",
                 "--version", "1.0-SNAPSHOT",
                 "--connectionConfig", "{'token' : 'uskMiSCZAbukcGsqOfRqjZZ', 'spaceId' : 'spcvyGLrtcYgs'}"};
 

@@ -11,6 +11,7 @@ import com.aerospike.client.async.NioEventLoops;
 import com.aerospike.client.listener.WriteListener;
 import com.aerospike.client.policy.ClientPolicy;
 import com.aerospike.client.policy.WritePolicy;
+
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -42,7 +43,7 @@ public abstract class AerospikeAbstractSink<K, V> {
             this.createClient();
             this.queue = new LinkedBlockingDeque(this.aerospikeSinkConfig.getMaxConcurrentRequests());
 
-            for(int i = 0; i < this.aerospikeSinkConfig.getMaxConcurrentRequests(); ++i) {
+            for (int i = 0; i < this.aerospikeSinkConfig.getMaxConcurrentRequests(); ++i) {
                 this.queue.put(new AerospikeAbstractSink.AWriteListener(this.queue));
             }
 
@@ -51,6 +52,10 @@ public abstract class AerospikeAbstractSink<K, V> {
         } else {
             throw new IllegalArgumentException("Required property not set.");
         }
+    }
+
+    public boolean isConnected() {
+        return this.client != null && this.client.isConnected();
     }
 
     public void close() throws Exception {
@@ -85,12 +90,16 @@ public abstract class AerospikeAbstractSink<K, V> {
         }
 
         listener.setContext(record);
-        Bin key_bin = new Bin("PK", keyValue.getKey());
-        this.client.put(this.writePolicy,key, key_bin);
+
+        if (record.getKey().isPresent()) {
+            Bin key_bin = new Bin("PK", record.getKey().get());
+            this.client.put(this.writePolicy, key, key_bin);
+        }
+
 //        Bin[] bins = new Bin[record.getBinValuesMap().size()];
-        for(Map.Entry<String, String> entry: record.getBinValuesMap().entrySet()){
+        for (Map.Entry<String, String> entry : record.getBinValuesMap().entrySet()) {
             Bin bin = new Bin(entry.getKey(), String.valueOf(entry.getValue()));
-            this.client.put(this.writePolicy,key,bin);
+            this.client.put(this.writePolicy, key, bin);
         }
         listener.onSuccess(key);
 //        this.client.put(this.eventLoop, listener, this.writePolicy, key, new Bin[]{bin});
@@ -103,7 +112,7 @@ public abstract class AerospikeAbstractSink<K, V> {
         } else {
             Host[] aeroSpikeHosts = new Host[hosts.length];
 
-            for(int i = 0; i < hosts.length; ++i) {
+            for (int i = 0; i < hosts.length; ++i) {
                 String[] hostPort = hosts[i].split(":");
                 aeroSpikeHosts[i] = new Host(hostPort[0], Integer.parseInt(hostPort[1]));
             }
