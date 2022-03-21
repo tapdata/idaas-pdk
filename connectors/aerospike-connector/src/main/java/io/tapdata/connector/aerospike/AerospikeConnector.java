@@ -3,6 +3,8 @@ package io.tapdata.connector.aerospike;
 import com.aerospike.client.Key;
 import com.aerospike.client.policy.WritePolicy;
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.connector.aerospike.bean.AerospikeNamespaces;
+import io.tapdata.connector.aerospike.bean.AerospikeSet;
 import io.tapdata.connector.aerospike.bean.IRecord;
 import io.tapdata.connector.aerospike.bean.TapAerospikeRecord;
 import io.tapdata.connector.aerospike.utils.AerospikeSinkConfig;
@@ -36,6 +38,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
     private AerospikeSinkConfig sinkConfig;
     private AerospikeStringSink aerospikeStringSink;
+    private AerospikeNamespaces aerospikeNamespaces;
     private final WritePolicy policy = new WritePolicy();
 
     public void initConnection(Map<String, Object> configMap) throws Exception {
@@ -44,6 +47,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
             sinkConfig = AerospikeSinkConfig.load(configMap);
             policy.timeoutDelay = 20;
             aerospikeStringSink.open(sinkConfig);
+            aerospikeNamespaces = new AerospikeNamespaces(this.aerospikeStringSink.client);
         }
     }
 
@@ -62,25 +66,19 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
-        //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
-        //Sample code shows how to define tables with specified fields.
-//        DefaultMap connectionConfig = connectionContext.getConnectionConfig();
-//        String seedHosts = (String) connectionConfig.get("seedHosts");
-//        String keyspace = (String) connectionConfig.get("keyspace");
-//        String columnName = (String) connectionConfig.get("columnName");
+        // Load schema from database, connection information in connectionContext#getConnectionConfig
 
         try {
             initConnection(connectionContext.getConnectionConfig());
         } catch (Exception e) {
             throw new RuntimeException("Create Connection Failed!");
         }
-        //TODO 获得表信息,获得真实的AS表数据
-//        consumer.accept(list(
-//                //Define first table
-//                table("aerospike-table1")
-//                        //Define a field named "id", origin field type, whether is primary key and primary key position
-//                        .add(field("ASPK", "VARCHAR").isPrimaryKey(true))
-//        ));
+
+        // 获得表信息,获得真实的AS表数据
+        ArrayList<AerospikeSet> sets = aerospikeNamespaces.getSets(sinkConfig.getKeyspace());
+        for (AerospikeSet set : sets) {
+            consumer.accept(list(table(set.getSetName())));
+        }
 
         try {
             aerospikeStringSink.close();
@@ -177,8 +175,9 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
         for (TapRecordEvent recordEvent : tapRecordEvents) {
-            TapTable table = recordEvent.getTable();
-            LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
+            TapTable sourceTable = recordEvent.getTable();
+            TapTable targetTable = connectorContext.getTable();
+            LinkedHashMap<String, TapField> nameFieldMap = sourceTable.getNameFieldMap();
 
             Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
             for (String key : nameFieldMap.keySet()) {
@@ -188,6 +187,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 }
             }
 
+            String keySet = targetTable.getName();
             String newKey;
             IRecord<String> newRecord;
 
@@ -196,7 +196,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 Map<String, Object> after = insertRecordEvent.getAfter();
                 newKey = generateASPrimaryKey(after,posPrimaryKeyName.values(),'_');
                 newRecord = new TapAerospikeRecord(toJson(after), newKey);
-                aerospikeStringSink.write(newRecord);
+                aerospikeStringSink.write(newRecord,keySet);
                 inserted.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
@@ -204,14 +204,14 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 Map<String, Object> after = updateRecordEvent.getAfter();
                 newKey = generateASPrimaryKey(after,posPrimaryKeyName.values(),'_');
                 newRecord = new TapAerospikeRecord(toJson(after), newKey);
-                aerospikeStringSink.write(newRecord);
+                aerospikeStringSink.write(newRecord,keySet);
                 updated.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
                 newKey = generateASPrimaryKey(before,posPrimaryKeyName.values(),'_');
-                Key key = new Key(sinkConfig.getKeyspace(), sinkConfig.getKeySet(), newKey);
+                Key key = new Key(sinkConfig.getKeyspace(), keySet, newKey);
                 aerospikeStringSink.client.delete(policy, key);
                 deleted.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
@@ -238,6 +238,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         try {
             aerospikeStringSink.close();
             aerospikeStringSink = null;
+            aerospikeNamespaces = null;
         } catch (Exception e) {
             throw new RuntimeException("release Connection Failed!");
         }

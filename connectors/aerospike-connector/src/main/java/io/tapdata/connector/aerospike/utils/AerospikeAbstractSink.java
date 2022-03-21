@@ -69,8 +69,8 @@ public abstract class AerospikeAbstractSink<K, V> {
         LOG.info("Connection Closed");
     }
 
-    public void write(IRecord<String> record) {
-        Key key = new Key(this.aerospikeSinkConfig.getKeyspace(), this.aerospikeSinkConfig.getKeySet(), record.getKey().get());
+    public void write(IRecord<String> record,String keySet) {
+        Key key = new Key(this.aerospikeSinkConfig.getKeyspace(), keySet, record.getKey().get());
 
         AerospikeAbstractSink.AWriteListener listener = null;
 

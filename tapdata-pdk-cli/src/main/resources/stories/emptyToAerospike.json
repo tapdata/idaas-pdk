@@ -20,14 +20,13 @@
         "keyspace": "test",
         "userName": "",
         "password": "",
-        "keySet": "test_set_name",
         "maxConcurrentRequests": 10,
         "timeoutMs": 100,
         "retries": 1
       },
       "table" : {
-        "name" : "aerospike-table1",
-        "id" : "aerospike-table1"
+        "name" : "test_set_name",
+        "id" : "test_set_name"
       },
       "id" : "t2",
       "pdkId" : "aerospike",

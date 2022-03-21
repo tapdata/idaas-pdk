@@ -12,10 +12,8 @@ public class AerospikeSinkConfig implements Serializable {
     private static final long serialVersionUID = 1L;
     private String seedHosts;
     private String keyspace;
-    private String columnName;
     private String userName;
     private String password;
-    private String keySet;
     private int maxConcurrentRequests = 100;
     private int timeoutMs = 100;
     private int retries = 1;
@@ -42,9 +40,6 @@ public class AerospikeSinkConfig implements Serializable {
         return this.keyspace;
     }
 
-    public String getColumnName() {
-        return this.columnName;
-    }
 
     public String getUserName() {
         return this.userName;
@@ -52,10 +47,6 @@ public class AerospikeSinkConfig implements Serializable {
 
     public String getPassword() {
         return this.password;
-    }
-
-    public String getKeySet() {
-        return this.keySet;
     }
 
     public int getMaxConcurrentRequests() {
@@ -80,11 +71,6 @@ public class AerospikeSinkConfig implements Serializable {
         return this;
     }
 
-    public AerospikeSinkConfig setColumnName(String columnName) {
-        this.columnName = columnName;
-        return this;
-    }
-
     public AerospikeSinkConfig setUserName(String userName) {
         this.userName = userName;
         return this;
@@ -92,11 +78,6 @@ public class AerospikeSinkConfig implements Serializable {
 
     public AerospikeSinkConfig setPassword(String password) {
         this.password = password;
-        return this;
-    }
-
-    public AerospikeSinkConfig setKeySet(String keySet) {
-        this.keySet = keySet;
         return this;
     }
 
