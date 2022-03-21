@@ -5,13 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TypeExpr {
+public class TypeExpr<T> {
     /**
      * Prefix for the expression.
      * Enhance the performance for matching by filter out the expression which prefix doesn't match.
      */
     private String prefix;
-    private Object value;
+    private T value;
 
     public static final String KEY_PARAMS = "_params";
 
@@ -85,13 +85,13 @@ public class TypeExpr {
         return true;
     }
 
-    public TypeExprResult verifyValue(String value) {
+    public TypeExprResult<T> verifyValue(String value) {
         Pattern r = Pattern.compile(regExpr);
         Matcher m = r.matcher(value);
         boolean match = m.matches();
         if(match) {
-            TypeExprResult typeExprResult = new TypeExprResult();
-            typeExprResult.setValue((Map<String, Object>) this.value);
+            TypeExprResult<T> typeExprResult = new TypeExprResult<>();
+            typeExprResult.setValue(this.value);
             Map<String, String> params = new HashMap<>();
             typeExprResult.setParams(params);
             for(Map.Entry<String, List<Integer>> entry : allVariableKeyOptionPosListMap.entrySet()) {
@@ -130,11 +130,11 @@ public class TypeExpr {
         this.items = items;
     }
 
-    public Object getValue() {
+    public T getValue() {
         return value;
     }
 
-    public void setValue(Object value) {
+    public void setValue(T value) {
         this.value = value;
     }
 

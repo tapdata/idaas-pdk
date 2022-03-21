@@ -5,9 +5,8 @@ import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.tapdata.entity.utils.DefaultMap;
 import io.tapdata.entity.utils.JsonParser;
+import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.pdk.core.annotations.Implementation;
-
-import java.util.Map;
 
 @Implementation(JsonParser.class)
 public class JsonParserImpl implements JsonParser {
@@ -24,5 +23,10 @@ public class JsonParserImpl implements JsonParser {
     @Override
     public <T> T fromJson(String json, Class<T> clazz) {
         return JSON.parseObject(json, clazz, Feature.OrderedField, Feature.UseNativeJavaObject, Feature.DisableCircularReferenceDetect);
+    }
+
+    @Override
+    public <T> T fromJson(String json, TypeHolder<T> typeHolder) {
+        return JSON.parseObject(json, typeHolder.getType(), Feature.OrderedField, Feature.UseNativeJavaObject, Feature.DisableCircularReferenceDetect);
     }
 }

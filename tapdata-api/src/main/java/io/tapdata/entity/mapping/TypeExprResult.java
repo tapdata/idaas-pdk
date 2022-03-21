@@ -2,15 +2,15 @@ package io.tapdata.entity.mapping;
 
 import java.util.Map;
 
-public class TypeExprResult {
-    private Map<String, Object> value;
+public class TypeExprResult<T> {
+    private T value;
     private Map<String, String> params;
 
-    public Map<String, Object> getValue() {
+    public T getValue() {
         return value;
     }
 
-    public void setValue(Map<String, Object> value) {
+    public void setValue(T value) {
         this.value = value;
     }
 

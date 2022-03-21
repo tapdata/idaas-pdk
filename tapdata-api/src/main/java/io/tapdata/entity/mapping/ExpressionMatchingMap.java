@@ -1,7 +1,9 @@
-package io.tapdata.entity.utils;
+package io.tapdata.entity.mapping;
 
-import io.tapdata.entity.mapping.TypeExpr;
-import io.tapdata.entity.mapping.TypeExprResult;
+import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
+import io.tapdata.entity.utils.TypeHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,15 +51,31 @@ import java.util.concurrent.ConcurrentHashMap;
  *  expressionMatchingMap.get("decimal(5, 2) unsigned") == {"precision":[1, 65], "scale": [0, 30], "unsigned": "unsigned", "to": "typeNumber", "_params" : {"precision" : "5", "scale" : "2", "unsigned" : true, "zerofill" : false}},
  *
  */
-public class ExpressionMatchingMap {
-    private Map<String, Object> exactlyMatchMap = new ConcurrentHashMap<>();
-    private Map<String, List<TypeExpr>> prefixTypeExprListMap = new ConcurrentHashMap<>();
+public class ExpressionMatchingMap<T> {
+    private Map<String, T> exactlyMatchMap = new ConcurrentHashMap<>();
+    private Map<String, List<TypeExpr<T>>> prefixTypeExprListMap = new ConcurrentHashMap<>();
 
-    public ExpressionMatchingMap(Map<String, Object> map) {
-        Set<Map.Entry<String, Object>> entries = map.entrySet();
-        for(Map.Entry<String, Object> entry : entries) {
+    public static <T> ExpressionMatchingMap<T> map(String json, TypeHolder<Map<String, T>> typeHolder) {
+        return new ExpressionMatchingMap<>(json, typeHolder);
+    }
+
+    public static ExpressionMatchingMap<DefaultMap> map(String json) {
+        return new ExpressionMatchingMap<>(json, new TypeHolder<Map<String, DefaultMap>>() {});
+    }
+
+    public static DefaultExpressionMatchingMap map(Map<String, Object> map) {
+        return new DefaultExpressionMatchingMap(map);
+    }
+
+    public ExpressionMatchingMap(String json, TypeHolder<Map<String, T>> typeHolder) {
+        this(InstanceFactory.instance(JsonParser.class).fromJson(json, typeHolder));
+    }
+
+    public ExpressionMatchingMap(Map<String, T> map) {
+        Set<Map.Entry<String, T>> entries = map.entrySet();
+        for(Map.Entry<String, T> entry : entries) {
             String key = entry.getKey();
-            TypeExpr typeExpr = new TypeExpr();
+            TypeExpr<T> typeExpr = new TypeExpr<>();
             if(!typeExpr.parseExpression(key))
                 continue;
             typeExpr.setValue(entry.getValue());
@@ -71,7 +89,7 @@ public class ExpressionMatchingMap {
                     String prefix = typeExpr.getPrefix();
                     if(prefix == null)
                         break;
-                    List<TypeExpr> typeExprList = prefixTypeExprListMap.computeIfAbsent(prefix, k -> new ArrayList<>());
+                    List<TypeExpr<T>> typeExprList = prefixTypeExprListMap.computeIfAbsent(prefix, k -> new ArrayList<>());
                     if(typeExprList.contains(typeExpr))
                         continue;
                     typeExprList.add(typeExpr);
@@ -88,23 +106,27 @@ public class ExpressionMatchingMap {
      * @param key
      * @return
      */
-    public TypeExprResult get(String key) {
-        Object value = exactlyMatchMap.get(key);
+    public TypeExprResult<T> get(String key) {
+        T value = exactlyMatchMap.get(key);
         if(value == null) {
             Set<String> prefixList = prefixTypeExprListMap.keySet();
             for(String prefix : prefixList) {
                 if(!key.startsWith(prefix))
                     continue;
-                List<TypeExpr> typeExprList = prefixTypeExprListMap.get(prefix);
+                List<TypeExpr<T>> typeExprList = prefixTypeExprListMap.get(prefix);
                 if(typeExprList == null)
                     continue;
-                for(TypeExpr typeExpr : typeExprList) {
-                    TypeExprResult result = typeExpr.verifyValue(key);
+                for(TypeExpr<T> typeExpr : typeExprList) {
+                    TypeExprResult<T> result = typeExpr.verifyValue(key);
                     if(result == null)
                         continue;
                     return result;
                 }
             }
+        } else {
+            TypeExprResult<T> result = new TypeExprResult<>();
+            result.setValue(value);
+            return result;
         }
         return null;
     }

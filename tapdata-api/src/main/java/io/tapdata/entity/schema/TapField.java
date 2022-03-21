@@ -67,8 +67,8 @@ public class TapField {
     /**
      * Primary key position, start from 1.
      */
-    private Long primaryKeyPos;
-    public TapField primaryKeyPos(Long primaryKeyPos) {
+    private Integer primaryKeyPos;
+    public TapField primaryKeyPos(Integer primaryKeyPos) {
         this.primaryKeyPos = primaryKeyPos;
         return this;
     }
@@ -202,11 +202,11 @@ public class TapField {
         this.pos = pos;
     }
 
-    public Long getPrimaryKeyPos() {
+    public Integer getPrimaryKeyPos() {
         return primaryKeyPos;
     }
 
-    public void setPrimaryKeyPos(Long primaryKeyPos) {
+    public void setPrimaryKeyPos(Integer primaryKeyPos) {
         this.primaryKeyPos = primaryKeyPos;
     }
 
