@@ -35,8 +35,7 @@ public abstract class AerospikeAbstractSink<K, V> {
 
     public void open(AerospikeSinkConfig config) throws Exception {
         this.aerospikeSinkConfig = config;
-        // TODO this.aerospikeSinkConfig.getColumnName() != null 每次都需要指定列?
-        if (this.aerospikeSinkConfig.getSeedHosts() != null && this.aerospikeSinkConfig.getKeyspace() != null && this.aerospikeSinkConfig.getColumnName() != null) {
+        if (this.aerospikeSinkConfig.getSeedHosts() != null && this.aerospikeSinkConfig.getKeyspace() != null) {
             this.writePolicy = new WritePolicy();
             this.writePolicy.maxRetries = this.aerospikeSinkConfig.getRetries();
             this.writePolicy.setTimeout(this.aerospikeSinkConfig.getTimeoutMs());

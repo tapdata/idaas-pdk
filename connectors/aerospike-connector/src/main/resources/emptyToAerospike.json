@@ -18,7 +18,6 @@
       "connectionConfig" : {
         "seedHosts": "192.168.153.131:3000",
         "keyspace": "",
-        "columnName": "",
         "userName": "",
         "password": "",
         "keySet": "",
