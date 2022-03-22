@@ -58,7 +58,7 @@ public abstract class TapDateBase extends TapMapping {
 
         Object gmtObj = info.get(KEY_GMT);
         if(gmtObj instanceof Number) {
-            gmt = (Integer) gmtObj;
+            gmt = ((Number) gmtObj).intValue();
         } else {
             gmt = 0;
         }

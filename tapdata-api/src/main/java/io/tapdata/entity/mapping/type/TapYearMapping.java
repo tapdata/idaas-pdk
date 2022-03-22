@@ -18,10 +18,10 @@ public class TapYearMapping extends TapMapping {
             List<?> list = (List<?>) precisionObj;
             if(list.size() == 2) {
                 if(list.get(0) instanceof Number) {
-                    minRange = (Integer) list.get(0);
+                    minRange = ((Number) list.get(0)).intValue();
                 }
                 if(list.get(1) instanceof Number) {
-                    maxRange = (Integer) list.get(1);
+                    maxRange = ((Number) list.get(1)).intValue();
                 }
             }
         }

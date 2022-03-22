@@ -14,7 +14,7 @@ public abstract class TapSizeBase extends TapMapping {
     public void from(Map<String, Object> info) {
         Object sizeObj = info.get(KEY_SIZE);
         if(sizeObj instanceof Number) {
-            size = (Integer) sizeObj;
+            size = ((Number) sizeObj).intValue();
         }
     }
 }

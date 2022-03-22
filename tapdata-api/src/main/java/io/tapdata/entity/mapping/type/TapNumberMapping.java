@@ -27,17 +27,17 @@ public class TapNumberMapping extends TapMapping {
     public void from(Map<String, Object> info) {
         Object bitObj = info.get(KEY_BIT);
         if(bitObj instanceof Number) {
-            bit = (Integer) bitObj;
+            bit = ((Number) bitObj).intValue();
         }
         Object precisionObj = info.get(KEY_PRECISION);
         if(precisionObj instanceof List) {
             List<?> list = (List<?>) precisionObj;
             if(list.size() == 2) {
                 if(list.get(0) instanceof Number) {
-                    minPrecision = (Integer) list.get(0);
+                    minPrecision = ((Number) list.get(0)).intValue();
                 }
                 if(list.get(1) instanceof Number) {
-                    maxPrecision = (Integer) list.get(1);
+                    maxPrecision = ((Number) list.get(1)).intValue();
                 }
             }
         }
@@ -47,10 +47,10 @@ public class TapNumberMapping extends TapMapping {
             List<?> list = (List<?>) scaleObj;
             if(list.size() == 2) {
                 if(list.get(0) instanceof Number) {
-                    minScale = (Integer) list.get(0);
+                    minScale = ((Number) list.get(0)).intValue();
                 }
                 if(list.get(1) instanceof Number) {
-                    maxScale = (Integer) list.get(1);
+                    maxScale = ((Number) list.get(1)).intValue();
                 }
             }
         }

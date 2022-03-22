@@ -18,7 +18,7 @@ public abstract class TapBytesBase extends TapMapping {
 
         Object byteObj = info.get(KEY_BYTE);
         if(byteObj instanceof Number) {
-            bytes = (Long) byteObj;
+            bytes = ((Number) byteObj).longValue();
         } else if(byteObj instanceof String) {
             //4g 64k 16m
             String str = (String) byteObj;

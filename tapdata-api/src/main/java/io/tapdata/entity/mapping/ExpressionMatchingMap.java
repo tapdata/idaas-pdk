@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class ExpressionMatchingMap<T> {
+    private ValueFilter<T> valueFilter;
     private Map<String, T> exactlyMatchMap = new ConcurrentHashMap<>();
     private Map<String, List<TypeExpr<T>>> prefixTypeExprListMap = new ConcurrentHashMap<>();
 
@@ -59,11 +60,11 @@ public class ExpressionMatchingMap<T> {
         return new ExpressionMatchingMap<>(json, typeHolder);
     }
 
-    public static ExpressionMatchingMap<DefaultMap> map(String json) {
-        return new ExpressionMatchingMap<>(json, new TypeHolder<Map<String, DefaultMap>>() {});
+    public static DefaultExpressionMatchingMap map(String json) {
+        return new DefaultExpressionMatchingMap(InstanceFactory.instance(JsonParser.class).fromJson(json, new TypeHolder<Map<String, DefaultMap>>(){}));
     }
 
-    public static DefaultExpressionMatchingMap map(Map<String, Object> map) {
+    public static DefaultExpressionMatchingMap map(Map<String, DefaultMap> map) {
         return new DefaultExpressionMatchingMap(map);
     }
 
@@ -120,15 +121,26 @@ public class ExpressionMatchingMap<T> {
                     TypeExprResult<T> result = typeExpr.verifyValue(key);
                     if(result == null)
                         continue;
+                    valueFilter(result.getValue());
                     return result;
                 }
             }
         } else {
             TypeExprResult<T> result = new TypeExprResult<>();
             result.setValue(value);
+            valueFilter(value);
             return result;
         }
         return null;
     }
 
+    private void valueFilter(T value) {
+        if(valueFilter != null) {
+            valueFilter.filter(value);
+        }
+    }
+
+    public void setValueFilter(ValueFilter<T> valueFilter) {
+        this.valueFilter = valueFilter;
+    }
 }
