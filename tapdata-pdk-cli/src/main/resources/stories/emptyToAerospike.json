@@ -18,17 +18,15 @@
       "connectionConfig" : {
         "seedHosts": "192.168.153.131:3000",
         "keyspace": "test",
-        "columnName": "description",
         "userName": "",
         "password": "",
-        "keySet": "test_set_name",
         "maxConcurrentRequests": 10,
         "timeoutMs": 100,
         "retries": 1
       },
       "table" : {
-        "name" : "aerospike-table1",
-        "id" : "aerospike-table1"
+        "name" : "test_set_name",
+        "id" : "test_set_name"
       },
       "id" : "t2",
       "pdkId" : "aerospike",
