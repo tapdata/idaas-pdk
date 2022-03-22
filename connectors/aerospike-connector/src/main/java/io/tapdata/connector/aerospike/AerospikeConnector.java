@@ -38,7 +38,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
     private AerospikeSinkConfig sinkConfig;
     private AerospikeStringSink aerospikeStringSink;
-    private AerospikeNamespaces aerospikeNamespaces;
     private final WritePolicy policy = new WritePolicy();
 
     public void initConnection(Map<String, Object> configMap) throws Exception {
@@ -47,7 +46,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
             sinkConfig = AerospikeSinkConfig.load(configMap);
             policy.timeoutDelay = 20;
             aerospikeStringSink.open(sinkConfig);
-            aerospikeNamespaces = new AerospikeNamespaces(this.aerospikeStringSink.client);
         }
     }
 
@@ -75,7 +73,11 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         }
 
         // 获得表信息,获得真实的AS表数据
-        ArrayList<AerospikeSet> sets = aerospikeNamespaces.getSets(sinkConfig.getKeyspace());
+        String namespace = sinkConfig.getKeyspace();
+        ArrayList<AerospikeSet> sets = AerospikeNamespaces.getSets(aerospikeStringSink.client,namespace);
+        if(sets == null){
+            throw new RuntimeException(namespace + " is not exist!");
+        }
         for (AerospikeSet set : sets) {
             consumer.accept(list(table(set.getSetName())));
         }
@@ -238,7 +240,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         try {
             aerospikeStringSink.close();
             aerospikeStringSink = null;
-            aerospikeNamespaces = null;
         } catch (Exception e) {
             throw new RuntimeException("release Connection Failed!");
         }

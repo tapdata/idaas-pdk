@@ -1,6 +1,8 @@
 package empty;
 
 
+import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.Bin;
 import com.aerospike.client.Key;
 import com.aerospike.client.policy.WritePolicy;
 import com.alibaba.fastjson.JSON;
@@ -15,7 +17,6 @@ import io.tapdata.entity.utils.DefaultMap;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class ConnectionTestTest {
@@ -36,7 +37,6 @@ public class ConnectionTestTest {
         sinkConfig = AerospikeSinkConfig.load(configPath);
         policy.timeoutDelay = 20;
         aerospikeStringSink.open(sinkConfig);
-        aerospikeNamespaces = new AerospikeNamespaces(this.aerospikeStringSink.client);
     }
 
     public void clearKeyInKeySet(AerospikeSinkConfig sinkConfig, String keySet, String keyStr) throws Exception {
@@ -70,16 +70,31 @@ public class ConnectionTestTest {
         String keyStr = after_json_obj.get("id").toString();
         String after_json = after_json_obj.toJSONString();
 
+        AerospikeClient client = aerospikeStringSink.client;
+        String keySet = "test_set_name";
+        client.truncate(client.getInfoPolicyDefault(), sinkConfig.getKeyspace(), keySet, null);
 
-        ArrayList<AerospikeSet> sets = aerospikeNamespaces.getSets(sinkConfig.getKeyspace());
-        String keySet = sets.get(0).getSetName();
-        Assert.assertEquals("test_set_name",keySet);
+        Key key = new Key(sinkConfig.getKeyspace(), keySet, keyStr);
+        Bin b = new Bin("PK", keyStr);
+        client.put(policy, key, b);
+
+        ArrayList<AerospikeSet> sets = AerospikeNamespaces.getSets(client, sinkConfig.getKeyspace());
+        Assert.assertNotNull(sets);
+        boolean keySetFlag = false;
+        for (AerospikeSet set : sets) {
+            if (set.getSetName().equals(keySet)) {
+                keySetFlag = true;
+                break;
+            }
+        }
+        Assert.assertTrue(keySetFlag);
+
         clearKeyInKeySet(sinkConfig, keySet, keyStr);
         IRecord<String> tapAerospikeRecord = new TapAerospikeRecord(after_json, keyStr);
 
         aerospikeStringSink.write(tapAerospikeRecord, keySet);
 
-        Key key = new Key(sinkConfig.getKeyspace(), keySet, keyStr);
+        key = new Key(sinkConfig.getKeyspace(), keySet, keyStr);
         Assert.assertEquals("{PK=1.0}", aerospikeStringSink.client.get(policy, key, "PK").bins.toString());
         Assert.assertEquals("{id=1.0}", aerospikeStringSink.client.get(policy, key, "id").bins.toString());
         Assert.assertEquals("{description=description123}", aerospikeStringSink.client.get(policy, key, "description").bins.toString());
