@@ -44,6 +44,11 @@
             <version>2.13.2</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.tapdata.pdk</groupId>
+            <artifactId>tapdata-pdk-runner</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
     <build>

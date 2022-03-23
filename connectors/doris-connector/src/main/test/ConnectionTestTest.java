@@ -1,13 +1,12 @@
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tapdata.connector.doris.utils.DorisConfig;
-import io.tapdata.pdk.apis.common.DefaultMap;
-import io.tapdata.pdk.apis.utils.ImplementationUtils;
-import io.tapdata.pdk.apis.utils.TapUtils;
+import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.pdk.core.api.impl.JsonParserImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
-
+import io.tapdata.entity.utils.JsonParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +16,7 @@ import java.sql.*;
 @DisplayName("Tests for connection test")
 public class ConnectionTestTest {
     private DorisConfig dorisConfig;
-    private final TapUtils tapUtils = ImplementationUtils.getTapUtils();
+    private final JsonParser jsonParser = new JsonParserImpl();
 
     @Test
     @DisplayName("Test method connectionTest")
@@ -35,8 +34,8 @@ public class ConnectionTestTest {
 
 
         String json = "{\"after\":{\"id\":1.0,\"description\":\"description123\",\"name\":\"name123\",\"age\":12.0},\"table\":{\"id\":\"empty-table1\",\"name\":\"empty-table1\",\"nameFieldMap\":{\"id\":{\"name\":\"id\",\"originType\":\"VARCHAR\",\"partitionKeyPos\":1,\"pos\":1,\"primaryKey\":true},\"description\":{\"name\":\"description\",\"originType\":\"TEXT\",\"pos\":2},\"name\":{\"name\":\"name\",\"originType\":\"VARCHAR\",\"pos\":3},\"age\":{\"name\":\"age\",\"originType\":\"DOUBLE\",\"pos\":4}}},\"time\":1647660346515}";
-        DefaultMap defaultMap = tapUtils.fromJson(json);
-        DefaultMap after_map = tapUtils.fromJson(defaultMap.get("after").toString());
+        DefaultMap defaultMap = jsonParser.fromJson(json);
+        DefaultMap after_map = jsonParser.fromJson(defaultMap.get("after").toString());
 
 
         try {
