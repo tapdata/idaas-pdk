@@ -1,8 +1,6 @@
 package io.tapdata.pdk.apis.logger;
 
 import io.tapdata.pdk.apis.utils.FormatUtils;
-import io.tapdata.pdk.apis.utils.ImplementationUtils;
-import io.tapdata.pdk.apis.utils.TapUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

@@ -67,8 +67,8 @@ public class TapField {
     /**
      * Primary key position, start from 1.
      */
-    private Long primaryKeyPos;
-    public TapField primaryKeyPos(Long primaryKeyPos) {
+    private Integer primaryKeyPos;
+    public TapField primaryKeyPos(Integer primaryKeyPos) {
         this.primaryKeyPos = primaryKeyPos;
         return this;
     }
@@ -112,14 +112,14 @@ public class TapField {
         this.autoIncStartValue = autoIncStartValue;
         return this;
     }
-    /**
-     * Unique field
-     */
-    private Boolean unique;
-    public TapField unique(Boolean unique) {
-        this.unique = unique;
-        return this;
-    }
+//    /**
+//     * Unique field
+//     */
+//    private Boolean unique;
+//    public TapField unique(Boolean unique) {
+//        this.unique = unique;
+//        return this;
+//    }
     /**
      * Check expression, ensure the data can only be write when satisfy the check expression.
      */
@@ -202,11 +202,11 @@ public class TapField {
         this.pos = pos;
     }
 
-    public Long getPrimaryKeyPos() {
+    public Integer getPrimaryKeyPos() {
         return primaryKeyPos;
     }
 
-    public void setPrimaryKeyPos(Long primaryKeyPos) {
+    public void setPrimaryKeyPos(Integer primaryKeyPos) {
         this.primaryKeyPos = primaryKeyPos;
     }
 
@@ -242,13 +242,13 @@ public class TapField {
         this.autoIncStartValue = autoIncStartValue;
     }
 
-    public Boolean getUnique() {
-        return unique;
-    }
-
-    public void setUnique(Boolean unique) {
-        this.unique = unique;
-    }
+//    public Boolean getUnique() {
+//        return unique;
+//    }
+//
+//    public void setUnique(Boolean unique) {
+//        this.unique = unique;
+//    }
 
     public String getCheck() {
         return check;

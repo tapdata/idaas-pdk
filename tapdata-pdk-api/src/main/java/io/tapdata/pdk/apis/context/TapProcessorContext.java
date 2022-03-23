@@ -1,6 +1,6 @@
 package io.tapdata.pdk.apis.context;
 
-import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.entity.utils.DefaultMap;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 public class TapProcessorContext extends TapContext {
