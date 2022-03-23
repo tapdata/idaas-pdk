@@ -1,0 +1,11 @@
+{
+  "jdbcDriver": "com.mysql.jdbc.Driver",
+  "databaseUrlPattern": "jdbc:mysql://%s:%d/%s?rewriteBatchedStatements=true",
+  "host": "192.168.153.132",
+  "port": "9030",
+  "database": "example_db",
+  "table": "empty",
+  "user": "test",
+  "password": "test",
+  "insertBatchSize": 100
+}
