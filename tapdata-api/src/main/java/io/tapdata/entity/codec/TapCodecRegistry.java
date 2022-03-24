@@ -23,7 +23,7 @@ public class TapCodecRegistry {
         classToTapValueCodecMap.remove(anyClass);
     }
 
-    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<? extends TapValue<?, ?>> tapTypeClass, FromTapValueCodec<T> fromTapValueCodec) {
+    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapTypeClass, FromTapValueCodec<T> fromTapValueCodec) {
         classFromTapValueCodecMap.put(tapTypeClass, fromTapValueCodec);
         return this;
     }

@@ -27,11 +27,16 @@ public class TargetTypesGenerator {
         AtomicReference<String> hitTapMapping = new AtomicReference<>();
         matchingMap.iterate(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
-            String originType = tapMapping.fromTapType(expressionValueEntry.getKey(), field.getTapType());
-            //TODO need better conversion implementation here.
-            if(originType != null) {
-                hitTapMapping.set(originType);
-                return true;
+            if(tapMapping != null) {
+                if(tapMapping.getQueryOnly() != null && tapMapping.getQueryOnly()) {
+                    return false;
+                }
+                String originType = tapMapping.fromTapType(expressionValueEntry.getKey(), field.getTapType());
+                //TODO need better conversion implementation here.
+                if(originType != null) {
+                    hitTapMapping.set(originType);
+                    return true;
+                }
             }
             return false;
         });

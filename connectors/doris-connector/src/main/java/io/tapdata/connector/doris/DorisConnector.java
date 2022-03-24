@@ -1,6 +1,7 @@
 package io.tapdata.connector.doris;
 
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
@@ -11,6 +12,11 @@ import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.type.TapRaw;
+import io.tapdata.entity.value.TapArrayValue;
+import io.tapdata.entity.value.TapBooleanValue;
+import io.tapdata.entity.value.TapMapValue;
+import io.tapdata.entity.value.TapRawValue;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -120,18 +126,48 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportAlterTable(this::alterTable);
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportDropTable(this::dropTable);
+
+        codecRegistry.registerFromTapValue(TapRawValue.class, tapRawValue -> {
+            if(tapRawValue != null)
+                return tapRawValue.toString();
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapMapValue.class, tapMapValue -> {
+            if(tapMapValue != null) {
+                return tapMapValue.toString();
+            }
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapArrayValue.class, tapValue -> {
+            if(tapValue != null)
+                return tapValue.toString();
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapBooleanValue.class, tapValue -> {
+            if(tapValue != null) {
+                Boolean value = tapValue.getValue();
+                if(value != null && value) {
+                    return 1;
+                }
+            }
+            return 0;
+        });
     }
 
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
+        PDKLogger.info(TAG, "createTable");
     }
 
     private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent) {
+        PDKLogger.info(TAG, "alterTable");
     }
 
     private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) {
+        PDKLogger.info(TAG, "clearTable");
     }
 
     private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) {
+        PDKLogger.info(TAG, "dropTable");
     }
 
 

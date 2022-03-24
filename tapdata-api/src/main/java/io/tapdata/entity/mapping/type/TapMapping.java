@@ -10,6 +10,7 @@ public abstract class TapMapping {
     public static final String FIELD_TYPE_MAPPING = "_tapMapping";
 
     private String to;
+    private Boolean queryOnly;
     private static final Map<String, Class<?>> classCacheMap = new ConcurrentHashMap<>();
 
     public TapMapping() {}
@@ -42,6 +43,7 @@ public abstract class TapMapping {
     }
     public static TapMapping build(Map<String, Object> info) {
         String to = (String) info.get("to");
+        Boolean queryOnly = (Boolean) info.get("queryOnly");
         if(to == null)
             return null;
 
@@ -68,6 +70,7 @@ public abstract class TapMapping {
         try {
             TapMapping tapMapping = (TapMapping) mappingClass.getConstructor().newInstance();
             tapMapping.to = to;
+            tapMapping.queryOnly = queryOnly;
             tapMapping.from(info);
             return tapMapping;
         } catch (Throwable e) {
@@ -111,6 +114,8 @@ public abstract class TapMapping {
         return clearBrackets(typeExpression, str, true);
     }
     protected String clearBrackets(String typeExpression, String str, boolean needSpace) {
+        if(str == null)
+            return typeExpression;
         int pos = typeExpression.indexOf(str);
         if (pos >= 0) {
             int startPos = typeExpression.lastIndexOf("[", pos);
@@ -124,5 +129,13 @@ public abstract class TapMapping {
             }
         }
         return typeExpression;
+    }
+
+    public Boolean getQueryOnly() {
+        return queryOnly;
+    }
+
+    public void setQueryOnly(Boolean queryOnly) {
+        this.queryOnly = queryOnly;
     }
 }

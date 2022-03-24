@@ -95,10 +95,10 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
                 dropTableFunction.dropTable(getTargetNode().getConnectorContext(), dropTableEvent);
                 //clear the index and fields
                 TapTable table = targetNode.getConnectorContext().getTable();
-                if(table != null) {
-                    table.setIndexList(null);
-                    table.setNameFieldMap(null);
-                }
+//                if(table != null) {
+//                    table.setIndexList(null);
+//                    table.setNameFieldMap(null);
+//                }
             }, "Drop table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
         }
     }

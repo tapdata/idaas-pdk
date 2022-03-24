@@ -12,7 +12,9 @@ import java.util.Map;
 public abstract class TapDateBase extends TapMapping {
     public static final String KEY_RANGE = "range";
     public static final String KEY_GMT = "gmt";
+    public static final String KEY_BYTE = "byte";
 
+    private Long bytes;
     private Date min;
     private Date max;
 
@@ -61,6 +63,11 @@ public abstract class TapDateBase extends TapMapping {
             gmt = ((Number) gmtObj).intValue();
         } else {
             gmt = 0;
+        }
+
+        Object byteObj = info.get(KEY_BYTE);
+        if(byteObj instanceof Number) {
+            bytes = ((Number) byteObj).longValue();
         }
     }
 

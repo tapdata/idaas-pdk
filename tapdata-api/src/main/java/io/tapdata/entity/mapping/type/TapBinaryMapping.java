@@ -22,6 +22,8 @@ public class TapBinaryMapping extends TapBytesBase {
                 throwable.printStackTrace();
             }
         }
+        if(bytes == null)
+            bytes = defaultBytes;
         return new TapBinary().width(bytes);
     }
 

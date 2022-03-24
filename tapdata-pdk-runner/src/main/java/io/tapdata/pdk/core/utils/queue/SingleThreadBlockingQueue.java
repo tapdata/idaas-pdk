@@ -157,6 +157,7 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
         try {
             this.listHandler.execute(t);
         } catch (Throwable e) {
+            e.printStackTrace();
             if(listErrorHandler != null) {
                 CommonUtils.ignoreAnyError(() -> {
                     this.listErrorHandler.error(t, e);

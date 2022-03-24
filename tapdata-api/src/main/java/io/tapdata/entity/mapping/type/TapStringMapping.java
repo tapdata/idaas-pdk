@@ -24,6 +24,8 @@ public class TapStringMapping extends TapBytesBase {
                 throwable.printStackTrace();
             }
         }
+        if(bytes == null)
+            bytes = defaultBytes;
         return new TapString().width(bytes).fixed(theFixed);
     }
 
