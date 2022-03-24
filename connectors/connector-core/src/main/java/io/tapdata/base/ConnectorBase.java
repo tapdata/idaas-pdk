@@ -125,6 +125,10 @@ public class ConnectorBase {
         return new TapMap();
     }
 
+    public TapYear tapYear() {
+        return new TapYear();
+    }
+
     public TapDate tapDate() {
         return new TapDate();
     }

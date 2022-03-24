@@ -3,8 +3,17 @@ package io.tapdata.entity.mapping;
 import java.util.Map;
 
 public class TypeExprResult<T> {
+    private String expression;
     private T value;
     private Map<String, String> params;
+
+    public String getExpression() {
+        return expression;
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
 
     public T getValue() {
         return value;

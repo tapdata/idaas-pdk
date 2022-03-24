@@ -155,6 +155,28 @@ public class TapField {
         return this;
     }
 
+    public TapField clone() {
+        TapField newField = new TapField();
+        newField.nullable = nullable;
+        newField.name = name;
+        newField.originType = originType;
+        newField.partitionKeyPos = partitionKeyPos;
+        newField.pos = pos;
+        newField.primaryKeyPos = primaryKeyPos;
+        newField.autoInc = autoInc;
+        newField.autoIncStartValue = autoIncStartValue;
+        newField.check = check;
+        newField.comment = comment;
+        newField.constraint = constraint;
+        newField.defaultValue = defaultValue;
+        newField.foreignKeyField = foreignKeyField;
+        newField.foreignKeyTable = foreignKeyTable;
+        newField.isPartitionKey = isPartitionKey;
+        newField.isPrimaryKey = isPrimaryKey;
+        newField.tapType = tapType; //XXX need clone?
+        return newField;
+    }
+
     public Object getDefaultValue() {
         return defaultValue;
     }

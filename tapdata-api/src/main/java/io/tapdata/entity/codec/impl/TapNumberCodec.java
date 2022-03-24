@@ -17,7 +17,7 @@ public class TapNumberCodec implements ToTapValueCodec<TapNumberValue>, FromTapV
             tapNumber = (TapNumber) tapType;
         }
         if(tapNumber != null) {
-            Long scale = tapNumber.getScale();
+            Integer scale = tapNumber.getScale();
             //TODO need more code
             if(scale == null || scale == 0)
                 return tapValue.getValue().longValue();

@@ -8,20 +8,23 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.mapping.TypeExprResult;
+import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
-import io.tapdata.pdk.apis.functions.connector.source.BatchReadFunction;
-import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
-import io.tapdata.pdk.apis.functions.connector.source.StreamReadFunction;
+import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
+import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
@@ -54,7 +57,7 @@ public class SourceNodeDriver extends Driver {
                     if(table != null) {
                         TapTable targetTable = sourceNode.getConnectorContext().getTable();
                         if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
-                            sourceNode.getConnectorContext().setTable(table);
+                            analyzeTableFields(table);
                             break;
                         }
                     }
@@ -121,10 +124,16 @@ public class SourceNodeDriver extends Driver {
                             PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offer(filterEvents(events));
 
-//                                if (offsetState != null) {
-//                                    PDKLogger.debug(TAG, "Batch read update offset from {} to {}", this.batchOffsetStr, offsetState);
-//                                    batchOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
-//                                }
+                            BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
+                            if(batchOffsetFunction != null) {
+                                pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_OFFSET, () -> {
+                                    Object offsetState = batchOffsetFunction.batchOffset(getSourceNode().getConnectorContext());
+                                    if(offsetState != null) {
+                                        PDKLogger.debug(TAG, "Batch read update offset from {} to {}", this.batchOffsetStr, offsetState);
+                                        batchOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+                                    }
+                                }, "Batch offset " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+                            }
                         }
                     }), "Batch read " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
             if (!batchCompleted) {
@@ -132,7 +141,6 @@ public class SourceNodeDriver extends Driver {
                     if (!batchCompleted) {
                         batchCompleted = true;
                         PDKLogger.debug(TAG, "Batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
-//                        streamLock.notifyAll();
                     }
                 }
             }
@@ -169,6 +177,26 @@ public class SourceNodeDriver extends Driver {
                     });
                 }
             }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
+        }
+    }
+
+    private void analyzeTableFields(TapTable table) {
+        sourceNode.getConnectorContext().setTable(table);
+
+        LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
+        if(nameFieldMap != null) {
+            DefaultExpressionMatchingMap expressionMatchingMap = sourceNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap();
+            for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
+                if(entry.getValue().getOriginType() != null) {
+                    TypeExprResult<DefaultMap> result = expressionMatchingMap.get(entry.getValue().getOriginType());
+                    if(result != null) {
+                        TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+                        if(tapMapping != null) {
+                            entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getOriginType(), result.getParams()));
+                        }
+                    }
+                }
+            }
         }
     }
 

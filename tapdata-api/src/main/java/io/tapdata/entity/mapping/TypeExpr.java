@@ -92,6 +92,7 @@ public class TypeExpr<T> {
         if(match) {
             TypeExprResult<T> typeExprResult = new TypeExprResult<>();
             typeExprResult.setValue(this.value);
+            typeExprResult.setExpression(expression);
             Map<String, String> params = new HashMap<>();
             typeExprResult.setParams(params);
             for(Map.Entry<String, List<Integer>> entry : allVariableKeyOptionPosListMap.entrySet()) {

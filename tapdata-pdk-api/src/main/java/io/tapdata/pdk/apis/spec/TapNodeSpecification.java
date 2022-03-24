@@ -1,5 +1,8 @@
 package io.tapdata.pdk.apis.spec;
 
+import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.utils.DefaultMap;
+
 import java.util.Map;
 
 /**
@@ -14,7 +17,8 @@ public class TapNodeSpecification {
     private String group; //Unique key for each enterprise.
     private String version;
     private String icon;
-    private Map<String, Object> configOptions;
+    private DefaultMap configOptions;
+    private DefaultExpressionMatchingMap dataTypesMap;
 
     public String verify() {
         if(name == null)
@@ -80,11 +84,19 @@ public class TapNodeSpecification {
         this.icon = icon;
     }
 
-    public Map<String, Object> getConfigOptions() {
+    public DefaultMap getConfigOptions() {
         return configOptions;
     }
 
-    public void setConfigOptions(Map<String, Object> configOptions) {
+    public void setConfigOptions(DefaultMap configOptions) {
         this.configOptions = configOptions;
+    }
+
+    public DefaultExpressionMatchingMap getDataTypesMap() {
+        return dataTypesMap;
+    }
+
+    public void setDataTypesMap(DefaultExpressionMatchingMap dataTypesMap) {
+        this.dataTypesMap = dataTypesMap;
     }
 }
