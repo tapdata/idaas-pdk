@@ -6,14 +6,14 @@ public abstract class TapBytesBase extends TapMapping {
     public static final String KEY_FIXED = "fixed";
     public static final String KEY_BYTE = "byte";
 
-    private Boolean fixed;
-    private Long bytes;
+    protected String  fixed;
+    protected Long bytes;
 
     @Override
     public void from(Map<String, Object> info) {
         Object fixedObj = info.get(KEY_FIXED);
-        if(fixedObj instanceof Boolean) {
-            fixed = (Boolean) fixedObj;
+        if(fixedObj instanceof String) {
+            fixed = (String) fixedObj;
         }
 
         Object byteObj = info.get(KEY_BYTE);
@@ -50,11 +50,11 @@ public abstract class TapBytesBase extends TapMapping {
         return null;
     }
 
-    public Boolean getFixed() {
+    public String getFixed() {
         return fixed;
     }
 
-    public void setFixed(Boolean fixed) {
+    public void setFixed(String fixed) {
         this.fixed = fixed;
     }
 

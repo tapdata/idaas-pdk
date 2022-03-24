@@ -1,5 +1,6 @@
 package io.tapdata.pdk.core.tapnode;
 
+import io.tapdata.entity.utils.DefaultMap;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 import java.util.Map;
@@ -7,13 +8,15 @@ import java.util.Map;
 public class TapNodeContainer {
     private TapNodeSpecification properties;
 
-    private Map<String, Object> configOptions;
+    private DefaultMap configOptions;
 
-    public Map<String, Object> getConfigOptions() {
+    private Map<String, DefaultMap> dataTypes;
+
+    public DefaultMap getConfigOptions() {
         return configOptions;
     }
 
-    public void setConfigOptions(Map<String, Object> configOptions) {
+    public void setConfigOptions(DefaultMap configOptions) {
         this.configOptions = configOptions;
     }
 
@@ -25,4 +28,11 @@ public class TapNodeContainer {
         this.properties = properties;
     }
 
+    public Map<String, DefaultMap> getDataTypes() {
+        return dataTypes;
+    }
+
+    public void setDataTypes(Map<String, DefaultMap> dataTypes) {
+        this.dataTypes = dataTypes;
+    }
 }

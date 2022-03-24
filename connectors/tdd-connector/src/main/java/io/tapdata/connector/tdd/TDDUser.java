@@ -11,6 +11,15 @@ public class TDDUser {
     public static final int GENDER_FEMALE = 10;
     private int gender;
 
+    public TDDUser() {}
+    public TDDUser(String id, String name, String description, int age, int gender) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.age = age;
+        this.gender = gender;
+    }
+
     private List<String> loginAccounts;
 
     public String getId() {

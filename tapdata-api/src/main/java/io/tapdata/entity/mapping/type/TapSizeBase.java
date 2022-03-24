@@ -3,7 +3,7 @@ package io.tapdata.entity.mapping.type;
 import java.util.Map;
 
 /**
- *  "varbinary($width)": {"byte": 255, "fixed": false, "to": "typeBinary"}
+ *  "varbinary($byte)": {"byte": 255, "fixed": false, "to": "typeBinary"}
  */
 public abstract class TapSizeBase extends TapMapping {
     public static final String KEY_SIZE = "size";

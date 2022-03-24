@@ -12,11 +12,12 @@ import picocli.CommandLine;
 public class StoryMain {
     //
     public static void main(String... args) {
-        String rootPath = "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\stories\\";
-//        String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
+//        String rootPath = "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\stories\\";
+        String rootPath = "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/stories/";
         args = new String[]{"start",
 //                rootPath + "emptyToFile.json",
-                rootPath + "emptyToAerospike.json",
+//                rootPath + "emptyToAerospike.json",
+                rootPath + "tddToEmpty.json",
 //                rootPath + "vikaToVika.json",
         };
 

@@ -74,6 +74,7 @@ public class TapDAGNodeWithWorker extends TapDAGNode {
                             .withTapDAGNode(this)
                             .withDagId(dag.getId())
                             .build());
+                    targetNodeDriver.setActionsBeforeStart(jobOptions.actionsBeforeStart);
                 }
                 break;
         }

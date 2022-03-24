@@ -1,10 +1,9 @@
 package io.tapdata.pdk.cli;
 
-import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
-import io.tapdata.entity.mapping.ValueFilter;
+import io.tapdata.entity.mapping.*;
 import io.tapdata.entity.mapping.type.TapMapping;
+import io.tapdata.entity.type.TapType;
 import io.tapdata.entity.utils.DefaultMap;
-import io.tapdata.entity.mapping.ExpressionMatchingMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 
@@ -16,21 +15,22 @@ import java.util.regex.Pattern;
 public class TypeMappingMain {
     public static void main(String[] args) {
         String str = "{\n" +
-                "    \"tinyint[($bit)][unsigned][zerofill]\": {\"bit\": 1, \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
-                "    \"smallint[($bit)][unsigned][zerofill]\": {\"bit\": 4, \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
-                "    \"mediumint[($bit)][unsigned][zerofill]\": {\"bit\": 8, \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
-                "    \"int[($bit)][unsigned][zerofill]\": {\"bit\": 32, \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
-                "    \"bigint[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
-                "    \"float[($bit)][unsigned][zerofill]\": {\"bit\": 16, \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
-                "    \"double[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
-                "    \"decimal($precision, $scale)[unsigned][zerofill]\": {\"precision\":[1, 65], \"scale\": [0, 30], \"unsigned\": true, \"to\": \"TapNumber\"},\n" +
+                "    \"tinyint[($length)][unsigned][zerofill]\": {\"bit\": 1, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"smallint[($length)][unsigned][zerofill]\": {\"bit\": 4, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"mediumint[($length)][unsigned][zerofill]\": {\"bit\": 8, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"int[($length)][unsigned][zerofill]\": {\"bit\": 32, \"unsigned\": \"unsigned\", \"zerofill\": \"zerofill\", \"to\": \"TapNumber\"},\n" +
+                "    \"bigint($length)[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"bigint[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"float[($length)][unsigned][zerofill]\": {\"bit\": 16, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"double[($length)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"decimal($precision, $scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [0, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"to\": \"TapNumber\"},\n" +
                 "    \"date\": {\"range\": [\"1000-01-01\", \"9999-12-31\"], \"to\": \"TapDate\"},\n" +
                 "    \"time\": {\"range\": [\"-838:59:59\",\"838:59:59\"], \"to\": \"TapTime\"},\n" +
                 "    \"year\": {\"range\": [1901, 2155], \"to\": \"TapYear\"},\n" +
                 "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"to\": \"TapDateTime\"},\n" +
                 "    \"timestamp\": {\"to\": \"TapDateTime\"},\n" +
-                "    \"char[($byte)]\": {\"byte\": 255, \"to\": \"TapString\"},\n" +
-                "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"fixed\": false, \"to\": \"TapString\"},\n" +
+                "    \"char[($width)]\": {\"byte\": 255, \"to\": \"TapString\"},\n" +
+                "    \"varchar[($width)]\": {\"byte\": \"64k\", \"fixed\": false, \"to\": \"TapString\"},\n" +
                 "    \"tinyblob\": {\"byte\": 255, \"to\": \"TapBinary\"},\n" +
                 "    \"tinytext\": {\"byte\": 255, \"to\": \"TapString\"},\n" +
                 "    \"blob\": {\"byte\": \"64k\", \"to\": \"TapBinary\"},\n" +
@@ -39,10 +39,10 @@ public class TypeMappingMain {
                 "    \"mediumtext\": {\"byte\": \"16m\", \"to\": \"TapString\"},\n" +
                 "    \"longblob\": {\"byte\": \"4g\", \"to\": \"TapBinary\"},\n" +
                 "    \"longtext\": {\"byte\": \"4g\", \"to\": \"TapString\"},\n" +
-                "    \"bit($byte)\": {\"byte\": 8, \"to\": \"TapBinary\"},\n" +
-                "    \"binary($byte)\": {\"byte\": 255, \"to\": \"TapBinary\"},\n" +
-                "    \"varbinary($byte)\": {\"byte\": 255, \"fixed\": false, \"to\": \"TapBinary\"},\n" +
-//                "    \"[varbinary]($width)[ABC$hi]aaaa[DDD[AAA]]\": {\"byte\": 33333, \"fixed\": false, \"to\": \"TapBinary\"}\n" +
+                "    \"bit($width)\": {\"byte\": 8, \"to\": \"TapBinary\"},\n" +
+                "    \"binary($width)\": {\"byte\": 255, \"to\": \"TapBinary\"},\n" +
+                "    \"varbinary($width)\": {\"byte\": 255, \"fixed\": false, \"to\": \"TapBinary\"},\n" +
+                "    \"[varbinary]($width)[ABC$hi]aaaa[DDD[AAA|BBB]]\": {\"byte\": 33333, \"fixed\": false, \"to\": \"TapBinary\"}\n" +
                 "}";
 
 //        String str1 = "{\n" +
@@ -53,9 +53,9 @@ public class TypeMappingMain {
 //        map1.get("");
         DefaultExpressionMatchingMap matchingMap = ExpressionMatchingMap.map(str);
         matchingMap.setValueFilter(defaultMap -> {
-            TapMapping tapMapping = (TapMapping) defaultMap.get("_tapMapping");
+            TapMapping tapMapping = (TapMapping) defaultMap.get(TapMapping.FIELD_TYPE_MAPPING);
             if(tapMapping == null) {
-                defaultMap.put("_tapMapping", TapMapping.build(defaultMap));
+                defaultMap.put(TapMapping.FIELD_TYPE_MAPPING, TapMapping.build(defaultMap));
             }
         });
 
@@ -87,15 +87,26 @@ public class TypeMappingMain {
         System.out.println("date => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("date")));
         //[varbinary]($width)[ABC$hi] aaaa [DDD[AAA]]
         System.out.println("varbinary(lllll)ABCDDDDD aaaa DDDAAA => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("varbinary(lllll)ABCDDDDD aaaa DDDAAA")));
+        System.out.println("varbinary(lllll)ABCDDDDD aaaa DDDBBB => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("varbinary(lllll)ABCDDDDD aaaa DDDBBB")));
         System.out.println("(lllll)ABCDDDDD aaaa => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("(lllll)ABCDDDDD aaaa")));
 
+        TypeExprResult<DefaultMap> result = matchingMap.get("decimal(56, 2) theUnsigned theZerofill");
+        TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+        TapType tapType = tapMapping.toTapType("decimal(56, 2) theUnsigned theZerofill", result.getParams());
 
+        String originType = tapMapping.fromTapType("decimal($precision, $scale)[theUnsigned][theZerofill]", tapType);
 
-        long time = System.currentTimeMillis();
-        for(int i = 0; i < 1000000; i++) {
-            matchingMap.get("decimal(4, 8) unsigned zerofill");
-        }
-        System.out.println("matchingMap.get(\"decimal(4, 8) unsigned zerofill\") takes " + (System.currentTimeMillis() - time));
+        matchingMap.iterate(entry -> {
+            System.out.println("key " + entry.getKey() + " value " + entry.getValue());
+            return false;
+        });
+
+        System.out.println("");
+//        long time = System.currentTimeMillis();
+//        for(int i = 0; i < 1000000; i++) {
+//            matchingMap.get("decimal(4, 8) unsigned zerofill");
+//        }
+//        System.out.println("matchingMap.get(\"decimal(4, 8) unsigned zerofill\") takes " + (System.currentTimeMillis() - time));
         //1000000 matchingMap.get("decimal(4, 8) unsigned zerofill") takes 3408
     }
 

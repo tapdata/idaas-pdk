@@ -5,10 +5,7 @@ import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -101,6 +98,27 @@ public class ExpressionMatchingMap<T> {
         }
     }
 
+    public void iterate(TapIterator<Map.Entry<String, T>> iterator) {
+        if(exactlyMatchMap != null) {
+            for(Map.Entry<String, T> entry : exactlyMatchMap.entrySet()) {
+                valueFilter(entry.getValue());
+                if(iterator.iterate(entry)) {
+                    return;
+                }
+            }
+        }
+        if(prefixTypeExprListMap != null) {
+            for(Map.Entry<String, List<TypeExpr<T>>> entry : prefixTypeExprListMap.entrySet()) {
+                List<TypeExpr<T>> list = entry.getValue();
+                for(TypeExpr<T> typeExpr : list) {
+                    valueFilter(typeExpr.getValue());
+                    if(iterator.iterate(new TapEntry<>(typeExpr.getExpression(), typeExpr.getValue()))) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
     /**
      * Return the map value, with parameter map under key "_params".
      *
@@ -127,6 +145,7 @@ public class ExpressionMatchingMap<T> {
             }
         } else {
             TypeExprResult<T> result = new TypeExprResult<>();
+            result.setExpression(key);
             result.setValue(value);
             valueFilter(value);
             return result;

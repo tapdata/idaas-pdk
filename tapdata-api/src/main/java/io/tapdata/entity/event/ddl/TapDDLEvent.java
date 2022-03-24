@@ -1,7 +1,8 @@
 package io.tapdata.entity.event.ddl;
 
 
-import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.TapBaseEvent;
 
-public class TapDDLEvent extends TapEvent {
+
+public class TapDDLEvent extends TapBaseEvent {
 }
