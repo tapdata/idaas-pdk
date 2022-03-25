@@ -45,6 +45,7 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
+        //TODO originType最好使用标准列类型来表达， 避免混淆
         consumer.accept(list(
                 //Define first table
                 table("tdd-table")
