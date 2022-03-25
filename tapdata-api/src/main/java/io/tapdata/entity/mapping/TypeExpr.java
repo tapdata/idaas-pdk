@@ -86,7 +86,7 @@ public class TypeExpr<T> {
     }
 
     public TypeExprResult<T> verifyValue(String value) {
-        Pattern r = Pattern.compile(regExpr);
+        Pattern r = Pattern.compile(regExpr, Pattern.CASE_INSENSITIVE);
         Matcher m = r.matcher(value);
         boolean match = m.matches();
         if(match) {

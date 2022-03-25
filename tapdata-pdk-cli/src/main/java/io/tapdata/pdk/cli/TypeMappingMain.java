@@ -73,7 +73,7 @@ public class TypeMappingMain {
 //        DefaultExpressionMatchingMap map2 = ExpressionMatchingMap.map(defaultMap);
 //        map2.get("");
 
-        System.out.println("binary(4) => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("binary(4)")));
+        System.out.println("Binary(4) => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("Binary(4)")));
         System.out.println("double => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("double")));
         System.out.println("double(4) unsigned zerofill => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("double(4) unsigned zerofill")));
         //decimal($precision, $scale)[unsigned][zerofill]

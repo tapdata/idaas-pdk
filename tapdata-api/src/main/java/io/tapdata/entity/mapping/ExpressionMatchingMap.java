@@ -130,7 +130,7 @@ public class ExpressionMatchingMap<T> {
         if(value == null) {
             Set<String> prefixList = prefixTypeExprListMap.keySet();
             for(String prefix : prefixList) {
-                if(!key.startsWith(prefix))
+                if(!key.toLowerCase().startsWith(prefix))
                     continue;
                 List<TypeExpr<T>> typeExprList = prefixTypeExprListMap.get(prefix);
                 if(typeExprList == null)
