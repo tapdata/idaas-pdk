@@ -127,22 +127,22 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportDropTable(this::dropTable);
 
-        codecRegistry.registerFromTapValue(TapRawValue.class, tapRawValue -> {
+        codecRegistry.registerFromTapValue(TapRawValue.class, "string", tapRawValue -> {
             if(tapRawValue != null && tapRawValue.getValue() != null)
                 return toJson(tapRawValue.getValue());
             return "null";
         });
-        codecRegistry.registerFromTapValue(TapMapValue.class, tapMapValue -> {
+        codecRegistry.registerFromTapValue(TapMapValue.class, "string", tapMapValue -> {
             if(tapMapValue != null && tapMapValue.getValue() != null)
                 return toJson(tapMapValue.getValue());
             return "null";
         });
-        codecRegistry.registerFromTapValue(TapArrayValue.class, tapValue -> {
+        codecRegistry.registerFromTapValue(TapArrayValue.class, "string", tapValue -> {
             if(tapValue != null && tapValue.getValue() != null)
                 return toJson(tapValue.getValue());
             return "null";
         });
-        codecRegistry.registerFromTapValue(TapBooleanValue.class, tapValue -> {
+        codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
             if(tapValue != null) {
                 Boolean value = tapValue.getValue();
                 if(value != null && value) {

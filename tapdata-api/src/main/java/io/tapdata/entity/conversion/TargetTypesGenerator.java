@@ -1,5 +1,6 @@
 package io.tapdata.entity.conversion;
 
+import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.schema.TapField;
@@ -11,13 +12,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TargetTypesGenerator {
 
-    public LinkedHashMap<String, TapField> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap matchingMap) {
+    public LinkedHashMap<String, TapField> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap matchingMap, TapCodecFilterManager codecFilterManager) {
         if(sourceFields == null || matchingMap == null)
             return null;
         LinkedHashMap<String, TapField> targetFieldMap = new LinkedHashMap<>();
         for(Map.Entry<String, TapField> entry : sourceFields.entrySet()) {
             TapField field = entry.getValue();
             String originType = calculateBestTypeMapping(field, matchingMap);
+            if(originType == null && field.getTapType() != null) {
+                originType = codecFilterManager.getOriginTypeByTapType(field.getTapType().getClass());
+            }
             targetFieldMap.put(field.getName(), field.clone().originType(originType));
         }
         return targetFieldMap;

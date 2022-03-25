@@ -215,7 +215,7 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
         TapTable targetTable = targetNode.getConnectorContext().getTable();
         //Convert source table to target target by calculate the originType of target database.
         TargetTypesGenerator targetTypesGenerator = new TargetTypesGenerator();
-        LinkedHashMap<String, TapField> nameFieldMap = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap());
+        LinkedHashMap<String, TapField> nameFieldMap = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
         targetTable.setNameFieldMap(nameFieldMap);
     }
 

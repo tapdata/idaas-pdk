@@ -96,24 +96,6 @@
       "byte": "16385",
       "to": "TapNumber",
       "queryOnly": true
-    },
-    "boolean": {
-      "to": "TapBoolean"
-    },
-    "string": {
-      "to": "TapArray"
-    },
-    "string": {
-      "to": "TapMap"
-    },
-    "string": {
-      "to": "TapYear"
-    },
-    "string": {
-      "to": "TapTime"
-    },
-    "string": {
-      "to": "TapRaw"
     }
   }
 }
