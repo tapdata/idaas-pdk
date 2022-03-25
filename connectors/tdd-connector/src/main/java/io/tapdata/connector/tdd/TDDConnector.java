@@ -53,23 +53,23 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
                         .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(2))
                         .add(field("tddUser", "tapString"))
                         .add(field("tapString", "tapString").primaryKeyPos(1))
-                        .add(field("tapString(10)", "tapString(10)"))
-                        .add(field("tapString(10)Fixed", "tapString(10) fixed"))
-                        .add(field("int", "int"))
+                        .add(field("tapString10", "tapString(10)"))
+                        .add(field("tapString10Fixed", "tapString(10) fixed"))
+                        .add(field("tapInt", "int"))
                         .add(field("tapBoolean", "tapBoolean"))
                         .add(field("tapDate", "tapDate"))
-                        .add(field("tapArray-String", "tapArray"))
-                        .add(field("tapArray-Double", "tapArray"))
-                        .add(field("tapArray-TDDUser", "tapArray"))
-                        .add(field("tapRaw-TDDUser", "tapRaw"))
+                        .add(field("tapArrayString", "tapArray"))
+                        .add(field("tapArrayDouble", "tapArray"))
+                        .add(field("tapArrayTDDUser", "tapArray"))
+                        .add(field("tapRawTDDUser", "tapRaw"))
                         .add(field("tapNumber", "tapNumber"))
-                        .add(field("tapNumber(8)", "tapNumber(8)"))
-                        .add(field("tapNumber(5,2)", "tapNumber(5, 2)"))
+//                        .add(field("tapNumber8", "tapNumber(8)"))
+                        .add(field("tapNumber52", "tapNumber(5, 2)"))
                         .add(field("tapBinary", "tapBinary"))
                         .add(field("tapTime", "tapTime"))
-                        .add(field("tapMap-String-String", "tapMap"))
-                        .add(field("tapMap-String-Double", "tapMap"))
-                        .add(field("tapMap-String-TDDUser", "tapMap"))
+                        .add(field("tapMapStringString", "tapMap"))
+                        .add(field("tapMapStringDouble", "tapMap"))
+                        .add(field("tapMapStringTDDUser", "tapMap"))
                         .add(field("tapDateTime", "tapDateTime"))
                         .add(field("tapDateTimeTimeZone", "tapDateTime"))
         ));
@@ -231,23 +231,23 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
                         entry("id", "id_" + counter.incrementAndGet()),
                         entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
                         entry("tapString", "123"),
-                        entry("tapString(10)", "1234567890"),
-                        entry("tapString(10)Fixed", "1"),
-                        entry("int", 123123),
+                        entry("tapString10", "1234567890"),
+                        entry("tapString10Fixed", "1"),
+                        entry("tapInt", 123123),
                         entry("tapBoolean", true),
                         entry("tapDate", new Date()),
-                        entry("tapArray-String", Arrays.asList("1", "2", "3")),
-                        entry("tapArray-Double", Arrays.asList(1.1, 2.2, 3.3)),
-                        entry("tapArray-TDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
-                        entry("tapRaw-TDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
+                        entry("tapArrayString", Arrays.asList("1", "2", "3")),
+                        entry("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3)),
+                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
+                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
                         entry("tapNumber", 1233),
-                        entry("tapNumber(8)", 1111),
-                        entry("tapNumber(5,2)", 343.22),
+//                        entry("tapNumber(8)", 1111),
+                        entry("tapNumber52", 343.22),
                         entry("tapBinary", new byte[]{123, 21, 3, 2}),
                         entry("tapTime", new Date()),
-                        entry("tapMap-String-String", new HashMap<String, String>() {{put("a", "a");put("b", "b");}}),
-                        entry("tapMap-String-Double", new HashMap<String, Double>() {{put("a", 1.0);put("b", 2.0);}}),
-                        entry("tapMap-String-TDDUser", new HashMap<String, TDDUser>() {{put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));}}),
+                        entry("tapMapStringString", new HashMap<String, String>() {{put("a", "a");put("b", "b");}}),
+                        entry("tapMapStringDouble", new HashMap<String, Double>() {{put("a", 1.0);put("b", 2.0);}}),
+                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));}}),
                         entry("tapDateTime", new Date()),
                         entry("tapDateTimeTimeZone", new Date())
                 ), connectorContext.getTable());

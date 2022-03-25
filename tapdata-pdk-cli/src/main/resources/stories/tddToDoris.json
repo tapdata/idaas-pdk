@@ -16,10 +16,18 @@
     },
     {
       "connectionConfig": {
+        "jdbcDriver": "com.mysql.jdbc.Driver",
+        "databaseUrlPattern": "jdbc:mysql://%s:%d/%s?rewriteBatchedStatements=true",
+        "host": "192.168.153.132",
+        "port": "9030",
+        "database": "example_db",
+        "user": "test",
+        "password": "test",
+        "insertBatchSize": 100
       },
       "table": {
-        "name": "empty-table2",
-        "id": "empty-table2"
+        "name": "emptyTable2",
+        "id": "emptyTable2"
       },
       "id": "t2",
       "pdkId": "doris",

@@ -85,7 +85,7 @@ public class TapTable extends TapItem<TapField> {
         for (String key : nameFieldMapCopyRef.keySet()) {
             TapField field = nameFieldMapCopyRef.get(key);
             if (field != null && field.getPrimaryKey() != null && field.getPrimaryKey()) {
-                posPrimaryKeyName.put(field.getPartitionKeyPos(), field.getName());
+                posPrimaryKeyName.put(field.getPrimaryKeyPos(), field.getName());
             }
         }
         return posPrimaryKeyName.values();

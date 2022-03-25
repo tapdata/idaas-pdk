@@ -47,7 +47,6 @@
         <dependency>
             <groupId>io.tapdata.pdk</groupId>
             <artifactId>tapdata-pdk-runner</artifactId>
-            <scope>test</scope>
         </dependency>
 
     </dependencies>
