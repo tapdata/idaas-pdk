@@ -194,6 +194,8 @@ public class SourceNodeDriver extends Driver {
                         if(tapMapping != null) {
                             entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getOriginType(), result.getParams()));
                         }
+                    } else {
+                        PDKLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition. {}", entry.getValue().getOriginType(), LoggerUtils.sourceNodeMessage(sourceNode));
                     }
                 }
             }

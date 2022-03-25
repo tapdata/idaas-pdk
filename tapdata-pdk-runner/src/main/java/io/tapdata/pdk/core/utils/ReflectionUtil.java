@@ -97,7 +97,7 @@ public class ReflectionUtil {
             if (contructor == null)
                 return false;
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             return false;
         }
         return true;

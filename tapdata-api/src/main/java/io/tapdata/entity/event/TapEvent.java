@@ -1,6 +1,8 @@
 package io.tapdata.entity.event;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TapEvent {
     /**
@@ -35,6 +37,14 @@ public class TapEvent {
 
     public void setTime(Long time) {
         this.time = time;
+    }
+
+    public void clone(TapEvent tapEvent) {
+        tapEvent.time = time;
+        if(info != null)
+            tapEvent.info = new ConcurrentHashMap<>(info);
+        if(traceMap != null)
+            tapEvent.traceMap = new ConcurrentHashMap<>(traceMap);
     }
 
 }
