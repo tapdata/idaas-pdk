@@ -177,9 +177,8 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
         for (TapRecordEvent recordEvent : tapRecordEvents) {
-            TapTable sourceTable = recordEvent.getTable(); //TODO 不应该关心源数据的表
             TapTable targetTable = connectorContext.getTable();
-            LinkedHashMap<String, TapField> nameFieldMap = sourceTable.getNameFieldMap();
+            LinkedHashMap<String, TapField> nameFieldMap = targetTable.getNameFieldMap();
 
             Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
             for (String key : nameFieldMap.keySet()) {
