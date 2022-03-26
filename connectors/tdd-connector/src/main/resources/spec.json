@@ -16,6 +16,7 @@
     "tapRaw" : {"to": "TapRaw"},
     "tapBinary" : {"to": "TapBinary"},
     "tapMap" : {"to": "TapMap"},
+    "tapTime" : {"to": "tapTime"},
     "tapDateTime" : {"to": "TapDateTime"}
   }
 }

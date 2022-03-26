@@ -32,7 +32,10 @@ import io.tapdata.pdk.core.api.impl.JsonParserImpl;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -46,6 +49,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     private DorisConfig dorisConfig;
     private Connection conn;
     private Statement stmt;
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
     private void initConnection(DefaultMap config) {
@@ -222,12 +226,12 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         return builder.toString();
     }
 
-    private String buildColumnValues(TapTable tapTable, DefaultMap record) {
+    private String buildColumnValues(TapTable tapTable, Map<String, Object> record) {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         StringBuilder builder = new StringBuilder();
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
-            Object value = record.getValue(columnName, null);
+            Object value = record.get(columnName);
             if (tapField.getOriginType() == null) continue;
             if (value == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
@@ -236,10 +240,11 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                     builder.append("null").append(',');
                 }
             } else {
-                if (value instanceof JSONObject && "datetime".equals(tapField.getOriginType())) {
-                    Long nano = ((JSONObject) value).getLong("nano");
-                    builder.append("date_format(").append(nano).append(",").
-                            append("'yyyy-MM-dd HH:mm:ss')").append(',');
+                String originType = tapField.getOriginType();
+                if (value instanceof DateTime && ("datetime".equals(originType) || "date".equals(originType))) {
+                    TimeZone timeZone = ((DateTime) value).getTimeZone();
+                    if(timeZone!=null) simpleDateFormat.setTimeZone(timeZone);
+                    builder.append("'").append(simpleDateFormat.format(new Date(((DateTime) value).getSeconds() * 1000L))).append("'").append(',');
                 } else {
                     builder.append("'").append(value).append("'").append(',');
                 }
@@ -321,7 +326,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
             if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-                DefaultMap after = jsonParser.fromJson(jsonParser.toJson(insertRecordEvent.getAfter()));
+                Map<String, Object> after = insertRecordEvent.getAfter();
                 String sql = "INSERT INTO " + tapTable.getName() + " VALUES (" + buildColumnValues(tapTable, after) + ")";
                 stmt.execute(sql);
                 inserted.incrementAndGet();
