@@ -187,7 +187,14 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
-        //TODO 实现一下这个方法， TDD测试会要求实现这个方法做数据验证。 基于多个filter查询返回多个数据。 filter就是精确匹配的， 会用primaryKeys组织一个Map。
+//        TapTable tapTable = connectorContext.getTable();
+//        Map<String, Object> filterMap = new LinkedHashMap<>();
+//        for (TapFilter filter : filters) {
+//            filterMap.put(filter.getMatch().get())
+//        }
+//        String sql = "SELECT * FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, after, "AND");
+//
+//        //TODO 实现一下这个方法， TDD测试会要求实现这个方法做数据验证。 基于多个filter查询返回多个数据。 filter就是精确匹配的， 会用primaryKeys组织一个Map。
     }
 
     private String buildDistributedKey(Collection<String> primaryKeyNames) {
@@ -222,6 +229,17 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         return builder.toString();
     }
 
+    private Object getFieldValue(TapField tapField, Object originValue) {
+        Object result = originValue;
+        String originType = tapField.getOriginType();
+        if (originValue instanceof DateTime && ("datetime".equals(originType) || "date".equals(originType))) {
+            TimeZone timeZone = ((DateTime) originValue).getTimeZone();
+            if (timeZone != null) simpleDateFormat.setTimeZone(timeZone);
+            result = simpleDateFormat.format(new Date(((DateTime) originValue).getSeconds() * 1000L));
+        }
+        return result;
+    }
+
     private String buildColumnValues(TapTable tapTable, Map<String, Object> record) {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         StringBuilder builder = new StringBuilder();
@@ -236,15 +254,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                     builder.append("null").append(',');
                 }
             } else {
-                String originType = tapField.getOriginType();
-                if (value instanceof DateTime && ("datetime".equals(originType) || "date".equals(originType))) {
-                    TimeZone timeZone = ((DateTime) value).getTimeZone();
-                    if(timeZone!=null) simpleDateFormat.setTimeZone(timeZone);
-                    builder.append("'").append(simpleDateFormat.format(new Date(((DateTime) value).getSeconds() * 1000L))).append("'").append(',');
-                } else {
-                    builder.append("'").append(value).append("'").append(',');
-                }
-
+                builder.append("'").append(getFieldValue(tapField, value)).append("'").append(',');
             }
         }
         builder.delete(builder.length() - 1, builder.length());
@@ -305,6 +315,19 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
     }
 
+    private String buildKeyAndValue(TapTable tapTable, Map<String, Object> record, String splitSymbol) {
+        StringBuilder builder = new StringBuilder();
+        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
+        for (Map.Entry<String, Object> entry : record.entrySet()) {
+            String fieldName = entry.getKey();
+            builder.append(fieldName).append("=").append("'").
+                    append(getFieldValue(nameFieldMap.get(fieldName), entry.getValue())).
+                    append("' ").append(splitSymbol).append(" ");
+        }
+        builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
+        return builder.toString();
+    }
+
 
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Exception {
         //TODO write records into database
@@ -315,9 +338,10 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         AtomicLong deleted = new AtomicLong(0); //delete count
 
 
-        TapTable tapTable;
+        TapTable tapTable = connectorContext.getTable();
+        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         for (TapRecordEvent recordEvent : tapRecordEvents) {
-            tapTable = connectorContext.getTable();
+
             ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{"TABLE"});
             if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
             if (recordEvent instanceof TapInsertRecordEvent) {
@@ -329,16 +353,31 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 //                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
-
-                //TODO 通过table的primaryKeys从updateRecordEvent.getAfter()获得查询信息后进行修改
+                Map<String, Object> after = updateRecordEvent.getAfter();
+                Map<String, Object> filterAfter = new LinkedHashMap<>();
+                Map<String, Object> updateAfter = new LinkedHashMap<>();
+                for (Map.Entry<String, Object> entry : after.entrySet()) {
+                    String fieldName = entry.getKey();
+                    if (nameFieldMap.get(fieldName).getPrimaryKey() != null && nameFieldMap.get(fieldName).getPrimaryKey()) {
+                        filterAfter.put(fieldName, entry.getValue());
+                    } else {
+                        updateAfter.put(fieldName, entry.getValue());
+                    }
+                }
+                String sql = "UPDATE " + tapTable.getName() +
+                             " SET " + buildKeyAndValue(tapTable, updateAfter, ",") +
+                             " WHERE " + buildKeyAndValue(tapTable, filterAfter, "AND");
+                //TODO Doris目前Update语句只支持在Unique模型上更新,tapField Unique字段目前不支持
+                //     ref: https://doris.apache.org/zh-CN/sql-reference/sql-statements/Data%20Manipulation/UPDATE.html#description
+//                stmt.execute(sql);
                 updated.incrementAndGet();
 //                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
-
-                //TODO 通过table的primaryKeys从deleteRecordEvent.getBefore()获得查询信息后进行删除
+                Map<String, Object> after = deleteRecordEvent.getBefore();
+                String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, after, "AND");
+                stmt.execute(sql);
                 deleted.incrementAndGet();
-
 //                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }

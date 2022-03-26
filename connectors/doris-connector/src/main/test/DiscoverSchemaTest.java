@@ -25,6 +25,7 @@ public class DiscoverSchemaTest {
     private Connection conn;
     private Statement stmt;
     private TapTable tapTable;
+    private String tableName = "empty";
 
 
     private void initConnection() throws Exception {
@@ -115,14 +116,14 @@ public class DiscoverSchemaTest {
         initConnection();
         Assertions.assertNotNull(conn);
         Assertions.assertNotNull(stmt);
-        initTapTable(dorisConfig.getTable());
+        initTapTable(tableName);
 
-        ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), dorisConfig.getTable(), new String[]{"TABLE"});
+        ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tableName, new String[]{"TABLE"});
         if (table.first()) {
-            String sql = "DROP TABLE " + dorisConfig.getTable();
+            String sql = "DROP TABLE " + tableName;
             stmt.execute(sql);
         }
-        table = conn.getMetaData().getTables(conn.getCatalog(), null, dorisConfig.getTable(), new String[]{"TABLE"});
+        table = conn.getMetaData().getTables(conn.getCatalog(), null, tableName, new String[]{"TABLE"});
         Assertions.assertFalse(table.first());
     }
 
@@ -133,7 +134,7 @@ public class DiscoverSchemaTest {
         initConnection();
         Assertions.assertNotNull(conn);
         Assertions.assertNotNull(stmt);
-        initTapTable(dorisConfig.getTable());
+        initTapTable(tableName);
 
         // TODO TAPTYPE SCHEMA -> DORIS SCHEMA
         Collection<String> primaryKeys = tapTable.primaryKeys();
@@ -152,14 +153,14 @@ public class DiscoverSchemaTest {
         initConnection();
         Assertions.assertNotNull(conn);
         Assertions.assertNotNull(stmt);
-        initTapTable(dorisConfig.getTable());
+        initTapTable(tableName);
 
-        ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), dorisConfig.getTable(), new String[]{"TABLE"});
+        ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tableName, new String[]{"TABLE"});
         if (table.first()) {
             String sql = "TRUNCATE TABLE " + tapTable.getName();
             stmt.execute(sql);
         }
-        ResultSet resultSet = stmt.executeQuery("SELECT * FROM " + dorisConfig.getTable());
+        ResultSet resultSet = stmt.executeQuery("SELECT * FROM " + tableName);
         Assertions.assertFalse(resultSet.next());
     }
 
@@ -170,20 +171,20 @@ public class DiscoverSchemaTest {
         initConnection();
         Assertions.assertNotNull(conn);
         Assertions.assertNotNull(stmt);
-        initTapTable(dorisConfig.getTable());
+        initTapTable(tableName);
 
         String json = "{\"after\":{\"id\":1.0,\"description\":\"description123\",\"name\":\"name123\",\"age\":12.0},\"table\":{\"id\":\"empty-table1\",\"name\":\"empty-table1\",\"nameFieldMap\":{\"id\":{\"name\":\"id\",\"originType\":\"VARCHAR\",\"partitionKeyPos\":1,\"pos\":1,\"primaryKey\":true},\"description\":{\"name\":\"description\",\"originType\":\"TEXT\",\"pos\":2},\"name\":{\"name\":\"name\",\"originType\":\"VARCHAR\",\"pos\":3},\"age\":{\"name\":\"age\",\"originType\":\"DOUBLE\",\"pos\":4}}},\"time\":1647660346515}";
         DataMap dataMap = jsonParser.fromJson(json);
         DataMap after_map = jsonParser.fromJson(dataMap.get("after").toString());
 
-        ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), dorisConfig.getTable(), new String[]{"TABLE"});
+        ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tableName, new String[]{"TABLE"});
         if (table.first()) {
             String sql = "INSERT INTO " + tapTable.getName() + " VALUES (" + this.buildColumnValues(tapTable, after_map) + ")";
             System.out.println(sql);
             stmt.execute(sql);
         }
 
-        ResultSet resultSet = stmt.executeQuery("select * from " + dorisConfig.getTable());
+        ResultSet resultSet = stmt.executeQuery("select * from " + tableName);
         Assertions.assertTrue(resultSet.next());
     }
 }

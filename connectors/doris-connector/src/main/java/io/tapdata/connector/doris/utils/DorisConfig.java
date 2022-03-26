@@ -10,12 +10,11 @@ import java.util.Map;
 
 public class DorisConfig implements Serializable {
     private static final long serialVersionUID = 1L;
-    private String jdbcDriver;
-    private String databaseUrlPattern;
+    private String jdbcDriver = "com.mysql.jdbc.Driver";
+    private String databaseUrlPattern = "jdbc:mysql://%s:%d/%s?rewriteBatchedStatements=true";
     private String host;
     private int port;
     private String database;
-    private String table;
     private String user;
     private String password;
     private int insertBatchSize = 1000;
@@ -30,8 +29,8 @@ public class DorisConfig implements Serializable {
         return mapper.readValue((new ObjectMapper()).writeValueAsString(map), DorisConfig.class);
     }
 
-    public String getDatabaseUrl(){
-        return String.format(this.getDatabaseUrlPattern(),this.getHost(),this.getPort(),this.getDatabase());
+    public String getDatabaseUrl() {
+        return String.format(this.getDatabaseUrlPattern(), this.getHost(), this.getPort(), this.getDatabase());
     }
 
     public String getJdbcDriver() {
@@ -72,14 +71,6 @@ public class DorisConfig implements Serializable {
 
     public void setDatabase(String database) {
         this.database = database;
-    }
-
-    public String getTable() {
-        return table;
-    }
-
-    public void setTable(String table) {
-        this.table = table;
     }
 
     public String getUser() {

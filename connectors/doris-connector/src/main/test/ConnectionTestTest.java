@@ -14,6 +14,7 @@ import java.sql.*;
 public class ConnectionTestTest {
     private DorisConfig dorisConfig;
     private final JsonParser jsonParser = new JsonParserImpl();
+    private String tableName = "empty";
 
     @Test
     @DisplayName("Test method connectionTest")
@@ -36,14 +37,14 @@ public class ConnectionTestTest {
 
 
         try {
-            ResultSet tables = conn.getMetaData().getTables(conn.getCatalog(), null, dorisConfig.getTable(), new String[]{"TABLE"});
+            ResultSet tables = conn.getMetaData().getTables(conn.getCatalog(), null, tableName, new String[]{"TABLE"});
 
             while (tables.next()) {
-                Assertions.assertEquals(dorisConfig.getTable(), tables.getString("TABLE_NAME"));
+                Assertions.assertEquals(tableName, tables.getString("TABLE_NAME"));
             }
             Class.forName(dorisConfig.getJdbcDriver());
 
-            String insert = "insert into " + dorisConfig.getTable() + " values(?, ?, ?, ?)";
+            String insert = "insert into " + tableName + " values(?, ?, ?, ?)";
             stmt = conn.prepareStatement(insert);
             for (int i = 0; i < dorisConfig.getInsertBatchSize(); i++) {
                 stmt.setString(1, after_map.getValue("id", null).toString());
@@ -56,7 +57,7 @@ public class ConnectionTestTest {
             int[] res = stmt.executeBatch();
             Assertions.assertEquals(dorisConfig.getInsertBatchSize(), res.length);
 
-            String query = "select * from " + dorisConfig.getTable();
+            String query = "select * from " + tableName;
             stmt = conn.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -66,7 +67,7 @@ public class ConnectionTestTest {
                 Assertions.assertEquals(rs.getDouble(4), 12.0);
             }
 
-            String truncate = "truncate table " + dorisConfig.getTable();
+            String truncate = "truncate table " + tableName;
             stmt = conn.prepareStatement(truncate);
             stmt.execute();
         } catch (Exception e) {

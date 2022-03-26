@@ -252,6 +252,50 @@ public class TDDConnector extends ConnectorBase implements TapConnector {
                         entry("tapDateTimeTimeZone", new Date())
                 ), connectorContext.getTable());
                 tapEvents.add(recordEvent);
+
+                TapUpdateRecordEvent updateDMLEvent = updateDMLEvent(map(
+                        entry("id", "id_1"),
+                        entry("tapString", "123")
+                ), map(
+                        entry("id", "id_1"),
+                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
+                        entry("tapString", "123123123123"),
+                        entry("tapString10", "1234567890"),
+                        entry("tapString10Fixed", "1"),
+                        entry("tapInt", 123123),
+                        entry("tapBoolean", true),
+                        entry("tapDate", new Date()),
+                        entry("tapArrayString", Arrays.asList("1", "2", "3")),
+                        entry("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3)),
+                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
+                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
+                        entry("tapNumber", 1233),
+                        //                        entry("tapNumber(8)", 1111),
+                        entry("tapNumber52", 343.22),
+                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
+                        entry("tapTime", new Date()),
+                        entry("tapMapStringString", new HashMap<String, String>() {{
+                            put("a", "a");
+                            put("b", "b");
+                        }}),
+                        entry("tapMapStringDouble", new HashMap<String, Double>() {{
+                            put("a", 1.0);
+                            put("b", 2.0);
+                        }}),
+                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{
+                            put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));
+                        }}),
+                        entry("tapDateTime", new Date()),
+                        entry("tapDateTimeTimeZone", new Date())
+                ), connectorContext.getTable());
+                tapEvents.add(updateDMLEvent);
+
+                TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
+                        entry("id", "id_"+ counter.get()),
+                        entry("tapString", "123")
+                ), connectorContext.getTable());
+                tapEvents.add(deleteRecordEvent);
+
             }
             tapReadOffsetConsumer.accept(tapEvents);
         }
