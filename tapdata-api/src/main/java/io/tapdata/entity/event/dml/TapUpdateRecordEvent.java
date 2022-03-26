@@ -41,6 +41,15 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
         return this;
     }
 
+    public void clone(TapUpdateRecordEvent updateRecordEvent) {
+        super.clone(updateRecordEvent);
+        if(before != null)
+            updateRecordEvent.before = new LinkedHashMap<>(before);
+        if(after != null)
+            updateRecordEvent.after = new LinkedHashMap<>(after);
+    }
+
+
     public Map<String, Object> getAfter() {
         return after;
     }

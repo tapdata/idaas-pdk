@@ -6,6 +6,8 @@ import io.tapdata.entity.schema.TapTable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TapAlterTableEvent extends TapTableEvent {
     //
@@ -25,6 +27,20 @@ public class TapAlterTableEvent extends TapTableEvent {
      * 字符编码
      */
     private String charset;
+
+    public void clone(TapAlterTableEvent alterTableEvent) {
+        super.clone(alterTableEvent);
+        if(changedNameFields != null)
+            alterTableEvent.changedNameFields = new ConcurrentHashMap<>(changedNameFields);
+        if(insertFields != null)
+            alterTableEvent.insertFields = new CopyOnWriteArrayList<>(insertFields);
+        if(deletedFields != null)
+            alterTableEvent.deletedFields = new CopyOnWriteArrayList<>(deletedFields);
+        alterTableEvent.name = name;
+        alterTableEvent.storageEngine = storageEngine;
+        alterTableEvent.charset = charset;
+    }
+
 
     public String getName() {
         return name;
