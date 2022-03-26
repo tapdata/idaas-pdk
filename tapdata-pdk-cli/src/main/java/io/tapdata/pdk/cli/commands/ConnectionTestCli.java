@@ -1,7 +1,7 @@
 package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -36,16 +36,16 @@ public class ConnectionTestCli extends CommonCli {
 
     public Integer execute() throws Exception {
         try {
-            DefaultMap defaultMap = null;
+            DataMap dataMap = null;
             if(connectionConfigStr != null) {
-                defaultMap = JSON.parseObject(connectionConfigStr, DefaultMap.class);
+                dataMap = JSON.parseObject(connectionConfigStr, DataMap.class);
             }
             ConnectionNode connectionNode = PDKIntegration.createConnectionConnectorBuilder()
                     .withAssociateId(UUID.randomUUID().toString())
                     .withGroup(pdkGroup)
                     .withVersion(version)
                     .withPdkId(pdkId)
-                    .withConnectionConfig(defaultMap)
+                    .withConnectionConfig(dataMap)
                     .build();
             connectionNode.getConnectorNode().connectionTest(connectionNode.getConnectionContext(), testItem -> PDKLogger.info(TAG, "testItem {}", testItem));
 

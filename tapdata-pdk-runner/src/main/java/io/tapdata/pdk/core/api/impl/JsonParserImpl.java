@@ -3,7 +3,7 @@ package io.tapdata.pdk.core.api.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.pdk.core.annotations.Implementation;
@@ -16,8 +16,8 @@ public class JsonParserImpl implements JsonParser {
     }
 
     @Override
-    public DefaultMap fromJson(String json) {
-        return JSON.parseObject(json, DefaultMap.class, Feature.OrderedField, Feature.UseNativeJavaObject, Feature.DisableCircularReferenceDetect);
+    public DataMap fromJson(String json) {
+        return JSON.parseObject(json, DataMap.class, Feature.OrderedField, Feature.UseNativeJavaObject, Feature.DisableCircularReferenceDetect);
     }
 
     @Override
