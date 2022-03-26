@@ -1,14 +1,11 @@
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tapdata.connector.doris.utils.DorisConfig;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.core.api.impl.JsonParserImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import io.tapdata.entity.utils.JsonParser;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -34,8 +31,8 @@ public class ConnectionTestTest {
 
 
         String json = "{\"after\":{\"id\":1.0,\"description\":\"description123\",\"name\":\"name123\",\"age\":12.0},\"table\":{\"id\":\"empty-table1\",\"name\":\"empty-table1\",\"nameFieldMap\":{\"id\":{\"name\":\"id\",\"originType\":\"VARCHAR\",\"partitionKeyPos\":1,\"pos\":1,\"primaryKey\":true},\"description\":{\"name\":\"description\",\"originType\":\"TEXT\",\"pos\":2},\"name\":{\"name\":\"name\",\"originType\":\"VARCHAR\",\"pos\":3},\"age\":{\"name\":\"age\",\"originType\":\"DOUBLE\",\"pos\":4}}},\"time\":1647660346515}";
-        DefaultMap defaultMap = jsonParser.fromJson(json);
-        DefaultMap after_map = jsonParser.fromJson(defaultMap.get("after").toString());
+        DataMap dataMap = jsonParser.fromJson(json);
+        DataMap after_map = jsonParser.fromJson(dataMap.get("after").toString());
 
 
         try {

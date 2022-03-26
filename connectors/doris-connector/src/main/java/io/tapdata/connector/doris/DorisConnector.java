@@ -1,12 +1,8 @@
 package io.tapdata.connector.doris;
 
-import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.doris.utils.DorisConfig;
 import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
@@ -16,43 +12,36 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.utils.DefaultMap;
-import io.tapdata.entity.utils.JsonParser;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.value.*;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.FilterResult;
+import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
-import io.tapdata.pdk.core.api.impl.JsonParserImpl;
 
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
 import java.util.*;
-import java.text.DateFormat;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 @TapConnectorClass("spec.json")
 public class DorisConnector extends ConnectorBase implements TapConnector {
     public static final String TAG = DorisConnector.class.getSimpleName();
-    private final AtomicLong counter = new AtomicLong();
-    private final AtomicBoolean isShutDown = new AtomicBoolean(false);
-    private final JsonParser jsonParser = new JsonParserImpl();
     private DorisConfig dorisConfig;
     private Connection conn;
     private Statement stmt;
     private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
-    private void initConnection(DefaultMap config) {
+    private void initConnection(DataMap config) {
         if (conn == null) {
             try {
                 if (dorisConfig == null) dorisConfig = DorisConfig.load(config);
@@ -100,6 +89,8 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 //                        .add(field("name", "VARCHAR"))
 //                        .add(field("age", "DOUBLE"))
 //        ));
+
+        //TODO 这里需要实现加载表的功能， 以及对应字段。 在tapdata的界面上是会显示目标表的列表的。
     }
 
     /**
@@ -157,6 +148,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportAlterTable(this::alterTable);
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportDropTable(this::dropTable);
+        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
             if (tapRawValue != null && tapRawValue.getValue() != null)
@@ -192,6 +184,10 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 return toJson(tapValue.getValue());
             return "null";
         });
+    }
+
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+        //TODO 实现一下这个方法， TDD测试会要求实现这个方法做数据验证。 基于多个filter查询返回多个数据。 filter就是精确匹配的， 会用primaryKeys组织一个Map。
     }
 
     private String buildDistributedKey(Collection<String> primaryKeyNames) {
@@ -330,13 +326,20 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 String sql = "INSERT INTO " + tapTable.getName() + " VALUES (" + buildColumnValues(tapTable, after) + ")";
                 stmt.execute(sql);
                 inserted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
+                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
+
+                //TODO 通过table的primaryKeys从updateRecordEvent.getAfter()获得查询信息后进行修改
                 updated.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
+                TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
+
+                //TODO 通过table的primaryKeys从deleteRecordEvent.getBefore()获得查询信息后进行删除
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
+
+//                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
         //Need to tell flow engine the write result
@@ -371,6 +374,5 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 e.printStackTrace();
             }
         }
-        isShutDown.set(true);
     }
 }

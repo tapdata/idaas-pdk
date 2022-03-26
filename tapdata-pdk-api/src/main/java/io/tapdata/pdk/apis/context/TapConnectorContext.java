@@ -1,25 +1,25 @@
 package io.tapdata.pdk.apis.context;
 
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 public class TapConnectorContext extends TapConnectionContext {
-    protected DefaultMap nodeConfig;
+    protected DataMap nodeConfig;
     private TapTable table;
-    public TapConnectorContext(TapNodeSpecification specification, TapTable table, DefaultMap connectionConfig, DefaultMap nodeConfig) {
+    public TapConnectorContext(TapNodeSpecification specification, TapTable table, DataMap connectionConfig, DataMap nodeConfig) {
         super(specification, connectionConfig);
         this.table = table;
         this.nodeConfig = nodeConfig;
     }
 
-    public DefaultMap getNodeConfig() {
+    public DataMap getNodeConfig() {
         return nodeConfig;
     }
 
-    public void setNodeConfig(DefaultMap nodeConfig) {
+    public void setNodeConfig(DataMap nodeConfig) {
         this.nodeConfig = nodeConfig;
     }
 

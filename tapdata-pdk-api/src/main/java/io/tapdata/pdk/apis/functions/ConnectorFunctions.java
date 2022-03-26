@@ -11,6 +11,7 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private StreamOffsetFunction streamOffsetFunction;
     private WriteRecordFunction writeRecordFunction;
     private QueryByFilterFunction queryByFilterFunction;
+    private QueryByAdvanceFilterFunction queryByAdvanceFilterFunction;
     private TransactionFunction transactionFunction;
     private CreateTableFunction createTableFunction;
     private AlterTableFunction alterTableFunction;
@@ -95,6 +96,19 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     public ConnectorFunctions supportQueryByFilter(QueryByFilterFunction function) {
         this.queryByFilterFunction = function;
         return this;
+    }
+
+    public ConnectorFunctions supportQueryByAdvanceFilter(QueryByAdvanceFilterFunction function) {
+        this.queryByAdvanceFilterFunction = function;
+        return this;
+    }
+
+    public WriteRecordFunction getWriteRecordFunction() {
+        return writeRecordFunction;
+    }
+
+    public QueryByAdvanceFilterFunction getQueryByAdvanceFilterFunction() {
+        return queryByAdvanceFilterFunction;
     }
 
     public BatchReadFunction getBatchReadFunction() {

@@ -1,24 +1,19 @@
 package io.tapdata.pdk.core.api.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Maps;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.utils.TapUtils;
 import io.tapdata.pdk.core.annotations.Implementation;
-import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.ReflectionUtil;
 
-import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Implementation(TapUtils.class)
@@ -120,14 +115,14 @@ public class TapUtilsImpl implements TapUtils {
 
         TapDAGNode node = new TapDAGNode();
         node.setChildNodeIds(Arrays.asList("1", "3"));
-        DefaultMap defaultMap = new DefaultMap();
+        DataMap dataMap = new DataMap();
 
         TapTable table1 = new TapTable()
                 .add(new TapField().name("f").originType("aaa"))
                 .add(new TapField().name("a").originType("aa"));
-        defaultMap.put("aaa", 1);
+        dataMap.put("aaa", 1);
 //        defaultMap.put("table", table1);
-        node.setConnectionConfig(defaultMap);
+        node.setConnectionConfig(dataMap);
         TapTable table = new TapTable()
                 .add(new TapField().name("f").originType("aaa"))
                 .add(new TapField().name("a").originType("aa"));

@@ -7,7 +7,7 @@ import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.type.*;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.entity.TestItem;
@@ -32,9 +32,9 @@ public class ConnectorBase {
      * @param params
      * @return
      */
-    public DefaultMap curl(String curl, Object... params) {
+    public DataMap curl(String curl, Object... params) {
         String result = Curl.$(format(curl, params));
-        return fromJson(result, DefaultMap.class);
+        return fromJson(result, DataMap.class);
     }
 
     public void interval(Runnable runnable, int seconds) {
@@ -81,7 +81,7 @@ public class ConnectorBase {
         return jsonParser.toJson(obj);
     }
 
-    public DefaultMap fromJson(String json) {
+    public DataMap fromJson(String json) {
         return jsonParser.fromJson(json);
     }
 
