@@ -1,5 +1,6 @@
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.tapdata.connector.doris.bean.DorisColumn;
 import io.tapdata.connector.doris.utils.DorisConfig;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
@@ -14,9 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 @DisplayName("Tests for discover schema")
 public class DiscoverSchemaTest {
@@ -186,5 +185,61 @@ public class DiscoverSchemaTest {
 
         ResultSet resultSet = stmt.executeQuery("select * from " + tableName);
         Assertions.assertTrue(resultSet.next());
+    }
+
+    @Test
+    @Disabled("Disabled")
+    @DisplayName("Test method DiscoverSchemaTest")
+    void DiscoverSchemaTest() throws Exception {
+        initConnection();
+        Map<String, DataMap> tables = new HashMap<>();
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        tableName = "empty5";
+        ResultSet rs = stmt.executeQuery("select * from " + tableName);
+        ResultSetMetaData resultSetMetaData = rs.getMetaData();
+
+        for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+            System.out.println(
+                    "ColumnName = " + resultSetMetaData.getColumnName(i));
+            System.out.println(
+                    "ColumnType = " + resultSetMetaData.getColumnType(i) + "   ");
+            System.out.println(
+                    "ColumnDisplaySize = " + resultSetMetaData.getColumnDisplaySize(i) + "   ");
+            System.out.println(
+                    "ColumnTypeName = " + resultSetMetaData.getColumnTypeName(i) + "   ");
+            System.out.println(
+                    "isNullable = " + resultSetMetaData.isNullable(i) + "   ");
+            System.out.println(
+                    "isAutoIncrement = " + resultSetMetaData.isAutoIncrement(i) + "   ");
+            System.out.println(
+                    "getPrecision = " + resultSetMetaData.getPrecision(i) + "   ");
+            System.out.println(
+                    "getScale = " + resultSetMetaData.getScale(i) + "   ");
+            System.out.println(
+                    "----metaDataColumns----");
+        }
+        ResultSet metaDataColumns = databaseMetaData.getColumns(null, dorisConfig.getDatabase(), tableName, null);
+        while (metaDataColumns.next()) {
+            System.out.println(
+                    "COLUMN_NAME = " + metaDataColumns.getString("COLUMN_NAME") + "   ");
+            System.out.println(
+                    "TYPE_NAME = " + metaDataColumns.getString("TYPE_NAME") + "   ");
+            System.out.println(
+                    "COLUMN_SIZE = " + metaDataColumns.getString("COLUMN_SIZE") + "   ");
+            System.out.println(
+                    "DECIMAL_DIGITS = " + metaDataColumns.getString("DECIMAL_DIGITS") + "   ");
+            System.out.println(
+                    "NUM_PREC_RADIX = " + metaDataColumns.getString("NUM_PREC_RADIX") + "   ");
+            System.out.println(
+                    "CHAR_OCTET_LENGTH  = " + metaDataColumns.getString("CHAR_OCTET_LENGTH") + "   ");
+            System.out.println(
+                    "IS_AUTOINCREMENT  = " + metaDataColumns.getString("IS_AUTOINCREMENT") + "   ");
+            System.out.println(
+                    "COLUMN_DEFAULT  = " + metaDataColumns.getString("COLUMN_DEF") + "   ");
+            System.out.println(
+                    "NULLABLE  = " + metaDataColumns.getString("NULLABLE") + "   ");
+            System.out.println(
+                    "------------------");
+        }
     }
 }

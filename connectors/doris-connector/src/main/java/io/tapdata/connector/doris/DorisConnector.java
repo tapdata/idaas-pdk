@@ -1,6 +1,7 @@
 package io.tapdata.connector.doris;
 
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.connector.doris.bean.DorisColumn;
 import io.tapdata.connector.doris.utils.DorisConfig;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
@@ -72,23 +73,33 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
-        //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
-        //Sample code shows how to define tables with specified fields.
-//        consumer.accept(list(
-//                //Define first table
-//                table("empty-table1")
-//                        //Define a field named "id", origin field type, whether is primary key and primary key position
-//                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-//                        .add(field("description", "TEXT"))
-//                        .add(field("name", "VARCHAR"))
-//                        .add(field("age", "DOUBLE")),
-//                //Define second table
-//                table("empty-table2")
-//                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-//                        .add(field("description", "TEXT"))
-//                        .add(field("name", "VARCHAR"))
-//                        .add(field("age", "DOUBLE"))
-//        ));
+        try {
+            dorisConfig = DorisConfig.load(connectionContext.getConnectionConfig());
+            String dbUrl = dorisConfig.getDatabaseUrl();
+            conn = DriverManager.getConnection(dbUrl, dorisConfig.getUser(), dorisConfig.getPassword());
+        } catch (Exception e) {
+            throw new RuntimeException("Create Connection Failed!");
+        }
+
+        List<TapTable> tapTableList = new LinkedList<>();
+        try {
+            DatabaseMetaData databaseMetaData = conn.getMetaData();
+            ResultSet TableResult = databaseMetaData.getTables(conn.getCatalog(), dorisConfig.getDatabase(), null, new String[]{"TABLE"});
+            while (TableResult.next()) {
+                String tableName = TableResult.getString("TABLE_NAME");
+                TapTable table = table(tableName);
+                ResultSet columnsResult = databaseMetaData.getColumns(conn.getCatalog(), dorisConfig.getDatabase(), tableName, null);
+                while (columnsResult.next()) {
+                    TapField tapField = new DorisColumn(columnsResult).getTapField();
+                    table.add(tapField);
+                }
+                tapTableList.add(table);
+            }
+            consumer.accept(tapTableList);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("discoverSchema Failed! Execute SQL Failed!");
+        }
 
         //TODO 这里需要实现加载表的功能， 以及对应字段。 在tapdata的界面上是会显示目标表的列表的。
     }
