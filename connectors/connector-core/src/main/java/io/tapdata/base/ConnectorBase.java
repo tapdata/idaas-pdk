@@ -10,6 +10,7 @@ import io.tapdata.entity.type.*;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
+import io.tapdata.entity.value.DateTime;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.utils.FormatUtils;
@@ -17,12 +18,14 @@ import io.tapdata.pdk.apis.utils.TapUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
 import org.toilelibre.libe.curl.Curl;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ConnectorBase {
     private TapUtils tapUtils = InstanceFactory.instance(TapUtils.class);
     private TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
     private JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
+    private SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
 
     /**
      * @XXX
@@ -31,6 +34,7 @@ public class ConnectorBase {
      * @param curl
      * @param params
      * @return
+     * @XXX This CURL lib has bug, need bug fixing
      */
     public DataMap curl(String curl, Object... params) {
         String result = Curl.$(format(curl, params));
@@ -207,5 +211,11 @@ public class ConnectorBase {
         } catch (InterruptedException interruptedException) {
             interruptedException.printStackTrace();
         }
+    }
+
+    public String formatTapDateTime(DateTime dateTime, String pattern) {
+        if (dateTime.getTimeZone() != null) dateTime.setTimeZone(dateTime.getTimeZone());
+        tapDateTimeFormat.applyPattern(pattern);
+        return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
     }
 }

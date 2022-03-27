@@ -39,7 +39,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     private DorisConfig dorisConfig;
     private Connection conn;
     private Statement stmt;
-    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
     private void initConnection(DataMap config) {
@@ -242,11 +241,9 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
     private Object getFieldValue(TapField tapField, Object originValue) {
         Object result = originValue;
-        String originType = tapField.getOriginType();
-        if (originValue instanceof DateTime && ("datetime".equals(originType) || "date".equals(originType))) {
-            TimeZone timeZone = ((DateTime) originValue).getTimeZone();
-            if (timeZone != null) simpleDateFormat.setTimeZone(timeZone);
-            result = simpleDateFormat.format(new Date(((DateTime) originValue).getSeconds() * 1000L));
+        if (originValue instanceof DateTime) {
+            // TODO 依据不同的TapField进行不同类型的格式化
+            String dateValue = this.formatTapDateTime((DateTime) originValue, "yyyy-MM-dd HH:mm:ss");
         }
         return result;
     }
