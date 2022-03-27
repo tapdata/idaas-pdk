@@ -3,11 +3,10 @@ package io.tapdata.pdk.cli;
 import io.tapdata.entity.mapping.*;
 import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.type.TapType;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 
-import java.util.Map;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,7 +72,7 @@ public class TypeMappingMain {
 //        DefaultExpressionMatchingMap map2 = ExpressionMatchingMap.map(defaultMap);
 //        map2.get("");
 
-        System.out.println("binary(4) => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("binary(4)")));
+        System.out.println("Binary(4) => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("Binary(4)")));
         System.out.println("double => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("double")));
         System.out.println("double(4) unsigned zerofill => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("double(4) unsigned zerofill")));
         //decimal($precision, $scale)[unsigned][zerofill]
@@ -90,7 +89,7 @@ public class TypeMappingMain {
         System.out.println("varbinary(lllll)ABCDDDDD aaaa DDDBBB => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("varbinary(lllll)ABCDDDDD aaaa DDDBBB")));
         System.out.println("(lllll)ABCDDDDD aaaa => " + InstanceFactory.instance(JsonParser.class).toJson(matchingMap.get("(lllll)ABCDDDDD aaaa")));
 
-        TypeExprResult<DefaultMap> result = matchingMap.get("decimal(56, 2) theUnsigned theZerofill");
+        TypeExprResult<DataMap> result = matchingMap.get("decimal(56, 2) theUnsigned theZerofill");
         TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
         TapType tapType = tapMapping.toTapType("decimal(56, 2) theUnsigned theZerofill", result.getParams());
 

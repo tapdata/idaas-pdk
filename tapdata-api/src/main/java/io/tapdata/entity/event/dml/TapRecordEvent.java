@@ -14,6 +14,12 @@ public class TapRecordEvent extends TapBaseEvent {
      */
     protected String connectorVersion;
 
+    public void clone(TapRecordEvent tapRecordEvent) {
+        super.clone(tapRecordEvent);
+        tapRecordEvent.connector = connector;
+        tapRecordEvent.connectorVersion = connectorVersion;
+    }
+
     public String getConnector() {
         return connector;
     }

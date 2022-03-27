@@ -13,13 +13,12 @@ import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
-import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 
 import java.util.LinkedHashMap;
@@ -188,12 +187,14 @@ public class SourceNodeDriver extends Driver {
             DefaultExpressionMatchingMap expressionMatchingMap = sourceNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap();
             for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
                 if(entry.getValue().getOriginType() != null) {
-                    TypeExprResult<DefaultMap> result = expressionMatchingMap.get(entry.getValue().getOriginType());
+                    TypeExprResult<DataMap> result = expressionMatchingMap.get(entry.getValue().getOriginType());
                     if(result != null) {
                         TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
                         if(tapMapping != null) {
                             entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getOriginType(), result.getParams()));
                         }
+                    } else {
+                        PDKLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition. {}", entry.getValue().getOriginType(), LoggerUtils.sourceNodeMessage(sourceNode));
                     }
                 }
             }

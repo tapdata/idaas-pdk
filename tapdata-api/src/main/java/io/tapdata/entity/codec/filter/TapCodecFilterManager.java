@@ -68,6 +68,10 @@ public class TapCodecFilterManager {
         });
     }
 
+    public String getOriginTypeByTapType(Class<? extends TapType> tapTypeClass) {
+        return codecRegistry.getOriginTypeByTapType(tapTypeClass);
+    }
+
     public MapIterator<Object> getMapIterator() {
         return mapIterator;
     }

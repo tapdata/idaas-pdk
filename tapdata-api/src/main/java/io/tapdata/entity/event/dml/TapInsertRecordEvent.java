@@ -3,7 +3,9 @@ package io.tapdata.entity.event.dml;
 
 import io.tapdata.entity.schema.TapTable;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TapInsertRecordEvent extends TapRecordEvent {
     /**
@@ -11,6 +13,13 @@ public class TapInsertRecordEvent extends TapRecordEvent {
      * Value format should follow TapType formats
      */
     private Map<String, Object> after;
+
+    public void clone(TapInsertRecordEvent insertRecordEvent) {
+        super.clone(insertRecordEvent);
+        if(after != null)
+            insertRecordEvent.after = new LinkedHashMap<>(after);
+    }
+
     public TapInsertRecordEvent init() {
         time = System.currentTimeMillis();
         return this;

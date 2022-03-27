@@ -1,7 +1,7 @@
 package io.tapdata.entity.mapping.type;
 
 import io.tapdata.entity.type.TapType;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +38,7 @@ public abstract class TapMapping {
      */
     public abstract void from(Map<String, Object> info);
 
-    public static TapMapping build(DefaultMap info) {
+    public static TapMapping build(DataMap info) {
         return TapMapping.build(((Map<String, Object>)info));
     }
     public static TapMapping build(Map<String, Object> info) {

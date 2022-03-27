@@ -1,9 +1,7 @@
 package io.tapdata.entity.schema;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.LongAdder;
 
 public class TapTable extends TapItem<TapField> {
     public TapTable() {}
@@ -15,6 +13,10 @@ public class TapTable extends TapItem<TapField> {
         this.id = id;
     }
 
+    /**
+     * Please don't add or remove on this field. If you need to add or delete, please set new one.
+     * Protect ConcurrentModification.
+     */
     private LinkedHashMap<String, TapField> nameFieldMap;
 
     private List<TapIndex> indexList;
@@ -72,6 +74,21 @@ public class TapTable extends TapItem<TapField> {
             throw new IllegalArgumentException("field is null when add into table " + name);
         if(field.getName() == null)
             throw new IllegalArgumentException("field name is null when add into table " + name);
+    }
+
+    public Collection<String> primaryKeys() {
+        LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
+        if(nameFieldMapCopyRef == null)
+            return Collections.emptyList();
+
+        Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
+        for (String key : nameFieldMapCopyRef.keySet()) {
+            TapField field = nameFieldMapCopyRef.get(key);
+            if (field != null && field.getPrimaryKey() != null && field.getPrimaryKey()) {
+                posPrimaryKeyName.put(field.getPrimaryKeyPos(), field.getName());
+            }
+        }
+        return posPrimaryKeyName.values();
     }
 
     @Override

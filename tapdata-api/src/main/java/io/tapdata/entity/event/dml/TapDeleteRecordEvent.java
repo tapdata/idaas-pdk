@@ -3,11 +3,19 @@ package io.tapdata.entity.event.dml;
 
 import io.tapdata.entity.schema.TapTable;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class TapDeleteRecordEvent extends TapRecordEvent {
 
     private Map<String, Object> before;
+
+    public void clone(TapDeleteRecordEvent deleteRecordEvent) {
+        super.clone(deleteRecordEvent);
+        if(before != null)
+            deleteRecordEvent.before = new LinkedHashMap<>(before);
+    }
+
     public TapDeleteRecordEvent init() {
         time = System.currentTimeMillis();
         return this;

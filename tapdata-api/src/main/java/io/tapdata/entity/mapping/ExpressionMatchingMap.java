@@ -1,6 +1,6 @@
 package io.tapdata.entity.mapping;
 
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
@@ -58,10 +58,10 @@ public class ExpressionMatchingMap<T> {
     }
 
     public static DefaultExpressionMatchingMap map(String json) {
-        return new DefaultExpressionMatchingMap(InstanceFactory.instance(JsonParser.class).fromJson(json, new TypeHolder<Map<String, DefaultMap>>(){}));
+        return new DefaultExpressionMatchingMap(InstanceFactory.instance(JsonParser.class).fromJson(json, new TypeHolder<Map<String, DataMap>>(){}));
     }
 
-    public static DefaultExpressionMatchingMap map(Map<String, DefaultMap> map) {
+    public static DefaultExpressionMatchingMap map(Map<String, DataMap> map) {
         return new DefaultExpressionMatchingMap(map);
     }
 
@@ -130,7 +130,7 @@ public class ExpressionMatchingMap<T> {
         if(value == null) {
             Set<String> prefixList = prefixTypeExprListMap.keySet();
             for(String prefix : prefixList) {
-                if(!key.startsWith(prefix))
+                if(!key.toLowerCase().startsWith(prefix))
                     continue;
                 List<TypeExpr<T>> typeExprList = prefixTypeExprListMap.get(prefix);
                 if(typeExprList == null)

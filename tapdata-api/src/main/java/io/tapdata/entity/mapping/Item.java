@@ -116,7 +116,7 @@ public class Item {
             }
             builder.append(ch);
         }
-        cleanPrefix = prefixBuilder.toString();
+        cleanPrefix = prefixBuilder.toString().toLowerCase();
         regExpr = builder.toString();
     }
 
