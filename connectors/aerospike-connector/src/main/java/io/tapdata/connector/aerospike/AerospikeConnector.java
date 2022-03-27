@@ -35,13 +35,11 @@ import java.util.function.Consumer;
 @TapConnectorClass("spec.json")
 public class AerospikeConnector extends ConnectorBase implements TapConnector {
     public static final String TAG = AerospikeConnector.class.getSimpleName();
-    private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
 
     private AerospikeSinkConfig sinkConfig;
     private AerospikeStringSink aerospikeStringSink;
     private final WritePolicy policy = new WritePolicy();
-    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public void initConnection(Map<String, Object> configMap) throws Exception {
         if (aerospikeStringSink == null) {
@@ -192,11 +190,12 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> after = insertRecordEvent.getAfter();
                 for (String columnName : nameFieldMap.keySet()) {
+                    TapField tapField = nameFieldMap.get(columnName);
                     Object value = after.get(columnName);
-                    if (value instanceof DateTime ) {
-                        TimeZone timeZone = ((DateTime) value).getTimeZone();
-                        if (timeZone != null) simpleDateFormat.setTimeZone(timeZone);
-                        after.put(columnName, simpleDateFormat.format(new Date(((DateTime) value).getSeconds() * 1000L)));
+                    if (value instanceof DateTime) {
+                        // TODO 依据不同的TapField进行不同类型的格式化
+                        String dateValue = this.formatTapDateTime((DateTime) value, "yyyy-MM-dd HH:mm:ss");
+                        after.put(columnName, dateValue);
                     }
                 }
                 newKey = generateASPrimaryKey(after, primaryKeys, '_');
