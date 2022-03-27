@@ -13,7 +13,7 @@ import io.tapdata.connector.aerospike.bean.IRecord;
 import io.tapdata.connector.aerospike.bean.TapAerospikeRecord;
 import io.tapdata.connector.aerospike.utils.AerospikeSinkConfig;
 import io.tapdata.connector.aerospike.utils.AerospikeStringSink;
-import io.tapdata.entity.utils.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -64,8 +64,8 @@ public class ConnectionTestTest {
         initConnection(configPath);
 
         String json = "{\"after\":{\"id\":1.0,\"description\":\"description123\",\"name\":\"name123\",\"age\":12.0},\"table\":{\"id\":\"empty-table1\",\"name\":\"empty-table1\",\"nameFieldMap\":{\"id\":{\"name\":\"id\",\"originType\":\"VARCHAR\",\"partitionKeyPos\":1,\"pos\":1,\"primaryKey\":true},\"description\":{\"name\":\"description\",\"originType\":\"TEXT\",\"pos\":2},\"name\":{\"name\":\"name\",\"originType\":\"VARCHAR\",\"pos\":3},\"age\":{\"name\":\"age\",\"originType\":\"DOUBLE\",\"pos\":4}}},\"time\":1647660346515}";
-        DefaultMap defaultMap = JSON.parseObject(json, DefaultMap.class);
-        JSONObject after_json_obj = (JSONObject) defaultMap.get("after");
+        DataMap dataMap = JSON.parseObject(json, DataMap.class);
+        JSONObject after_json_obj = (JSONObject) dataMap.get("after");
 
         String keyStr = after_json_obj.get("id").toString();
         String after_json = after_json_obj.toJSONString();
