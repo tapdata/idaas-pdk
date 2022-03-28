@@ -8,7 +8,7 @@ import java.util.Map;
 public class TapNodeContainer {
     private TapNodeSpecification properties;
 
-    private DataMap configOptions;
+    private DataMap configOptions; //include connection and node
 
     private Map<String, DataMap> dataTypes;
 

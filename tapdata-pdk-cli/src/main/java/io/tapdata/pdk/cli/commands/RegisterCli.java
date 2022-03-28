@@ -55,7 +55,7 @@ public class RegisterCli extends CommonCli {
 //    private SummaryGeneratingListener listener = new SummaryGeneratingListener();
 //    public void runOne() {
 //        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
-//                .selectors(selectClass("io.tapdata.pdk.tdd.tests.ConnectionTestTest"))
+//                .selectors(selectClass("io.tapdata.pdk.tdd.tests.basic.ConnectionTestTest"))
 //                .build();
 //        Launcher launcher = LauncherFactory.create();
 //        TestPlan testPlan = launcher.discover(request);

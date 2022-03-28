@@ -5,6 +5,23 @@
     "id": "emptySource"
   },
   "configOptions": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "title": "Host",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "port": {
+          "type": "string",
+          "title": "Port",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        }
+      }
+    }
   },
   "dataTypes": {
     "DOUBLE": {

@@ -29,7 +29,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
 
     @Override
     public void handle(Set<Class<?>> classes) throws CoreException {
-        if (classes != null) {
+        if (classes != null && !classes.isEmpty()) {
             newerIdGroupTapNodeInfoMap = new ConcurrentHashMap<>();
             PDKLogger.info(TAG, "--------------TapConnector Classes Start------------- size {}", classes.size());
             for (Class<?> clazz : classes) {

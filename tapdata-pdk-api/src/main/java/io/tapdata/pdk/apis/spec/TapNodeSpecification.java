@@ -15,7 +15,7 @@ public class TapNodeSpecification {
     private String group; //Unique key for each enterprise.
     private String version;
     private String icon;
-    private DataMap configOptions;
+    private DataMap configOptions; //include connection and node
     private DefaultExpressionMatchingMap dataTypesMap;
 
     public String verify() {
