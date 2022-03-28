@@ -17,8 +17,9 @@ public class StoryMain {
         args = new String[]{"start",
 //                rootPath + "emptyToFile.json",
 //                rootPath + "emptyToAerospike.json",
+                rootPath + "tddToAerospike.json",
 //                rootPath + "tddToEmpty.json",
-                rootPath + "tddToDoris.json",
+//                rootPath + "tddToDoris.json",
 //                rootPath + "vikaToVika.json",
         };
 

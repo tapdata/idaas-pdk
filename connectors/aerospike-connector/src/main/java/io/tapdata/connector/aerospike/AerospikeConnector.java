@@ -15,6 +15,7 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.value.DateTime;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -25,6 +26,7 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import org.junit.Assert;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,7 +35,6 @@ import java.util.function.Consumer;
 @TapConnectorClass("spec.json")
 public class AerospikeConnector extends ConnectorBase implements TapConnector {
     public static final String TAG = AerospikeConnector.class.getSimpleName();
-    private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
 
     private AerospikeSinkConfig sinkConfig;
@@ -74,8 +75,8 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
         // 获得表信息,获得真实的AS表数据
         String namespace = sinkConfig.getKeyspace();
-        ArrayList<AerospikeSet> sets = AerospikeNamespaces.getSets(aerospikeStringSink.client,namespace);
-        if(sets == null){
+        ArrayList<AerospikeSet> sets = AerospikeNamespaces.getSets(aerospikeStringSink.client, namespace);
+        if (sets == null) {
             throw new RuntimeException(namespace + " is not exist!");
         }
         for (AerospikeSet set : sets) {
@@ -143,7 +144,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
     }
 
 
-    private String generateASPrimaryKey(Map<String, Object> recordMap,Collection<String> primaryKeyNames,Character splitSymbol){
+    private String generateASPrimaryKey(Map<String, Object> recordMap, Collection<String> primaryKeyNames, Character splitSymbol) {
         StringBuilder builder = new StringBuilder();
         for (String fieldName : primaryKeyNames) {
             builder.append(fieldName);
@@ -151,9 +152,10 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
             builder.append(recordMap.get(fieldName).toString());
             builder.append(splitSymbol);
         }
-        builder.delete(builder.length()-1,builder.length());
+        builder.delete(builder.length() - 1, builder.length());
         return builder.toString();
     }
+
     /**
      * The method invocation life circle is below,
      * initiated ->
@@ -177,42 +179,42 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
         for (TapRecordEvent recordEvent : tapRecordEvents) {
-            TapTable sourceTable = recordEvent.getTable(); //TODO 不应该关心源数据的表
             TapTable targetTable = connectorContext.getTable();
-            LinkedHashMap<String, TapField> nameFieldMap = sourceTable.getNameFieldMap();
-
-            Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
-            for (String key : nameFieldMap.keySet()) {
-                TapField field = nameFieldMap.get(key);
-                if (field != null && field.getPrimaryKey() != null && field.getPrimaryKey()) {
-                    posPrimaryKeyName.put(field.getPartitionKeyPos(), field.getName());
-                }
-            }
+            Collection<String> primaryKeys = targetTable.primaryKeys();
 
             String keySet = targetTable.getName();
             String newKey;
             IRecord<String> newRecord;
-
+            LinkedHashMap<String, TapField> nameFieldMap = targetTable.getNameFieldMap();
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> after = insertRecordEvent.getAfter();
-                newKey = generateASPrimaryKey(after,posPrimaryKeyName.values(),'_');
+                for (String columnName : nameFieldMap.keySet()) {
+                    TapField tapField = nameFieldMap.get(columnName);
+                    Object value = after.get(columnName);
+                    if (value instanceof DateTime) {
+                        // TODO 依据不同的TapField进行不同类型的格式化
+                        String dateValue = this.formatTapDateTime((DateTime) value, "yyyy-MM-dd HH:mm:ss");
+                        after.put(columnName, dateValue);
+                    }
+                }
+                newKey = generateASPrimaryKey(after, primaryKeys, '_');
                 newRecord = new TapAerospikeRecord(toJson(after), newKey);
-                aerospikeStringSink.write(newRecord,keySet);
+                aerospikeStringSink.write(newRecord, keySet);
                 inserted.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
-                newKey = generateASPrimaryKey(after,posPrimaryKeyName.values(),'_');
+                newKey = generateASPrimaryKey(after, primaryKeys, '_');
                 newRecord = new TapAerospikeRecord(toJson(after), newKey);
-                aerospikeStringSink.write(newRecord,keySet);
+                aerospikeStringSink.write(newRecord, keySet);
                 updated.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
-                newKey = generateASPrimaryKey(before,posPrimaryKeyName.values(),'_');
+                newKey = generateASPrimaryKey(before, primaryKeys, '_');
                 Key key = new Key(sinkConfig.getKeyspace(), keySet, newKey);
                 aerospikeStringSink.client.delete(policy, key);
                 deleted.incrementAndGet();

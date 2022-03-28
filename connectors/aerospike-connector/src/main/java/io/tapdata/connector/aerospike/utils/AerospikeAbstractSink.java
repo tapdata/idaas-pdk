@@ -44,7 +44,7 @@ public abstract class AerospikeAbstractSink<K, V> {
         LOG.info("Connection Closed");
     }
 
-    public void write(IRecord<String> record,String keySet) {
+    public void write(IRecord<String> record, String keySet) {
         Key key = new Key(this.aerospikeSinkConfig.getKeyspace(), keySet, record.getKey().get());
         if (record.getKey().isPresent()) {
             Bin key_bin = new Bin("PK", record.getKey().get());
@@ -54,7 +54,11 @@ public abstract class AerospikeAbstractSink<K, V> {
         Bin[] bins = new Bin[record.getBinValuesMap().size()];
         int idx = 0;
         for (Map.Entry<String, String> entry : record.getBinValuesMap().entrySet()) {
-            Bin bin = new Bin(entry.getKey(), String.valueOf(entry.getValue()));
+            String binKey = entry.getKey();
+            if (binKey.length() > 14) {
+                binKey = binKey.substring(14);
+            }
+            Bin bin = new Bin(binKey, String.valueOf(entry.getValue()));
             bins[idx++] = bin;
         }
         this.client.put(this.writePolicy, key, bins);

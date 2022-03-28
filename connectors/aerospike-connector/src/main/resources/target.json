@@ -1,5 +1,5 @@
 {
-  "seedHosts": "192.168.153.131:3000",
+  "seedHosts": "192.168.153.132:3000",
   "keyspace": "test",
   "userName": "",
   "password": "",

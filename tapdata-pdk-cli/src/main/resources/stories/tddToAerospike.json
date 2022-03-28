@@ -1,21 +1,21 @@
 {
-  "id" : "dag1",
-  "nodes" : [
+  "id": "dag1",
+  "nodes": [
     {
-      "connectionConfig" : {
+      "connectionConfig": {
       },
-      "table" : {
-        "name" : "empty-table1",
-        "id" : "empty-table1"
+      "table": {
+        "name": "tdd-table",
+        "id": "tdd-table"
       },
-      "id" : "s1",
-      "pdkId" : "emptySource",
-      "group" : "io.tapdata.connector.empty",
-      "type" : "Source",
-      "version" : "1.1-SNAPSHOT"
+      "id": "s1",
+      "pdkId": "tdd-source",
+      "group": "io.tapdata.connector",
+      "type": "Source",
+      "version": "1.1-SNAPSHOT"
     },
     {
-      "connectionConfig" : {
+      "connectionConfig": {
         "seedHosts": "192.168.153.132:3000",
         "keyspace": "test",
         "userName": "",
@@ -35,11 +35,15 @@
       "version" : "1.0-SNAPSHOT"
     }
   ],
-  "dag" : [
-    ["s1", "t2"]
+  "dag": [
+    [
+      "s1",
+      "t2"
+    ]
   ],
-  "jobOptions" : {
-    "queueSize" : 100,
-    "queueBatchSize" : 100
+  "jobOptions": {
+    "queueSize": 100,
+    "queueBatchSize": 100,
+    "actionsBeforeStart": ["dropTable", "createTable"]
   }
 }
