@@ -1,6 +1,7 @@
 package io.tapdata.connector.doris;
 
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.base.utils.Entry;
 import io.tapdata.connector.doris.bean.DorisColumn;
 import io.tapdata.connector.doris.utils.DorisConfig;
 import io.tapdata.entity.codec.TapCodecRegistry;
@@ -37,6 +38,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     private DorisConfig dorisConfig;
     private Connection conn;
     private Statement stmt;
+    private static final String TABLE_COLUMN_NAME = "TABLE";
 
 
     private void initConnection(DataMap config) {
@@ -81,9 +83,10 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         List<TapTable> tapTableList = new LinkedList<>();
         try {
             DatabaseMetaData databaseMetaData = conn.getMetaData();
-            ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), dorisConfig.getDatabase(), null, new String[]{"TABLE"});
+            ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), dorisConfig.getDatabase(), null, new String[]{TABLE_COLUMN_NAME});
             while (tableResult.next()) {
                 String tableName = tableResult.getString("TABLE_NAME");
+                // TODO 暂时无法通过jdbc获取键信息
                 TapTable table = table(tableName);
                 ResultSet columnsResult = databaseMetaData.getColumns(conn.getCatalog(), dorisConfig.getDatabase(), tableName, null);
                 while (columnsResult.next()) {
@@ -119,10 +122,10 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
         consumer.accept(testItem(TestItem.ITEM_LOGIN, TestItem.RESULT_SUCCESSFULLY));
         //Read test
-        //TODO 通过权限检查有没有读权限
+        //TODO 通过权限检查有没有读权限, 暂时无法通过jdbc方式获取权限信息
         consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
         //Write test
-        //TODO 通过权限检查有没有写权限
+        //TODO 通过权限检查有没有写权限, 暂时无法通过jdbc方式获取权限信息
         consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
         //When test failed
         // consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
@@ -145,7 +148,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportCreateTable(this::createTable);
-        connectorFunctions.supportAlterTable(this::alterTable);
+//        connectorFunctions.supportAlterTable(this::alterTable);
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportDropTable(this::dropTable);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
@@ -187,13 +190,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
-//        TapTable tapTable = connectorContext.getTable();
-//        Map<String, Object> filterMap = new LinkedHashMap<>();
-//        for (TapFilter filter : filters) {
-//            filterMap.put(filter.getMatch().get())
-//        }
-//        String sql = "SELECT * FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, after, "AND");
-//
 //        //TODO 实现一下这个方法， TDD测试会要求实现这个方法做数据验证。 基于多个filter查询返回多个数据。 filter就是精确匹配的， 会用primaryKeys组织一个Map。
     }
 
@@ -233,7 +229,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         Object result = originValue;
         if (originValue instanceof DateTime) {
             // TODO 依据不同的TapField进行不同类型的格式化
-            String dateValue = this.formatTapDateTime((DateTime) originValue, "yyyy-MM-dd HH:mm:ss");
+            result = this.formatTapDateTime((DateTime) originValue, "yyyy-MM-dd HH:mm:ss");
         }
         return result;
     }
@@ -259,13 +255,35 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         return builder.toString();
     }
 
+    private void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
+        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
+        int pos = 1;
+        for (String columnName : nameFieldMap.keySet()) {
+            TapField tapField = nameFieldMap.get(columnName);
+            Object value = insertRecord.get(columnName);
+            if (tapField.getOriginType() == null) continue;
+            if (value == null) {
+                if (tapField.getNullable() != null && !tapField.getNullable()) {
+                    preparedStatement.setObject(pos, tapField.getDefaultValue());
+                } else {
+                    preparedStatement.setObject(pos, null);
+                }
+            } else {
+                preparedStatement.setObject(pos, getFieldValue(tapField, value));
+            }
+            pos += 1;
+        }
+        preparedStatement.addBatch();
+    }
+
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTable();
         Collection<String> primaryKeys = tapTable.primaryKeys();
         String sql = "CREATE TABLE " + tapTable.getName() +
                 "(" + this.buildColumnDefinition(tapTable) + ")" +
-                "DISTRIBUTED BY HASH(" + this.buildDistributedKey(primaryKeys) + ") BUCKETS 10 " +
+                "UNIQUE KEY (" + this.buildDistributedKey(primaryKeys) + " ) " +
+                "DISTRIBUTED BY HASH(" + this.buildDistributedKey(primaryKeys) + " ) BUCKETS 10 " +
                 "PROPERTIES(\"replication_num\" = \"1\")";
 
         try {
@@ -279,16 +297,42 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         PDKLogger.info(TAG, "createTable");
     }
 
-    private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent) {
-        PDKLogger.info(TAG, "alterTable");
-        //TODO 需要实现修改表的功能， 不过测试只能先从源端模拟一个修改表事件
-    }
+//FIXME DOIRS异步执行alter命令，无回调接口，没次对同一个table同时执行一个alter命令；不能保证某个时刻是否存在alter命令正在执行
+
+//    private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent)
+//        // TODO 需要实现修改表的功能， 不过测试只能先从源端模拟一个修改表事件
+//        initConnection(tapConnectorContext.getConnectionConfig());
+//        TapTable tapTable = tapConnectorContext.getTable();
+//        Set<String> fieldNames = tapTable.getNameFieldMap().keySet();
+//        try {
+//            for (TapField insertField : tapAlterTableEvent.getInsertFields()) {
+//                if (insertField.getOriginType() == null || insertField.getDefaultValue() == null) continue;
+//                String sql = "ALTER TABLE " + tapTable.getName() +
+//                        " ADD COLUMN " + insertField.getName() + ' ' + insertField.getOriginType() +
+//                        " DEFAULT '" + insertField.getDefaultValue() + "'";
+//                stmt.execute(sql);
+//            }
+//            for (String deletedFieldName : tapAlterTableEvent.getDeletedFields()) {
+//                if (!fieldNames.contains(deletedFieldName)) continue;
+//                String sql = "ALTER TABLE " + tapTable.getName() +
+//                        " DROP COLUMN " + deletedFieldName;
+//                stmt.execute(sql);
+//            }
+//            // TODO Doris在文档中没有看到修改列名的相关操作
+//
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//            throw new RuntimeException("ALTER Table " + tapTable.getName() + " Failed! \n ");
+//        }
+//
+//        PDKLogger.info(TAG, "alterTable");
+//    }
 
     private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapClearTableEvent.getTable();
         try {
-            ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapClearTableEvent.getTable().getName(), new String[]{"TABLE"});
+            ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});
             if (table.first()) {
                 String sql = "TRUNCATE TABLE " + tapTable.getName();
                 stmt.execute(sql);
@@ -302,7 +346,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapDropTableEvent.getTable();
         try {
-            ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapDropTableEvent.getTable().getName(), new String[]{"TABLE"});
+            ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapDropTableEvent.getTable().getName(), new String[]{});
             if (table.first()) {
                 String sql = "DROP TABLE " + tapTable.getName();
                 stmt.execute(sql);
@@ -311,7 +355,15 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
             e.printStackTrace();
             throw new RuntimeException("Drop Table " + tapTable.getName() + " Failed! \n ");
         }
+    }
 
+    private String buildBatchInsertSQL(TapTable tapTable, int fieldCount) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < fieldCount; i++) {
+            stringBuilder.append("?, ");
+        }
+        stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
+        return "INSERT INTO " + tapTable.getName() + " VALUES (" + stringBuilder + ")";
     }
 
     private String buildKeyAndValue(TapTable tapTable, Map<String, Object> record, String splitSymbol) {
@@ -328,7 +380,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     }
 
 
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Exception {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
         initConnection(connectorContext.getConnectionConfig());
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
@@ -338,46 +390,77 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
         TapTable tapTable = connectorContext.getTable();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        for (TapRecordEvent recordEvent : tapRecordEvents) {
+        PreparedStatement preparedStatement = null;
+        try {
+            if (Boolean.TRUE.equals(dorisConfig.isBatchInsert())) {
+                int fieldCount = 0;
+                for (Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
+                    TapField tapField = nameFieldMap.get(entry.getKey());
+                    if (tapField.getOriginType() == null) continue;
+                    fieldCount += 1;
+                }
+                preparedStatement = conn.prepareStatement(buildBatchInsertSQL(tapTable, fieldCount));
+            }
 
-            ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{"TABLE"});
-            if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
-            if (recordEvent instanceof TapInsertRecordEvent) {
-                TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-                Map<String, Object> after = insertRecordEvent.getAfter();
-                String sql = "INSERT INTO " + tapTable.getName() + " VALUES (" + buildColumnValues(tapTable, after) + ")";
-                stmt.execute(sql);
-                inserted.incrementAndGet();
-//                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
-            } else if (recordEvent instanceof TapUpdateRecordEvent) {
-                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
-                Map<String, Object> after = updateRecordEvent.getAfter();
-                Map<String, Object> filterAfter = new LinkedHashMap<>();
-                Map<String, Object> updateAfter = new LinkedHashMap<>();
-                for (Map.Entry<String, Object> entry : after.entrySet()) {
-                    String fieldName = entry.getKey();
-                    if (nameFieldMap.get(fieldName).getPrimaryKey() != null && nameFieldMap.get(fieldName).getPrimaryKey()) {
-                        filterAfter.put(fieldName, entry.getValue());
+
+            for (TapRecordEvent recordEvent : tapRecordEvents) {
+                ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});
+                if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
+                if (recordEvent instanceof TapInsertRecordEvent) {
+                    TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
+                    Map<String, Object> after = insertRecordEvent.getAfter();
+                    if (Boolean.FALSE.equals(dorisConfig.isBatchInsert())) {
+                        String sql = "INSERT INTO " + tapTable.getName() + " VALUES (" + buildColumnValues(tapTable, after) + ")";
+                        stmt.execute(sql);
+                        inserted.incrementAndGet();
                     } else {
-                        updateAfter.put(fieldName, entry.getValue());
+                        addBatchInsertRecord(tapTable, after, preparedStatement);
+                    }
+
+                }else{
+                    if (preparedStatement != null) {
+                        int[] affectRows = preparedStatement.executeBatch();
+                        for (int affect_row : affectRows) {
+                            if(affect_row > 0) inserted.getAndAdd(affect_row);
+                        }
+                        preparedStatement.clearBatch();
+                    }
+
+                    if (recordEvent instanceof TapUpdateRecordEvent) {
+                        TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
+                        Map<String, Object> after = updateRecordEvent.getAfter();
+                        Map<String, Object> filterAfter = new LinkedHashMap<>();
+                        Map<String, Object> updateAfter = new LinkedHashMap<>();
+                        for (Map.Entry<String, Object> entry : after.entrySet()) {
+                            String fieldName = entry.getKey();
+                            if (nameFieldMap.get(fieldName).getPrimaryKey() != null && nameFieldMap.get(fieldName).getPrimaryKey()) {
+                                filterAfter.put(fieldName, entry.getValue());
+                            } else {
+                                updateAfter.put(fieldName, entry.getValue());
+                            }
+                        }
+                        String sql = "UPDATE " + tapTable.getName() +
+                                " SET " + buildKeyAndValue(tapTable, updateAfter, ",") +
+                                " WHERE " + buildKeyAndValue(tapTable, filterAfter, "AND");
+                        stmt.execute(sql);
+                        updated.incrementAndGet();
+                    } else if (recordEvent instanceof TapDeleteRecordEvent) {
+                        TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
+                        Map<String, Object> after = deleteRecordEvent.getBefore();
+                        String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, after, "AND");
+                        stmt.execute(sql);
+                        deleted.incrementAndGet();
                     }
                 }
-                String sql = "UPDATE " + tapTable.getName() +
-                             " SET " + buildKeyAndValue(tapTable, updateAfter, ",") +
-                             " WHERE " + buildKeyAndValue(tapTable, filterAfter, "AND");
-                //TODO Doris目前Update语句只支持在Unique模型上更新,tapField Unique字段目前不支持， 是否应该用主键来建UNIQUE？ 需要确认
-                //     ref: https://doris.apache.org/zh-CN/sql-reference/sql-statements/Data%20Manipulation/UPDATE.html#description
-//                stmt.execute(sql);
-                updated.incrementAndGet();
-//                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
-            } else if (recordEvent instanceof TapDeleteRecordEvent) {
-                TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
-                Map<String, Object> after = deleteRecordEvent.getBefore();
-                String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, after, "AND");
-                stmt.execute(sql);
-                deleted.incrementAndGet();
-//                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
+            if (preparedStatement != null){
+                int[] affectRows = preparedStatement.executeBatch();
+                for (int affect_row : affectRows) {
+                    if(affect_row > 0) inserted.getAndAdd(affect_row);
+                }
+            }
+        } finally {
+            if (preparedStatement != null) preparedStatement.close();
         }
         //Need to tell flow engine the write result
         writeListResultConsumer.accept(writeListResult()
