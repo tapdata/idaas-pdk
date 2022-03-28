@@ -17,6 +17,7 @@ public class DorisConfig implements Serializable {
     private String database;
     private String user;
     private String password;
+    private boolean batchInsert = true;
     private int insertBatchSize = 1000;
 
     public static DorisConfig load(String jsonFile) throws IOException {
@@ -95,5 +96,13 @@ public class DorisConfig implements Serializable {
 
     public void setInsertBatchSize(int insertBatchSize) {
         this.insertBatchSize = insertBatchSize;
+    }
+
+    public Boolean isBatchInsert() {
+        return batchInsert;
+    }
+
+    public void setBatchInsert(Boolean batchInsert) {
+        this.batchInsert = batchInsert;
     }
 }

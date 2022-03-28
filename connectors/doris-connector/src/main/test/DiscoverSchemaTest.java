@@ -194,7 +194,7 @@ public class DiscoverSchemaTest {
         initConnection();
         Map<String, DataMap> tables = new HashMap<>();
         DatabaseMetaData databaseMetaData = conn.getMetaData();
-        tableName = "empty5";
+        tableName = "emptyTable2";
         ResultSet rs = stmt.executeQuery("select * from " + tableName);
         ResultSetMetaData resultSetMetaData = rs.getMetaData();
 
@@ -241,5 +241,23 @@ public class DiscoverSchemaTest {
             System.out.println(
                     "------------------");
         }
+
+        // 通过jdbc获取主键信息失败
+//        ResultSet indexInfoColumns = databaseMetaData.getIndexInfo(null, null, tableName, false, false);
+//        ResultSet indexInfoColumns = databaseMetaData.getPrimaryKeys(null, null, tableName);
+//        while (indexInfoColumns.next()) {
+//            System.out.println(
+//                    "TABLE_NAME = " + indexInfoColumns.getString("TABLE_NAME") + "   ");
+//            System.out.println(
+//                    "NON_UNIQUE = " + indexInfoColumns.getString("NON_UNIQUE") + "   ");
+//            System.out.println(
+//                    "INDEX_QUALIFIER = " + indexInfoColumns.getString("INDEX_QUALIFIER") + "   ");
+//            System.out.println(
+//                    "INDEX_NAME = " + indexInfoColumns.getString("INDEX_NAME") + "   ");
+//            System.out.println(
+//                    "TYPE = " + indexInfoColumns.getString("TYPE") + "   ");
+//            System.out.println(
+//                    "------------------");
+//        }
     }
 }
