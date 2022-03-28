@@ -83,9 +83,9 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         List<TapTable> tapTableList = new LinkedList<>();
         try {
             DatabaseMetaData databaseMetaData = conn.getMetaData();
-            ResultSet TableResult = databaseMetaData.getTables(conn.getCatalog(), dorisConfig.getDatabase(), null, new String[]{"TABLE"});
-            while (TableResult.next()) {
-                String tableName = TableResult.getString("TABLE_NAME");
+            ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), dorisConfig.getDatabase(), null, new String[]{"TABLE"});
+            while (tableResult.next()) {
+                String tableName = tableResult.getString("TABLE_NAME");
                 TapTable table = table(tableName);
                 ResultSet columnsResult = databaseMetaData.getColumns(conn.getCatalog(), dorisConfig.getDatabase(), tableName, null);
                 while (columnsResult.next()) {
@@ -99,8 +99,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
             e.printStackTrace();
             throw new RuntimeException("discoverSchema Failed! Execute SQL Failed!");
         }
-
-        //TODO 这里需要实现加载表的功能， 以及对应字段。 在tapdata的界面上是会显示目标表的列表的。
     }
 
     /**
@@ -121,19 +119,13 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         //Connection test
         initConnection(connectionContext.getConnectionConfig());
         consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
-        //Login test
-        //TODO execute login test here
         consumer.accept(testItem(TestItem.ITEM_LOGIN, TestItem.RESULT_SUCCESSFULLY));
         //Read test
-        //TODO execute read test here
+        //TODO 通过权限检查有没有读权限
         consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
         //Write test
-        //TODO execute write test here
+        //TODO 通过权限检查有没有写权限
         consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
-        //Read log test to check CDC capability
-        //TODO execute read log test here
-        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY));
-
         //When test failed
         // consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
         //When test successfully, but some warn is reported.
@@ -291,6 +283,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
     private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent) {
         PDKLogger.info(TAG, "alterTable");
+        //TODO 需要实现修改表的功能， 不过测试只能先从源端模拟一个修改表事件
     }
 
     private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) {
@@ -338,7 +331,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
 
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Exception {
-        //TODO write records into database
         initConnection(connectorContext.getConnectionConfig());
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
@@ -375,7 +367,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 String sql = "UPDATE " + tapTable.getName() +
                              " SET " + buildKeyAndValue(tapTable, updateAfter, ",") +
                              " WHERE " + buildKeyAndValue(tapTable, filterAfter, "AND");
-                //TODO Doris目前Update语句只支持在Unique模型上更新,tapField Unique字段目前不支持
+                //TODO Doris目前Update语句只支持在Unique模型上更新,tapField Unique字段目前不支持， 是否应该用主键来建UNIQUE？ 需要确认
                 //     ref: https://doris.apache.org/zh-CN/sql-reference/sql-statements/Data%20Manipulation/UPDATE.html#description
 //                stmt.execute(sql);
                 updated.incrementAndGet();
@@ -406,7 +398,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void destroy() {
-        //TODO release resources
         if (stmt != null) {
             try {
                 stmt.close();
