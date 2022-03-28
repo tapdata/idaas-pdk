@@ -2,6 +2,7 @@ package io.tapdata.pdk.core.workflow.engine.driver;
 
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
+import io.tapdata.entity.conversion.impl.TargetTypesGeneratorImpl;
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
@@ -9,13 +10,14 @@ import io.tapdata.entity.event.ddl.table.*;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
-import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.ClassFactory;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.pretty.ClassHandlers;
 import io.tapdata.pdk.core.api.TargetNode;
+import io.tapdata.pdk.core.implementation.ImplementationClassFactory;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.LoggerUtils;
@@ -214,7 +216,7 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
     private void configTable(TapTable sourceTable) {
         TapTable targetTable = targetNode.getConnectorContext().getTable();
         //Convert source table to target target by calculate the originType of target database.
-        TargetTypesGenerator targetTypesGenerator = new TargetTypesGenerator();
+        TargetTypesGenerator targetTypesGenerator = ClassFactory.create(TargetTypesGenerator.class);
         LinkedHashMap<String, TapField> nameFieldMap = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
         targetTable.setNameFieldMap(nameFieldMap);
     }

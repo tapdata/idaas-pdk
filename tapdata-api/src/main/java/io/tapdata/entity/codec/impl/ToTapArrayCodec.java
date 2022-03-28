@@ -1,21 +1,14 @@
 package io.tapdata.entity.codec.impl;
 
-import io.tapdata.entity.codec.FromTapValueCodec;
+import io.tapdata.entity.annotations.Implementation;
+import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.type.TapArray;
-import io.tapdata.entity.type.TapType;
 import io.tapdata.entity.value.TapArrayValue;
 
 import java.util.List;
 
-public class TapArrayCodec implements ToTapValueCodec<TapArrayValue>, FromTapValueCodec<TapArrayValue> {
-    @Override
-    public Object fromTapValue(TapArrayValue tapValue) {
-        if(tapValue == null)
-            return null;
-        //TODO need more code
-        return tapValue.getValue();
-    }
+@Implementation(value = ToTapValueCodec.class, type = TapDefaultCodecs.TAP_ARRAY_VALUE, buildNumber = 0)
+public class ToTapArrayCodec implements ToTapValueCodec<TapArrayValue> {
 
     @Override
     public TapArrayValue toTapValue(Object value) {

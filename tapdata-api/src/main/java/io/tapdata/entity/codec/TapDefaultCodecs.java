@@ -1,6 +1,6 @@
 package io.tapdata.entity.codec;
 
-import io.tapdata.entity.codec.impl.*;
+import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.value.*;
 
 import java.math.BigDecimal;
@@ -15,40 +15,41 @@ public class TapDefaultCodecs {
     Map<Class<?>, ToTapValueCodec<?>> classToTapValueCodecMap = new ConcurrentHashMap<>();
     Map<Class<? extends TapValue<?, ?>>, FromTapValueCodec<?>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
 
-    private final TapArrayCodec arrayCodec = new TapArrayCodec();
-    private final TapBinaryCodec binaryCodec = new TapBinaryCodec();
-    private final TapBooleanCodec booleanCodec = new TapBooleanCodec();
-    private final TapDateCodec dateCodec = new TapDateCodec();
-    private final TapDateTimeCodec dateTimeCodec = new TapDateTimeCodec();
-    private final TapMapCodec mapCodec = new TapMapCodec();
-    private final TapNumberCodec numberCodec = new TapNumberCodec();
-    private final TapRawCodec rawCodec = new TapRawCodec();
-    private final TapStringCodec stringCodec = new TapStringCodec();
-    private final TapTimeCodec timeCodec = new TapTimeCodec();
+    public static final String TAP_TIME_VALUE = "TapTimeValue";
+    public static final String TAP_MAP_VALUE = "TapMapValue";
+    public static final String TAP_DATE_VALUE = "TapDateValue";
+    public static final String TAP_ARRAY_VALUE = "TapArrayValue";
+    public static final String TAP_YEAR_VALUE = "TapYearValue";
+    public static final String TAP_NUMBER_VALUE = "TapNumberValue";
+    public static final String TAP_BOOLEAN_VALUE = "TapBooleanValue";
+    public static final String TAP_DATE_TIME_VALUE = "TapDateTimeValue";
+    public static final String TAP_BINARY_VALUE = "TapBinaryValue";
+    public static final String TAP_RAW_VALUE = "TapRawValue";
+    public static final String TAP_STRING_VALUE = "TapStringValue";
 
     public TapDefaultCodecs() {
-        classToTapValueCodecMap.put(byte[].class, binaryCodec);
-        classToTapValueCodecMap.put(boolean.class, booleanCodec);
-        classToTapValueCodecMap.put(Boolean.class, booleanCodec);
-        classToTapValueCodecMap.put(double.class, numberCodec);
-        classToTapValueCodecMap.put(float.class, numberCodec);
-        classToTapValueCodecMap.put(long.class, numberCodec);
-        classToTapValueCodecMap.put(int.class, numberCodec);
-        classToTapValueCodecMap.put(short.class, numberCodec);
-        classToTapValueCodecMap.put(byte.class, numberCodec);
-        classToTapValueCodecMap.put(String.class, stringCodec);
-        classToTapValueCodecMap.put(Date.class, dateTimeCodec);
+        classToTapValueCodecMap.put(byte[].class, InstanceFactory.instance(ToTapValueCodec.class, TAP_BINARY_VALUE));
+        classToTapValueCodecMap.put(boolean.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_BOOLEAN_VALUE));
+        classToTapValueCodecMap.put(Boolean.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_BOOLEAN_VALUE));
+        classToTapValueCodecMap.put(double.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_NUMBER_VALUE));
+        classToTapValueCodecMap.put(float.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_NUMBER_VALUE));
+        classToTapValueCodecMap.put(long.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_NUMBER_VALUE));
+        classToTapValueCodecMap.put(int.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_NUMBER_VALUE));
+        classToTapValueCodecMap.put(short.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_NUMBER_VALUE));
+        classToTapValueCodecMap.put(byte.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_NUMBER_VALUE));
+        classToTapValueCodecMap.put(String.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_STRING_VALUE));
+        classToTapValueCodecMap.put(Date.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_DATE_TIME_VALUE));
 
-        classFromTapValueCodecMap.put(TapArrayValue.class, arrayCodec);
-        classFromTapValueCodecMap.put(TapBinaryValue.class, binaryCodec);
-        classFromTapValueCodecMap.put(TapBooleanValue.class, booleanCodec);
-        classFromTapValueCodecMap.put(TapDateValue.class, dateCodec);
-        classFromTapValueCodecMap.put(TapDateTimeValue.class, dateTimeCodec);
-        classFromTapValueCodecMap.put(TapMapValue.class, mapCodec);
-        classFromTapValueCodecMap.put(TapNumberValue.class, numberCodec);
-        classFromTapValueCodecMap.put(TapRawValue.class, rawCodec);
-        classFromTapValueCodecMap.put(TapStringValue.class, stringCodec);
-        classFromTapValueCodecMap.put(TapTimeValue.class, timeCodec);
+        classFromTapValueCodecMap.put(TapArrayValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_ARRAY_VALUE));
+        classFromTapValueCodecMap.put(TapBinaryValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_BINARY_VALUE));
+        classFromTapValueCodecMap.put(TapBooleanValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_BOOLEAN_VALUE));
+        classFromTapValueCodecMap.put(TapDateValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_DATE_VALUE));
+        classFromTapValueCodecMap.put(TapDateTimeValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_DATE_TIME_VALUE));
+        classFromTapValueCodecMap.put(TapMapValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_MAP_VALUE));
+        classFromTapValueCodecMap.put(TapNumberValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_NUMBER_VALUE));
+        classFromTapValueCodecMap.put(TapRawValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_RAW_VALUE));
+        classFromTapValueCodecMap.put(TapStringValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_STRING_VALUE));
+        classFromTapValueCodecMap.put(TapTimeValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_TIME_VALUE));
     }
 
     ToTapValueCodec<?> getToTapValueCodec(Class<?> clazz) {
@@ -56,13 +57,13 @@ public class TapDefaultCodecs {
         if(codec != null)
             return codec;
         if(Collection.class.isAssignableFrom(clazz)) {
-            return arrayCodec;
+            return InstanceFactory.instance(ToTapValueCodec.class, TAP_ARRAY_VALUE);
         } else if(Map.class.isAssignableFrom(clazz)) {
-            return mapCodec;
+            return InstanceFactory.instance(ToTapValueCodec.class, TAP_MAP_VALUE);
         } else if(Number.class.isAssignableFrom(clazz)) {
-            return numberCodec;
+            return InstanceFactory.instance(ToTapValueCodec.class, TAP_NUMBER_VALUE);
         }
-        return rawCodec;
+        return InstanceFactory.instance(ToTapValueCodec.class, TAP_RAW_VALUE);
     }
 
     FromTapValueCodec<?> getFromTapValueCodec(Class<? extends TapValue<?, ?>> clazz) {

@@ -6,7 +6,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.utils.TapUtils;
-import io.tapdata.pdk.core.annotations.Implementation;
+import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.ReflectionUtil;

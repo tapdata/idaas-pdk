@@ -6,7 +6,7 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
-import io.tapdata.pdk.core.annotations.Implementation;
+import io.tapdata.entity.annotations.Implementation;
 
 @Implementation(JsonParser.class)
 public class JsonParserImpl implements JsonParser {

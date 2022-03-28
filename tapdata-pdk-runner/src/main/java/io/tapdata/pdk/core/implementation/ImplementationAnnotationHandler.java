@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.implementation;
 
 import io.tapdata.pdk.apis.logger.PDKLogger;
-import io.tapdata.pdk.core.annotations.Implementation;
+import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.reflection.ClassAnnotationHandler;
 
@@ -80,7 +80,7 @@ public class ImplementationAnnotationHandler extends ClassAnnotationHandler {
                     }
                 }
             }
-            PDKLogger.info(TAG, "--------------Implementation Classes End-------------");
+x            PDKLogger.info(TAG, "--------------Implementation Classes End-------------");
         }
     }
 

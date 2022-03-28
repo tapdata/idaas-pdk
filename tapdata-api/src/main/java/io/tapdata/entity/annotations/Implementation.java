@@ -1,4 +1,4 @@
-package io.tapdata.pdk.core.annotations;
+package io.tapdata.entity.annotations;
 
 import java.lang.annotation.*;
 

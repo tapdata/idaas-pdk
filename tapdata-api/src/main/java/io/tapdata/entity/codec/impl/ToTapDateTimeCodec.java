@@ -1,25 +1,17 @@
 package io.tapdata.entity.codec.impl;
 
-import io.tapdata.entity.codec.FromTapValueCodec;
+import io.tapdata.entity.annotations.Implementation;
+import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.type.TapTime;
-import io.tapdata.entity.type.TapType;
 import io.tapdata.entity.value.DateTime;
-import io.tapdata.entity.value.TapTimeValue;
+import io.tapdata.entity.value.TapDateTimeValue;
 
 import java.util.Date;
 
-public class TapTimeCodec implements ToTapValueCodec<TapTimeValue>, FromTapValueCodec<TapTimeValue> {
+@Implementation(value = ToTapValueCodec.class, type = TapDefaultCodecs.TAP_DATE_TIME_VALUE, buildNumber = 0)
+public class ToTapDateTimeCodec implements ToTapValueCodec<TapDateTimeValue> {
     @Override
-    public Object fromTapValue(TapTimeValue tapValue) {
-        if(tapValue == null)
-            return null;
-        //TODO need more code
-        return tapValue.getValue();
-    }
-
-    @Override
-    public TapTimeValue toTapValue(Object value) {
+    public TapDateTimeValue toTapValue(Object value) {
 
         DateTime dateTime = null;
         if(value instanceof DateTime) {
@@ -32,7 +24,7 @@ public class TapTimeCodec implements ToTapValueCodec<TapTimeValue>, FromTapValue
         }
 
         if(dateTime != null) {
-            TapTimeValue dateTimeValue = new TapTimeValue(dateTime);
+            TapDateTimeValue dateTimeValue = new TapDateTimeValue(dateTime);
             return dateTimeValue;
         }
         return null;
