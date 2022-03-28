@@ -98,7 +98,7 @@ spec.json describes three types information,
     - Connector name, icon and id.
 * [configOptions](docs/configOptions.md)
     - Describe a form for user to input the information for how to connect and which database to open.
-* [openTypes](docs/open-type.md) (Not ready yet)
+* [dataTypes](docs/dataTypes.md) (Not ready yet)
     - This will be required when current data source need create table with proper types before insert records.
       Otherwise, this key can be empty.
     - Describe the capability of types for current data source.
@@ -130,16 +130,24 @@ spec.json describes three types information,
       }
     }
   },
-  "openTypes": {
-    "varchar[($width)]": {
-      "byte": "64k",
-      "fixed": false,
-      "to": "typeString"
+  "dataTypes": {
+    "double": {
+      "bit": 64,
+      "to": "TapNumber"
     },
-    "smallint[($m)][unsigned][zerofill]": {
-      "bit": 4,
-      "unsigned": "unsigned",
-      "to": "typeNumber"
+    "decimal[($precision,$scale)]": {
+      "bit": 128,
+      "precision": [
+        1,
+        27
+      ],
+      "defaultPrecision": 10,
+      "scale": [
+        0,
+        9
+      ],
+      "defaultScale": 0,
+      "to": "TapNumber"
     }
   }
 }
