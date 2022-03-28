@@ -423,11 +423,10 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                         for (int affect_row : affectRows) {
                             if(affect_row > 0) inserted.getAndAdd(affect_row);
                         }
-                        preparedStatement = null;
+                        preparedStatement.clearBatch();
                     }
 
                     if (recordEvent instanceof TapUpdateRecordEvent) {
-
                         TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                         Map<String, Object> after = updateRecordEvent.getAfter();
                         Map<String, Object> filterAfter = new LinkedHashMap<>();
