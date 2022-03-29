@@ -4,6 +4,7 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.pdk.apis.functions.processor.ProcessRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.api.ProcessorNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
@@ -37,7 +38,9 @@ public class ProcessorNodeDriver extends Driver implements ListHandler<List<TapE
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.PROCESSOR_PROCESS_RECORD, () -> {
                     processRecordFunction.process(processorNode.getProcessorContext(), recordEvents, (event) -> {
                         PDKLogger.debug(TAG, "Processed {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
-                        offer(recordEvents);
+                        //TODO not sure how to do this for processor, do it later.
+//                        offer(recordEvents);
+//                        offer(events, (theEvents) -> PDKIntegration.filterEvents(sourceNode, theEvents));
                     });
                 }, "insert " + LoggerUtils.processorNodeMessage(processorNode), TAG);
             }

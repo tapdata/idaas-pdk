@@ -1,12 +1,18 @@
 package io.tapdata.pdk.cli.commands;
 
+import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
+import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
+import io.tapdata.pdk.tdd.tests.basic.BasicTest;
+import io.tapdata.pdk.tdd.tests.target.beginner.DMLTest;
+import io.tapdata.pdk.tdd.tests.target.intermediate.CreateTableTest;
+import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
-import org.junit.platform.engine.discovery.PackageSelector;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
@@ -19,9 +25,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.*;
 
-import static org.junit.platform.engine.discovery.ClassNameFilter.includeClassNamePatterns;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
-import static org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage;
 
 @CommandLine.Command(
         description = "Push PDK jar file into Tapdata",
@@ -33,8 +37,6 @@ public class TDDCli extends CommonCli {
     File file;
 //    @CommandLine.Option(names = { "-t", "--testCase" }, required = false, description = "Specify the test class simple name to test")
 //    private String testClass;
-    @CommandLine.Option(names = { "-l", "--connectorLevel" }, required = false, description = "Connector has three levels, beginner, intermediate and expert, more functions connector implemented, the level is higher. ")
-    private String level = LEVEL_BEGINNER;
     @CommandLine.Option(names = { "-c", "--testConfig" }, required = true, description = "Specify the test json configuration file")
     private String testConfig;
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "TapData cli help")
@@ -47,28 +49,13 @@ public class TDDCli extends CommonCli {
         runTests(request);
     }
 
-    public void runLevel() {
-        List<PackageSelector> selectors = new ArrayList<>();
-        switch (level) {
-            case LEVEL_EXPERT:
-                selectors.add(DiscoverySelectors.selectPackage(SOURCE_PREFIX + LEVEL_EXPERT));
-                selectors.add(DiscoverySelectors.selectPackage(TARGET_PREFIX + LEVEL_EXPERT));
-            case LEVEL_INTERMEDIATE:
-                selectors.add(DiscoverySelectors.selectPackage(SOURCE_PREFIX + LEVEL_INTERMEDIATE));
-                selectors.add(DiscoverySelectors.selectPackage(TARGET_PREFIX + LEVEL_INTERMEDIATE));
-            case LEVEL_BEGINNER:
-                selectors.add(DiscoverySelectors.selectPackage("io.tapdata.pdk.tdd.tests.basic"));
-                selectors.add(DiscoverySelectors.selectPackage(SOURCE_PREFIX + LEVEL_BEGINNER));
-                selectors.add(DiscoverySelectors.selectPackage(TARGET_PREFIX + LEVEL_BEGINNER));
-                break;
-
-        }
+    public void runLevel(List<DiscoverySelector> selectors) {
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
 //                .selectors(selectPackage("io.tapdata.pdk.tdd.tests.basic"),
 //                        selectPackage("io.tapdata.pdk.tdd.tests.source." + level),
 //                        selectPackage("io.tapdata.pdk.tdd.tests.target." + level))
                 .selectors(selectors)
-                .filters(includeClassNamePatterns(".*Test"))
+//                .filters(includeClassNamePatterns(".*Test"))
                 .build();
         runTests(request);
     }
@@ -91,28 +78,57 @@ public class TDDCli extends CommonCli {
         summary.printFailuresTo(new PrintWriter(System.out));
     }
 
-    public Integer execute() throws Exception {
-        testPDKJar(file, testConfig);
+    public Integer execute() {
+        try {
+            testPDKJar(file, testConfig);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            PDKLogger.fatal(TAG, "Run test against file {} failed, {}", file, throwable.getMessage());
+        }
         return 0;
     }
 
-    private void testPDKJar(File file, String testConfig) {
+    private void testPDKJar(File file, String testConfig) throws Throwable {
         CommonUtils.setProperty("pdk_test_jar_file", file.getAbsolutePath());
         CommonUtils.setProperty("pdk_test_config_file", testConfig);
 
         PDKTestBase testBase = new PDKTestBase();
+//        testBase.setup();
         TapConnector testConnector = testBase.getTestConnector();
         Collection<TapNodeInfo> tapNodeInfoCollection = testConnector.getTapNodeClassFactory().getConnectorTapNodeInfos();
-
-        switch (level) {
-            case LEVEL_BEGINNER:
-            case LEVEL_EXPERT:
-            case LEVEL_INTERMEDIATE:
-                break;
-            default:
-                throw new IllegalArgumentException("Level is illegal, need to be " + LEVEL_BEGINNER + ", " + LEVEL_INTERMEDIATE + ", or " + LEVEL_EXPERT);
+        for(TapNodeInfo tapNodeInfo : tapNodeInfoCollection) {
+            runLevel(generateTestTargets(tapNodeInfo));
         }
-        runLevel();
+    }
+
+    private List<DiscoverySelector> generateTestTargets(TapNodeInfo tapNodeInfo) throws Throwable {
+        StringBuilder builder = new StringBuilder();
+
+        io.tapdata.pdk.apis.TapConnector connector = (io.tapdata.pdk.apis.TapConnector) tapNodeInfo.getNodeClass().getConstructor().newInstance();
+        ConnectorFunctions connectorFunctions = new ConnectorFunctions();
+        TapCodecRegistry codecRegistry = new TapCodecRegistry();
+        connector.registerCapabilities(connectorFunctions, codecRegistry);
+
+
+        builder.append("\n-------------PDK connector idAndGroupAndVersion " + tapNodeInfo.getTapNodeSpecification().idAndGroup() + "-------------").append("\n");
+        builder.append("             Node class " + tapNodeInfo.getNodeClass() + " run tests below, ").append("\n");
+        List<DiscoverySelector> selectors = new ArrayList<>();
+        selectors.add(DiscoverySelectors.selectClass(BasicTest.class));
+
+        if(connectorFunctions.getDmlFunction() != null) {
+            selectors.add(DiscoverySelectors.selectClass(DMLTest.class));
+        }
+
+        if(connectorFunctions.getCreateTableFunction() != null) {
+            selectors.add(DiscoverySelectors.selectClass(CreateTableTest.class));
+        }
+        builder.append("             Will run total " + selectors.size() + " test cases").append("\n");
+        for(DiscoverySelector selector : selectors) {
+            builder.append("             Test case " + selector.toString()).append("\n");
+        }
+        builder.append("-------------PDK connector idAndGroupAndVersion " + tapNodeInfo.getTapNodeSpecification().idAndGroup() + "-------------").append("\n");
+        PDKLogger.info(TAG, builder.toString());
+        return selectors;
     }
 
 }

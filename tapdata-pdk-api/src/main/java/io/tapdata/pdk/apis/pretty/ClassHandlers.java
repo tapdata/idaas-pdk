@@ -25,9 +25,9 @@ public class ClassHandlers {
                 for(ClassObjectHandler objectHandler : objectHandlers) {
                     objectHandler.handle(t);
                 }
-            } else {
+            } /*else {
                 PDKLogger.error(TAG, "Class {} not found corresponding handler, maybe forget to register one? ", t.getClass());
-            }
+            }*/
         }
     }
 }

@@ -15,6 +15,7 @@ import java.util.function.Consumer;
  * TODO start monitor thread for checking slow invocation
  */
 public class PDKInvocationMonitor {
+    private static final String TAG = PDKInvocationMonitor.class.getSimpleName();
     private static volatile PDKInvocationMonitor instance;
     private static final Object lock = new int[0];
 
@@ -55,7 +56,7 @@ public class PDKInvocationMonitor {
     }
 
     private void invokePDKMethodPrivate(PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
-        String invokeId = methodStart(method);
+        String invokeId = methodStart(method, logTag);
         Throwable theError = null;
         try {
             r.run();
@@ -79,10 +80,11 @@ public class PDKInvocationMonitor {
         }
     }
 
-    public String methodStart(PDKMethod method) {
+    public String methodStart(PDKMethod method, String logTag) {
         final String invokeId = CommonUtils.processUniqueId();
         InvocationCollector collector = methodInvocationCollectorMap.computeIfAbsent(method, InvocationCollector::new);
         collector.getInvokeIdTimeMap().put(invokeId, System.currentTimeMillis());
+        PDKLogger.debug(logTag, "methodStart {} invokeId {}", method, invokeId);
         return invokeId;
     }
 
@@ -95,9 +97,9 @@ public class PDKInvocationMonitor {
                 long takes = System.currentTimeMillis() - time;
                 collector.getTotalTakes().add(takes);
                 if(error != null) {
-                    PDKLogger.error(logTag, "{} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
+                    PDKLogger.error(logTag, "methodEnd {} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
                 } else {
-                    PDKLogger.debug(logTag, "{} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
+                    PDKLogger.debug(logTag, "methodEnd {} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
                 }
                 return takes;
             }

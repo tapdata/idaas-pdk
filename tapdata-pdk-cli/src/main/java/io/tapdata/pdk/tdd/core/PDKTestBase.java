@@ -7,7 +7,9 @@ import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.api.ConnectionNode;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.PDKIntegration;
+import io.tapdata.pdk.core.api.SourceAndTargetNode;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.error.CoreException;
@@ -16,9 +18,7 @@ import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +33,9 @@ public class PDKTestBase {
     protected TapConnector tddConnector;
     protected File testConfigFile;
     protected File jarFile;
+
+    protected DataMap connectionOptions;
+    protected DataMap nodeOptions;
 
     public PDKTestBase() {
         String testConfig = CommonUtils.getProperty("pdk_test_config_file", "");
@@ -95,6 +98,48 @@ public class PDKTestBase {
         }
     }
 
+    public void prepareSourceNode(TapNodeInfo nodeInfo, DataMap connection, Consumer<ConnectorNode> consumer) {
+        try {
+            consumer.accept(PDKIntegration.createSourceBuilder()
+                    .withPdkId(nodeInfo.getTapNodeSpecification().getId())
+                    .withAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup())
+                    .withGroup(nodeInfo.getTapNodeSpecification().getGroup())
+                    .withVersion(nodeInfo.getTapNodeSpecification().getVersion())
+                    .withConnectionConfig(connection)
+                    .build());
+        } finally {
+            PDKIntegration.releaseAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup());
+        }
+    }
+
+    public void prepareTargetNode(TapNodeInfo nodeInfo, DataMap connection, Consumer<ConnectorNode> consumer) {
+        try {
+            consumer.accept(PDKIntegration.createTargetBuilder()
+                    .withPdkId(nodeInfo.getTapNodeSpecification().getId())
+                    .withAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup())
+                    .withGroup(nodeInfo.getTapNodeSpecification().getGroup())
+                    .withVersion(nodeInfo.getTapNodeSpecification().getVersion())
+                    .withConnectionConfig(connection)
+                    .build());
+        } finally {
+            PDKIntegration.releaseAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup());
+        }
+    }
+
+    public void prepareSourceAndTargetNode(TapNodeInfo nodeInfo, DataMap connection, Consumer<SourceAndTargetNode> consumer) {
+        try {
+            consumer.accept(PDKIntegration.createSourceAndTargetBuilder()
+                    .withPdkId(nodeInfo.getTapNodeSpecification().getId())
+                    .withAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup())
+                    .withGroup(nodeInfo.getTapNodeSpecification().getGroup())
+                    .withVersion(nodeInfo.getTapNodeSpecification().getVersion())
+                    .withConnectionConfig(connection)
+                    .build());
+        } finally {
+            PDKIntegration.releaseAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup());
+        }
+    }
+
     public void consumeQualifiedTapNodeInfo(Consumer<TapNodeInfo> consumer, String... nodeTypes) {
         Collection<TapNodeInfo> tapNodeInfoCollection = testConnector.getTapNodeClassFactory().getConnectorTapNodeInfos();
         if(tapNodeInfoCollection.isEmpty())
@@ -107,13 +152,17 @@ public class PDKTestBase {
         }
     }
 
-    @BeforeAll
-    public static void setup() {
+    @BeforeEach
+    public void setup() {
         PDKLogger.info(TAG, "setup");
+        Map<String, DataMap> testConfigMap = readTestConfig(testConfigFile);
+        Assertions.assertNotNull(testConfigMap, "testConfigFile " + testConfigFile + " read to json failed");
+        connectionOptions = testConfigMap.get("connection");
+        nodeOptions = testConfigMap.get("node");
     }
 
-    @AfterAll
-    public static void tearDown() {
+    @AfterEach
+    public void tearDown() {
         PDKLogger.info(TAG, "tearDown");
     }
 
@@ -127,5 +176,13 @@ public class PDKTestBase {
 
     public File getJarFile() {
         return jarFile;
+    }
+
+    public DataMap getConnectionOptions() {
+        return connectionOptions;
+    }
+
+    public DataMap getNodeOptions() {
+        return nodeOptions;
     }
 }

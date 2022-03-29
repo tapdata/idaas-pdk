@@ -89,7 +89,8 @@ public class PDKLogger {
         builder.append("$$time:: " + dateString()).
                 append(" $$tag:: " + tag).
                 append(" ").
-                append("[" + msg + "]");
+                append("[" + msg + "]").
+                append(" $$thread:: " + Thread.currentThread().getName());
 
         return builder.toString();
     }
@@ -100,7 +101,8 @@ public class PDKLogger {
                 append(" $$time:: " + dateString()).
                 append(" $$tag:: " + tag).
                 append(" ").
-                append("[" + msg + "]");
+                append("[" + msg + "]").
+                append(" $$thread:: " + Thread.currentThread().getName());
         return builder.toString();
     }
 
@@ -109,7 +111,8 @@ public class PDKLogger {
         builder.append("$$time:: " + dateString()).
                 append(" $$tag:: " + tag).
                 append(" [" + msg + "]").
-                append(" $$spendTime:: " + spendTime);
+                append(" $$spendTime:: " + spendTime).
+                append(" $$thread:: " + Thread.currentThread().getName());
 
         return builder.toString();
     }
@@ -120,7 +123,8 @@ public class PDKLogger {
                 append(" $$tag:: " + tag).
                 append(" [" + msg + "]").
                 append(" $$dataType:: " + dataType).
-                append(" $$data:: " + data);
+                append(" $$data:: " + data).
+                append(" $$thread:: " + Thread.currentThread().getName());
 
         return builder.toString();
     }

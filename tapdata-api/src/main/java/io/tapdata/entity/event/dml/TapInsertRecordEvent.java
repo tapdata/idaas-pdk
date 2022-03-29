@@ -2,6 +2,8 @@ package io.tapdata.entity.event.dml;
 
 
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.TapUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,7 +19,7 @@ public class TapInsertRecordEvent extends TapRecordEvent {
     public void clone(TapInsertRecordEvent insertRecordEvent) {
         super.clone(insertRecordEvent);
         if(after != null)
-            insertRecordEvent.after = new LinkedHashMap<>(after);
+            insertRecordEvent.after = InstanceFactory.instance(TapUtils.class).cloneMap(after);
     }
 
     public TapInsertRecordEvent init() {

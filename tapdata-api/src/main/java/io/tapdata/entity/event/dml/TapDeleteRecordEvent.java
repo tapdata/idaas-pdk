@@ -2,6 +2,8 @@ package io.tapdata.entity.event.dml;
 
 
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.TapUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,7 +15,7 @@ public class TapDeleteRecordEvent extends TapRecordEvent {
     public void clone(TapDeleteRecordEvent deleteRecordEvent) {
         super.clone(deleteRecordEvent);
         if(before != null)
-            deleteRecordEvent.before = new LinkedHashMap<>(before);
+            deleteRecordEvent.before = InstanceFactory.instance(TapUtils.class).cloneMap(before);
     }
 
     public TapDeleteRecordEvent init() {

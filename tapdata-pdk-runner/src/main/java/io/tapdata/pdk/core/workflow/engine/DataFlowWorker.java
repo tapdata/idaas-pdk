@@ -1,5 +1,6 @@
 package io.tapdata.pdk.core.workflow.engine;
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -96,6 +97,31 @@ public class DataFlowWorker {
             TapDAGNodeWithWorker nodeWorker = dag.getNodeMap().get(nodeId);
             if(nodeWorker.sourceNodeDriver != null) {
                 nodeWorker.sourceNodeDriver.start();
+            }
+        }
+    }
+    public void sendExternalEvent(TapEvent event) {
+        sendExternalEvent(event, null);
+    }
+    public void sendExternalEvent(TapEvent event, String nodeId) {
+        if(nodeId != null) {
+            TapDAGNodeWithWorker nodeWorker = dag.getNodeMap().get(nodeId);
+            if(nodeWorker != null) {
+                if(nodeWorker.sourceNodeDriver != null) {
+                    nodeWorker.sourceNodeDriver.getSourceNode().offerExternalEvent(event);
+                } else if(nodeWorker.targetNodeDriver != null) {
+                    nodeWorker.targetNodeDriver.getTargetNode().offerExternalEvent(event);
+                }
+                //Processor not consider at this moment. 
+            }
+
+        } else {
+            List<String> headNodeIds = dag.getHeadNodeIds();
+            for(String theNodeId : headNodeIds) {
+                TapDAGNodeWithWorker nodeWorker = dag.getNodeMap().get(theNodeId);
+                if(nodeWorker.sourceNodeDriver != null) {
+                    nodeWorker.sourceNodeDriver.getSourceNode().offerExternalEvent(event);
+                }
             }
         }
     }

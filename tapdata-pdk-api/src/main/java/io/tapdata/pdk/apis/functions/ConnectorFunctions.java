@@ -17,6 +17,7 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private AlterTableFunction alterTableFunction;
     private ClearTableFunction clearTableFunction;
     private DropTableFunction dropTableFunction;
+    private ControlFunction controlFunction;
     /**
      * Flow engine may get current batch offset at any time.
      * To continue batch read for the batch offset when job resumed from pause or stopped accidentally.
@@ -26,6 +27,11 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
      */
     public ConnectorFunctions supportBatchOffset(BatchOffsetFunction function) {
         batchOffsetFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportControlFunction(ControlFunction function) {
+        controlFunction = function;
         return this;
     }
 
@@ -157,5 +163,9 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public DropTableFunction getDropTableFunction() {
         return dropTableFunction;
+    }
+
+    public ControlFunction getControlFunction() {
+        return controlFunction;
     }
 }

@@ -1,6 +1,8 @@
 package io.tapdata.pdk.core.workflow.engine;
 
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.api.PDKIntegration;
@@ -18,6 +20,48 @@ import java.util.List;
 
 public class TapDAGNodeWithWorker extends TapDAGNode {
     private static final String TAG = TapDAGNodeWithWorker.class.getSimpleName();
+
+    public TapDAGNodeWithWorker nodeConfig(DataMap nodeConfig) {
+        this.nodeConfig = nodeConfig;
+        return this;
+    }
+    public TapDAGNodeWithWorker connectionConfig(DataMap connectionConfig) {
+        this.connectionConfig = connectionConfig;
+        return this;
+    }
+    public TapDAGNodeWithWorker id(String id) {
+        this.id = id;
+        return this;
+    }
+    public TapDAGNodeWithWorker pdkId(String pdkId) {
+        this.pdkId = pdkId;
+        return this;
+    }
+    public TapDAGNodeWithWorker group(String group) {
+        this.group = group;
+        return this;
+    }
+    public TapDAGNodeWithWorker version(String version) {
+        this.version = version;
+        return this;
+    }
+    public TapDAGNodeWithWorker type(String type) {
+        this.type = type;
+        return this;
+    }
+    public TapDAGNodeWithWorker table(TapTable table) {
+        this.table = table;
+        return this;
+    }
+    public TapDAGNodeWithWorker parentNodeIds(List<String> parentNodeIds) {
+        this.parentNodeIds = parentNodeIds;
+        return this;
+    }
+    public TapDAGNodeWithWorker childNodeIds(List<String> childNodeIds) {
+        this.childNodeIds = childNodeIds;
+        return this;
+    }
+
     ProcessorNodeDriver processorNodeDriver;
     SourceNodeDriver sourceNodeDriver;
     TargetNodeDriver targetNodeDriver;

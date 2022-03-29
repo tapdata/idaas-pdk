@@ -5,6 +5,7 @@ import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
@@ -16,14 +17,17 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
+import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
@@ -46,23 +50,26 @@ public class SourceNodeDriver extends Driver {
     }
 
     public void start() {
+        PDKLogger.info(TAG, "SourceNodeDriver started, {}", LoggerUtils.sourceNodeMessage(sourceNode));
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 
         //Fill the discovered table back into connector context
         //The table user input has to be one in the discovered tables. Otherwise we need create table logic which currently we don't have.
-        sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), (tables) -> {
-            if(tables != null) {
+        pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
+            sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), (tables) -> {
+                if(tables == null) return;
                 for(TapTable table : tables) {
-                    if(table != null) {
-                        TapTable targetTable = sourceNode.getConnectorContext().getTable();
-                        if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
-                            analyzeTableFields(table);
-                            break;
-                        }
+                    if(table == null) continue;
+                    TapTable targetTable = sourceNode.getConnectorContext().getTable();
+                    if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
+                        PDKIntegration.analyzeTableFields(sourceNode, table);
+                        break;
                     }
                 }
-            }
-        });
+
+            });
+        }, "Discover schema " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+
 
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
         if (batchCountFunction != null) {
@@ -121,7 +128,13 @@ public class SourceNodeDriver extends Driver {
                     () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, 100, (events) -> {
                         if (events != null && !events.isEmpty()) {
                             PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                            offer(filterEvents(events));
+                            offer(events, (theEvents) -> PDKIntegration.filterEvents(sourceNode, theEvents));
+
+                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
+                            if(externalEvents != null) {
+                                PDKLogger.debug(TAG, "Batch read external {} of events, {}", externalEvents.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                                offer(externalEvents);
+                            }
 
                             BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
                             if(batchOffsetFunction != null) {
@@ -158,7 +171,13 @@ public class SourceNodeDriver extends Driver {
                     streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
                         if (events != null) {
                             PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                            offer(filterEvents(events));
+                            offer(events, (theEvents) -> PDKIntegration.filterEvents(sourceNode, theEvents));
+
+                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
+                            if(externalEvents != null) {
+                                PDKLogger.debug(TAG, "Stream read external {} of events, {}", externalEvents.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                                offer(externalEvents);
+                            }
                         }
 
                         StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
@@ -179,44 +198,14 @@ public class SourceNodeDriver extends Driver {
         }
     }
 
-    private void analyzeTableFields(TapTable table) {
-        sourceNode.getConnectorContext().setTable(table);
-
-        LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
-        if(nameFieldMap != null) {
-            DefaultExpressionMatchingMap expressionMatchingMap = sourceNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap();
-            for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
-                if(entry.getValue().getOriginType() != null) {
-                    TypeExprResult<DataMap> result = expressionMatchingMap.get(entry.getValue().getOriginType());
-                    if(result != null) {
-                        TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
-                        if(tapMapping != null) {
-                            entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getOriginType(), result.getParams()));
-                        }
-                    } else {
-                        PDKLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition. {}", entry.getValue().getOriginType(), LoggerUtils.sourceNodeMessage(sourceNode));
-                    }
+    private void filterExternalEvent(TapEvent tapEvent) {
+        if(tapEvent instanceof PatrolEvent) {
+            PatrolEvent patrolEvent = (PatrolEvent) tapEvent;
+            if(patrolEvent.applyState(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE)) {
+                if(patrolEvent.getPatrolListener() != null) {
+                    CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE), TAG);
                 }
             }
         }
-    }
-
-    private List<TapEvent> filterEvents(List<TapEvent> events) {
-        LinkedHashMap<String, TapField> nameFieldMap = sourceNode.getConnectorContext().getTable().getNameFieldMap();
-        TapCodecFilterManager codecFilterManager = sourceNode.getCodecFilterManager();
-        for(TapEvent tapEvent : events) {
-            if(tapEvent instanceof TapInsertRecordEvent) {
-                TapInsertRecordEvent insertDMLEvent = (TapInsertRecordEvent) tapEvent;
-                codecFilterManager.transformToTapValueMap(insertDMLEvent.getAfter(), nameFieldMap);
-            } else if(tapEvent instanceof TapUpdateRecordEvent) {
-                TapUpdateRecordEvent updateDMLEvent = (TapUpdateRecordEvent) tapEvent;
-                codecFilterManager.transformToTapValueMap(updateDMLEvent.getAfter(), nameFieldMap);
-                codecFilterManager.transformToTapValueMap(updateDMLEvent.getBefore(), nameFieldMap);
-            } else if(tapEvent instanceof TapDeleteRecordEvent) {
-                TapDeleteRecordEvent deleteDMLEvent = (TapDeleteRecordEvent) tapEvent;
-                codecFilterManager.transformToTapValueMap(deleteDMLEvent.getBefore(), nameFieldMap);
-            }
-        }
-        return events;
     }
 }

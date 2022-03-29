@@ -4,12 +4,24 @@ import java.util.List;
 
 public class JobOptions {
     protected int queueSize = 20;
+    public JobOptions queueSize(int queueSize) {
+        this.queueSize = queueSize;
+        return this;
+    }
     protected int queueBatchSize = 10;
+    public JobOptions queueBatchSize(int queueBatchSize) {
+        this.queueBatchSize = queueBatchSize;
+        return this;
+    }
     public static final String ACTION_DROP_TABLE = "dropTable";
     public static final String ACTION_CREATE_TABLE = "createTable";
     public static final String ACTION_CLEAR_TABLE = "clearTable";
     public static final String ACTION_INDEX_PRIMARY = "indexPrimary";
     protected List<String> actionsBeforeStart;
+    public JobOptions actionsBeforeStart(List<String> actionsBeforeStart) {
+        this.actionsBeforeStart = actionsBeforeStart;
+        return this;
+    }
 
     public int getQueueSize() {
         return queueSize;

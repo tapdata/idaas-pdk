@@ -5,12 +5,14 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.utils.TapUtils;
+import io.tapdata.entity.utils.TapUtils;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.ReflectionUtil;
+import org.apache.commons.lang3.SerializationUtils;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -24,49 +26,44 @@ public class TapUtilsImpl implements TapUtils {
         ExecutorsManager.getInstance().getScheduledExecutorService().schedule(runnable, seconds, TimeUnit.SECONDS);
     }
 
+    @Override
+    public Map<String, Object> cloneMap(Map<String, Object> map) {
+        return (Map<String, Object>) clone(map);
+    }
+
     public Object clone(Object obj) {
         if(obj instanceof Map) {
-            Map<Object, Object> cloneMap = null;
             Map<?, ?> map = (Map<?, ?>) obj;
-            if(ReflectionUtil.canBeInitiated(obj.getClass())) {
-                try {
-                    cloneMap = (Map<Object, Object>) ReflectionUtil.newInstance(obj.getClass(), null);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            } else {
-                cloneMap = new LinkedHashMap<>();
-            }
+            Map<Object, Object> cloneMap = new LinkedHashMap<>();
             for (Map.Entry<?, ?> entry : map.entrySet()) {
                 cloneMap.put(entry.getKey(), clone(entry.getValue()));
             }
             return cloneMap;
         } else if(obj instanceof Collection) {
             Collection<?> list = (Collection<?>) obj;
-            Collection<Object> cloneList = null;
-            if(ReflectionUtil.canBeInitiated(obj.getClass())) {
-                try {
-                    cloneList = (Collection<Object>) ReflectionUtil.newInstance(obj.getClass(), null);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            } else {
-                cloneList = new ArrayList<>();
-            }
-
+            Collection<Object> cloneList = new ArrayList<>();
             for(Object o : list) {
                 cloneList.add(clone(o));
             }
             return cloneList;
         } else {
-            return cloneObject(obj);
+            //The object here should be primitive value.
+            return obj;
         }
     }
 
+    private Object cloneObjectUsingSerializable(Object obj) {
+        if (ReflectionUtil.isPrimitiveOrWrapper(obj.getClass()) || obj instanceof String) {
+            return obj;
+        } else if(obj instanceof Serializable) {
+            Serializable serializable = (Serializable) obj;
+            Serializable clone = SerializationUtils.clone(serializable);
+            return clone;
+        }
+        return obj;
+    }
 
-    private Object cloneObject(Object obj){
+    private Object cloneObjectUsingReflection(Object obj){
         try{
             if(ReflectionUtil.isPrimitiveOrWrapper(obj.getClass()) || obj instanceof String) {
                 return obj;
@@ -97,7 +94,7 @@ public class TapUtilsImpl implements TapUtils {
                         field.set(clone, clone);
                     } else {
                         if(ReflectionUtil.canBeInitiated(field.getType())) {
-                            field.set(clone, cloneObject(fieldValue));
+                            field.set(clone, cloneObjectUsingReflection(fieldValue));
                         }
                     }
                 }
@@ -140,12 +137,39 @@ public class TapUtilsImpl implements TapUtils {
         insertRecordEvent.setPdkId("aaaa");
         insertRecordEvent.setTable(table);
 
-        TapInsertRecordEvent clone = (TapInsertRecordEvent) new TapUtilsImpl().clone(insertRecordEvent);
-        TapInsertRecordEvent insertRecordEvent1 = JSON.parseObject(JSON.toJSONString(insertRecordEvent), TapInsertRecordEvent.class);
+//        TapInsertRecordEvent clone = (TapInsertRecordEvent) new TapUtilsImpl().clone(insertRecordEvent);
+//        TapInsertRecordEvent insertRecordEvent1 = JSON.parseObject(JSON.toJSONString(insertRecordEvent), TapInsertRecordEvent.class);
+
+        HashMap embedded = new HashMap<String, Object>(){{
+            put("aa", "bb");
+            put("cc", date);
+//            put("ccca", node);
+        }};
+        Map<String, Object> map = new HashMap<String, Object>(){ {
+            put("aaa", Arrays.asList("1", "2"));
+            put("bbb", 1);
+            put("embedded", embedded);
+        }};
+
+//        long time = System.currentTimeMillis();
+//        for(int i = 0; i < 1000000; i++) {
+//            new TapUtilsImpl().clone(map);
+//        }
+//        System.out.println("reflection count per second "  + (1000000d / ((System.currentTimeMillis() - time) / 1000d)));
+////        System.out.println("takes "  + (System.currentTimeMillis() - time));
+//
+//
+//        time = System.currentTimeMillis();
+//        for(int i = 0; i < 1000000; i++) {
+//            JSON.parseObject(JSON.toJSONString(map), Map.class);
+//        }
+//        System.out.println("json count per second "  + (1000000d / ((System.currentTimeMillis() - time) / 1000d)));
+
 
         long time = System.currentTimeMillis();
         for(int i = 0; i < 1000000; i++) {
-            new TapUtilsImpl().clone(insertRecordEvent);
+//            new TapUtilsImpl().clone(insertRecordEvent);
+            insertRecordEvent.clone(new TapInsertRecordEvent());
         }
         System.out.println("reflection count per second "  + (1000000d / ((System.currentTimeMillis() - time) / 1000d)));
 //        System.out.println("takes "  + (System.currentTimeMillis() - time));

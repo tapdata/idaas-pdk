@@ -1,6 +1,6 @@
 package io.tapdata.pdk.tdd.tests.basic;
 
-import com.sun.xml.internal.ws.policy.AssertionSet;
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.logger.PDKLogger;
@@ -22,17 +22,14 @@ public class BasicTest extends PDKTestBase {
     @DisplayName("Test method connectionTest")
     void connectionTest() {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
-            Map<String, DataMap> testConfigMap = readTestConfig(testConfigFile);
-            Assertions.assertNotNull(testConfigMap, "testConfigFile " + testConfigFile + " read to json failed");
-            DataMap connection = testConfigMap.get("connection");
-            Assertions.assertNotNull(connection, "Missing \"connection\" key in test config json file. The value of \"connection\" key is the user input values of json form items. ");
+            Assertions.assertNotNull(connectionOptions, "Missing \"connection\" key in test config json file. The value of \"connection\" key is the user input values of json form items. ");
 
             DataMap configOptions = nodeInfo.getTapNodeSpecification().getConfigOptions();
             Assertions.assertNotNull(configOptions, "The key \"configOptions\" doesn't be found in spec json file. ");
 
-            verifyConnection(configOptions, connection);
+            verifyConnection(configOptions, connectionOptions);
 
-            prepareConnectionNode(nodeInfo, connection, connectionNode -> {
+            prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 LinkedHashMap<String, TestItem> testItemMap = new LinkedHashMap<>();
                 connectionNode.connectionTest(testItem -> {
                     Assertions.assertNotNull(testItem, "TestItem is null");
@@ -41,6 +38,29 @@ public class BasicTest extends PDKTestBase {
                 });
                 Assertions.assertFalse(testItemMap.isEmpty(), "TestItem is needed to return at least one from connectionTest method");
 
+                connectionNode.getConnectorNode().destroy();
+            });
+        }, TapNodeInfo.NODE_TYPE_PROCESSOR,
+        TapNodeInfo.NODE_TYPE_SOURCE,
+        TapNodeInfo.NODE_TYPE_SOURCE_TARGET,
+        TapNodeInfo.NODE_TYPE_TARGET);
+    }
+
+    @Test
+    @DisplayName("Test method discoverSchema")
+    void discoverSchemaTest() {
+        consumeQualifiedTapNodeInfo(nodeInfo -> {
+            Assertions.assertNotNull(connectionOptions, "Missing \"connection\" key in test config json file. The value of \"connection\" key is the user input values of json form items. ");
+
+            prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
+                List<TapTable> allTables = new ArrayList<>();
+                connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                Assertions.assertFalse(allTables.isEmpty(), "At least one table can be discovered from discoverSchema method.");
+                for(TapTable table : allTables) {
+                    Assertions.assertNotNull(table, "Discovered table can not be null");
+                    Assertions.assertNotNull(table.getName(), "Discovered table name can not be null");
+                    Assertions.assertNotNull(table.getId(), "Discovered table id can not be null");
+                }
                 connectionNode.getConnectorNode().destroy();
             });
         }, TapNodeInfo.NODE_TYPE_PROCESSOR,

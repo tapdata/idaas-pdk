@@ -1,10 +1,11 @@
 package io.tapdata.entity.event;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TapEvent {
+public class TapEvent implements Serializable {
     /**
      * The time when the event is created
      */

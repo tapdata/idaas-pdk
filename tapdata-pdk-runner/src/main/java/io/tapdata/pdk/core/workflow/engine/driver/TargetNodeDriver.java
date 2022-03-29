@@ -5,6 +5,8 @@ import io.tapdata.entity.conversion.TargetTypesGenerator;
 import io.tapdata.entity.conversion.impl.TargetTypesGeneratorImpl;
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.control.ControlEvent;
+import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.event.ddl.table.*;
 import io.tapdata.entity.event.dml.*;
@@ -20,6 +22,7 @@ import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.implementation.ImplementationClassFactory;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
+import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 import io.tapdata.pdk.core.utils.queue.ListHandler;
 import io.tapdata.pdk.core.workflow.engine.JobOptions;
@@ -29,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
     private static final String TAG = TargetNodeDriver.class.getSimpleName();
@@ -122,7 +126,9 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
 //        }
 
         List<TapRecordEvent> recordEvents = new ArrayList<>();
+        List<ControlEvent> controlEvents = new ArrayList<>();
         for(List<TapEvent> events : list) {
+            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
             for (TapEvent event : events) {
                 if(!firstNonControlReceived.get() && event instanceof TapBaseEvent) {
                     TapTable table = ((TapBaseEvent) event).getTable();
@@ -134,16 +140,26 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
                 if(event instanceof TapDDLEvent) {
                     //force to handle DML before handle DDL.
                     handleRecordEvents(recordEvents);
+                    handleControlEvent(controlEvents);
                     //handle ddl events
                     handleDDLEvent((TapDDLEvent) event);
-                }
-                if(event instanceof TapRecordEvent) {
+                } else if(event instanceof TapRecordEvent) {
                     recordEvents.add(filterEvent((TapRecordEvent) event));
+                } else if(event instanceof ControlEvent) {
+                    if(event instanceof PatrolEvent) {
+                        PatrolEvent patrolEvent = (PatrolEvent) event;
+                        if(patrolEvent.applyState(targetNode.getAssociateId(), PatrolEvent.STATE_ENTER)) {
+                            if(patrolEvent.getPatrolListener() != null) {
+                                CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(targetNode.getAssociateId(), PatrolEvent.STATE_ENTER), TAG);
+                            }
+                        }
+                    }
+                    controlEvents.add((ControlEvent) event);
                 }
             }
         }
         handleRecordEvents(recordEvents);
-
+        handleControlEvent(controlEvents);
     }
 
     private void tableInitialCheck(TapTable incomingTable) {
@@ -255,6 +271,31 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
             }, "insert " + LoggerUtils.targetNodeMessage(targetNode), TAG);
         }
         recordEvents.clear();
+    }
+
+    private void handleControlEvent(List<ControlEvent> events) {
+        if(events.isEmpty())
+            return;
+        PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+        ControlFunction insertRecordFunction = targetNode.getConnectorFunctions().getControlFunction();
+        if(insertRecordFunction != null) {
+            PDKLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.targetNodeMessage(targetNode));
+            for(ControlEvent controlEvent : events) {
+                pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DML, () -> {
+                    insertRecordFunction.control(targetNode.getConnectorContext(), controlEvent);
+                }, "control event " + LoggerUtils.targetNodeMessage(targetNode), TAG);
+
+                if(controlEvent instanceof PatrolEvent) {
+                    PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
+                    if(patrolEvent.applyState(targetNode.getAssociateId(), PatrolEvent.STATE_LEAVE)) {
+                        if(patrolEvent.getPatrolListener() != null) {
+                            CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(targetNode.getAssociateId(), PatrolEvent.STATE_LEAVE), TAG);
+                        }
+                    }
+                }
+            }
+        }
+        events.clear();
     }
 
     private <T extends TapTableEvent> T newTableEvent(Class<T> tableEventClass) {

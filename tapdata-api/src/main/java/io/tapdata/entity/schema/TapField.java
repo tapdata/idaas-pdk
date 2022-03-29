@@ -3,7 +3,9 @@ package io.tapdata.entity.schema;
 
 import io.tapdata.entity.type.TapType;
 
-public class TapField {
+import java.io.Serializable;
+
+public class TapField implements Serializable {
     public TapField() {}
 
     public TapField(String name, String originType) {

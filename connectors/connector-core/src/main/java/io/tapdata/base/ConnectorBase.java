@@ -14,7 +14,7 @@ import io.tapdata.entity.value.DateTime;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.utils.FormatUtils;
-import io.tapdata.pdk.apis.utils.TapUtils;
+import io.tapdata.entity.utils.TapUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
 import org.toilelibre.libe.curl.Curl;
 

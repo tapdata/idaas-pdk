@@ -1,5 +1,6 @@
 package io.tapdata.pdk.core.workflow.engine;
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
@@ -51,6 +52,13 @@ public class DataFlowEngine {
                 dataFlowWorker.init(dag, jobOptions);
                 dataFlowWorker.start();
             }
+        }
+    }
+
+    public void sendExternalTapEvent(String dagId, TapEvent event) {
+        DataFlowWorker dataFlowWorker = idDataFlowWorkerMap.get(dagId);
+        if(dataFlowWorker != null) {
+            dataFlowWorker.sendExternalEvent(event);
         }
     }
 
