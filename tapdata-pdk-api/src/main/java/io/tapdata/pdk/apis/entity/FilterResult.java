@@ -7,6 +7,16 @@ public class FilterResult {
 
     private Map<String, Object> result;
 
+    private Throwable error;
+
+    public Throwable getError() {
+        return error;
+    }
+
+    public void setError(Throwable error) {
+        this.error = error;
+    }
+
     public TapFilter getFilter() {
         return filter;
     }

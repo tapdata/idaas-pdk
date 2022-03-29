@@ -55,9 +55,9 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                 //Define first table
                 table("tdd-table")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(2))
+                        .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(1))
                         .add(field("tddUser", "tapString"))
-                        .add(field("tapString", "tapString").primaryKeyPos(1))
+                        .add(field("tapString", "tapString").isPrimaryKey(true).primaryKeyPos(2))
                         .add(field("tapString10", "tapString(10)"))
                         .add(field("tapString10Fixed", "tapString(10) fixed"))
                         .add(field("tapInt", "int"))
@@ -139,7 +139,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
-        connectorFunctions.supportCreateTable(this::createTable);
+//        connectorFunctions.supportCreateTable(this::createTable);
         connectorFunctions.supportControlFunction(this::control);
 //        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
@@ -153,50 +153,6 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
             Object value = patrolEvent.getInfo("tdd");
             PDKLogger.info(TAG, "tdd value {}", value);
         }
-    }
-
-    private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
-        PDKLogger.info(TAG, "createTable");
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(needCreateTable)
-     *      createTable
-     *  if(needClearTable)
-     *      clearTable
-     *  writeRecord
-     * -> destroy -> ended
-     *
-     * @param connectorContext
-     * @param tapRecordEvents
-     * @param writeListResultConsumer
-     */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
-        //TODO write records into database
-
-        //Below is sample code to print received events which suppose to write to database.
-        AtomicLong inserted = new AtomicLong(0); //insert count
-        AtomicLong updated = new AtomicLong(0); //update count
-        AtomicLong deleted = new AtomicLong(0); //delete count
-        for(TapRecordEvent recordEvent : tapRecordEvents) {
-            if(recordEvent instanceof TapInsertRecordEvent) {
-                inserted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
-            } else if(recordEvent instanceof TapUpdateRecordEvent) {
-                updated.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
-            } else if(recordEvent instanceof TapDeleteRecordEvent) {
-                deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
-            }
-        }
-        //Need to tell flow engine the write result
-        writeListResultConsumer.accept(writeListResult()
-                .insertedCount(inserted.get())
-                .modifiedCount(updated.get())
-                .removedCount(deleted.get()));
     }
 
     /**
@@ -218,7 +174,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      */
     private long batchCount(TapConnectorContext connectorContext, Object offset) {
         //TODO Count the batch size.
-        return 20L;
+        return 1L;
     }
 
     /**
@@ -244,9 +200,9 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 18; i++) {
+            for (int i = 0; i < 1; i++) {
                 TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                        entry("id", "id_" + counter.incrementAndGet()),
+                        entry("id", "id_1"),
                         entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
                         entry("tapString", "123"),
                         entry("tapString10", "1234567890"),
@@ -254,159 +210,121 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                         entry("tapInt", 123123),
                         entry("tapBoolean", true),
                         entry("tapDate", new Date()),
-                        entry("tapArrayString", Arrays.asList("1", "2", "3")),
-                        entry("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3)),
-                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
+                        entry("tapArrayString", list("1", "2", "3")),
+                        entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
+                        entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
                         entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
                         entry("tapNumber", 1233),
 //                        entry("tapNumber(8)", 1111),
                         entry("tapNumber52", 343.22),
                         entry("tapBinary", new byte[]{123, 21, 3, 2}),
                         entry("tapTime", new Date()),
-                        entry("tapMapStringString", new HashMap<String, String>() {{put("a", "a");put("b", "b");}}),
-                        entry("tapMapStringDouble", new HashMap<String, Double>() {{put("a", 1.0);put("b", 2.0);}}),
-                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));}}),
+                        entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
+                        entry("tapMapStringDouble", map(entry("a", 1.0), entry("b", 2.0))),
+                        entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
                         entry("tapDateTime", new Date()),
                         entry("tapDateTimeTimeZone", new Date())
                 ), connectorContext.getTable());
                 tapEvents.add(recordEvent);
 
-                TapUpdateRecordEvent updateDMLEvent = updateDMLEvent(map(
-                        entry("id", "id_1"),
-                        entry("tapString", "123")
-                ), map(
-                        entry("id", "id_1"),
-                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
-                        entry("tapString", "123123123123"),
-                        entry("tapString10", "1234567890000"),
-                        entry("tapString10Fixed", "10000"),
-                        entry("tapInt", 321321),
-                        entry("tapBoolean", false),
-                        entry("tapDate", new Date()),
-                        entry("tapArrayString", Arrays.asList("3", "2", "1")),
-                        entry("tapArrayDouble", Arrays.asList(6.1, 5.2, 4.3)),
-                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("b", "a", "b", 1, TDDUser.GENDER_MALE), new TDDUser("a", "n", "d", 2, TDDUser.GENDER_FEMALE))),
-                        entry("tapRawTDDUser", new TDDUser("b1", "a1", "b1", 22, TDDUser.GENDER_MALE)),
-                        entry("tapNumber", 3221),
-                        //                        entry("tapNumber(8)", 1111),
-                        entry("tapNumber52", 22.343),
-                        entry("tapBinary", new byte[]{2, 3, 21, 123}),
-                        entry("tapTime", new Date()),
-                        entry("tapMapStringString", new HashMap<String, String>() {{
-                            put("c", "c");
-                            put("d", "d");
-                        }}),
-                        entry("tapMapStringDouble", new HashMap<String, Double>() {{
-                            put("c", 3.0);
-                            put("d", 4.0);
-                        }}),
-                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{
-                            put("b", new TDDUser("b1", "a1", "b1", 22, TDDUser.GENDER_MALE));
-                        }}),
-                        entry("tapDateTime", new Date()),
-                        entry("tapDateTimeTimeZone", new Date())
-                ), connectorContext.getTable());
-                tapEvents.add(updateDMLEvent);
-                TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
-                        entry("id", "id_1")
-                ), connectorContext.getTable());
-                tapEvents.add(deleteRecordEvent);
-
-
-                List<String> deleteFields = new ArrayList<>();
-                List<TapField> insertFields = new ArrayList<>();
-                Map<String, TapField> changedNameFields = new HashMap<>();
-                deleteFields.add("tapString");
-                // TODO insertFields field 推演
-//            insertFields.add(new TapField("addStringField", "tapString").defaultValue("default_value"));
-                insertFields.add(new TapField("addStringField", "VARCHAR(256)").defaultValue("test"));
-                TapField renameTapField = connectorContext.getTable().getNameFieldMap().get("tapString10").clone();
-                renameTapField.setName("renameTapString10");
-                changedNameFields.put(renameTapField.getName(), renameTapField);
-
-                TapAlterTableEvent tapAlterTableEvent = new TapAlterTableEvent();
-                tapAlterTableEvent.setTable(connectorContext.getTable());
-                tapAlterTableEvent.setChangedNameFields(changedNameFields);
-                tapAlterTableEvent.setDeletedFields(deleteFields);
-                tapAlterTableEvent.setInsertFields(insertFields);
-                tapEvents.add(tapAlterTableEvent);
+//                TapUpdateRecordEvent updateDMLEvent = updateDMLEvent(map(
+//                        entry("id", "id_1"),
+//                        entry("tapString", "123")
+//                ), map(
+//                        entry("id", "id_1"),
+//                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
+//                        entry("tapString", "123123123123"),
+//                        entry("tapString10", "1234567890000"),
+//                        entry("tapString10Fixed", "10000"),
+//                        entry("tapInt", 321321),
+//                        entry("tapBoolean", false),
+//                        entry("tapDate", new Date()),
+//                        entry("tapArrayString", Arrays.asList("3", "2", "1")),
+//                        entry("tapArrayDouble", Arrays.asList(6.1, 5.2, 4.3)),
+//                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("b", "a", "b", 1, TDDUser.GENDER_MALE), new TDDUser("a", "n", "d", 2, TDDUser.GENDER_FEMALE))),
+//                        entry("tapRawTDDUser", new TDDUser("b1", "a1", "b1", 22, TDDUser.GENDER_MALE)),
+//                        entry("tapNumber", 3221),
+//                        //                        entry("tapNumber(8)", 1111),
+//                        entry("tapNumber52", 22.343),
+//                        entry("tapBinary", new byte[]{2, 3, 21, 123}),
+//                        entry("tapTime", new Date()),
+//                        entry("tapMapStringString", new HashMap<String, String>() {{
+//                            put("c", "c");
+//                            put("d", "d");
+//                        }}),
+//                        entry("tapMapStringDouble", new HashMap<String, Double>() {{
+//                            put("c", 3.0);
+//                            put("d", 4.0);
+//                        }}),
+//                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{
+//                            put("b", new TDDUser("b1", "a1", "b1", 22, TDDUser.GENDER_MALE));
+//                        }}),
+//                        entry("tapDateTime", new Date()),
+//                        entry("tapDateTimeTimeZone", new Date())
+//                ), connectorContext.getTable());
+//                tapEvents.add(updateDMLEvent);
+//                TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
+//                        entry("id", "id_1")
+//                ), connectorContext.getTable());
+//                tapEvents.add(deleteRecordEvent);
+//
+//
+//                List<String> deleteFields = new ArrayList<>();
+//                List<TapField> insertFields = new ArrayList<>();
+//                Map<String, TapField> changedNameFields = new HashMap<>();
+//                deleteFields.add("tapString");
+//                // TODO insertFields field 推演
+////            insertFields.add(new TapField("addStringField", "tapString").defaultValue("default_value"));
+//                insertFields.add(new TapField("addStringField", "VARCHAR(256)").defaultValue("test"));
+//                TapField renameTapField = connectorContext.getTable().getNameFieldMap().get("tapString10").clone();
+//                renameTapField.setName("renameTapString10");
+//                changedNameFields.put(renameTapField.getName(), renameTapField);
+//
+//                TapAlterTableEvent tapAlterTableEvent = new TapAlterTableEvent();
+//                tapAlterTableEvent.setTable(connectorContext.getTable());
+//                tapAlterTableEvent.setChangedNameFields(changedNameFields);
+//                tapAlterTableEvent.setDeletedFields(deleteFields);
+//                tapAlterTableEvent.setInsertFields(insertFields);
+//                tapEvents.add(tapAlterTableEvent);
             }
 
-            TapUpdateRecordEvent updateDMLEvent = updateDMLEvent(map(
-                        entry("id", "id_1"),
-                        entry("tapString", "123")
-                    ), map(
-                        entry("id", "id_1"),
-                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
-                        entry("tapString", "123123123123"),
-                        entry("tapString10", "1234567890"),
-                        entry("tapString10Fixed", "1"),
-                        entry("tapInt", 123123),
-                        entry("tapBoolean", true),
-                        entry("tapDate", new Date()),
-                        entry("tapArrayString", Arrays.asList("1", "2", "3")),
-                        entry("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3)),
-                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
-                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
-                        entry("tapNumber", 1233),
-    //                        entry("tapNumber(8)", 1111),
-                        entry("tapNumber52", 343.22),
-                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
-                        entry("tapTime", new Date()),
-                        entry("tapMapStringString", new HashMap<String, String>() {{put("a", "a");put("b", "b");}}),
-                        entry("tapMapStringDouble", new HashMap<String, Double>() {{put("a", 1.0);put("b", 2.0);}}),
-                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));}}),
-                        entry("tapDateTime", new Date()),
-                        entry("tapDateTimeTimeZone", new Date())
-            ), connectorContext.getTable());
-            tapEvents.add(updateDMLEvent);
-
-            TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
-                    entry("id", "id_2"),
-                    entry("tapString", "123")
-            ), connectorContext.getTable());
-            tapEvents.add(deleteRecordEvent);
+//            TapUpdateRecordEvent updateDMLEvent = updateDMLEvent(map(
+//                        entry("id", "id_1"),
+//                        entry("tapString", "123")
+//                    ), map(
+//                        entry("id", "id_1"),
+//                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
+//                        entry("tapString", "123123123123"),
+//                        entry("tapString10", "1234567890"),
+//                        entry("tapString10Fixed", "1"),
+//                        entry("tapInt", 123123),
+//                        entry("tapBoolean", true),
+//                        entry("tapDate", new Date()),
+//                        entry("tapArrayString", Arrays.asList("1", "2", "3")),
+//                        entry("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3)),
+//                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
+//                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
+//                        entry("tapNumber", 1233),
+//    //                        entry("tapNumber(8)", 1111),
+//                        entry("tapNumber52", 343.22),
+//                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
+//                        entry("tapTime", new Date()),
+//                        entry("tapMapStringString", new HashMap<String, String>() {{put("a", "a");put("b", "b");}}),
+//                        entry("tapMapStringDouble", new HashMap<String, Double>() {{put("a", 1.0);put("b", 2.0);}}),
+//                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));}}),
+//                        entry("tapDateTime", new Date()),
+//                        entry("tapDateTimeTimeZone", new Date())
+//            ), connectorContext.getTable());
+//            tapEvents.add(updateDMLEvent);
+//
+//            TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
+//                    entry("id", "id_2"),
+//                    entry("tapString", "123")
+//            ), connectorContext.getTable());
+//            tapEvents.add(deleteRecordEvent);
             tapReadOffsetConsumer.accept(tapEvents);
         }
         counter.set(counter.get() + 1000);
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     * if(batchEnabled)
-     * batchCount -> batchRead
-     * if(streamEnabled)
-     * streamRead
-     * -> destroy -> ended
-     * <p>
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param consumer
-     */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
-
-        //Below is sample code to generate stream records directly
-        while (!isShutDown.get()) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 10; i++) {
-                TapInsertRecordEvent event = insertRecordEvent(map(
-                        entry("id", counter.incrementAndGet()),
-                        entry("description", "123"),
-                        entry("name", "123"),
-                        entry("age", 12)
-                ), connectorContext.getTable());
-                tapEvents.add(event);
-            }
-
-            sleep(1000L);
-            consumer.accept(tapEvents);
-        }
     }
 
     /**

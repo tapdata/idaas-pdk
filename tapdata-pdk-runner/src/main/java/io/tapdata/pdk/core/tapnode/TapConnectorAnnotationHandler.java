@@ -119,7 +119,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                 if (connectorFunctions.getBatchReadFunction() != null || connectorFunctions.getStreamReadFunction() != null) {
                     isSource = true;
                 }
-                if (connectorFunctions.getDmlFunction() != null) {
+                if (connectorFunctions.getWriteRecordFunction() != null) {
                     isTarget = true;
                 }
             } catch (Throwable e) {

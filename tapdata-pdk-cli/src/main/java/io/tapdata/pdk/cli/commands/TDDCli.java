@@ -115,7 +115,7 @@ public class TDDCli extends CommonCli {
         List<DiscoverySelector> selectors = new ArrayList<>();
         selectors.add(DiscoverySelectors.selectClass(BasicTest.class));
 
-        if(connectorFunctions.getDmlFunction() != null) {
+        if(connectorFunctions.getWriteRecordFunction() != null) {
             selectors.add(DiscoverySelectors.selectClass(DMLTest.class));
         }
 

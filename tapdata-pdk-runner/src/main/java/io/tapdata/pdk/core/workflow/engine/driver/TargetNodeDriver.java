@@ -261,7 +261,7 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
         if(recordEvents.isEmpty())
             return;
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-        WriteRecordFunction insertRecordFunction = targetNode.getConnectorFunctions().getDmlFunction();
+        WriteRecordFunction insertRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
         if(insertRecordFunction != null) {
             PDKLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DML, () -> {

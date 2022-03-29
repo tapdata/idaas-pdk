@@ -137,10 +137,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return streamOffsetFunction;
     }
 
-    public WriteRecordFunction getDmlFunction() {
-        return writeRecordFunction;
-    }
-
     public QueryByFilterFunction getQueryByFilterFunction() {
         return queryByFilterFunction;
     }
