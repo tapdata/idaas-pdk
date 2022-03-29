@@ -1,5 +1,6 @@
 package io.tapdata.entity.event.ddl.index;
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.schema.TapIndex;
 
@@ -18,8 +19,12 @@ public class TapIndexEvent extends TapDDLEvent {
         this.indexList = indexList;
     }
 
-    public void clone(TapIndexEvent tapIndexEvent) {
-        super.clone(tapIndexEvent);
-        indexList = new CopyOnWriteArrayList<>(indexList);
+    @Override
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapIndexEvent) {
+            TapIndexEvent tapIndexEvent = (TapIndexEvent) tapEvent;
+            tapIndexEvent.indexList = new CopyOnWriteArrayList<>(indexList);
+        }
     }
 }

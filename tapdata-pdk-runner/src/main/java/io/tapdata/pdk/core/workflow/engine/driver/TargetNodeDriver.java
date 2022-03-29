@@ -128,7 +128,7 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
         List<TapRecordEvent> recordEvents = new ArrayList<>();
         List<ControlEvent> controlEvents = new ArrayList<>();
         for(List<TapEvent> events : list) {
-            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
+//            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
             for (TapEvent event : events) {
                 if(!firstNonControlReceived.get() && event instanceof TapBaseEvent) {
                     TapTable table = ((TapBaseEvent) event).getTable();
@@ -277,20 +277,21 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
         if(events.isEmpty())
             return;
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-        ControlFunction insertRecordFunction = targetNode.getConnectorFunctions().getControlFunction();
-        if(insertRecordFunction != null) {
-            PDKLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.targetNodeMessage(targetNode));
-            for(ControlEvent controlEvent : events) {
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DML, () -> {
-                    insertRecordFunction.control(targetNode.getConnectorContext(), controlEvent);
-                }, "control event " + LoggerUtils.targetNodeMessage(targetNode), TAG);
+        ControlFunction controlFunction = targetNode.getConnectorFunctions().getControlFunction();
 
-                if(controlEvent instanceof PatrolEvent) {
-                    PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
-                    if(patrolEvent.applyState(targetNode.getAssociateId(), PatrolEvent.STATE_LEAVE)) {
-                        if(patrolEvent.getPatrolListener() != null) {
-                            CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(targetNode.getAssociateId(), PatrolEvent.STATE_LEAVE), TAG);
-                        }
+        PDKLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.targetNodeMessage(targetNode));
+        for(ControlEvent controlEvent : events) {
+            if(controlFunction != null) {
+                pdkInvocationMonitor.invokePDKMethod(PDKMethod.CONTROL, () -> {
+                    controlFunction.control(targetNode.getConnectorContext(), controlEvent);
+                }, "control event " + LoggerUtils.targetNodeMessage(targetNode), TAG);
+            }
+
+            if(controlEvent instanceof PatrolEvent) {
+                PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
+                if(patrolEvent.applyState(targetNode.getAssociateId(), PatrolEvent.STATE_LEAVE)) {
+                    if(patrolEvent.getPatrolListener() != null) {
+                        CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(targetNode.getAssociateId(), PatrolEvent.STATE_LEAVE), TAG);
                     }
                 }
             }

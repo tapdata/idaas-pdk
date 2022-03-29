@@ -3,6 +3,8 @@ package io.tapdata.connector.tdd;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.control.ControlEvent;
+import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
 import io.tapdata.entity.event.dml.*;
@@ -138,10 +140,19 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportCreateTable(this::createTable);
+        connectorFunctions.supportControlFunction(this::control);
 //        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
+    }
+
+    private void control(TapConnectorContext connectorContext, ControlEvent controlEvent) {
+        if(controlEvent instanceof PatrolEvent) {
+            PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
+            Object value = patrolEvent.getInfo("tdd");
+            PDKLogger.info(TAG, "tdd value {}", value);
+        }
     }
 
     private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {

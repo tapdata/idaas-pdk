@@ -18,46 +18,46 @@ import io.tapdata.pdk.core.workflow.engine.driver.TargetNodeDriver;
 
 import java.util.List;
 
-public class TapDAGNodeWithWorker extends TapDAGNode {
-    private static final String TAG = TapDAGNodeWithWorker.class.getSimpleName();
+public class TapDAGNodeEx extends TapDAGNode {
+    private static final String TAG = TapDAGNodeEx.class.getSimpleName();
 
-    public TapDAGNodeWithWorker nodeConfig(DataMap nodeConfig) {
+    public TapDAGNodeEx nodeConfig(DataMap nodeConfig) {
         this.nodeConfig = nodeConfig;
         return this;
     }
-    public TapDAGNodeWithWorker connectionConfig(DataMap connectionConfig) {
+    public TapDAGNodeEx connectionConfig(DataMap connectionConfig) {
         this.connectionConfig = connectionConfig;
         return this;
     }
-    public TapDAGNodeWithWorker id(String id) {
+    public TapDAGNodeEx id(String id) {
         this.id = id;
         return this;
     }
-    public TapDAGNodeWithWorker pdkId(String pdkId) {
+    public TapDAGNodeEx pdkId(String pdkId) {
         this.pdkId = pdkId;
         return this;
     }
-    public TapDAGNodeWithWorker group(String group) {
+    public TapDAGNodeEx group(String group) {
         this.group = group;
         return this;
     }
-    public TapDAGNodeWithWorker version(String version) {
+    public TapDAGNodeEx version(String version) {
         this.version = version;
         return this;
     }
-    public TapDAGNodeWithWorker type(String type) {
+    public TapDAGNodeEx type(String type) {
         this.type = type;
         return this;
     }
-    public TapDAGNodeWithWorker table(TapTable table) {
+    public TapDAGNodeEx table(TapTable table) {
         this.table = table;
         return this;
     }
-    public TapDAGNodeWithWorker parentNodeIds(List<String> parentNodeIds) {
+    public TapDAGNodeEx parentNodeIds(List<String> parentNodeIds) {
         this.parentNodeIds = parentNodeIds;
         return this;
     }
-    public TapDAGNodeWithWorker childNodeIds(List<String> childNodeIds) {
+    public TapDAGNodeEx childNodeIds(List<String> childNodeIds) {
         this.childNodeIds = childNodeIds;
         return this;
     }
@@ -66,7 +66,7 @@ public class TapDAGNodeWithWorker extends TapDAGNode {
     SourceNodeDriver sourceNodeDriver;
     TargetNodeDriver targetNodeDriver;
 
-    public void setup(TapDAGWithWorker dag, JobOptions jobOptions) {
+    public void setup(TapDAG dag, JobOptions jobOptions) {
         switch (type) {
             case TapDAGNode.TYPE_SOURCE:
                 if(sourceNodeDriver == null) {
@@ -124,7 +124,7 @@ public class TapDAGNodeWithWorker extends TapDAGNode {
         }
         if(childNodeIds != null) {
             for(String childNodeId : childNodeIds) {
-                TapDAGNodeWithWorker nodeWorker = dag.getNodeMap().get(childNodeId);
+                TapDAGNodeEx nodeWorker = dag.getNodeMap().get(childNodeId);
                 if(nodeWorker != null) {
                     nodeWorker.setup(dag, jobOptions);
                     buildPath(this, nodeWorker, jobOptions);
@@ -133,7 +133,7 @@ public class TapDAGNodeWithWorker extends TapDAGNode {
         }
     }
 
-    private void buildPath(TapDAGNodeWithWorker parent, TapDAGNodeWithWorker child, JobOptions jobOptions) {
+    private void buildPath(TapDAGNodeEx parent, TapDAGNodeEx child, JobOptions jobOptions) {
         String queueName = parent.id + " pdk " + TapNodeSpecification.idAndGroup(parent.pdkId, parent.group, parent.version);
         if(parent.sourceNodeDriver != null) {
             if(child.processorNodeDriver != null || child.targetNodeDriver != null) {

@@ -4,10 +4,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.control.ControlEvent;
 import io.tapdata.entity.event.control.PatrolEvent;
+import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.TypeExprResult;
@@ -16,6 +20,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.source.*;
+import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.api.SourceNode;
@@ -24,6 +29,7 @@ import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,11 +136,11 @@ public class SourceNodeDriver extends Driver {
                             PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offer(events, (theEvents) -> PDKIntegration.filterEvents(sourceNode, theEvents));
 
-                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
-                            if(externalEvents != null) {
-                                PDKLogger.debug(TAG, "Batch read external {} of events, {}", externalEvents.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                                offer(externalEvents);
-                            }
+//                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
+//                            if(externalEvents != null) {
+//                                PDKLogger.debug(TAG, "Batch read external {} of events, {}", externalEvents.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+//                                offer(externalEvents);
+//                            }
 
                             BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
                             if(batchOffsetFunction != null) {
@@ -173,11 +179,11 @@ public class SourceNodeDriver extends Driver {
                             PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offer(events, (theEvents) -> PDKIntegration.filterEvents(sourceNode, theEvents));
 
-                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
-                            if(externalEvents != null) {
-                                PDKLogger.debug(TAG, "Stream read external {} of events, {}", externalEvents.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                                offer(externalEvents);
-                            }
+//                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
+//                            if(externalEvents != null) {
+//                                PDKLogger.debug(TAG, "Stream read external {} of events, {}", externalEvents.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+//                                offer(externalEvents);
+//                            }
                         }
 
                         StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
@@ -198,12 +204,42 @@ public class SourceNodeDriver extends Driver {
         }
     }
 
-    private void filterExternalEvent(TapEvent tapEvent) {
-        if(tapEvent instanceof PatrolEvent) {
-            PatrolEvent patrolEvent = (PatrolEvent) tapEvent;
-            if(patrolEvent.applyState(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE)) {
-                if(patrolEvent.getPatrolListener() != null) {
-                    CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE), TAG);
+    public void receivedExternalEvent(List<TapEvent> events) {
+        if(events == null)
+            return;
+
+        List<ControlEvent> controlEvents = new ArrayList<>();
+//            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
+        for (TapEvent event : events) {
+            if(event instanceof ControlEvent) {
+                controlEvents.add((ControlEvent) event);
+            }
+        }
+
+        handleControlEvent(controlEvents);
+        offer(events, (theEvents) -> PDKIntegration.filterEvents(sourceNode, theEvents));
+    }
+
+    private void handleControlEvent(List<ControlEvent> events) {
+        if(events.isEmpty())
+            return;
+        PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+        ControlFunction controlFunction = sourceNode.getConnectorFunctions().getControlFunction();
+
+        PDKLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+        for(ControlEvent controlEvent : events) {
+            if(controlFunction != null) {
+                pdkInvocationMonitor.invokePDKMethod(PDKMethod.CONTROL, () -> {
+                    controlFunction.control(sourceNode.getConnectorContext(), controlEvent);
+                }, "control event " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+            }
+
+            if(controlEvent instanceof PatrolEvent) {
+                PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
+                if(patrolEvent.applyState(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE)) {
+                    if(patrolEvent.getPatrolListener() != null) {
+                        CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE), TAG);
+                    }
                 }
             }
         }

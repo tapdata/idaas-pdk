@@ -5,6 +5,7 @@ import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.utils.Validator;
+import io.tapdata.pdk.core.utils.state.StateListener;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +37,10 @@ public class DataFlowEngine {
 
     }
 
-    public void startDataFlow(TapDAGWithWorker dag, JobOptions jobOptions) {
+    public void startDataFlow(TapDAG dag, JobOptions jobOptions) {
+        startDataFlow(dag, jobOptions, null);
+    }
+    public void startDataFlow(TapDAG dag, JobOptions jobOptions, StateListener<String, DataFlowWorker> stateListener) {
         Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dag);
         Validator.checkAllNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dag.getId());
 
@@ -45,13 +49,18 @@ public class DataFlowEngine {
             DataFlowWorker old = idDataFlowWorkerMap.putIfAbsent(dag.getId(), dataFlowWorker);
             if(old == null) {
                 //Ensure only one dataFlowWorker can be started.
-                dataFlowWorker.addStateListener((fromState, toState, dataFlowWorker1) -> {
-                    //State changed
-
-                });
                 dataFlowWorker.init(dag, jobOptions);
+                if(stateListener != null)
+                    dataFlowWorker.addStateListener(stateListener);
                 dataFlowWorker.start();
             }
+        }
+    }
+
+    public void sendExternalTapEvent(String dagId, String nodeId, TapEvent event) {
+        DataFlowWorker dataFlowWorker = idDataFlowWorkerMap.get(dagId);
+        if(dataFlowWorker != null) {
+            dataFlowWorker.sendExternalEvent(event, nodeId);
         }
     }
 

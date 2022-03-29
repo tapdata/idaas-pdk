@@ -33,7 +33,7 @@ public class PDKLogger {
         if (logListener != null)
             logListener.debug(log);
         else
-            System.out.println(log);
+            System.out.println("[DEBUG] " + log);
     }
 
     public static void info(String tag, String msg, Object... params) {
@@ -41,7 +41,7 @@ public class PDKLogger {
         if (logListener != null)
             logListener.info(log);
         else
-            System.out.println(log);
+            System.out.println("[INFO] " + log);
     }
 
     public static void info(String tag, Long spendTime, String msg, Object... params) {
@@ -49,7 +49,7 @@ public class PDKLogger {
         if (logListener != null)
             logListener.info(log);
         else
-            System.out.println(log);
+            System.out.println("[INFO] " + log);
     }
 
     public static void infoWithData(String tag, String dataType, String data, String msg, Object... params) {
@@ -57,7 +57,7 @@ public class PDKLogger {
         if (logListener != null)
             logListener.info(log);
         else
-            System.out.println(log);
+            System.out.println("[INFO] " + log);
     }
 
     public static void warn(String tag, String msg, Object... params) {
@@ -65,7 +65,7 @@ public class PDKLogger {
         if (logListener != null)
             logListener.warn(log);
         else
-            System.out.println(log);
+            System.out.println("[WARN] " + log);
     }
 
     public static void error(String tag, String msg, Object... params) {
@@ -73,7 +73,7 @@ public class PDKLogger {
         if (logListener != null)
             logListener.error(log);
         else
-            System.out.println(log);
+            System.out.println("[ERROR] " + log);
     }
 
     public static void fatal(String tag, String msg, Object... params) {
@@ -81,7 +81,7 @@ public class PDKLogger {
         if (logListener != null)
             logListener.fatal(log);
         else
-            System.out.println(log);
+            System.out.println("[FATAL] " + log);
     }
 
     private static String getLogMsg(String tag, String msg) {

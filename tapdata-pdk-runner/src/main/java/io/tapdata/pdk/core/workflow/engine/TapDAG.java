@@ -5,11 +5,11 @@ import io.tapdata.pdk.core.dag.TapDAGNode;
 import java.util.List;
 import java.util.Map;
 
-public class TapDAGWithWorker {
+public class TapDAG {
     private String id;
     private List<String> headNodeIds;
 
-    private Map<String, TapDAGNodeWithWorker> nodeMap;
+    private Map<String, TapDAGNodeEx> nodeMap;
 
     public String getId() {
         return id;
@@ -27,11 +27,11 @@ public class TapDAGWithWorker {
         this.headNodeIds = headNodeIds;
     }
 
-    public Map<String, TapDAGNodeWithWorker> getNodeMap() {
+    public Map<String, TapDAGNodeEx> getNodeMap() {
         return nodeMap;
     }
 
-    public void setNodeMap(Map<String, TapDAGNodeWithWorker> nodeMap) {
+    public void setNodeMap(Map<String, TapDAGNodeEx> nodeMap) {
         this.nodeMap = nodeMap;
     }
 

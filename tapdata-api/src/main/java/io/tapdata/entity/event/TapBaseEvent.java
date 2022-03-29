@@ -16,13 +16,17 @@ public abstract class TapBaseEvent extends TapEvent {
     protected String pdkGroup;
     protected String pdkVersion;
 
-    public void clone(TapBaseEvent tapBaseEvent) {
-        super.clone(tapBaseEvent);
-        tapBaseEvent.referenceTime = referenceTime;
-        tapBaseEvent.pdkId = pdkId;
-        tapBaseEvent.pdkGroup = pdkGroup;
-        tapBaseEvent.pdkVersion = pdkVersion;
-        tapBaseEvent.table = table;
+    @Override
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapBaseEvent) {
+            TapBaseEvent baseEvent = (TapBaseEvent) tapEvent;
+            baseEvent.referenceTime = referenceTime;
+            baseEvent.pdkId = pdkId;
+            baseEvent.pdkGroup = pdkGroup;
+            baseEvent.pdkVersion = pdkVersion;
+            baseEvent.table = table;
+        }
     }
 
     public Long getReferenceTime() {

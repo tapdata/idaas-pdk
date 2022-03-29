@@ -1,5 +1,7 @@
 package io.tapdata.entity.event.control;
 
+import io.tapdata.entity.event.TapEvent;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,10 +32,15 @@ public class PatrolEvent extends ControlEvent {
         return false;
     }
 
-    public void clone(PatrolEvent patrolEvent) {
-        super.clone(patrolEvent);
-        //use the same listener to trace.
-        patrolEvent.patrolListener = patrolListener;
+    @Override
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof PatrolEvent) {
+            PatrolEvent patrolEvent = (PatrolEvent) tapEvent;
+            //use the same listener to trace.
+            patrolEvent.patrolListener = patrolListener;
+            patrolEvent.stateMap = stateMap;
+        }
     }
 
     public PatrolListener getPatrolListener() {

@@ -491,7 +491,7 @@ public class PDKIntegration {
             } else {
                 try {
                     TapEvent newTapEvent = tapEvent.getClass().getConstructor().newInstance();
-                    newTapEvent.clone(tapEvent);
+                    tapEvent.clone(newTapEvent);
                     newEvents.add(newTapEvent);
                 } catch (Throwable e) {
                     e.printStackTrace();

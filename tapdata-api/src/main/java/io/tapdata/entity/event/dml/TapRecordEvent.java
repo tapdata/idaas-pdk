@@ -14,10 +14,14 @@ public class TapRecordEvent extends TapBaseEvent {
      */
     protected String connectorVersion;
 
-    public void clone(TapRecordEvent tapRecordEvent) {
-        super.clone(tapRecordEvent);
-        tapRecordEvent.connector = connector;
-        tapRecordEvent.connectorVersion = connectorVersion;
+    @Override
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapRecordEvent) {
+            TapRecordEvent recordEvent = (TapRecordEvent) tapEvent;
+            recordEvent.connector = connector;
+            recordEvent.connectorVersion = connectorVersion;
+        }
     }
 
     public String getConnector() {

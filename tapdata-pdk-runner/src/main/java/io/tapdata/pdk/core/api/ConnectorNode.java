@@ -25,58 +25,58 @@ public class ConnectorNode extends Node {
     ConnectorFunctions connectorFunctions;
     TapCodecFilterManager codecFilterManager;
 
-    Queue<TapEvent> externalEvents;
+//    Queue<TapEvent> externalEvents;
 
     public void init(TapConnector tapNode, TapCodecRegistry codecRegistry, ConnectorFunctions connectorFunctions) {
         connector = tapNode;
         this.codecRegistry = codecRegistry;
         this.connectorFunctions = connectorFunctions;
         codecFilterManager = new TapCodecFilterManager(this.codecRegistry);
-        externalEvents = new ConcurrentLinkedQueue<>();
+//        externalEvents = new ConcurrentLinkedQueue<>();
     }
 
     public void init(TapConnector tapNode) {
         init(tapNode, new TapCodecRegistry(), new ConnectorFunctions());
     }
 
-    public void offerExternalEvent(TapEvent tapEvent) {
-        if(externalEvents != null) {
-            if(tapEvent instanceof PatrolEvent) {
-                PatrolEvent patrolEvent = (PatrolEvent) tapEvent;
-                if(patrolEvent.applyState(getAssociateId(), PatrolEvent.STATE_ENTER)) {
-                    if(patrolEvent.getPatrolListener() != null) {
-                        CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(getAssociateId(), PatrolEvent.STATE_ENTER), TAG);
-                    }
-                }
-            }
-            externalEvents.offer(tapEvent);
-        }
-    }
+//    public void offerExternalEvent(TapEvent tapEvent) {
+//        if(externalEvents != null) {
+//            if(tapEvent instanceof PatrolEvent) {
+//                PatrolEvent patrolEvent = (PatrolEvent) tapEvent;
+//                if(patrolEvent.applyState(getAssociateId(), PatrolEvent.STATE_ENTER)) {
+//                    if(patrolEvent.getPatrolListener() != null) {
+//                        CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(getAssociateId(), PatrolEvent.STATE_ENTER), TAG);
+//                    }
+//                }
+//            }
+//            externalEvents.offer(tapEvent);
+//        }
+//    }
 
-    public List<TapEvent> pullAllExternalEventsInList(Consumer<TapEvent> consumer) {
-        if(externalEvents != null) {
-            if(externalEvents.isEmpty()) return null;
+//    public List<TapEvent> pullAllExternalEventsInList(Consumer<TapEvent> consumer) {
+//        if(externalEvents != null) {
+//            if(externalEvents.isEmpty()) return null;
+//
+//            List<TapEvent> events = new ArrayList<>();
+//            TapEvent tapEvent;
+//            while((tapEvent = externalEvents.poll()) != null) {
+//                if(consumer != null)
+//                    consumer.accept(tapEvent);
+//                events.add(tapEvent);
+//            }
+//            return events;
+//        }
+//        return null;
+//    }
 
-            List<TapEvent> events = new ArrayList<>();
-            TapEvent tapEvent;
-            while((tapEvent = externalEvents.poll()) != null) {
-                if(consumer != null)
-                    consumer.accept(tapEvent);
-                events.add(tapEvent);
-            }
-            return events;
-        }
-        return null;
-    }
-
-    public void pullAllExternalEvents(Consumer<TapEvent> consumer) {
-        if(externalEvents != null) {
-            TapEvent tapEvent;
-            while((tapEvent = externalEvents.poll()) != null) {
-                consumer.accept(tapEvent);
-            }
-        }
-    }
+//    public void pullAllExternalEvents(Consumer<TapEvent> consumer) {
+//        if(externalEvents != null) {
+//            TapEvent tapEvent;
+//            while((tapEvent = externalEvents.poll()) != null) {
+//                consumer.accept(tapEvent);
+//            }
+//        }
+//    }
 
     public TapCodecRegistry getCodecRegistry() {
         return codecRegistry;

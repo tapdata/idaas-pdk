@@ -1,7 +1,7 @@
 package io.tapdata.entity.event;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +31,30 @@ public class TapEvent implements Serializable {
         this.info = info;
     }
 
+    public Object addInfo(String key, Object value) {
+        initInfo();
+        return info.put(key, value);
+    }
+
+    private void initInfo() {
+        if(info == null) {
+            synchronized (this) {
+                if(info == null) {
+                    info = new LinkedHashMap<>();
+                }
+            }
+        }
+    }
+
+    public Object removeInfo(String key) {
+        initInfo();
+        return info.remove(key);
+    }
+
+    public Object getInfo(String key) {
+        initInfo();
+        return info.get(key);
+    }
 
     public Long getTime() {
         return time;

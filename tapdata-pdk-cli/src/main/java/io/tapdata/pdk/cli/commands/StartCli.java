@@ -36,7 +36,7 @@ public class StartCli extends CommonCli {
                             String json = IOUtils.toString(fileInputStream);
                             DAGDescriber dataFlowDescriber = JSON.parseObject(json, DAGDescriber.class);
 //                            validateAndFill(dataFlowDescriber);
-                            TapDAGWithWorker dag = dataFlowDescriber.toDag();
+                            TapDAG dag = dataFlowDescriber.toDag();
                             if(dag != null) {
                                 JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                                 dataFlowEngine.startDataFlow(dag, jobOptions);

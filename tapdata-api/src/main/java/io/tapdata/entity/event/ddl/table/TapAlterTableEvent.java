@@ -1,5 +1,6 @@
 package io.tapdata.entity.event.ddl.table;
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
@@ -28,17 +29,20 @@ public class TapAlterTableEvent extends TapTableEvent {
      */
     private String charset;
 
-    public void clone(TapAlterTableEvent alterTableEvent) {
-        super.clone(alterTableEvent);
-        if(changedNameFields != null)
-            alterTableEvent.changedNameFields = new ConcurrentHashMap<>(changedNameFields);
-        if(insertFields != null)
-            alterTableEvent.insertFields = new CopyOnWriteArrayList<>(insertFields);
-        if(deletedFields != null)
-            alterTableEvent.deletedFields = new CopyOnWriteArrayList<>(deletedFields);
-        alterTableEvent.name = name;
-        alterTableEvent.storageEngine = storageEngine;
-        alterTableEvent.charset = charset;
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapAlterTableEvent) {
+            TapAlterTableEvent alterTableEvent = (TapAlterTableEvent) tapEvent;
+            if(changedNameFields != null)
+                alterTableEvent.changedNameFields = new ConcurrentHashMap<>(changedNameFields);
+            if(insertFields != null)
+                alterTableEvent.insertFields = new CopyOnWriteArrayList<>(insertFields);
+            if(deletedFields != null)
+                alterTableEvent.deletedFields = new CopyOnWriteArrayList<>(deletedFields);
+            alterTableEvent.name = name;
+            alterTableEvent.storageEngine = storageEngine;
+            alterTableEvent.charset = charset;
+        }
     }
 
 

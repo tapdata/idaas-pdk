@@ -1,6 +1,7 @@
 package io.tapdata.entity.event.dml;
 
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.TapUtils;
@@ -16,10 +17,13 @@ public class TapInsertRecordEvent extends TapRecordEvent {
      */
     private Map<String, Object> after;
 
-    public void clone(TapInsertRecordEvent insertRecordEvent) {
-        super.clone(insertRecordEvent);
-        if(after != null)
-            insertRecordEvent.after = InstanceFactory.instance(TapUtils.class).cloneMap(after);
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapInsertRecordEvent) {
+            TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) tapEvent;
+            if(after != null)
+                insertRecordEvent.after = InstanceFactory.instance(TapUtils.class).cloneMap(after);
+        }
     }
 
     public TapInsertRecordEvent init() {
