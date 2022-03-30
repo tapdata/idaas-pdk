@@ -3,6 +3,8 @@ package io.tapdata.connector.empty;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
@@ -24,9 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-@TapConnectorClass("spec.json")
-public class EmptyConnector extends ConnectorBase implements TapConnector {
-    public static final String TAG = EmptyConnector.class.getSimpleName();
+@TapConnectorClass("sourceSpec.json")
+public class EmptySourceConnector extends ConnectorBase implements TapConnector {
+    public static final String TAG = EmptySourceConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
     private static Map<String, Map<String, Object>> primaryKeyRecordMap;
@@ -124,26 +126,14 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportBatchOffset(this::batchOffset);
         connectorFunctions.supportStreamOffset(this::streamOffset);
 
-        connectorFunctions.supportWriteRecord(this::writeRecord);
+//        connectorFunctions.supportWriteRecord(this::writeRecord);
 
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportCreateTable(this::createTable);
-        connectorFunctions.supportQueryByFilter(this::queryByFilter);
+//        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
-    }
-
-    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
-        if(filters != null) {
-            List<FilterResult> filterResults = new ArrayList<>();
-            for(TapFilter filter : filters) {
-                Map<String, Object> value = primaryKeyRecordMap.get(primaryKey(connectorContext, filter.getMatch()));
-                FilterResult filterResult = new FilterResult().result(value).filter(filter);
-                filterResults.add(filterResult);
-            }
-            listConsumer.accept(filterResults);
-        }
     }
 
     /**

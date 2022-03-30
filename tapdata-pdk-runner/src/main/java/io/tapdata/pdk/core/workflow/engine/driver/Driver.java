@@ -27,4 +27,6 @@ public abstract class Driver {
                 queue.offer(events);
         }
     }
+
+    public void destroy() {}
 }

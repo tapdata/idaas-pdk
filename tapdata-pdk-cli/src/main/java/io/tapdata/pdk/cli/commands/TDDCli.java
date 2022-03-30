@@ -35,8 +35,8 @@ public class TDDCli extends CommonCli {
     private static final String TAG = TDDCli.class.getSimpleName();
     @CommandLine.Parameters(paramLabel = "FILE", description = "One ore more pdk jar files")
     File file;
-//    @CommandLine.Option(names = { "-t", "--testCase" }, required = false, description = "Specify the test class simple name to test")
-//    private String testClass;
+    @CommandLine.Option(names = { "-t", "--testCase" }, required = false, description = "Specify the test class simple name to test")
+    private String testClass;
     @CommandLine.Option(names = { "-c", "--testConfig" }, required = true, description = "Specify the test json configuration file")
     private String testConfig;
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "TapData cli help")
@@ -63,9 +63,6 @@ public class TDDCli extends CommonCli {
     public static final String LEVEL_BEGINNER = "beginner";
     public static final String LEVEL_INTERMEDIATE = "intermediate";
     public static final String LEVEL_EXPERT = "expert";
-
-    public static final String SOURCE_PREFIX = "io.tapdata.pdk.tdd.tests.source.";
-    public static final String TARGET_PREFIX = "io.tapdata.pdk.tdd.tests.target.";
 
     private void runTests(LauncherDiscoveryRequest request) {
         Launcher launcher = LauncherFactory.create();
@@ -113,14 +110,19 @@ public class TDDCli extends CommonCli {
         builder.append("\n-------------PDK connector idAndGroupAndVersion " + tapNodeInfo.getTapNodeSpecification().idAndGroup() + "-------------").append("\n");
         builder.append("             Node class " + tapNodeInfo.getNodeClass() + " run tests below, ").append("\n");
         List<DiscoverySelector> selectors = new ArrayList<>();
-        selectors.add(DiscoverySelectors.selectClass(BasicTest.class));
+        if(testClass != null) {
+            Class<?> theClass = Class.forName(testClass);
+            selectors.add(DiscoverySelectors.selectClass(theClass));
+        } else {
+            selectors.add(DiscoverySelectors.selectClass(BasicTest.class));
 
-        if(connectorFunctions.getWriteRecordFunction() != null) {
-            selectors.add(DiscoverySelectors.selectClass(DMLTest.class));
-        }
+            if(connectorFunctions.getWriteRecordFunction() != null) {
+                selectors.add(DiscoverySelectors.selectClass(DMLTest.class));
+            }
 
-        if(connectorFunctions.getCreateTableFunction() != null) {
-            selectors.add(DiscoverySelectors.selectClass(CreateTableTest.class));
+            if(connectorFunctions.getCreateTableFunction() != null) {
+                selectors.add(DiscoverySelectors.selectClass(CreateTableTest.class));
+            }
         }
         builder.append("             Will run total " + selectors.size() + " test cases").append("\n");
         for(DiscoverySelector selector : selectors) {

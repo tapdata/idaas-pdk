@@ -14,6 +14,7 @@ import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.io.FileUtils;
@@ -38,6 +39,7 @@ public class PDKTestBase {
 
     protected DataMap connectionOptions;
     protected DataMap nodeOptions;
+    protected DataMap testOptions;
 
     private final AtomicBoolean completed = new AtomicBoolean(false);
     private Throwable lastThrowable;
@@ -75,6 +77,7 @@ public class PDKTestBase {
         }
 
         tddConnector = TapConnectorManager.getInstance().getTapConnectorByJarName(tddJarFile.getName());
+        PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> Assertions.fail(errorMessage)));
     }
 
     public interface AssertionCall {
@@ -92,6 +95,7 @@ public class PDKTestBase {
 
     public void completed() {
         if(completed.compareAndSet(false, true)) {
+            PDKLogger.enable(false);
             synchronized (completed) {
                 completed.notifyAll();
             }
@@ -105,7 +109,8 @@ public class PDKTestBase {
                     try {
                         completed.wait(seconds * 1000);
                         completed.set(true);
-                        throw new TimeoutException("Waited " + seconds + " seconds and still not completed, consider timeout execution.");
+                        if(lastThrowable == null)
+                            throw new TimeoutException("Waited " + seconds + " seconds and still not completed, consider timeout execution.");
                     } catch (InterruptedException interruptedException) {
                         interruptedException.printStackTrace();
                         PDKLogger.error(TAG, "Completed wait interrupted " + interruptedException.getMessage());
@@ -190,10 +195,22 @@ public class PDKTestBase {
         Collection<TapNodeInfo> tapNodeInfoCollection = testConnector.getTapNodeClassFactory().getConnectorTapNodeInfos();
         if(tapNodeInfoCollection.isEmpty())
             throw new CoreException(ErrorCodes.TDD_TAPNODEINFO_NOT_FOUND, "No connector or processor is found in jar " + jarFile);
+
+        String pdkId = null;
+        if(testOptions != null) {
+            pdkId = (String) testOptions.get("pdkId");
+        }
+
         List<String> nodeTypeList = Arrays.asList(nodeTypes);
         for (TapNodeInfo nodeInfo : tapNodeInfoCollection) {
-            if(nodeTypeList.contains(nodeInfo.getNodeType())) {
+            if(pdkId != null) {
+                if(nodeInfo.getTapNodeSpecification().getId().equals(pdkId)) {
+                    consumer.accept(nodeInfo);
+                    break;
+                }
+            } else if(nodeTypeList.contains(nodeInfo.getNodeType())) {
                 consumer.accept(nodeInfo);
+                break;
             }
         }
     }
@@ -205,6 +222,7 @@ public class PDKTestBase {
         Assertions.assertNotNull(testConfigMap, "testConfigFile " + testConfigFile + " read to json failed");
         connectionOptions = testConfigMap.get("connection");
         nodeOptions = testConfigMap.get("node");
+        testOptions = testConfigMap.get("test");
     }
 
     @AfterEach

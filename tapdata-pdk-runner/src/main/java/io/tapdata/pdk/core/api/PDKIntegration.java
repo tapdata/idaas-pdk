@@ -2,6 +2,7 @@ package io.tapdata.pdk.core.api;
 
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -440,65 +441,5 @@ public class PDKIntegration {
     public static ConnectionConnectorBuilder createConnectionConnectorBuilder() {
         init();
         return new ConnectionConnectorBuilder();
-    }
-
-    public static void analyzeTableFields(SourceNode sourceNode, TapTable table) {
-        sourceNode.getConnectorContext().setTable(table);
-
-        LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
-        if(nameFieldMap != null) {
-            DefaultExpressionMatchingMap expressionMatchingMap = sourceNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap();
-            for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
-                if(entry.getValue().getOriginType() != null) {
-                    TypeExprResult<DataMap> result = expressionMatchingMap.get(entry.getValue().getOriginType());
-                    if(result != null) {
-                        TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
-                        if(tapMapping != null) {
-                            entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getOriginType(), result.getParams()));
-                        }
-                    } else {
-                        PDKLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition. {}", entry.getValue().getOriginType(), LoggerUtils.sourceNodeMessage(sourceNode));
-                    }
-                }
-            }
-        }
-    }
-
-    public static List<TapEvent> filterEvents(ConnectorNode connectorNode, List<TapEvent> events) {
-        LinkedHashMap<String, TapField> nameFieldMap = connectorNode.getConnectorContext().getTable().getNameFieldMap();
-        TapCodecFilterManager codecFilterManager = connectorNode.getCodecFilterManager();
-        List<TapEvent> newEvents = new ArrayList<>();
-        for(TapEvent tapEvent : events) {
-            if(tapEvent instanceof TapInsertRecordEvent) {
-                TapInsertRecordEvent insertDMLEvent = (TapInsertRecordEvent) tapEvent;
-                TapInsertRecordEvent newInsertDMLEvent = new TapInsertRecordEvent();
-                insertDMLEvent.clone(newInsertDMLEvent);
-                codecFilterManager.transformToTapValueMap(newInsertDMLEvent.getAfter(), nameFieldMap);
-                newEvents.add(newInsertDMLEvent);
-            } else if(tapEvent instanceof TapUpdateRecordEvent) {
-                TapUpdateRecordEvent updateDMLEvent = (TapUpdateRecordEvent) tapEvent;
-                TapUpdateRecordEvent newUpdateDMLEvent = new TapUpdateRecordEvent();
-                updateDMLEvent.clone(newUpdateDMLEvent);
-                codecFilterManager.transformToTapValueMap(newUpdateDMLEvent.getAfter(), nameFieldMap);
-                codecFilterManager.transformToTapValueMap(newUpdateDMLEvent.getBefore(), nameFieldMap);
-                newEvents.add(newUpdateDMLEvent);
-            } else if(tapEvent instanceof TapDeleteRecordEvent) {
-                TapDeleteRecordEvent deleteDMLEvent = (TapDeleteRecordEvent) tapEvent;
-                TapDeleteRecordEvent newDeleteDMLEvent = new TapDeleteRecordEvent();
-                deleteDMLEvent.clone(newDeleteDMLEvent);
-                codecFilterManager.transformToTapValueMap(newDeleteDMLEvent.getBefore(), nameFieldMap);
-                newEvents.add(newDeleteDMLEvent);
-            } else {
-                try {
-                    TapEvent newTapEvent = tapEvent.getClass().getConstructor().newInstance();
-                    tapEvent.clone(newTapEvent);
-                    newEvents.add(newTapEvent);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    PDKLogger.error(TAG, "New instance for {} failed, {}. TapEvent {} will be ignored", tapEvent.getClass(), e.getMessage(), tapEvent);
-                }
-            }
-        }
-        return newEvents;
     }
 }

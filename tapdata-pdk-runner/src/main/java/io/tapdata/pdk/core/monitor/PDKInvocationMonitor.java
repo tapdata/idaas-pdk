@@ -21,7 +21,13 @@ public class PDKInvocationMonitor {
 
     private Map<PDKMethod, InvocationCollector> methodInvocationCollectorMap = new ConcurrentHashMap<>();
 
+    private Consumer<String> errorListener;
+
     private PDKInvocationMonitor() {}
+
+    public void setErrorListener(Consumer<String> errorListener) {
+        this.errorListener = errorListener;
+    }
 
     public static PDKInvocationMonitor getInstance() {
         if(instance == null) {
@@ -62,6 +68,8 @@ public class PDKInvocationMonitor {
             r.run();
         } catch(CoreException coreException) {
             theError = coreException;
+            if(errorListener != null)
+                errorListener.accept(describeError(method, coreException, message, logTag));
             if(errorConsumer != null) {
                 errorConsumer.accept(coreException);
             } else {
@@ -69,6 +77,8 @@ public class PDKInvocationMonitor {
             }
         } catch(Throwable throwable) {
             theError = throwable;
+            if(errorListener != null)
+                errorListener.accept(describeError(method, throwable, message, logTag));
             CoreException coreException = new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
             if(errorConsumer != null) {
                 errorConsumer.accept(coreException);
@@ -78,6 +88,10 @@ public class PDKInvocationMonitor {
         } finally {
             methodEnd(method, invokeId, theError, message, logTag);
         }
+    }
+
+    private String describeError(PDKMethod method, Throwable throwable, String message, String logTag) {
+        return logTag + ": Invoke PDKMethod " + method.name() + " failed, error " + message + " context message " + message;
     }
 
     public String methodStart(PDKMethod method, String logTag) {
