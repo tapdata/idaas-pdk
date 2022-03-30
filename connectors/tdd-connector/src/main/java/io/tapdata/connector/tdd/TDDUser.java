@@ -1,6 +1,7 @@
 package io.tapdata.connector.tdd;
 
 import java.util.List;
+import java.util.Objects;
 
 public class TDDUser {
     private String id;
@@ -10,7 +11,17 @@ public class TDDUser {
     public static final int GENDER_MALE = 1;
     public static final int GENDER_FEMALE = 10;
     private int gender;
-
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TDDUser that = (TDDUser) o;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(description, that.description) &&
+                age == that.age &&
+                gender == that.gender;
+    }
     public TDDUser() {}
     public TDDUser(String id, String name, String description, int age, int gender) {
         this.id = id;

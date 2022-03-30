@@ -150,7 +150,33 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
     private void control(TapConnectorContext connectorContext, ControlEvent controlEvent) {
         if(controlEvent instanceof PatrolEvent) {
             PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
-            Object value = patrolEvent.getInfo("tdd");
+            Object value = patrolEvent.getInfo("tdd_return_first");
+            if(value instanceof Boolean && ((Boolean) value).booleanValue()) {
+                Map<String, Object> record = map(
+                        entry("id", "id_1"),
+                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
+                        entry("tapString", "123"),
+                        entry("tapString10", "1234567890"),
+                        entry("tapString10Fixed", "1"),
+                        entry("tapInt", 123123),
+                        entry("tapBoolean", true),
+                        entry("tapDate", new Date()),
+                        entry("tapArrayString", list("1", "2", "3")),
+                        entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
+                        entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
+                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
+                        entry("tapNumber", 1233),
+//                        entry("tapNumber(8)", 1111),
+                        entry("tapNumber52", 343.22),
+                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
+                        entry("tapTime", new Date()),
+                        entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
+                        entry("tapMapStringDouble", map(entry("a", 1.0), entry("b", 2.0))),
+                        entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
+                        entry("tapDateTime", new Date()),
+                        entry("tapDateTimeTimeZone", new Date()));
+                patrolEvent.addInfo("tdd_return_first", record);
+            }
             PDKLogger.info(TAG, "tdd value {}", value);
         }
     }

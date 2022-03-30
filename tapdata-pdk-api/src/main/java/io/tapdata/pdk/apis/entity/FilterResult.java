@@ -4,10 +4,22 @@ import java.util.Map;
 
 public class FilterResult {
     private TapFilter filter;
+    public FilterResult filter(TapFilter filter) {
+        this.filter = filter;
+        return this;
+    }
 
     private Map<String, Object> result;
+    public FilterResult result(Map<String, Object> result) {
+        this.result = result;
+        return this;
+    }
 
     private Throwable error;
+    public FilterResult error(Throwable error) {
+        this.error = error;
+        return this;
+    }
 
     public Throwable getError() {
         return error;

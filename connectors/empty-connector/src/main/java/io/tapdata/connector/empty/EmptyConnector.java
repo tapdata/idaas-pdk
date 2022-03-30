@@ -11,12 +11,15 @@ import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.FilterResult;
+import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -26,7 +29,12 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
     public static final String TAG = EmptyConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
-
+    private static Map<String, Map<String, Object>> primaryKeyRecordMap;
+    static {
+        if(primaryKeyRecordMap == null) {
+            primaryKeyRecordMap = new ConcurrentHashMap<>();
+        }
+    }
     /**
      * The method invocation life circle is below,
      * initiated -> discoverSchema -> ended
@@ -120,10 +128,22 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
 
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportCreateTable(this::createTable);
-//        connectorFunctions.supportQueryByFilter(this::queryByFilter);
+        connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
+    }
+
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+        if(filters != null) {
+            List<FilterResult> filterResults = new ArrayList<>();
+            for(TapFilter filter : filters) {
+                Map<String, Object> value = primaryKeyRecordMap.get(primaryKey(connectorContext, filter.getMatch()));
+                FilterResult filterResult = new FilterResult().result(value).filter(filter);
+                filterResults.add(filterResult);
+            }
+            listConsumer.accept(filterResults);
+        }
     }
 
     /**
@@ -175,7 +195,13 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
         AtomicLong deleted = new AtomicLong(0); //delete count
         for(TapRecordEvent recordEvent : tapRecordEvents) {
             if(recordEvent instanceof TapInsertRecordEvent) {
-                inserted.incrementAndGet();
+                TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
+                Map<String, Object> value = insertRecordEvent.getAfter();
+                if(value != null) {
+                    primaryKeyRecordMap.put(primaryKey(connectorContext, value), value);
+                    inserted.incrementAndGet();
+                }
+
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapUpdateRecordEvent) {
                 updated.incrementAndGet();
@@ -190,6 +216,15 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
+    }
+
+    private String primaryKey(TapConnectorContext connectorContext, Map<String, Object> value) {
+        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+        StringBuilder builder = new StringBuilder();
+        for(String primaryKey : primaryKeys) {
+            builder.append(value.get(primaryKey));
+        }
+        return builder.toString();
     }
 
     /**

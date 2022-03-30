@@ -9,6 +9,9 @@ import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.Validator;
 import io.tapdata.pdk.core.utils.state.StateListener;
 import io.tapdata.pdk.core.utils.state.StateMachine;
+import io.tapdata.pdk.core.workflow.engine.driver.ProcessorNodeDriver;
+import io.tapdata.pdk.core.workflow.engine.driver.SourceNodeDriver;
+import io.tapdata.pdk.core.workflow.engine.driver.TargetNodeDriver;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -160,6 +163,30 @@ public class DataFlowWorker {
     private void checkAllNodesInDAG(TapDAG dagNodes) {
         //TODO check all node information are correct, PDK can be found correctly.
         //If startNodes not source, or tail nodes not target, remove them.
+    }
+
+    public SourceNodeDriver getSourceNodeDriver(String nodeId) {
+        TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+        if(nodeWorker != null) {
+            return nodeWorker.sourceNodeDriver;
+        }
+        return null;
+    }
+
+    public TargetNodeDriver getTargetNodeDriver(String nodeId) {
+        TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+        if(nodeWorker != null) {
+            return nodeWorker.targetNodeDriver;
+        }
+        return null;
+    }
+
+    public ProcessorNodeDriver getProcessorNodeDriver(String nodeId) {
+        TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+        if(nodeWorker != null) {
+            return nodeWorker.processorNodeDriver;
+        }
+        return null;
     }
 
     public synchronized void start() {
