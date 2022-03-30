@@ -19,6 +19,11 @@ public class DateTime {
      */
     private TimeZone timeZone;
 
+    public DateTime() {
+
+    }
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -27,6 +32,11 @@ public class DateTime {
         return Objects.equals(seconds, that.seconds) &&
                 Objects.equals(timeZone, that.timeZone) &&
                 Objects.equals(nano, that.nano);
+    }
+
+    @Override
+    public String toString() {
+        return "DateTime nano " + nano + " seconds " + seconds + " timeZone " + timeZone;
     }
 
     public Long getSeconds() {

@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 @DisplayName("Tests for target beginner test")
 public class DMLTest extends PDKTestBase {
@@ -48,7 +47,7 @@ public class DMLTest extends PDKTestBase {
 
     @Test
     @DisplayName("Test method handleDML")
-    void targetTest() {
+    void targetTest() throws Throwable {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
             try {
                 DataFlowEngine dataFlowEngine = DataFlowEngine.getInstance();
@@ -103,13 +102,15 @@ public class DMLTest extends PDKTestBase {
                 throwable.printStackTrace();
                 CommonUtils.logError(TAG, "Start failed", throwable);
                 if(throwable instanceof AssertionFailedError) {
-                    throw ((AssertionFailedError) throwable);
+                    $(() -> {
+                        throw ((AssertionFailedError) throwable);
+                    });
                 } else {
-                    Assertions.fail("Unknown error " + throwable.getMessage());
+                    $(() -> Assertions.fail("Unknown error " + throwable.getMessage()));
                 }
             }
         }, TapNodeInfo.NODE_TYPE_TARGET, TapNodeInfo.NODE_TYPE_SOURCE_TARGET);
-        PDKLogger.info(TAG, "");
+        waitCompleted(200000);
     }
 
     private void verifyBatchRecordNotExist() {
@@ -123,10 +124,10 @@ public class DMLTest extends PDKTestBase {
 
         List<FilterResult> results = new ArrayList<>();
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " for queryByFilter, then filterResults size has to be 1");
+        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
-        Assertions.assertNull(filterResult.getError(), "Should be no value, error should not be threw");
-        Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record hasn't be inserted yet");
+        $(() -> Assertions.assertNull(filterResult.getError(), "Should be no value, error should not be threw"));
+        $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record hasn't be inserted yet"));
     }
 
     private void verifyBatchRecordExists() {
@@ -140,10 +141,10 @@ public class DMLTest extends PDKTestBase {
 
         List<FilterResult> results = new ArrayList<>();
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " for queryByFilter, then filterResults size has to be 1");
+        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
-        Assertions.assertNull(filterResult.getError(), "Error occurred while queryByFilter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " error " + filterResult.getError());
-        Assertions.assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted");
+        $(() -> Assertions.assertNull(filterResult.getError(), "Error occurred while queryByFilter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " error " + filterResult.getError()));
+        $(() -> Assertions.assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));
         Map<String, Object> result = filterResult.getResult();
 
 
@@ -170,12 +171,13 @@ public class DMLTest extends PDKTestBase {
                 builder.append("\t\t").append("Right ").append(diff.rightValue()).append("\n");
             }
         }
-        Assertions.assertFalse(different, builder.toString());
+        boolean finalDifferent = different;
+        $(() -> Assertions.assertFalse(finalDifferent, builder.toString()));
     }
 
     private void checkFunctions() {
-        Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "DMLFunction is a must to implement a Target");
-        Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly");
+        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "DMLFunction is a must to implement a Target"));
+        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
     }
 
     private void initConnectorFunctions(TapNodeInfo nodeInfo, String tableId, String dagId) {
