@@ -3,13 +3,17 @@ package io.tapdata.connector.empty;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.dml.*;
+import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
+import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.value.*;
 import io.tapdata.pdk.apis.TapConnector;
-import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
+import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
@@ -18,15 +22,18 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-@TapConnectorClass("spec.json")
-public class EmptyConnector extends ConnectorBase implements TapConnector {
-    public static final String TAG = EmptyConnector.class.getSimpleName();
+@TapConnectorClass("targetSpec.json")
+public class EmptyTargetConnector extends ConnectorBase implements TapConnector {
+    public static final String TAG = EmptyTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
     private static Map<String, Map<String, Object>> primaryKeyRecordMap;
@@ -118,20 +125,75 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
-        connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportStreamRead(this::streamRead);
+//        connectorFunctions.supportBatchRead(this::batchRead);
+//        connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
-        connectorFunctions.supportBatchOffset(this::batchOffset);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
+//        connectorFunctions.supportBatchOffset(this::batchOffset);
+//        connectorFunctions.supportStreamOffset(this::streamOffset);
 
         connectorFunctions.supportWriteRecord(this::writeRecord);
 
         //Below capabilities, developer can decide to implement or not.
-//        connectorFunctions.supportCreateTable(this::createTable);
+        connectorFunctions.supportCreateTable(this::createTable);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
-//        connectorFunctions.supportDropTable(this::dropTable);
+        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
+
+        codecRegistry.registerFromTapValue(TapRawValue.class, "TEXT", tapRawValue -> {
+            if (tapRawValue != null && tapRawValue.getValue() != null)
+                return toJson(tapRawValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapMapValue.class, "TEXT", tapMapValue -> {
+            if (tapMapValue != null && tapMapValue.getValue() != null)
+                return toJson(tapMapValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapArrayValue.class, "TEXT", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapBooleanValue.class, "TEXT", tapValue -> {
+            if (tapValue != null) {
+                Boolean value = tapValue.getValue();
+                if (value != null && value) {
+                    return "true";
+                }
+            }
+            return "false";
+        });
+        codecRegistry.registerFromTapValue(TapBinaryValue.class, "TEXT", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "TEXT", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
+
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TEXT", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
+
+        codecRegistry.registerFromTapValue(TapDateValue.class, "TEXT", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
+    }
+
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+        primaryKeyRecordMap.clear();
+    }
+
+    private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
+//        throw new NullPointerException("aaaa");
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
@@ -246,7 +308,7 @@ public class EmptyConnector extends ConnectorBase implements TapConnector {
      */
     private long batchCount(TapConnectorContext connectorContext, Object offset) {
         //TODO Count the batch size.
-        return 20L;
+        return primaryKeyRecordMap.size();
     }
 
     /**

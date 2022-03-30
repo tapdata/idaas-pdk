@@ -4,5 +4,8 @@
     "port" : 12345
   },
   "node": {
+  },
+  "test": {
+    "pdkId" : "emptyTarget"
   }
 }

@@ -29,6 +29,7 @@ public class DataFlowWorker {
     public static final String STATE_INITIALIZING = "Initializing";
     public static final String STATE_INITIALIZED = "Initialized";
     public static final String STATE_INITIALIZE_FAILED = "Initialize failed";
+    public static final String STATE_RECORDS_SENT = "Records sent";
     public static final String STATE_TERMINATED = "Terminated";
     private StateMachine<String, DataFlowWorker> stateMachine;
     private AtomicBoolean started = new AtomicBoolean(false);
@@ -82,13 +83,18 @@ public class DataFlowWorker {
 //                .setOperateListener(this::handleGetServicesNodes)
 //                .setOperateFailedListener(this::handleGetServicesNodesFailed);
             stateMachine.configState(STATE_NONE, stateMachine.execute().nextStates(STATE_INITIALIZING, STATE_TERMINATED))
-                    .configState(STATE_INITIALIZING, stateMachine.execute(this::handleInitializing).nextStates(STATE_INITIALIZED, STATE_TERMINATED, STATE_INITIALIZE_FAILED))
+                    .configState(STATE_INITIALIZING, stateMachine.execute(this::handleInitializing).nextStates(STATE_RECORDS_SENT, STATE_INITIALIZED, STATE_TERMINATED, STATE_INITIALIZE_FAILED))
                     .configState(STATE_INITIALIZE_FAILED, stateMachine.execute(this::handleInitializeFailed).nextStates(STATE_INITIALIZING, STATE_TERMINATED))
-                    .configState(STATE_INITIALIZED, stateMachine.execute(this::handleInitialized).nextStates(STATE_TERMINATED))
+                    .configState(STATE_RECORDS_SENT, stateMachine.execute(this::handleRecordsSent).nextStates(STATE_INITIALIZED, STATE_TERMINATED))
+                    .configState(STATE_INITIALIZED, stateMachine.execute(this::handleInitialized).nextStates(STATE_RECORDS_SENT, STATE_TERMINATED))
                     .configState(STATE_TERMINATED, stateMachine.execute(this::handleTerminated).nextStates(STATE_INITIALIZING, STATE_NONE))
                     .errorOccurred(this::handleError);
             stateMachine.enableAsync(Executors.newSingleThreadExecutor()); //Use one thread for a worker
         }
+    }
+
+    private void handleRecordsSent(DataFlowWorker dataFlowWorker, StateMachine<String, DataFlowWorker> stringDataFlowWorkerStateMachine) {
+
     }
 
     private void handleInitializeFailed(DataFlowWorker dataFlowWorker, StateMachine<String, DataFlowWorker> stringDataFlowWorkerStateMachine) {
@@ -103,7 +109,11 @@ public class DataFlowWorker {
         for(String nodeId : headNodeIds) {
             TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
             if(nodeWorker.sourceNodeDriver != null) {
-                nodeWorker.sourceNodeDriver.start();
+                nodeWorker.sourceNodeDriver.start(state -> {
+                    if(state == SourceNodeDriver.STATE_FIRST_BATCH_RECORDS_OFFERED) {
+                        stateMachine.gotoState(STATE_RECORDS_SENT, "First batch of records has sent out");
+                    }
+                });
             }
         }
     }

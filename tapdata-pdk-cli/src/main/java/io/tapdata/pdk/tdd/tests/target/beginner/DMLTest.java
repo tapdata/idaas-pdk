@@ -91,6 +91,14 @@ public class DMLTest extends PDKTestBase {
                                 PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     verifyBatchRecordExists();
+                                    //TODO Use PatrolEvent to let TDD Source send a TapUpdateRecordEvent
+                                    //TODO Send PatrolEvent again to verify update successfully.
+//                                    verifyUpdate();
+
+                                    //TODO Do delete test after update. it is async.
+                                    //TODO Use PatrolEvent to let TDD Source send a TapDeleteRecordEvent
+                                    //TODO Send PatrolEvent again to verify delete successfully.
+//                                    verifyDelete();
                                 }
                             });
                             dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
@@ -248,6 +256,7 @@ public class DMLTest extends PDKTestBase {
 
         tddSourceNode.getCodecFilterManager().transformToTapValueMap(firstRecord, tddSourceNode.getConnectorContext().getTable().getNameFieldMap());
         tddSourceNode.getCodecFilterManager().transformFromTapValueMap(firstRecord);
+
         MapDifference<String, Object> difference = Maps.difference(firstRecord, result);
         Map<String, MapDifference.ValueDifference<Object>> differenceMap = difference.entriesDiffering();
         StringBuilder builder = new StringBuilder("Differences: \n");
@@ -274,17 +283,12 @@ public class DMLTest extends PDKTestBase {
     }
 
     private void checkFunctions() {
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "DMLFunction is a must to implement a Target"));
+        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
         $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
     }
 
     private void initConnectorFunctions(TapNodeInfo nodeInfo, String tableId, String dagId) {
         targetNode = dataFlowWorker.getTargetNodeDriver(targetNodeId).getTargetNode();
-
-//        ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-//        TapCodecRegistry codecRegistry = new TapCodecRegistry();
-//        targetNode.getConnector().registerCapabilities(connectorFunctions, codecRegistry);
-
         tddSourceNode = dataFlowWorker.getSourceNodeDriver(sourceNodeId).getSourceNode();
     }
 }

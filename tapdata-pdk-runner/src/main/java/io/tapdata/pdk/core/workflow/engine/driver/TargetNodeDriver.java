@@ -66,7 +66,7 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
 
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CREATE_TABLE, () -> {
                 createTableFunction.createTable(getTargetNode().getConnectorContext(), createTableEvent);
-            }, "Clear table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
+            }, "Create table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
         }
     }
 
@@ -233,7 +233,10 @@ public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
         TapTable targetTable = targetNode.getConnectorContext().getTable();
         //Convert source table to target target by calculate the originType of target database.
         TargetTypesGenerator targetTypesGenerator = ClassFactory.create(TargetTypesGenerator.class);
-        LinkedHashMap<String, TapField> nameFieldMap = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
+        LinkedHashMap<String, TapField> nameFieldMap = null;
+        if (targetTypesGenerator != null) {
+            nameFieldMap = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
+        }
         targetTable.setNameFieldMap(nameFieldMap);
     }
 

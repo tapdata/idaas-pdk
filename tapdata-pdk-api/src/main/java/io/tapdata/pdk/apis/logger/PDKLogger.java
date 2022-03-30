@@ -12,6 +12,13 @@ public class PDKLogger {
 
     private PDKLogger() {
     }
+
+    private static boolean enable = true;
+
+    public static void enable(boolean enable1) {
+        enable = enable1;
+    }
+
     public interface LogListener {
         void debug(String log);
 
@@ -29,6 +36,8 @@ public class PDKLogger {
     }
 
     public static void debug(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.debug(log);
@@ -37,6 +46,8 @@ public class PDKLogger {
     }
 
     public static void info(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.info(log);
@@ -45,6 +56,8 @@ public class PDKLogger {
     }
 
     public static void info(String tag, Long spendTime, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params), spendTime);
         if (logListener != null)
             logListener.info(log);
@@ -53,6 +66,8 @@ public class PDKLogger {
     }
 
     public static void infoWithData(String tag, String dataType, String data, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params), dataType, data);
         if (logListener != null)
             logListener.info(log);
@@ -61,6 +76,8 @@ public class PDKLogger {
     }
 
     public static void warn(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.warn(log);
@@ -69,6 +86,8 @@ public class PDKLogger {
     }
 
     public static void error(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.error(log);
@@ -77,6 +96,8 @@ public class PDKLogger {
     }
 
     public static void fatal(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsgFatal(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.fatal(log);
