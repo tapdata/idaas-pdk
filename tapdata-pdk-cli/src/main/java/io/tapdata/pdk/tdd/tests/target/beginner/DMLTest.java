@@ -5,12 +5,14 @@ import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
@@ -68,10 +70,10 @@ public class DMLTest extends PDKTestBase {
                 dataFlowDescriber.setJobOptions(new JobOptions());
 
                 TapDAG dag = dataFlowDescriber.toDag();
-                if(dag != null) {
+                if (dag != null) {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
-                        if(toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
+                        if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
 
                             checkFunctions();
@@ -79,32 +81,28 @@ public class DMLTest extends PDKTestBase {
                             firstPatrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_INITIALIZING", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                                    firstRecord = (Map<String, Object>) firstPatrolEvent.getInfo("tdd_return_first");
+                                    insertOneRecord();
                                 }
                             });
-                            firstPatrolEvent.addInfo("tdd_return_first", true);
+
                             dataFlowEngine.sendExternalTapEvent(dag.getId(), firstPatrolEvent);
-                        } else if(toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
+                        } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
-                                if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                                if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     verifyBatchRecordExists();
                                 }
                             });
-                            patrolEvent.addInfo("tdd", "aaa");
                             dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
 
                             patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     updateOneRecord();
                                 }
                             });
-                            patrolEvent.addInfo("tdd_update", "bbb");
                             dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
 
                             patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     deleteOneRecord();
                                 }
@@ -116,7 +114,7 @@ public class DMLTest extends PDKTestBase {
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 CommonUtils.logError(TAG, "Start failed", throwable);
-                if(throwable instanceof AssertionFailedError) {
+                if (throwable instanceof AssertionFailedError) {
                     $(() -> {
                         throw ((AssertionFailedError) throwable);
                     });
@@ -125,9 +123,47 @@ public class DMLTest extends PDKTestBase {
                 }
             }
         }, TapNodeInfo.NODE_TYPE_TARGET, TapNodeInfo.NODE_TYPE_SOURCE_TARGET);
-//        waitCompleted(200000);
-        completed();
+//        completed();
+        waitCompleted(20000);
+
     }
+
+    private void insertOneRecord() {
+        WriteRecordFunction writeRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
+        TapInsertRecordEvent insertRecordEvent = new TapInsertRecordEvent();
+        firstRecord = new DataMap();
+        firstRecord.put("id", "id_1");
+        firstRecord.put("tapString", "123");
+        firstRecord.put("tapString10", "1234567890");
+        firstRecord.put("tapString10Fixed", "1");
+        firstRecord.put("tapInt", 123123);
+        firstRecord.put("tapBoolean", true);
+        firstRecord.put("tapArrayString", Arrays.asList("1", "2", "3"));
+        firstRecord.put("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3));
+        firstRecord.put("tapNumber", 1233);
+        // firstRecord.put("tapNumber(8)", 1111),
+        firstRecord.put("tapNumber52", 343.22);
+        firstRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
+        HashMap<Object, Object> tapMapStringString = new HashMap<>();
+        tapMapStringString.put("a", "a");
+        tapMapStringString.put("b", "b");
+        firstRecord.put("tapMapStringString", tapMapStringString);
+        HashMap<Object, Object> tapMapStringDouble = new HashMap<>();
+        tapMapStringDouble.put("a", 1.0);
+        tapMapStringDouble.put("b", 2.0);
+        firstRecord.put("tapMapStringDouble", tapMapStringDouble);
+
+
+        List<TapRecordEvent> recordEvents = new ArrayList<>();
+        insertRecordEvent.setAfter(firstRecord);
+        AtomicLong insertCount = new AtomicLong();
+        recordEvents.add(insertRecordEvent);
+        CommonUtils.handleAnyError(() -> writeRecordFunction.writeDML(targetNode.getConnectorContext(), recordEvents,
+                writeConsumer -> insertCount.set(writeConsumer.getInsertedCount())));
+        $(() -> Assertions.assertEquals(1, insertCount.get(), "The number of insert count should be 1"));
+        verifyBatchRecordExists();
+    }
+
 
     private void updateOneRecord() {
         WriteRecordFunction writeRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
@@ -142,7 +178,7 @@ public class DMLTest extends PDKTestBase {
         AtomicLong modifyCount = new AtomicLong();
         CommonUtils.handleAnyError(() -> writeRecordFunction.writeDML(targetNode.getConnectorContext(), recordEvents,
                 writeConsumer -> modifyCount.set(writeConsumer.getModifiedCount())));
-        $(() -> Assertions.assertEquals(1, modifyCount.get(), "The number of modifications should be 1"));
+        $(() -> Assertions.assertEquals(1, modifyCount.get(), "The number of modify count should be 1"));
 
         QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         TapFilter filter = new TapFilter();
@@ -217,16 +253,16 @@ public class DMLTest extends PDKTestBase {
         StringBuilder builder = new StringBuilder("Differences: \n");
         boolean equalResult;
         boolean different = false;
-        for(Map.Entry<String, MapDifference.ValueDifference<Object>> entry : differenceMap.entrySet()) {
+        for (Map.Entry<String, MapDifference.ValueDifference<Object>> entry : differenceMap.entrySet()) {
             equalResult = false;
             MapDifference.ValueDifference<Object> diff = entry.getValue();
 //            if(entry.getKey().equals("tapBinary")) {
 //            }
-            if((diff.leftValue() instanceof byte[]) && (diff.rightValue() instanceof byte[])) {
-                equalResult = Arrays.equals((byte[])diff.leftValue(), (byte[])diff.rightValue());
+            if ((diff.leftValue() instanceof byte[]) && (diff.rightValue() instanceof byte[])) {
+                equalResult = Arrays.equals((byte[]) diff.leftValue(), (byte[]) diff.rightValue());
             }
 
-            if(!equalResult) {
+            if (!equalResult) {
                 different = true;
                 builder.append("\t").append("Key ").append(entry.getKey()).append("\n");
                 builder.append("\t\t").append("Left ").append(diff.leftValue()).append("\n");

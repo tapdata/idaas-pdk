@@ -57,12 +57,12 @@ public class AerospikeStringSink {
 
         Bin[] bins = new Bin[record.getBinValuesMap().size()];
         int idx = 0;
-        for (Map.Entry<String, String> entry : record.getBinValuesMap().entrySet()) {
+        for (Map.Entry<String, Object> entry : record.getBinValuesMap().entrySet()) {
             String binKey = entry.getKey();
             if (binKey.length() > 14) {
                 binKey = binKey.substring(14);
             }
-            Bin bin = new Bin(binKey, String.valueOf(entry.getValue()));
+            Bin bin = new Bin(binKey, entry.getValue());
             bins[idx++] = bin;
         }
         this.client.put(this.writePolicy, key, bins);

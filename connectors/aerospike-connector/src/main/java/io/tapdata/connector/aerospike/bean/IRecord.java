@@ -31,7 +31,7 @@ public interface IRecord<T> {
         return Collections.emptyMap();
     }
 
-    default Map<String, String> getBinValuesMap() {
+    default Map<String, Object> getBinValuesMap() {
         return Collections.emptyMap();
     }
 
