@@ -40,7 +40,7 @@ public class DataFlowEngine {
     public void startDataFlow(TapDAG dag, JobOptions jobOptions) {
         startDataFlow(dag, jobOptions, null);
     }
-    public void startDataFlow(TapDAG dag, JobOptions jobOptions, StateListener<String, DataFlowWorker> stateListener) {
+    public DataFlowWorker startDataFlow(TapDAG dag, JobOptions jobOptions, StateListener<String, DataFlowWorker> stateListener) {
         Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dag);
         Validator.checkAllNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dag.getId());
 
@@ -53,8 +53,10 @@ public class DataFlowEngine {
                 if(stateListener != null)
                     dataFlowWorker.addStateListener(stateListener);
                 dataFlowWorker.start();
+                return dataFlowWorker;
             }
         }
+        return null;
     }
 
     public void sendExternalTapEvent(String dagId, String nodeId, TapEvent event) {

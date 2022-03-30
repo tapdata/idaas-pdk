@@ -4,7 +4,6 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.logger.PDKLogger;
-import io.tapdata.pdk.core.api.ConnectionNode;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 @DisplayName("Tests for basic test")
 public class BasicTest extends PDKTestBase {

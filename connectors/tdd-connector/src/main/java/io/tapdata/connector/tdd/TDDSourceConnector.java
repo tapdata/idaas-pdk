@@ -150,7 +150,33 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
     private void control(TapConnectorContext connectorContext, ControlEvent controlEvent) {
         if(controlEvent instanceof PatrolEvent) {
             PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
-            Object value = patrolEvent.getInfo("tdd");
+            Object value = patrolEvent.getInfo("tdd_return_first");
+            if(value instanceof Boolean && ((Boolean) value).booleanValue()) {
+                Map<String, Object> record = map(
+                        entry("id", "id_1"),
+                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
+                        entry("tapString", "123"),
+                        entry("tapString10", "1234567890"),
+                        entry("tapString10Fixed", "1"),
+                        entry("tapInt", 123123),
+                        entry("tapBoolean", true),
+                        entry("tapDate", date),
+                        entry("tapArrayString", list("1", "2", "3")),
+                        entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
+                        entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
+                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
+                        entry("tapNumber", 1233),
+//                        entry("tapNumber(8)", 1111),
+                        entry("tapNumber52", 343.22),
+                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
+                        entry("tapTime", date),
+                        entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
+                        entry("tapMapStringDouble", map(entry("a", 1.0), entry("b", 2.0))),
+                        entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
+                        entry("tapDateTime", date),
+                        entry("tapDateTimeTimeZone", date));
+                patrolEvent.addInfo("tdd_return_first", record);
+            }
             PDKLogger.info(TAG, "tdd value {}", value);
         }
     }
@@ -194,6 +220,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * @param offset
      * @param tapReadOffsetConsumer
      */
+    private Date date = new Date();
     private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
@@ -209,7 +236,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                         entry("tapString10Fixed", "1"),
                         entry("tapInt", 123123),
                         entry("tapBoolean", true),
-                        entry("tapDate", new Date()),
+                        entry("tapDate", date),
                         entry("tapArrayString", list("1", "2", "3")),
                         entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
                         entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
@@ -218,12 +245,12 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
 //                        entry("tapNumber(8)", 1111),
                         entry("tapNumber52", 343.22),
                         entry("tapBinary", new byte[]{123, 21, 3, 2}),
-                        entry("tapTime", new Date()),
+                        entry("tapTime", date),
                         entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
                         entry("tapMapStringDouble", map(entry("a", 1.0), entry("b", 2.0))),
                         entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
-                        entry("tapDateTime", new Date()),
-                        entry("tapDateTimeTimeZone", new Date())
+                        entry("tapDateTime", date),
+                        entry("tapDateTimeTimeZone", date)
                 ), connectorContext.getTable());
                 tapEvents.add(recordEvent);
 
@@ -238,7 +265,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
 //                        entry("tapString10Fixed", "10000"),
 //                        entry("tapInt", 321321),
 //                        entry("tapBoolean", false),
-//                        entry("tapDate", new Date()),
+//                        entry("tapDate", date),
 //                        entry("tapArrayString", Arrays.asList("3", "2", "1")),
 //                        entry("tapArrayDouble", Arrays.asList(6.1, 5.2, 4.3)),
 //                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("b", "a", "b", 1, TDDUser.GENDER_MALE), new TDDUser("a", "n", "d", 2, TDDUser.GENDER_FEMALE))),
@@ -247,7 +274,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
 //                        //                        entry("tapNumber(8)", 1111),
 //                        entry("tapNumber52", 22.343),
 //                        entry("tapBinary", new byte[]{2, 3, 21, 123}),
-//                        entry("tapTime", new Date()),
+//                        entry("tapTime", date),
 //                        entry("tapMapStringString", new HashMap<String, String>() {{
 //                            put("c", "c");
 //                            put("d", "d");
@@ -259,8 +286,8 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
 //                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{
 //                            put("b", new TDDUser("b1", "a1", "b1", 22, TDDUser.GENDER_MALE));
 //                        }}),
-//                        entry("tapDateTime", new Date()),
-//                        entry("tapDateTimeTimeZone", new Date())
+//                        entry("tapDateTime", date),
+//                        entry("tapDateTimeTimeZone", date)
 //                ), connectorContext.getTable());
 //                tapEvents.add(updateDMLEvent);
 //                TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
@@ -299,7 +326,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
 //                        entry("tapString10Fixed", "1"),
 //                        entry("tapInt", 123123),
 //                        entry("tapBoolean", true),
-//                        entry("tapDate", new Date()),
+//                        entry("tapDate", date),
 //                        entry("tapArrayString", Arrays.asList("1", "2", "3")),
 //                        entry("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3)),
 //                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
@@ -308,12 +335,12 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
 //    //                        entry("tapNumber(8)", 1111),
 //                        entry("tapNumber52", 343.22),
 //                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
-//                        entry("tapTime", new Date()),
+//                        entry("tapTime", date),
 //                        entry("tapMapStringString", new HashMap<String, String>() {{put("a", "a");put("b", "b");}}),
 //                        entry("tapMapStringDouble", new HashMap<String, Double>() {{put("a", 1.0);put("b", 2.0);}}),
 //                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));}}),
-//                        entry("tapDateTime", new Date()),
-//                        entry("tapDateTimeTimeZone", new Date())
+//                        entry("tapDateTime", date),
+//                        entry("tapDateTimeTimeZone", date)
 //            ), connectorContext.getTable());
 //            tapEvents.add(updateDMLEvent);
 //

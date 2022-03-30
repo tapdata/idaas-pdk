@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -36,6 +38,9 @@ public class PDKTestBase {
 
     protected DataMap connectionOptions;
     protected DataMap nodeOptions;
+
+    private final AtomicBoolean completed = new AtomicBoolean(false);
+    private Throwable lastThrowable;
 
     public PDKTestBase() {
         String testConfig = CommonUtils.getProperty("pdk_test_config_file", "");
@@ -70,6 +75,47 @@ public class PDKTestBase {
         }
 
         tddConnector = TapConnectorManager.getInstance().getTapConnectorByJarName(tddJarFile.getName());
+    }
+
+    public interface AssertionCall {
+        void assertIt();
+    }
+
+    public void $(AssertionCall assertionCall) {
+        try {
+            assertionCall.assertIt();
+        } catch(Throwable throwable) {
+            lastThrowable = throwable;
+            completed();
+        }
+    }
+
+    public void completed() {
+        if(completed.compareAndSet(false, true)) {
+            synchronized (completed) {
+                completed.notifyAll();
+            }
+        }
+    }
+
+    public void waitCompleted(long seconds) throws Throwable {
+        while (!completed.get()) {
+            synchronized (completed) {
+                if(completed.get()) {
+                    try {
+                        completed.wait(seconds * 1000);
+                        completed.set(true);
+                        throw new TimeoutException("Waited " + seconds + " seconds and still not completed, consider timeout execution.");
+                    } catch (InterruptedException interruptedException) {
+                        interruptedException.printStackTrace();
+                        PDKLogger.error(TAG, "Completed wait interrupted " + interruptedException.getMessage());
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+        if(lastThrowable != null)
+            throw lastThrowable;
     }
 
     public Map<String, DataMap> readTestConfig(File testConfigFile) {
