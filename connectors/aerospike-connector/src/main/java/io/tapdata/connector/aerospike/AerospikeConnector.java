@@ -20,6 +20,8 @@ import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.FilterResult;
+import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
@@ -141,6 +143,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
+        connectorFunctions.supportQueryByFilter(this::queryByFilter);
     }
 
 
@@ -154,6 +157,11 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         }
         builder.delete(builder.length() - 1, builder.length());
         return builder.toString();
+    }
+
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+        // TODO 执行查询
+        return;
     }
 
     /**
@@ -239,12 +247,16 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void destroy() {
-        try {
-            aerospikeStringSink.close();
-            aerospikeStringSink = null;
-        } catch (Exception e) {
-            throw new RuntimeException("release Connection Failed!");
+        if (aerospikeStringSink != null) {
+            try {
+                aerospikeStringSink.close();
+                aerospikeStringSink = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("release Connection Failed!");
+            }
         }
+
         isShutDown.set(true);
     }
 }

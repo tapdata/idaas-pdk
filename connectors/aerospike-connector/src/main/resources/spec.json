@@ -5,7 +5,56 @@
     "id": "aerospike"
   },
   "configOptions": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "seedHosts": {
+          "type": "string",
+          "title": "seedHosts",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "keyspace": {
+          "type": "string",
+          "title": "keyspace",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "userName": {
+          "type": "string",
+          "title": "userName",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "password": {
+          "type": "string",
+          "title": "password",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "maxConcurrentRequests": {
+          "type": "string",
+          "title": "maxConcurrentRequests",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "timeoutMs": {
+          "type": "string",
+          "title": "timeoutMs",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "retries": {
+          "type": "string",
+          "title": "retries",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        }
+      }
+    }
   },
   "dataTypes": {
   }
 }
+
+
