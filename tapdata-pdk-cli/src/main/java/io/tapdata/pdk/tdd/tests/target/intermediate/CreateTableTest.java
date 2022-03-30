@@ -4,6 +4,7 @@ import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -70,7 +71,7 @@ public class CreateTableTest extends PDKTestBase {
                                     verifyTableFields();
                                 }
                             });
-                            patrolEvent.addInfo("tdd", "aaa");
+//                            patrolEvent.addInfo("tdd", "aaa");
                             //Line up after batch read
                             dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
                         }
@@ -110,9 +111,11 @@ public class CreateTableTest extends PDKTestBase {
     }
 
     private void checkFunctions() {
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getCreateTableFunction(), "CreateTable is needed for database who need create table before insert records"));
+        ConnectorFunctions connectorFunctions = targetNode.getConnectorFunctions();
+        $(() -> Assertions.assertNotNull(connectorFunctions.getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
+        $(() -> Assertions.assertNotNull(connectorFunctions.getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
+        $(() -> Assertions.assertNotNull(connectorFunctions.getCreateTableFunction(), "CreateTable is needed for database who need create table before insert records"));
+        $(() -> Assertions.assertNotNull(connectorFunctions.getBatchCountFunction(), "BatchCount is needed for verify how many records have inserted"));
     }
 
     private void initConnectorFunctions() {

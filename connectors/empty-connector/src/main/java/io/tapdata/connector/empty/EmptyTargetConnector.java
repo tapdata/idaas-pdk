@@ -193,7 +193,7 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
     }
 
     private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
-        throw new NullPointerException("aaaa");
+//        throw new NullPointerException("aaaa");
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
