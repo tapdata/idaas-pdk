@@ -1,6 +1,8 @@
 package io.tapdata.connector.aerospike;
 
+import com.aerospike.client.AerospikeException;
 import com.aerospike.client.Key;
+import com.aerospike.client.Record;
 import com.aerospike.client.policy.WritePolicy;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.aerospike.bean.AerospikeNamespaces;
@@ -28,7 +30,6 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import org.junit.Assert;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -155,13 +156,28 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
             builder.append(recordMap.get(fieldName).toString());
             builder.append(splitSymbol);
         }
-        builder.delete(builder.length() - 1, builder.length());
+        if (builder.length() != 0) builder.delete(builder.length() - 1, builder.length());
         return builder.toString();
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
-        // TODO 执行查询
-        return;
+        String keySet = connectorContext.getTable().getName();
+        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+        List<FilterResult> result = new LinkedList<>();
+        for (TapFilter filter : filters) {
+            FilterResult filterResult = new FilterResult();
+            String key = generateASPrimaryKey(filter.getMatch(), primaryKeys, '_');
+            try {
+                Record filterRecordResult = aerospikeStringSink.read(keySet, key);
+                if (filterRecordResult != null) {
+                    filterResult.setResult(filterRecordResult.bins);
+                }
+                result.add(filterResult);
+            } catch (AerospikeException aerospikeException) {
+                filterResult.setError(aerospikeException);
+            }
+        }
+        listConsumer.accept(result);
     }
 
     /**
