@@ -159,29 +159,8 @@ public class DMLTest extends PDKTestBase {
         tddSourceNode.getCodecFilterManager().transformToTapValueMap(firstRecord, tddSourceNode.getConnectorContext().getTable().getNameFieldMap());
         tddSourceNode.getCodecFilterManager().transformFromTapValueMap(firstRecord);
 
-        MapDifference<String, Object> difference = Maps.difference(firstRecord, result);
-        Map<String, MapDifference.ValueDifference<Object>> differenceMap = difference.entriesDiffering();
-        StringBuilder builder = new StringBuilder("Differences: \n");
-        boolean equalResult;
-        boolean different = false;
-        for(Map.Entry<String, MapDifference.ValueDifference<Object>> entry : differenceMap.entrySet()) {
-            equalResult = false;
-            MapDifference.ValueDifference<Object> diff = entry.getValue();
-//            if(entry.getKey().equals("tapBinary")) {
-//            }
-            if((diff.leftValue() instanceof byte[]) && (diff.rightValue() instanceof byte[])) {
-                equalResult = Arrays.equals((byte[])diff.leftValue(), (byte[])diff.rightValue());
-            }
-
-            if(!equalResult) {
-                different = true;
-                builder.append("\t").append("Key ").append(entry.getKey()).append("\n");
-                builder.append("\t\t").append("Left ").append(diff.leftValue()).append("\n");
-                builder.append("\t\t").append("Right ").append(diff.rightValue()).append("\n");
-            }
-        }
-        boolean finalDifferent = different;
-        $(() -> Assertions.assertFalse(finalDifferent, builder.toString()));
+        StringBuilder builder = new StringBuilder();
+        $(() -> Assertions.assertFalse(mapEquals(firstRecord, result, builder), builder.toString()));
     }
 
     private void checkFunctions() {
