@@ -1,5 +1,7 @@
 package io.tapdata.pdk.tdd.core;
 
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
@@ -17,6 +19,7 @@ import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.*;
@@ -24,7 +27,11 @@ import org.junit.jupiter.api.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -229,6 +236,78 @@ public class PDKTestBase {
     public void tearDown() {
         PDKLogger.info(TAG, "tearDown");
     }
+
+    public DataMap getTestOptions() {
+        return testOptions;
+    }
+
+    protected boolean mapEquals(Map<String, Object> firstRecord, Map<String, Object> result, StringBuilder builder) {
+        MapDifference<String, Object> difference = Maps.difference(firstRecord, result);
+        Map<String, MapDifference.ValueDifference<Object>> differenceMap = difference.entriesDiffering();
+        builder.append("Differences: \n");
+        boolean equalResult;
+        boolean different = false;
+        for(Map.Entry<String, MapDifference.ValueDifference<Object>> entry : differenceMap.entrySet()) {
+            equalResult = false;
+            MapDifference.ValueDifference<Object> diff = entry.getValue();
+//            if(entry.getKey().equals("tapBinary")) {
+//            }
+            if((diff.leftValue() instanceof byte[]) && (diff.rightValue() instanceof byte[])) {
+                equalResult = Arrays.equals((byte[])diff.leftValue(), (byte[])diff.rightValue());
+            } else if((diff.leftValue() instanceof byte[]) && (diff.rightValue() instanceof String)) {
+                //byte[] vs string, base64 decode string
+                try {
+//                    byte[] rightBytes = Base64.getDecoder().decode((String) diff.rightValue());
+                    byte[] rightBytes = Base64.decodeBase64((String) diff.rightValue());
+                    equalResult = Arrays.equals((byte[])diff.leftValue(), rightBytes);
+                } catch(Throwable ignored) {}
+            } else if((diff.leftValue() instanceof Number) && (diff.rightValue() instanceof Number)) {
+                //number vs number, equal by value
+                BigDecimal leftB = null;
+                BigDecimal rightB = null;
+                if(diff.leftValue() instanceof BigDecimal) {
+                    leftB = (BigDecimal) diff.leftValue();
+                }
+                if(diff.rightValue() instanceof BigDecimal) {
+                    rightB = (BigDecimal) diff.rightValue();
+                }
+                if(leftB == null) {
+                    leftB = BigDecimal.valueOf(((Number)diff.leftValue()).doubleValue());
+                }
+                if(rightB == null) {
+                    rightB = BigDecimal.valueOf(((Number)diff.rightValue()).doubleValue());
+                }
+                equalResult = leftB.compareTo(rightB) == 0;
+            } else if((diff.leftValue() instanceof Boolean)) {
+                if(diff.rightValue() instanceof Number) {
+                    //boolean true == (!=0), false == 0
+                    Boolean leftBool = (Boolean) diff.leftValue();
+                    if(leftBool) {
+                        equalResult = ((Number)diff.rightValue()).longValue() != 0;
+                    } else {
+                        equalResult = ((Number)diff.rightValue()).longValue() == 0;
+                    }
+                } else if(diff.rightValue() instanceof String) {
+                    //boolean true == "true", false == "false"
+                    Boolean leftBool = (Boolean) diff.leftValue();
+                    if(leftBool) {
+                        equalResult = ((String)diff.rightValue()).equalsIgnoreCase("true");
+                    } else {
+                        equalResult = ((String)diff.rightValue()).equalsIgnoreCase("false");
+                    }
+                }
+            }
+
+            if(!equalResult) {
+                different = true;
+                builder.append("\t").append("Key ").append(entry.getKey()).append("\n");
+                builder.append("\t\t").append("Left ").append(diff.leftValue()).append(" class ").append(diff.leftValue().getClass().getSimpleName()).append("\n");
+                builder.append("\t\t").append("Right ").append(diff.rightValue()).append(" class ").append(diff.rightValue().getClass().getSimpleName()).append("\n");
+            }
+        }
+        return different;
+    }
+
 
     public TapConnector getTestConnector() {
         return testConnector;

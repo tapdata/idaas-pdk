@@ -66,11 +66,12 @@ public class DMLTest extends PDKTestBase {
                 dataFlowDescriber.setJobOptions(new JobOptions());
 
                 TapDAG dag = dataFlowDescriber.toDag();
-                if (dag != null) {
+                if(dag != null) {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
-                        if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
+                        if(toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
+
                             checkFunctions();
                         } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
@@ -94,7 +95,7 @@ public class DMLTest extends PDKTestBase {
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 CommonUtils.logError(TAG, "Start failed", throwable);
-                if (throwable instanceof AssertionFailedError) {
+                if(throwable instanceof AssertionFailedError) {
                     $(() -> {
                         throw ((AssertionFailedError) throwable);
                     });
@@ -255,29 +256,8 @@ public class DMLTest extends PDKTestBase {
         tddSourceNode.getCodecFilterManager().transformToTapValueMap(firstRecord, tddSourceNode.getConnectorContext().getTable().getNameFieldMap());
         tddSourceNode.getCodecFilterManager().transformFromTapValueMap(firstRecord);
 
-        MapDifference<String, Object> difference = Maps.difference(firstRecord, result);
-        Map<String, MapDifference.ValueDifference<Object>> differenceMap = difference.entriesDiffering();
-        StringBuilder builder = new StringBuilder("Differences: \n");
-        boolean equalResult;
-        boolean different = false;
-        for (Map.Entry<String, MapDifference.ValueDifference<Object>> entry : differenceMap.entrySet()) {
-            equalResult = false;
-            MapDifference.ValueDifference<Object> diff = entry.getValue();
-//            if(entry.getKey().equals("tapBinary")) {
-//            }
-            if ((diff.leftValue() instanceof byte[]) && (diff.rightValue() instanceof byte[])) {
-                equalResult = Arrays.equals((byte[]) diff.leftValue(), (byte[]) diff.rightValue());
-            }
-
-            if (!equalResult) {
-                different = true;
-                builder.append("\t").append("Key ").append(entry.getKey()).append("\n");
-                builder.append("\t\t").append("Left ").append(diff.leftValue()).append("\n");
-                builder.append("\t\t").append("Right ").append(diff.rightValue()).append("\n");
-            }
-        }
-        boolean finalDifferent = different;
-        $(() -> Assertions.assertFalse(finalDifferent, builder.toString()));
+        StringBuilder builder = new StringBuilder();
+        $(() -> Assertions.assertFalse(mapEquals(firstRecord, result, builder), builder.toString()));
     }
 
     private void checkFunctions() {

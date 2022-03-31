@@ -1,10 +1,13 @@
 package io.tapdata.pdk.cli.commands;
 
 import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.core.connector.TapConnector;
+import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
@@ -73,6 +76,10 @@ public class TDDCli extends CommonCli {
         TestExecutionSummary summary = listener.getSummary();
         summary.printTo(new PrintWriter(System.out));
         summary.printFailuresTo(new PrintWriter(System.out));
+        if(summary.getTestsFailedCount() > 0) {
+//            throw new CoreException(ErrorCodes.TDD_TEST_FAILED, "Terminated because test failed");
+            System.exit(0);
+        }
     }
 
     public Integer execute() {
@@ -92,9 +99,26 @@ public class TDDCli extends CommonCli {
         PDKTestBase testBase = new PDKTestBase();
 //        testBase.setup();
         TapConnector testConnector = testBase.getTestConnector();
+        testBase.setup();
+
+        DataMap testOptions = testBase.getTestOptions();
+
+        String pdkId = null;
+        if(testOptions != null) {
+            pdkId = (String) testOptions.get("pdkId");
+        }
+
         Collection<TapNodeInfo> tapNodeInfoCollection = testConnector.getTapNodeClassFactory().getConnectorTapNodeInfos();
         for(TapNodeInfo tapNodeInfo : tapNodeInfoCollection) {
-            runLevel(generateTestTargets(tapNodeInfo));
+            if(pdkId != null) {
+                if(tapNodeInfo.getTapNodeSpecification().getId().equals(pdkId)) {
+                    runLevel(generateTestTargets(tapNodeInfo));
+                    break;
+                }
+            } else {
+                PDKLogger.enable(true);
+                runLevel(generateTestTargets(tapNodeInfo));
+            }
         }
     }
 
@@ -120,9 +144,9 @@ public class TDDCli extends CommonCli {
                 selectors.add(DiscoverySelectors.selectClass(DMLTest.class));
             }
 
-            if(connectorFunctions.getCreateTableFunction() != null) {
-                selectors.add(DiscoverySelectors.selectClass(CreateTableTest.class));
-            }
+//            if(connectorFunctions.getCreateTableFunction() != null) {
+//                selectors.add(DiscoverySelectors.selectClass(CreateTableTest.class));
+//            }
         }
         builder.append("             Will run total " + selectors.size() + " test cases").append("\n");
         for(DiscoverySelector selector : selectors) {
