@@ -44,4 +44,5 @@ public interface ErrorCodes {
 
     int TDD_READ_TEST_CONFIG_FAILED = 70000;
     int TDD_TAPNODEINFO_NOT_FOUND = 70001;
+    int TDD_TEST_FAILED = 70002;
 }
