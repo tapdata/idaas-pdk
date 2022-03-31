@@ -120,6 +120,7 @@ public class TDDCli extends CommonCli {
                 runLevel(generateTestTargets(tapNodeInfo));
             }
         }
+        System.exit(0);
     }
 
     private List<DiscoverySelector> generateTestTargets(TapNodeInfo tapNodeInfo) throws Throwable {
