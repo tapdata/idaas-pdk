@@ -266,9 +266,21 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
 
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapUpdateRecordEvent) {
-                updated.incrementAndGet();
+                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
+
+                Map<String, Object> value = updateRecordEvent.getAfter();
+                Map<String, Object> before = updateRecordEvent.getBefore();
+                if(value != null && before != null) {
+                    primaryKeyRecordMap.put(primaryKey(connectorContext, before), value);
+                    updated.incrementAndGet();
+                }
                 PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapDeleteRecordEvent) {
+                TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
+                Map<String, Object> before = deleteRecordEvent.getBefore();
+                if(before != null) {
+                    primaryKeyRecordMap.remove(primaryKey(connectorContext, before));
+                }
                 deleted.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
