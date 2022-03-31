@@ -145,9 +145,9 @@ public class TDDCli extends CommonCli {
                 selectors.add(DiscoverySelectors.selectClass(DMLTest.class));
             }
 
-//            if(connectorFunctions.getCreateTableFunction() != null) {
-//                selectors.add(DiscoverySelectors.selectClass(CreateTableTest.class));
-//            }
+            if(connectorFunctions.getCreateTableFunction() != null) {
+                selectors.add(DiscoverySelectors.selectClass(CreateTableTest.class));
+            }
         }
         builder.append("             Will run total " + selectors.size() + " test cases").append("\n");
         for(DiscoverySelector selector : selectors) {

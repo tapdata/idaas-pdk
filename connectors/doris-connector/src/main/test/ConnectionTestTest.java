@@ -19,7 +19,7 @@ public class ConnectionTestTest {
     @Test
     @DisplayName("Test method connectionTest")
     void connectionTest() throws IOException, SQLException {
-//        String sourcePath = "B:\\code\\tapdata\\idaas-pdk\\connectors\\doris-connector\\src\\main\\resources\\source.json";
+//        String sourcePath = "B:\\code\\tapdata\\idaas-pdk\\connectors\\doris-connector\\src\\main\\resources\\mapping.json";
 //        ObjectMapper mapper = new ObjectMapper(new JsonFactory());
 //        DefaultMap source_map = mapper.readValue(new File(sourcePath), DefaultMap.class);
 

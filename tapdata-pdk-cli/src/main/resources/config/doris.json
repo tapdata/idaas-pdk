@@ -1,0 +1,18 @@
+{
+  "connection": {
+    "host": "192.168.153.132",
+    "port": "9030",
+    "database": "example_db",
+    "user": "test",
+    "password": "test"
+  },
+  "node": {
+  },
+  "table": {
+    "name": "emptyTable2",
+    "id": "emptyTable2"
+  },
+  "test": {
+    "pdkId" : "doris"
+  }
+}
