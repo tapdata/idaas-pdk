@@ -6,17 +6,14 @@ import com.google.common.collect.Maps;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
-import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
-import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
-import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -33,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 @DisplayName("Tests for target beginner test")
 public class DMLTest extends PDKTestBase {
@@ -41,7 +37,7 @@ public class DMLTest extends PDKTestBase {
     TargetNode targetNode;
     SourceNode tddSourceNode;
     PatrolEvent firstPatrolEvent;
-    Map<String, Object> firstRecord;
+    DataMap firstRecord;
     DataFlowWorker dataFlowWorker;
     String targetNodeId = "t2";
     String sourceNodeId = "s1";
@@ -75,47 +71,23 @@ public class DMLTest extends PDKTestBase {
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
                         if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
-
                             checkFunctions();
-
-                            firstPatrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                PDKLogger.info("PATROL STATE_INITIALIZING", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
-                                if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                                    insertOneRecord();
-                                }
-                            });
-
-                            dataFlowEngine.sendExternalTapEvent(dag.getId(), firstPatrolEvent);
                         } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                                    verifyBatchRecordExists();
-                                    //TODO Use PatrolEvent to let TDD Source send a TapUpdateRecordEvent
-                                    //TODO Send PatrolEvent again to verify update successfully.
+                                    insertOneRecord(dataFlowEngine, dag);
+                                }
+                            });
+                            dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
+                            //TODO Use PatrolEvent to let TDD Source send a TapUpdateRecordEvent
+                            //TODO Send PatrolEvent again to verify update successfully.
 //                                    verifyUpdate();
-
-                                    //TODO Do delete test after update. it is async.
-                                    //TODO Use PatrolEvent to let TDD Source send a TapDeleteRecordEvent
-                                    //TODO Send PatrolEvent again to verify delete successfully.
+                            //TODO Do delete test after update. it is async.
+                            //TODO Use PatrolEvent to let TDD Source send a TapDeleteRecordEvent
+                            //TODO Send PatrolEvent again to verify delete successfully.
 //                                    verifyDelete();
-                                }
-                            });
-                            dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
 
-                            patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                                    updateOneRecord();
-                                }
-                            });
-                            dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
-
-                            patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                                    deleteOneRecord();
-                                }
-                            });
-                            dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
                         }
                     });
                 }
@@ -136,14 +108,32 @@ public class DMLTest extends PDKTestBase {
 
     }
 
-    private void insertOneRecord() {
-        WriteRecordFunction writeRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
+    private void sendDeletePatrolEvent(DataFlowEngine dataFlowEngine, TapDAG dag) {
+        PatrolEvent deletePatrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
+            PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                deleteOneRecord(dataFlowEngine, dag);
+            }
+        });
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), deletePatrolEvent);
+    }
+
+    private void sendUpdatePatrolEvent(DataFlowEngine dataFlowEngine, TapDAG dag) {
+        PatrolEvent updatePatrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
+            PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                updateOneRecord(dataFlowEngine, dag);
+            }
+        });
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), updatePatrolEvent);
+    }
+
+    private void insertOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         TapInsertRecordEvent insertRecordEvent = new TapInsertRecordEvent();
         firstRecord = new DataMap();
-        firstRecord.put("id", "id_1");
-        firstRecord.put("tapString", "123");
-        firstRecord.put("tapString10", "1234567890");
-        firstRecord.put("tapString10Fixed", "1");
+        firstRecord.put("id", "id_2");
+        firstRecord.put("tapString", "1234");
+        firstRecord.put("tapString10", "0987654321");
         firstRecord.put("tapInt", 123123);
         firstRecord.put("tapBoolean", true);
         firstRecord.put("tapArrayString", Arrays.asList("1", "2", "3"));
@@ -152,78 +142,86 @@ public class DMLTest extends PDKTestBase {
         // firstRecord.put("tapNumber(8)", 1111),
         firstRecord.put("tapNumber52", 343.22);
         firstRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
-        HashMap<Object, Object> tapMapStringString = new HashMap<>();
+        HashMap<String, Object> tapMapStringString = new HashMap<>();
         tapMapStringString.put("a", "a");
         tapMapStringString.put("b", "b");
         firstRecord.put("tapMapStringString", tapMapStringString);
-        HashMap<Object, Object> tapMapStringDouble = new HashMap<>();
+        HashMap<String, Object> tapMapStringDouble = new HashMap<>();
         tapMapStringDouble.put("a", 1.0);
         tapMapStringDouble.put("b", 2.0);
         firstRecord.put("tapMapStringDouble", tapMapStringDouble);
-
-
-        List<TapRecordEvent> recordEvents = new ArrayList<>();
         insertRecordEvent.setAfter(firstRecord);
-        AtomicLong insertCount = new AtomicLong();
-        recordEvents.add(insertRecordEvent);
-        CommonUtils.handleAnyError(() -> writeRecordFunction.writeDML(targetNode.getConnectorContext(), recordEvents,
-                writeConsumer -> insertCount.set(writeConsumer.getInsertedCount())));
-        $(() -> Assertions.assertEquals(1, insertCount.get(), "The number of insert count should be 1"));
-        verifyBatchRecordExists();
+
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), insertRecordEvent);
+        PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                verifyBatchRecordExists();
+                sendUpdatePatrolEvent(dataFlowEngine,dag);
+            }
+        });
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
 
-    private void updateOneRecord() {
-        WriteRecordFunction writeRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
+    private void updateOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap after = new DataMap();
-        after.put("id", "id_1");
-        after.put("tapString", "123");
+        DataMap before = new DataMap();
+        before.put("id", "id_2");
+        before.put("tapString", "1234");
+        after.put("id", "id_2");
+        after.put("tapString", "1234");
         after.put("tapInt", "5555");
-        List<TapRecordEvent> recordEvents = new ArrayList<>();
         TapUpdateRecordEvent tapUpdateRecordEvent = new TapUpdateRecordEvent();
         tapUpdateRecordEvent.setAfter(after);
-        recordEvents.add(tapUpdateRecordEvent);
-        AtomicLong modifyCount = new AtomicLong();
-        CommonUtils.handleAnyError(() -> writeRecordFunction.writeDML(targetNode.getConnectorContext(), recordEvents,
-                writeConsumer -> modifyCount.set(writeConsumer.getModifiedCount())));
-        $(() -> Assertions.assertEquals(1, modifyCount.get(), "The number of modify count should be 1"));
+        tapUpdateRecordEvent.setBefore(before);
 
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), tapUpdateRecordEvent);
+        PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                verifyUpdateOneRecord();
+                sendDeletePatrolEvent(dataFlowEngine,dag);
+            }
+        });
+        dataFlowEngine.sendExternalTapEvent(dag.getId(),patrolEvent);
+    }
+
+    private void verifyUpdateOneRecord() {
+        firstRecord.put("id", "id_2");
+        firstRecord.put("tapString", "1234");
         QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         TapFilter filter = new TapFilter();
-        after.remove("tapInt");
-        filter.setMatch(after);
+        filter.setMatch(firstRecord);
         List<TapFilter> filters = Collections.singletonList(filter);
         List<FilterResult> results = new ArrayList<>();
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(after) + " for queryByFilter, then filterResults size has to be 1"));
+        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(firstRecord) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
-        $(() -> Assertions.assertNotNull(filterResult.getResult().get("tapInt"),"The value of tapInt should not be null"));
-        $(() -> Assertions.assertEquals("5555", filterResult.getResult().get("tapInt"),"The value of \"tapInt\" should not be \"5555\""));
+        $(() -> Assertions.assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
+        $(() -> Assertions.assertEquals("5555", filterResult.getResult().get("tapInt"), "The value of \"tapInt\" should not be \"5555\""));
     }
 
-    private void deleteOneRecord() {
-        WriteRecordFunction writeRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
+    private void deleteOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap before = new DataMap();
-        before.put("id", "id_1");
-        before.put("tapString", "123");
-        List<TapRecordEvent> recordEvents = new ArrayList<>();
+        before.put("id", "id_2");
+        before.put("tapString", "1234");
         TapDeleteRecordEvent tapDeleteRecordEvent = new TapDeleteRecordEvent();
         tapDeleteRecordEvent.setBefore(before);
-        recordEvents.add(tapDeleteRecordEvent);
-        AtomicLong removedCount = new AtomicLong();
-        CommonUtils.handleAnyError(() -> writeRecordFunction.writeDML(targetNode.getConnectorContext(), recordEvents,
-                writeConsumer -> removedCount.set(writeConsumer.getRemovedCount())));
-        $(() -> Assertions.assertEquals(1, removedCount.get(), "The number of modifications should be 1"));
 
-        verifyBatchRecordNotExist();
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDeleteRecordEvent);
+        PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                verifyDeleteOneRecord();
+            }
+        });
+        dataFlowEngine.sendExternalTapEvent(dag.getId(),patrolEvent);
     }
 
 
-    private void verifyBatchRecordNotExist() {
+    private void verifyDeleteOneRecord() {
         QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         DataMap match = new DataMap();
-        match.put("id", "id_1");
-        match.put("tapString", "123");
+        match.put("id", "id_2");
+        match.put("tapString", "1234");
         TapFilter filter = new TapFilter();
         filter.setMatch(match);
         List<TapFilter> filters = Collections.singletonList(filter);
@@ -239,8 +237,8 @@ public class DMLTest extends PDKTestBase {
     private void verifyBatchRecordExists() {
         QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         DataMap match = new DataMap();
-        match.put("id", "id_1");
-        match.put("tapString", "123");
+        match.put("id", "id_2");
+        match.put("tapString", "1234");
         TapFilter filter = new TapFilter();
         filter.setMatch(match);
         List<TapFilter> filters = Collections.singletonList(filter);

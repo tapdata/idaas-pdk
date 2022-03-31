@@ -54,6 +54,21 @@
     }
   },
   "dataTypes": {
+    "boolean": {
+      "to": "TapNumber"
+    },
+    "integer": {
+      "to": "TapNumber"
+    },
+    "string": {
+      "to": "TapNumber"
+    },
+    "blob": {
+      "to": "TapBinary"
+    },
+    "bytes": {
+      "to": "TapBinary"
+    }
   }
 }
 
