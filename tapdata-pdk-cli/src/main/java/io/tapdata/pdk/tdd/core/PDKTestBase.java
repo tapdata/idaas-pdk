@@ -46,6 +46,7 @@ public class PDKTestBase {
     protected DataMap testOptions;
 
     private final AtomicBoolean completed = new AtomicBoolean(false);
+    private boolean finishSuccessfully = false;
     private Throwable lastThrowable;
 
     public PDKTestBase() {
@@ -93,12 +94,15 @@ public class PDKTestBase {
             assertionCall.assertIt();
         } catch(Throwable throwable) {
             lastThrowable = throwable;
-            completed();
+            completed(true);
         }
     }
-
     public void completed() {
+        completed(false);
+    }
+    public void completed(boolean withError) {
         if(completed.compareAndSet(false, true)) {
+            finishSuccessfully = !withError;
             PDKLogger.enable(false);
             synchronized (completed) {
                 completed.notifyAll();
@@ -113,7 +117,7 @@ public class PDKTestBase {
                     try {
                         completed.wait(seconds * 1000);
                         completed.set(true);
-                        if(lastThrowable == null)
+                        if(lastThrowable == null && !finishSuccessfully)
                             throw new TimeoutException("Waited " + seconds + " seconds and still not completed, consider timeout execution.");
                     } catch (InterruptedException interruptedException) {
                         interruptedException.printStackTrace();

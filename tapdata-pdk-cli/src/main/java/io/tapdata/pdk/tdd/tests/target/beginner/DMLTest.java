@@ -137,20 +137,20 @@ public class DMLTest extends PDKTestBase {
         firstRecord.put("tapString10", "0987654321");
         firstRecord.put("tapInt", 123123);
         firstRecord.put("tapBoolean", true);
-        firstRecord.put("tapArrayString", Arrays.asList("1", "2", "3"));
-        firstRecord.put("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3));
+//        firstRecord.put("tapArrayString", Arrays.asList("1", "2", "3"));
+//        firstRecord.put("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3));
         firstRecord.put("tapNumber", 1233);
         // firstRecord.put("tapNumber(8)", 1111),
         firstRecord.put("tapNumber52", 343.22);
         firstRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
-        HashMap<String, Object> tapMapStringString = new HashMap<>();
-        tapMapStringString.put("a", "a");
-        tapMapStringString.put("b", "b");
-        firstRecord.put("tapMapStringString", tapMapStringString);
-        HashMap<String, Object> tapMapStringDouble = new HashMap<>();
-        tapMapStringDouble.put("a", 1.0);
-        tapMapStringDouble.put("b", 2.0);
-        firstRecord.put("tapMapStringDouble", tapMapStringDouble);
+//        HashMap<String, Object> tapMapStringString = new HashMap<>();
+//        tapMapStringString.put("a", "a");
+//        tapMapStringString.put("b", "b");
+//        firstRecord.put("tapMapStringString", tapMapStringString);
+//        HashMap<String, Object> tapMapStringDouble = new HashMap<>();
+//        tapMapStringDouble.put("a", 1.0);
+//        tapMapStringDouble.put("b", 2.0);
+//        firstRecord.put("tapMapStringDouble", tapMapStringDouble);
         insertRecordEvent.setAfter(firstRecord);
 
         dataFlowEngine.sendExternalTapEvent(dag.getId(), insertRecordEvent);
@@ -198,7 +198,7 @@ public class DMLTest extends PDKTestBase {
         $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(firstRecord) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
         $(() -> Assertions.assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
-        $(() -> Assertions.assertEquals("5555", filterResult.getResult().get("tapInt"), "The value of \"tapInt\" should not be \"5555\""));
+        $(() -> Assertions.assertEquals("5555", filterResult.getResult().get("tapInt"), "The value of \"tapInt\" should not be \"5555\", please make sure TapUpdateRecordEvent is handled well in writeRecord method"));
     }
 
     private void deleteOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
@@ -212,6 +212,7 @@ public class DMLTest extends PDKTestBase {
         PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
             if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 verifyDeleteOneRecord();
+                completed();
             }
         });
         dataFlowEngine.sendExternalTapEvent(dag.getId(),patrolEvent);
@@ -232,7 +233,7 @@ public class DMLTest extends PDKTestBase {
         $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
         $(() -> Assertions.assertNull(filterResult.getError(), "Should be no value, error should not be threw"));
-        $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record hasn't be inserted yet"));
+        $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
     }
 
     private void verifyBatchRecordExists() {
