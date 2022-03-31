@@ -74,6 +74,7 @@ public class CreateTableTest extends PDKTestBase {
                                     //TODO 类似于DMLTest， 插入一条数据， 然后发送PatrolEvent验证是否插入成功
                                     //TODO 发送TapDropTableEvent后， 在发送TapCreateTableEvent, 这里Table是不用指定的， 在sendExternalEvent里会自动设置Table。
                                     //TODO 发送PatrolEvent验证刚才插入的数据应该为空
+                                    //TODO 最后发送TapDropTableEvent清除测试数据
                                     completed();
                                 }
                             });
