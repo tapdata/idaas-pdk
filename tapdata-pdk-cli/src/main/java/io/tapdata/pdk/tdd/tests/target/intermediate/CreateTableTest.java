@@ -48,7 +48,7 @@ public class CreateTableTest extends PDKTestBase {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
             try {
                 DataFlowEngine dataFlowEngine = DataFlowEngine.getInstance();
-                dataFlowEngine.start();
+//                dataFlowEngine.start();
 
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
                 dataFlowDescriber.setId("createTableTest->" + nodeInfo.getTapNodeSpecification().getId());
@@ -66,7 +66,7 @@ public class CreateTableTest extends PDKTestBase {
                 dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList("s1", "t2")));
                 dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
 
-                TapDAG dag = dataFlowDescriber.toDag();
+                dag = dataFlowDescriber.toDag();
                 if (dag != null) {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
@@ -101,7 +101,7 @@ public class CreateTableTest extends PDKTestBase {
                 }
             }
         }, TapNodeInfo.NODE_TYPE_TARGET, TapNodeInfo.NODE_TYPE_SOURCE_TARGET);
-        waitCompleted(5);
+        waitCompleted(50);
     }
 
     private void verifyTableFields() {

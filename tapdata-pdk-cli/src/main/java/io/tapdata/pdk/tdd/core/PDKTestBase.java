@@ -19,6 +19,8 @@ import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
+import io.tapdata.pdk.core.workflow.engine.DataFlowEngine;
+import io.tapdata.pdk.core.workflow.engine.TapDAG;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,6 +50,8 @@ public class PDKTestBase {
     private final AtomicBoolean completed = new AtomicBoolean(false);
     private boolean finishSuccessfully = false;
     private Throwable lastThrowable;
+
+    protected TapDAG dag;
 
     public PDKTestBase() {
         String testConfig = CommonUtils.getProperty("pdk_test_config_file", "");
@@ -223,6 +227,11 @@ public class PDKTestBase {
         }
     }
 
+    @BeforeAll
+    public static void setupAll() {
+        DataFlowEngine.getInstance().start();
+    }
+
     @BeforeEach
     public void setup() {
         PDKLogger.info(TAG, "setup");
@@ -236,6 +245,9 @@ public class PDKTestBase {
     @AfterEach
     public void tearDown() {
         PDKLogger.info(TAG, "tearDown");
+        if(dag != null) {
+            DataFlowEngine.getInstance().stopDataFlow(dag.getId());
+        }
     }
 
     public DataMap getTestOptions() {

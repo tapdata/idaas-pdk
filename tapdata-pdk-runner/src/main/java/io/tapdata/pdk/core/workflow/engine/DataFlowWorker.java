@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.workflow.engine;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -215,7 +216,36 @@ public class DataFlowWorker {
     }
 
     public synchronized void stop() {
+        if(dag != null) {
+            List<String> headNodeIds = dag.getHeadNodeIds();
+            for(String nodeId : headNodeIds) {
+                TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+                destroyNode(nodeWorker);
+            }
+        }
+    }
 
+    private void destroyNode(TapDAGNodeEx nodeWorker) {
+        if(nodeWorker == null) return;
+        List<String> childNodeIds = nodeWorker.getChildNodeIds();
+        if(childNodeIds != null) {
+            for(String childNodeId : childNodeIds) {
+                destroyNode(dag.getNodeMap().get(childNodeId));
+            }
+        }
+        PDKIntegration.releaseAssociateId(nodeWorker.getId());
+        if(nodeWorker.sourceNodeDriver != null) {
+            CommonUtils.ignoreAnyError(() -> nodeWorker.sourceNodeDriver.destroy(), TAG);
+            nodeWorker.sourceNodeDriver = null;
+        }
+        if(nodeWorker.processorNodeDriver != null) {
+            CommonUtils.ignoreAnyError(() -> nodeWorker.processorNodeDriver.destroy(), TAG);
+            nodeWorker.processorNodeDriver = null;
+        }
+        if(nodeWorker.targetNodeDriver != null) {
+            CommonUtils.ignoreAnyError(() -> nodeWorker.targetNodeDriver.destroy(), TAG);
+            nodeWorker.targetNodeDriver = null;
+        }
     }
 
     public synchronized void init(TapDAG newDag, JobOptions jobOptions) {

@@ -46,7 +46,6 @@ public class DMLTest extends PDKTestBase {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
             try {
                 DataFlowEngine dataFlowEngine = DataFlowEngine.getInstance();
-                dataFlowEngine.start();
 
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
                 dataFlowDescriber.setId("tdd->" + nodeInfo.getTapNodeSpecification().getId());
@@ -63,7 +62,7 @@ public class DMLTest extends PDKTestBase {
                 dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList("s1", "t2")));
                 dataFlowDescriber.setJobOptions(new JobOptions());
 
-                TapDAG dag = dataFlowDescriber.toDag();
+                dag = dataFlowDescriber.toDag();
                 if(dag != null) {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
@@ -95,7 +94,7 @@ public class DMLTest extends PDKTestBase {
             }
         }, TapNodeInfo.NODE_TYPE_TARGET, TapNodeInfo.NODE_TYPE_SOURCE_TARGET);
 //        completed();
-        waitCompleted(20000);
+        waitCompleted(50);
 
     }
 
