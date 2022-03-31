@@ -1,8 +1,6 @@
 package io.tapdata.pdk.tdd.tests.target.beginner;
 
 
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -81,14 +79,6 @@ public class DMLTest extends PDKTestBase {
                                 }
                             });
                             dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
-                            //TODO Use PatrolEvent to let TDD Source send a TapUpdateRecordEvent
-                            //TODO Send PatrolEvent again to verify update successfully.
-//                                    verifyUpdate();
-                            //TODO Do delete test after update. it is async.
-                            //TODO Use PatrolEvent to let TDD Source send a TapDeleteRecordEvent
-                            //TODO Send PatrolEvent again to verify delete successfully.
-//                                    verifyDelete();
-
                         }
                     });
                 }
@@ -211,7 +201,7 @@ public class DMLTest extends PDKTestBase {
         dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDeleteRecordEvent);
         PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
             if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                verifyDeleteOneRecord();
+                verifyRecordNotExists();
                 completed();
             }
         });
@@ -219,7 +209,7 @@ public class DMLTest extends PDKTestBase {
     }
 
 
-    private void verifyDeleteOneRecord() {
+    private void verifyRecordNotExists() {
         QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         DataMap match = new DataMap();
         match.put("id", "id_2");

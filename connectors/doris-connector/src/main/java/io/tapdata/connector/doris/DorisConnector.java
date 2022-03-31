@@ -191,7 +191,33 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+        initConnection(connectorContext.getConnectionConfig());
 //        //TODO 实现一下这个方法， TDD测试会要求实现这个方法做数据验证。 基于多个filter查询返回多个数据。 filter就是精确匹配的， 会用primaryKeys组织一个Map。
+        TapTable tapTable = connectorContext.getTable();
+        Set<String> columnNames = connectorContext.getTable().getNameFieldMap().keySet();
+        List<FilterResult> filterResults = new LinkedList<>();
+        for (TapFilter filter : filters) {
+            String sql = "SELECT * FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, filter.getMatch(), "AND");
+            FilterResult filterResult = new FilterResult();
+            try {
+                DataMap resultMap = new DataMap();
+                ResultSet resultSet = stmt.executeQuery(sql);
+                if (resultSet.next()) {
+                    for (String columnName : columnNames) {
+                        resultMap.put(columnName, resultSet.getObject(columnName));
+                    }
+                    filterResult.setResult(resultMap);
+                    break;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                filterResult.setError(e);
+            }finally {
+                filterResults.add(filterResult);
+            }
+        }
+        listConsumer.accept(filterResults);
+
     }
 
     private String buildDistributedKey(Collection<String> primaryKeyNames) {
@@ -231,7 +257,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         if (originValue instanceof DateTime) {
             // TODO 依据不同的TapField进行不同类型的格式化
             result = this.formatTapDateTime((DateTime) originValue, "yyyy-MM-dd HH:mm:ss");
-        }else if(tapField.getTapType() instanceof TapMap){
+        } else if (tapField.getTapType() instanceof TapMap) {
             result = toJson(result);
         }
         return result;
@@ -347,9 +373,9 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
     private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
-        TapTable tapTable = tapDropTableEvent.getTable();
+        TapTable tapTable = tapConnectorContext.getTable();
         try {
-            ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapDropTableEvent.getTable().getName(), new String[]{});
+            ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{});
             if (table.first()) {
                 String sql = "DROP TABLE " + tapTable.getName();
                 stmt.execute(sql);
@@ -420,11 +446,11 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                         addBatchInsertRecord(tapTable, after, preparedStatement);
                     }
 
-                }else{
+                } else {
                     if (preparedStatement != null) {
                         int[] affectRows = preparedStatement.executeBatch();
                         for (int affect_row : affectRows) {
-                            if(affect_row > 0) inserted.getAndAdd(affect_row);
+                            if (affect_row > 0) inserted.getAndAdd(affect_row);
                         }
                         preparedStatement.clearBatch();
                     }
@@ -456,10 +482,10 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                     }
                 }
             }
-            if (preparedStatement != null){
+            if (preparedStatement != null) {
                 int[] affectRows = preparedStatement.executeBatch();
                 for (int affect_row : affectRows) {
-                    if(affect_row > 0) inserted.getAndAdd(affect_row);
+                    if (affect_row > 0) inserted.getAndAdd(affect_row);
                 }
             }
         } finally {
