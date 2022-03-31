@@ -56,8 +56,8 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                 table("tdd-table")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
                         .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(1))
-                        .add(field("tddUser", "tapString"))
                         .add(field("tapString", "tapString").isPrimaryKey(true).primaryKeyPos(2))
+                        .add(field("tddUser", "tapString"))
                         .add(field("tapString10", "tapString(10)"))
                         .add(field("tapString10Fixed", "tapString(10) fixed"))
                         .add(field("tapInt", "int"))
