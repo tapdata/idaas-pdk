@@ -39,9 +39,9 @@ public class DiscoverSchemaTest {
 
     private void initTapTable(String tableName) throws IOException {
         if (tapTable != null) return;
-        String sourcePath = "B:\\code\\tapdata\\idaas-pdk\\connectors\\doris-connector\\src\\main\\resources\\source.json";
+        String typeMappingPath = "B:\\code\\tapdata\\idaas-pdk\\connectors\\doris-connector\\src\\main\\resources\\mapping.json";
         ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-        DataMap source_map = mapper.readValue(new File(sourcePath), DataMap.class);
+        DataMap source_map = mapper.readValue(new File(typeMappingPath), DataMap.class);
         tapTable = new TapTable(tableName);
         for (Map.Entry<String, Object> entry : source_map.entrySet()) {
             DataMap dataMap = jsonParser.fromJson(jsonParser.toJson(entry.getValue()));
