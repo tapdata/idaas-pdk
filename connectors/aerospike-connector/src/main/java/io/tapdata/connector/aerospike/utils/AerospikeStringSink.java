@@ -60,7 +60,7 @@ public class AerospikeStringSink {
         for (Map.Entry<String, Object> entry : record.getBinValuesMap().entrySet()) {
             String binKey = entry.getKey();
             if (binKey.length() > 14) {
-                binKey = binKey.substring(14);
+                binKey = binKey.substring(0,14);
             }
             Bin bin = new Bin(binKey, entry.getValue());
             bins[idx++] = bin;
