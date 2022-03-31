@@ -44,7 +44,8 @@ public class CreateTableTest extends PDKTestBase {
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
                 dataFlowDescriber.setId("createTableTest->" + nodeInfo.getTapNodeSpecification().getId());
 
-                String tableId = dataFlowDescriber.getId() + "_" + UUID.randomUUID().toString();
+                String tableId = dataFlowDescriber.getId() + "_" + UUID.randomUUID();
+                tableId = tableId.replace('-', '_').replace('>','_');
 
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(Arrays.asList(
@@ -57,18 +58,19 @@ public class CreateTableTest extends PDKTestBase {
                 dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
 
                 TapDAG dag = dataFlowDescriber.toDag();
-                if(dag != null) {
+                if (dag != null) {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
-                        if(toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
+                        if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions();
                             checkFunctions();
 //                            tddSourceNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap();
-                        } else if(toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {
+                        } else if (toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
-                                if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                                if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     verifyTableFields();
+                                    completed();
                                 }
                             });
 //                            patrolEvent.addInfo("tdd", "aaa");
@@ -80,7 +82,7 @@ public class CreateTableTest extends PDKTestBase {
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 CommonUtils.logError(TAG, "Start failed", throwable);
-                if(throwable instanceof AssertionFailedError) {
+                if (throwable instanceof AssertionFailedError) {
                     $(() -> {
                         throw ((AssertionFailedError) throwable);
                     });
@@ -89,18 +91,18 @@ public class CreateTableTest extends PDKTestBase {
                 }
             }
         }, TapNodeInfo.NODE_TYPE_TARGET, TapNodeInfo.NODE_TYPE_SOURCE_TARGET);
-        waitCompleted(200000);
+        waitCompleted(5);
     }
 
     private void verifyTableFields() {
         TapTable table = targetNode.getConnectorContext().getTable();
-        LinkedHashMap<String, TapField> nameFieldMap =  table.getNameFieldMap();
+        LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
         $(() -> Assertions.assertNotNull(nameFieldMap, "Table name fields is null, please check whether you provide \"dataTypes\" in spec json file or define from TapValue codec in registerCapabilities method"));
 
         boolean missingOriginType = false;
         StringBuilder builder = new StringBuilder("Missing originType for fields, \n");
-        for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
-            if(entry.getValue().getOriginType() == null) {
+        for (Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
+            if (entry.getValue().getOriginType() == null) {
                 missingOriginType = true;
                 builder.append("\t").append("Field \"").append(entry.getKey()).append("\" missing originType for TapType \"").append(entry.getValue().getTapType().getClass().getSimpleName()).append("\"\n");
             }
@@ -115,7 +117,7 @@ public class CreateTableTest extends PDKTestBase {
         $(() -> Assertions.assertNotNull(connectorFunctions.getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
         $(() -> Assertions.assertNotNull(connectorFunctions.getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
         $(() -> Assertions.assertNotNull(connectorFunctions.getCreateTableFunction(), "CreateTable is needed for database who need create table before insert records"));
-        $(() -> Assertions.assertNotNull(connectorFunctions.getBatchCountFunction(), "BatchCount is needed for verify how many records have inserted"));
+//        $(() -> Assertions.assertNotNull(connectorFunctions.getBatchCountFunction(), "BatchCount is needed for verify how many records have inserted"));
     }
 
     private void initConnectorFunctions() {

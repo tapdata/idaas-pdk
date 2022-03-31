@@ -14,6 +14,7 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.type.TapMap;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.value.*;
 import io.tapdata.pdk.apis.TapConnector;
@@ -230,6 +231,8 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         if (originValue instanceof DateTime) {
             // TODO 依据不同的TapField进行不同类型的格式化
             result = this.formatTapDateTime((DateTime) originValue, "yyyy-MM-dd HH:mm:ss");
+        }else if(tapField.getTapType() instanceof TapMap){
+            result = toJson(result);
         }
         return result;
     }
