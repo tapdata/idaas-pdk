@@ -172,18 +172,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 Record filterRecordResult = aerospikeStringSink.read(keySet, key);
                 if (filterRecordResult != null) {
                     filterResult.setResult(filterRecordResult.bins);
-//                    Map<String, Object> bins = filterRecordResult.bins;
-//                    for (Map.Entry<String, Object> entry : bins.entrySet()) {
-//                        Object value = entry.getValue();
-////                        if (value instanceof BigDecimal) {
-//                            bins.put(entry.getKey(), ((BigDecimal) value).doubleValue());
-//                        } else if (Objects.equals(nameFieldMap.get(entry.getKey()).getOriginType(), "boolean")) {
-//                            bins.put(entry.getKey(), ((Long) value) == 1L);
-//                        } else if (Objects.equals(nameFieldMap.get(entry.getKey()).getOriginType(), "byte")){
-//                            bins.put(entry.getKey(), ((String) value).getBytes());
-//                        }
-//                    }
-//                    filterResult.setResult(bins);
                 }
                 result.add(filterResult);
             } catch (AerospikeException aerospikeException) {
