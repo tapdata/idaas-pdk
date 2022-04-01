@@ -84,7 +84,7 @@ public class DMLTest extends PDKTestBase {
             }
         });
 //        completed();
-        waitCompleted(5);
+        waitCompleted(50);
     }
 
     private void insertOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
