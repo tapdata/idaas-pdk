@@ -87,11 +87,17 @@ public class TDDCli extends CommonCli {
         if(summary.getTestsFailedCount() > 0) {
             System.out.println("*****************************************************TDD Results*****************************************************");
             System.out.println("-------------PDK id '" + testResultSummary.tapNodeInfo.getTapNodeSpecification().getId() + "' class '" + testResultSummary.tapNodeInfo.getNodeClass().getName() + "'-------------");
-            summary.printTo(new PrintWriter(System.out));
+//            summary.printTo(new PrintWriter(System.out));
+            System.out.println("");
+            StringBuilder builder = new StringBuilder();
+            outputTestResult(testResultSummary, builder);
+            System.out.print(builder.toString());
+
             summary.printFailuresTo(new PrintWriter(System.out));
+            System.out.println("");
             System.out.println("-------------PDK id '" + testResultSummary.tapNodeInfo.getTapNodeSpecification().getId() + "' class '" + testResultSummary.tapNodeInfo.getNodeClass().getName() + "'-------------");
             System.out.println("*****************************************************TDD Results*****************************************************");
-            System.out.println("Sorry, PDK " + file.getName() + " doesn't pass the TDD tests, please resolve above issue and retry again! \nIf any issue don't understand please send your questions into community forum without hesitation!");
+            System.out.println("Oops, PDK " + file.getName() + " didn't pass all tests, please resolve above issue(s) and try again.");
 //            throw new CoreException(ErrorCodes.TDD_TEST_FAILED, "Terminated because test failed");
             System.exit(0);
         }
@@ -146,19 +152,23 @@ public class TDDCli extends CommonCli {
                 builder.append("             \t" + testClass.getName()).append("\n");
             }
             builder.append("\n");
-            builder.append("             " + "Test run finished after " + (testSummary.summary.getTimeFinished() - testSummary.summary.getTimeStarted())).append("\n");
-            builder.append("             \t" + testSummary.summary.getTestsFoundCount() + " tests found").append("\n");
-            builder.append("             \t" + testSummary.summary.getTestsSkippedCount() + " tests skipped").append("\n");
-            builder.append("             \t" + testSummary.summary.getTestsStartedCount() + " tests started").append("\n");
-            builder.append("             \t" + testSummary.summary.getTestsSucceededCount() + " tests successful").append("\n");
-            builder.append("             \t" + testSummary.summary.getTestsFailedCount() + " tests failed").append("\n");
+            outputTestResult(testSummary, builder);
 
             builder.append("-------------PDK id '" + testSummary.tapNodeInfo.getTapNodeSpecification().getId() + "' class '" + testSummary.tapNodeInfo.getNodeClass().getName() + "'-------------").append("\n");
             System.out.print(builder.toString());
         }
         System.out.println("*****************************************************TDD Results*****************************************************");
-        System.out.println("Congratulations! PDK " + file.getName() + " has passed all the TDD tests!");
+        System.out.println("Congratulations! PDK " + file.getName() + " has passed all tests!");
         System.exit(0);
+    }
+
+    private void outputTestResult(TapSummary testSummary, StringBuilder builder) {
+        builder.append("             " + "Test run finished after " + (testSummary.summary.getTimeFinished() - testSummary.summary.getTimeStarted())).append("\n");
+        builder.append("             \t" + testSummary.summary.getTestsFoundCount() + " test(s) found").append("\n");
+        builder.append("             \t" + testSummary.summary.getTestsSkippedCount() + " test(s) skipped").append("\n");
+        builder.append("             \t" + testSummary.summary.getTestsStartedCount() + " test(s) started").append("\n");
+        builder.append("             \t" + testSummary.summary.getTestsSucceededCount() + " test(s) successful").append("\n");
+        builder.append("             \t" + testSummary.summary.getTestsFailedCount() + " test(s) failed").append("\n");
     }
 
     private void runLevelWithNodeInfo(TapNodeInfo tapNodeInfo) throws Throwable {

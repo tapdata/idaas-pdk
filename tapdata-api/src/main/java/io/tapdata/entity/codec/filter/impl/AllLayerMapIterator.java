@@ -29,17 +29,17 @@ public class AllLayerMapIterator implements MapIterator {
         Set<Map.Entry<String, Object>> entrySet = map.entrySet();
         for(Map.Entry<String, Object> entry : entrySet) {
             if(entry.getValue() instanceof Map) {
-                clone(entry.getKey() + ".", (Map<String, Object>) entry.getValue(), consumer);
+                iterateWithPrefix(entry.getKey() + ".", (Map<String, Object>) entry.getValue(), consumer);
             } else {
                 consumer.accept(entry);
             }
         }
    }
 
-    private void clone(String prefix, Map<String, Object> obj, Consumer<Map.Entry<String, Object>> consumer) {
+    private void iterateWithPrefix(String prefix, Map<String, Object> obj, Consumer<Map.Entry<String, Object>> consumer) {
         for (Map.Entry<String, Object> entry : obj.entrySet()) {
             if(entry.getValue() instanceof Map) {
-                clone(prefix + entry.getKey() + ".", (Map<String, Object>) entry.getValue(), consumer);
+                iterateWithPrefix(prefix + entry.getKey() + ".", (Map<String, Object>) entry.getValue(), consumer);
             } else {
                 consumer.accept(new TapEntry(entry, prefix));
             }
