@@ -3,6 +3,8 @@ package io.tapdata.pdk.tdd.core;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import io.tapdata.entity.event.control.PatrolEvent;
+import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
@@ -341,14 +343,14 @@ public class PDKTestBase {
         return equalResult;
     }
 
-    public void sendInsertEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap after, PatrolEvent patrolEvent) {
+    public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap after, PatrolEvent patrolEvent) {
         TapInsertRecordEvent tapInsertRecordEvent = new TapInsertRecordEvent();
         tapInsertRecordEvent.setAfter(after);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), tapInsertRecordEvent);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendUpdateEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap before, DataMap after, PatrolEvent patrolEvent) {
+    public void sendUpdateRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap before, DataMap after, PatrolEvent patrolEvent) {
         TapUpdateRecordEvent tapUpdateRecordEvent = new TapUpdateRecordEvent();
         tapUpdateRecordEvent.setAfter(after);
         tapUpdateRecordEvent.setBefore(before);
@@ -356,10 +358,22 @@ public class PDKTestBase {
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendDeleteEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap before, PatrolEvent patrolEvent) {
+    public void sendDeleteRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap before, PatrolEvent patrolEvent) {
         TapDeleteRecordEvent tapDeleteRecordEvent = new TapDeleteRecordEvent();
         tapDeleteRecordEvent.setBefore(before);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDeleteRecordEvent);
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
+    }
+
+    public void sendCreateTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag,PatrolEvent patrolEvent) {
+        TapCreateTableEvent createTableEvent = new TapCreateTableEvent();
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), createTableEvent);
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
+    }
+
+    public void sendDropTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag,PatrolEvent patrolEvent) {
+        TapDropTableEvent tapDropTableEvent = new TapDropTableEvent();
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDropTableEvent);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 

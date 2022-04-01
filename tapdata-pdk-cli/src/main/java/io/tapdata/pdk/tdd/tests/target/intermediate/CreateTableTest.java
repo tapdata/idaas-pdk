@@ -3,23 +3,16 @@ package io.tapdata.pdk.tdd.tests.target.intermediate;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
-import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.entity.utils.JsonParser;
-import io.tapdata.pdk.apis.entity.FilterResult;
-import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
-import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
@@ -53,7 +46,7 @@ public class CreateTableTest extends PDKTestBase {
                 dataFlowDescriber.setId("createTableTest->" + nodeInfo.getTapNodeSpecification().getId());
 
                 String tableId = dataFlowDescriber.getId() + "_" + UUID.randomUUID();
-                tableId = tableId.replace('-', '_').replace('>','_');
+                tableId = tableId.replace('-', '_').replace('>', '_');
 
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(Arrays.asList(
@@ -72,7 +65,6 @@ public class CreateTableTest extends PDKTestBase {
                         if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions();
                             checkFunctions();
-//                            tddSourceNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap();
                         } else if (toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
@@ -82,7 +74,6 @@ public class CreateTableTest extends PDKTestBase {
 
                                 }
                             });
-//                            patrolEvent.addInfo("tdd", "aaa");
                             //Line up after batch read
                             dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
                         }
@@ -122,96 +113,37 @@ public class CreateTableTest extends PDKTestBase {
     }
 
     private void insertOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
-        TapInsertRecordEvent insertRecordEvent = new TapInsertRecordEvent();
-        firstRecord = new DataMap();
-        firstRecord.put("id", "id_2");
-        firstRecord.put("tapString", "1234");
-        firstRecord.put("tapString10", "0987654321");
-        firstRecord.put("tapInt", 123123);
-        firstRecord.put("tapBoolean", true);
-        firstRecord.put("tapNumber", 1233);
-        firstRecord.put("tapNumber52", 343.22);
-        firstRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
-        insertRecordEvent.setAfter(firstRecord);
 
-        dataFlowEngine.sendExternalTapEvent(dag.getId(), insertRecordEvent);
-        PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
+        DataMap insertRecord = new DataMap();
+        insertRecord.put("id", "id_2");
+        insertRecord.put("tapString", "1234");
+        insertRecord.put("tapString10", "0987654321");
+        insertRecord.put("tapInt", 123123);
+        insertRecord.put("tapBoolean", true);
+        insertRecord.put("tapNumber", 1233);
+        insertRecord.put("tapNumber52", 343.22);
+        insertRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
+
+
+        DataMap filterMap = new DataMap();
+        filterMap.put("id", "id_2");
+        filterMap.put("tapString", "1234");
+
+        sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
             if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                verifyBatchRecordExists();
-
-                // send drop table event
-                TapDropTableEvent tapDropTableEvent = new TapDropTableEvent();
-                dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDropTableEvent);
-
-                PatrolEvent dropTablePatrolEvent = new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
-                    PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", innerNodeId, (innerState == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
+                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
-                        // send create table event
-                        TapCreateTableEvent tapCreateTableEvent = new TapCreateTableEvent();
-                        dataFlowEngine.sendExternalTapEvent(dag.getId(), tapCreateTableEvent);
-                        PatrolEvent createTablePatrolEvent = new PatrolEvent().patrolListener((innerNodeId1, innerState1) -> {
-                            PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", innerNodeId1, (innerState1 == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                        sendCreateTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId1, innerState1) -> {
                             if (innerNodeId1.equals(targetNodeId) && innerState1 == PatrolEvent.STATE_LEAVE) {
-                                verifyRecordNotExists();
-                                // send drop table event
-                                dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDropTableEvent);
-                                PatrolEvent dropTablePatrolEvent2 = new PatrolEvent().patrolListener((innerNodeId2, innerState2) -> {
-                                    completed();
-                                });
-                                dataFlowEngine.sendExternalTapEvent(dag.getId(),dropTablePatrolEvent2);
+                                verifyRecordNotExists(targetNode,filterMap);
+                                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId2, innerState2) -> completed()));
                             }
-                        });
-                        dataFlowEngine.sendExternalTapEvent(dag.getId(), createTablePatrolEvent);
+                        }));
                     }
-                });
-                dataFlowEngine.sendExternalTapEvent(dag.getId(), dropTablePatrolEvent);
-
-
+                }));
             }
-        });
-        dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
-    }
-    private void verifyBatchRecordExists() {
-        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
-        DataMap match = new DataMap();
-        match.put("id", "id_2");
-        match.put("tapString", "1234");
-        TapFilter filter = new TapFilter();
-        filter.setMatch(match);
-        List<TapFilter> filters = Collections.singletonList(filter);
-
-        List<FilterResult> results = new ArrayList<>();
-        CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " for queryByFilter, then filterResults size has to be 1"));
-        FilterResult filterResult = results.get(0);
-        $(() -> Assertions.assertNull(filterResult.getError(), "Error occurred while queryByFilter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " error " + filterResult.getError()));
-        $(() -> Assertions.assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));
-        Map<String, Object> result = filterResult.getResult();
-
-
-        tddSourceNode.getCodecFilterManager().transformToTapValueMap(firstRecord, tddSourceNode.getConnectorContext().getTable().getNameFieldMap());
-        tddSourceNode.getCodecFilterManager().transformFromTapValueMap(firstRecord);
-
-        StringBuilder builder = new StringBuilder();
-        $(() -> Assertions.assertFalse(mapEquals(firstRecord, result, builder), builder.toString()));
-    }
-
-
-    private void verifyRecordNotExists() {
-        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
-        DataMap match = new DataMap();
-        match.put("id", "id_2");
-        match.put("tapString", "1234");
-        TapFilter filter = new TapFilter();
-        filter.setMatch(match);
-        List<TapFilter> filters = Collections.singletonList(filter);
-
-        List<FilterResult> results = new ArrayList<>();
-        CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(match) + " for queryByFilter, then filterResults size has to be 1"));
-        FilterResult filterResult = results.get(0);
-        $(() -> Assertions.assertNull(filterResult.getError(), "Should be no value, error should not be threw"));
-        $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
+        }));
     }
 
     private void checkFunctions() {
