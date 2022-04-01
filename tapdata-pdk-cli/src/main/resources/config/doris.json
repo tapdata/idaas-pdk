@@ -8,10 +8,6 @@
   },
   "node": {
   },
-  "table": {
-    "name": "emptyTable2",
-    "id": "emptyTable2"
-  },
   "test": {
     "pdkId" : "doris"
   }
