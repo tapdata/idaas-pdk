@@ -4,6 +4,7 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.Validator;
 import io.tapdata.pdk.core.utils.state.StateListener;
 
@@ -25,11 +26,11 @@ public class DataFlowEngine {
      * 引擎启动
      */
     public void start() {
-        PDKLogger.info(TAG, ".___________.    ___      .______    _______       ___   .___________.    ___");
-        PDKLogger.info(TAG, "|           |   /   \\     |   _  \\  |       \\     /   \\  |           |   /   \\");
-        PDKLogger.info(TAG, "`---|  |----`  /  ^  \\    |  |_)  | |  .--.  |   /  ^  \\ `---|  |----`  /  ^  \\");
-        PDKLogger.info(TAG, "    |  |      /  /_\\  \\   |   ___/  |  |  |  |  /  /_\\  \\    |  |      /  /_\\  \\");
-        PDKLogger.info(TAG, "    |  |     /  _____  \\  |  |      |  '--'  | /  _____  \\   |  |     /  _____  \\");
+        PDKLogger.info(TAG, ".___________.    ___      .______    _______       ___   .___________.    ___     ");
+        PDKLogger.info(TAG, "|           |   /   \\     |   _  \\  |       \\     /   \\  |           |   /   \\    ");
+        PDKLogger.info(TAG, "`---|  |----`  /  ^  \\    |  |_)  | |  .--.  |   /  ^  \\ `---|  |----`  /  ^  \\   ");
+        PDKLogger.info(TAG, "    |  |      /  /_\\  \\   |   ___/  |  |  |  |  /  /_\\  \\    |  |      /  /_\\  \\  ");
+        PDKLogger.info(TAG, "    |  |     /  _____  \\  |  |      |  '--'  | /  _____  \\   |  |     /  _____  \\ ");
         PDKLogger.info(TAG, "    |__|    /__/     \\__\\ | _|      |_______/ /__/     \\__\\  |__|    /__/     \\__\\");
         PDKLogger.info(TAG, "                                                                            v{}", version);
         //http://www.network-science.de/ascii/
@@ -76,7 +77,7 @@ public class DataFlowEngine {
     public void stopDataFlow(String dagId) {
         Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dagId);
 
-        DataFlowWorker dataFlowWorker = idDataFlowWorkerMap.get(dagId);
+        DataFlowWorker dataFlowWorker = idDataFlowWorkerMap.remove(dagId);
         if(dataFlowWorker == null)
             throw new CoreException(ErrorCodes.MAIN_DATAFLOW_NOT_FOUND, "DAG " + dagId + " doesn't be found");
 
@@ -87,7 +88,9 @@ public class DataFlowEngine {
      * 引擎停止
      */
     public void stop() {
-
+        for(DataFlowWorker dataFlowWorker : idDataFlowWorkerMap.values()) {
+            CommonUtils.ignoreAnyError(() -> dataFlowWorker.stop(), TAG);
+        }
     }
 
     public Map<String, DataFlowWorker> getIdDataFlowWorkerMap() {

@@ -44,8 +44,8 @@ public class SourceNodeDriver extends Driver {
     private Long batchCount;
     private boolean batchCompleted = false;
     private final Object streamLock = new int[0];
-    private AtomicBoolean firstBatchRecordsWillOffer = new AtomicBoolean(false);
-    private AtomicBoolean firstBatchRecordsOffered = new AtomicBoolean(false);
+    private final AtomicBoolean firstBatchRecordsWillOffer = new AtomicBoolean(false);
+    private final AtomicBoolean firstBatchRecordsOffered = new AtomicBoolean(false);
 
     public SourceNode getSourceNode() {
         return sourceNode;

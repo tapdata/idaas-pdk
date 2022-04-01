@@ -56,8 +56,8 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                 table("tdd-table")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
                         .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(1))
-                        .add(field("tddUser", "tapString"))
                         .add(field("tapString", "tapString").isPrimaryKey(true).primaryKeyPos(2))
+                        .add(field("tddUser", "tapString"))
                         .add(field("tapString10", "tapString(10)"))
                         .add(field("tapString10Fixed", "tapString(10) fixed"))
                         .add(field("tapInt", "int"))
@@ -219,102 +219,8 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                         entry("tapDateTimeTimeZone", date)
                 ), connectorContext.getTable());
                 tapEvents.add(recordEvent);
-
-//                TapUpdateRecordEvent updateDMLEvent = updateDMLEvent(map(
-//                        entry("id", "id_1"),
-//                        entry("tapString", "123")
-//                ), map(
-//                        entry("id", "id_1"),
-//                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
-//                        entry("tapString", "123123123123"),
-//                        entry("tapString10", "1234567890000"),
-//                        entry("tapString10Fixed", "10000"),
-//                        entry("tapInt", 321321),
-//                        entry("tapBoolean", false),
-//                        entry("tapDate", date),
-//                        entry("tapArrayString", Arrays.asList("3", "2", "1")),
-//                        entry("tapArrayDouble", Arrays.asList(6.1, 5.2, 4.3)),
-//                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("b", "a", "b", 1, TDDUser.GENDER_MALE), new TDDUser("a", "n", "d", 2, TDDUser.GENDER_FEMALE))),
-//                        entry("tapRawTDDUser", new TDDUser("b1", "a1", "b1", 22, TDDUser.GENDER_MALE)),
-//                        entry("tapNumber", 3221),
-//                        //                        entry("tapNumber(8)", 1111),
-//                        entry("tapNumber52", 22.343),
-//                        entry("tapBinary", new byte[]{2, 3, 21, 123}),
-//                        entry("tapTime", date),
-//                        entry("tapMapStringString", new HashMap<String, String>() {{
-//                            put("c", "c");
-//                            put("d", "d");
-//                        }}),
-//                        entry("tapMapStringDouble", new HashMap<String, Double>() {{
-//                            put("c", 3.0);
-//                            put("d", 4.0);
-//                        }}),
-//                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{
-//                            put("b", new TDDUser("b1", "a1", "b1", 22, TDDUser.GENDER_MALE));
-//                        }}),
-//                        entry("tapDateTime", date),
-//                        entry("tapDateTimeTimeZone", date)
-//                ), connectorContext.getTable());
-//                tapEvents.add(updateDMLEvent);
-//                TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
-//                        entry("id", "id_1")
-//                ), connectorContext.getTable());
-//                tapEvents.add(deleteRecordEvent);
-//
-//
-//                List<String> deleteFields = new ArrayList<>();
-//                List<TapField> insertFields = new ArrayList<>();
-//                Map<String, TapField> changedNameFields = new HashMap<>();
-//                deleteFields.add("tapString");
-//                // TODO insertFields field 推演
-////            insertFields.add(new TapField("addStringField", "tapString").defaultValue("default_value"));
-//                insertFields.add(new TapField("addStringField", "VARCHAR(256)").defaultValue("test"));
-//                TapField renameTapField = connectorContext.getTable().getNameFieldMap().get("tapString10").clone();
-//                renameTapField.setName("renameTapString10");
-//                changedNameFields.put(renameTapField.getName(), renameTapField);
-//
-//                TapAlterTableEvent tapAlterTableEvent = new TapAlterTableEvent();
-//                tapAlterTableEvent.setTable(connectorContext.getTable());
-//                tapAlterTableEvent.setChangedNameFields(changedNameFields);
-//                tapAlterTableEvent.setDeletedFields(deleteFields);
-//                tapAlterTableEvent.setInsertFields(insertFields);
-//                tapEvents.add(tapAlterTableEvent);
             }
 
-//            TapUpdateRecordEvent updateDMLEvent = updateDMLEvent(map(
-//                        entry("id", "id_1"),
-//                        entry("tapString", "123")
-//                    ), map(
-//                        entry("id", "id_1"),
-//                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
-//                        entry("tapString", "123123123123"),
-//                        entry("tapString10", "1234567890"),
-//                        entry("tapString10Fixed", "1"),
-//                        entry("tapInt", 123123),
-//                        entry("tapBoolean", true),
-//                        entry("tapDate", date),
-//                        entry("tapArrayString", Arrays.asList("1", "2", "3")),
-//                        entry("tapArrayDouble", Arrays.asList(1.1, 2.2, 3.3)),
-//                        entry("tapArrayTDDUser", Arrays.asList(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
-//                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
-//                        entry("tapNumber", 1233),
-//    //                        entry("tapNumber(8)", 1111),
-//                        entry("tapNumber52", 343.22),
-//                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
-//                        entry("tapTime", date),
-//                        entry("tapMapStringString", new HashMap<String, String>() {{put("a", "a");put("b", "b");}}),
-//                        entry("tapMapStringDouble", new HashMap<String, Double>() {{put("a", 1.0);put("b", 2.0);}}),
-//                        entry("tapMapStringTDDUser", new HashMap<String, TDDUser>() {{put("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE));}}),
-//                        entry("tapDateTime", date),
-//                        entry("tapDateTimeTimeZone", date)
-//            ), connectorContext.getTable());
-//            tapEvents.add(updateDMLEvent);
-//
-//            TapDeleteRecordEvent deleteRecordEvent = deleteDMLEvent(map(
-//                    entry("id", "id_2"),
-//                    entry("tapString", "123")
-//            ), connectorContext.getTable());
-//            tapEvents.add(deleteRecordEvent);
             tapReadOffsetConsumer.accept(tapEvents);
         }
         counter.set(counter.get() + 1000);

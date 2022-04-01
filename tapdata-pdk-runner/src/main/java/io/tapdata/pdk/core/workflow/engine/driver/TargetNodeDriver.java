@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-public class TargetNodeDriver implements ListHandler<List<TapEvent>> {
+public class TargetNodeDriver extends Driver implements ListHandler<List<TapEvent>> {
     private static final String TAG = TargetNodeDriver.class.getSimpleName();
 
     private TargetNode targetNode;
