@@ -203,7 +203,7 @@ public class PDKTestBase {
         }
     }
 
-    public void consumeQualifiedTapNodeInfo(Consumer<TapNodeInfo> consumer, String... nodeTypes) {
+    public void consumeQualifiedTapNodeInfo(Consumer<TapNodeInfo> consumer) {
         Collection<TapNodeInfo> tapNodeInfoCollection = testConnector.getTapNodeClassFactory().getConnectorTapNodeInfos();
         if(tapNodeInfoCollection.isEmpty())
             throw new CoreException(ErrorCodes.TDD_TAPNODEINFO_NOT_FOUND, "No connector or processor is found in jar " + jarFile);
@@ -212,15 +212,13 @@ public class PDKTestBase {
         if(testOptions != null) {
             pdkId = (String) testOptions.get("pdkId");
         }
-
-        List<String> nodeTypeList = Arrays.asList(nodeTypes);
+        if(pdkId == null) {
+            pdkId = CommonUtils.getProperty("pdk_test_pdk_id", null);
+            if(pdkId == null)
+                Assertions.fail("Test pdkId is not specified");
+        }
         for (TapNodeInfo nodeInfo : tapNodeInfoCollection) {
-            if(pdkId != null) {
-                if(nodeInfo.getTapNodeSpecification().getId().equals(pdkId)) {
-                    consumer.accept(nodeInfo);
-                    break;
-                }
-            } else if(nodeTypeList.contains(nodeInfo.getNodeType())) {
+            if(nodeInfo.getTapNodeSpecification().getId().equals(pdkId)) {
                 consumer.accept(nodeInfo);
                 break;
             }

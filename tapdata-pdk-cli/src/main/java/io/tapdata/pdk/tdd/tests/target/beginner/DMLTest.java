@@ -92,7 +92,7 @@ public class DMLTest extends PDKTestBase {
                     $(() -> Assertions.fail("Unknown error " + throwable.getMessage()));
                 }
             }
-        }, TapNodeInfo.NODE_TYPE_TARGET, TapNodeInfo.NODE_TYPE_SOURCE_TARGET);
+        });
 //        completed();
         waitCompleted(50);
 

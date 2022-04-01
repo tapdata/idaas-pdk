@@ -3,7 +3,6 @@ package io.tapdata.pdk.tdd.tests.target.intermediate;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
-import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
@@ -100,7 +99,7 @@ public class CreateTableTest extends PDKTestBase {
                     $(() -> Assertions.fail("Unknown error " + throwable.getMessage()));
                 }
             }
-        }, TapNodeInfo.NODE_TYPE_TARGET, TapNodeInfo.NODE_TYPE_SOURCE_TARGET);
+        });
         waitCompleted(50);
     }
 

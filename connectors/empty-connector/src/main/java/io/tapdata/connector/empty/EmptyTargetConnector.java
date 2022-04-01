@@ -134,10 +134,10 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
         connectorFunctions.supportWriteRecord(this::writeRecord);
 
         //Below capabilities, developer can decide to implement or not.
-        connectorFunctions.supportCreateTable(this::createTable);
+//        connectorFunctions.supportCreateTable(this::createTable);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
 //        connectorFunctions.supportAlterTable(this::alterTable);
-        connectorFunctions.supportDropTable(this::dropTable);
+//        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "TEXT", tapRawValue -> {

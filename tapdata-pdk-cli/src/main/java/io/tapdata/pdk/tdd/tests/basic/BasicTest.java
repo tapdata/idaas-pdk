@@ -38,10 +38,7 @@ public class BasicTest extends PDKTestBase {
 
                 connectionNode.getConnectorNode().destroy();
             });
-        }, TapNodeInfo.NODE_TYPE_PROCESSOR,
-        TapNodeInfo.NODE_TYPE_SOURCE,
-        TapNodeInfo.NODE_TYPE_SOURCE_TARGET,
-        TapNodeInfo.NODE_TYPE_TARGET);
+        });
     }
 
     @Test
@@ -61,10 +58,7 @@ public class BasicTest extends PDKTestBase {
                 }
                 connectionNode.getConnectorNode().destroy();
             });
-        }, TapNodeInfo.NODE_TYPE_PROCESSOR,
-        TapNodeInfo.NODE_TYPE_SOURCE,
-        TapNodeInfo.NODE_TYPE_SOURCE_TARGET,
-        TapNodeInfo.NODE_TYPE_TARGET);
+        });
     }
 
     private void verifyConnection(DataMap configOptions, DataMap connectionInputs) {
