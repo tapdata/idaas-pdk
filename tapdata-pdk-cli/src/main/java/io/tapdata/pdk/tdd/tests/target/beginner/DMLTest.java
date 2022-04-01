@@ -101,7 +101,7 @@ public class DMLTest extends PDKTestBase {
         DataMap filterMap = new DataMap();
         filterMap.put("id", "id_2");
         filterMap.put("tapString", "1234");
-        sendInsertEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
+        sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
                 verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
                 updateOneRecord(dataFlowEngine, dag);
@@ -118,7 +118,7 @@ public class DMLTest extends PDKTestBase {
         after.put("id", "id_2");
         after.put("tapString", "1234");
         after.put("tapInt", "5555");
-        sendUpdateEvent(dataFlowEngine, dag, before, after, new PatrolEvent().patrolListener((nodeId, state) -> {
+        sendUpdateRecordEvent(dataFlowEngine, dag, before, after, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
                 verifyUpdateOneRecord(targetNode, before, after);
                 deleteOneRecord(dataFlowEngine, dag);
@@ -130,7 +130,7 @@ public class DMLTest extends PDKTestBase {
         DataMap before = new DataMap();
         before.put("id", "id_2");
         before.put("tapString", "1234");
-        sendDeleteEvent(dataFlowEngine, dag, before, new PatrolEvent().patrolListener((nodeId, state) -> {
+        sendDeleteRecordEvent(dataFlowEngine, dag, before, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
                 verifyRecordNotExists(targetNode, before);
                 completed();
