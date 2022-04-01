@@ -1,4 +1,4 @@
-import io.tapdata.connector.doris.utils.DorisConfig;
+import io.tapdata.connector.doris.bean.DorisConfig;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.core.api.impl.JsonParserImpl;
 import org.junit.jupiter.api.DisplayName;

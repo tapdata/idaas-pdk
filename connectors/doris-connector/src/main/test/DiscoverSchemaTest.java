@@ -1,7 +1,6 @@
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.tapdata.connector.doris.bean.DorisColumn;
-import io.tapdata.connector.doris.utils.DorisConfig;
+import io.tapdata.connector.doris.bean.DorisConfig;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
