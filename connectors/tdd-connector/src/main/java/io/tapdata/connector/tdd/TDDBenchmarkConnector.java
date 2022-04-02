@@ -3,33 +3,25 @@ package io.tapdata.connector.tdd;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.control.ControlEvent;
-import io.tapdata.entity.event.control.PatrolEvent;
-import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
-import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
-import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
-import io.tapdata.entity.event.dml.TapRecordEvent;
-import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.value.TapStringValue;
 import io.tapdata.pdk.apis.TapConnector;
-import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
+import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.logger.PDKLogger;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-@TapConnectorClass("sourceSpec.json")
-public class TDDSourceConnector extends ConnectorBase implements TapConnector {
-    public static final String TAG = TDDSourceConnector.class.getSimpleName();
+@TapConnectorClass("sourceBenchmarkSpec.json")
+public class TDDBenchmarkConnector extends ConnectorBase implements TapConnector {
+    public static final String TAG = TDDBenchmarkConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
 
@@ -191,11 +183,11 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate records directly.
-        for (int j = 0; j < 1; j++) {
+        for (int j = 0; j < 100; j++) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 1; i++) {
+            for (int i = 0; i < batchSize; i++) {
                 TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                        entry("id", "id_1"),
+                        entry("id", "id_" + counter.get()),
                         entry("tapString", "123"),
                         entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
                         entry("tapString10", "1234567890"),
@@ -218,6 +210,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                         entry("tapDateTime", date),
                         entry("tapDateTimeTimeZone", date)
                 ), connectorContext.getTable());
+                counter.incrementAndGet();
                 tapEvents.add(recordEvent);
             }
 
