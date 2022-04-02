@@ -307,9 +307,9 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
             T t = tableEventClass.getConstructor().newInstance();
             t.setTable(targetNode.getConnectorContext().getTable());
             t.setTime(System.currentTimeMillis());
-            t.setPdkId(targetNode.getTapNodeInfo().getTapNodeSpecification().getId());
-            t.setPdkGroup(targetNode.getTapNodeInfo().getTapNodeSpecification().getGroup());
-            t.setPdkVersion(targetNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
+//            t.setPdkId(targetNode.getTapNodeInfo().getTapNodeSpecification().getId());
+//            t.setPdkGroup(targetNode.getTapNodeInfo().getTapNodeSpecification().getGroup());
+//            t.setPdkVersion(targetNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
             return t;
         } catch (Throwable e) {
             e.printStackTrace();

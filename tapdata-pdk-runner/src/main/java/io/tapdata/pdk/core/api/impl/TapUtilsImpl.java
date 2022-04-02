@@ -134,7 +134,7 @@ public class TapUtilsImpl implements TapUtils {
             put("aaa", Arrays.asList("1", "2"));
             put("bbb", 1);
         }});
-        insertRecordEvent.setPdkId("aaaa");
+//        insertRecordEvent.setPdkId("aaaa");
         insertRecordEvent.setTable(table);
 
 //        TapInsertRecordEvent clone = (TapInsertRecordEvent) new TapUtilsImpl().clone(insertRecordEvent);
