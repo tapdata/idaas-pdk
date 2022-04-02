@@ -227,7 +227,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 newRecord = new TapAerospikeRecord(toJson(after), newKey);
                 aerospikeStringSink.write(newRecord, keySet);
                 inserted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
@@ -235,7 +234,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 newRecord = new TapAerospikeRecord(toJson(after), newKey);
                 aerospikeStringSink.write(newRecord, keySet);
                 updated.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
@@ -243,7 +241,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 Key key = new Key(sinkConfig.getKeyspace(), keySet, newKey);
                 aerospikeStringSink.client.delete(policy, key);
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
 

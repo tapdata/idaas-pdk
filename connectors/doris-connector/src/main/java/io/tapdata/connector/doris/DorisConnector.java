@@ -42,15 +42,13 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
     private void initConnection(DataMap config) {
         try {
-            if (conn == null || stmt == null) {
+            if (conn == null) {
                 if (dorisConfig == null) dorisConfig = DorisConfig.load(config);
                 String dbUrl = dorisConfig.getDatabaseUrl();
                 Class.forName(dorisConfig.getJdbcDriver());
-                if(stmt != null && !stmt.isClosed()) stmt.close();
-                if(conn != null && !conn.isClosed()) conn.close();
                 conn = DriverManager.getConnection(dbUrl, dorisConfig.getUser(), dorisConfig.getPassword());
-                stmt = conn.createStatement();
             }
+            if (stmt == null) stmt = conn.createStatement();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Create Connection Failed!");
@@ -285,6 +283,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     }
 
     private void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
+        preparedStatement.clearParameters();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         int pos = 1;
         for (String columnName : nameFieldMap.keySet()) {
@@ -426,15 +425,12 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
         TapTable tapTable = connectorContext.getTable();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        PreparedStatement preparedStatement = null;
 
+        PreparedStatement preparedStatement = conn.prepareStatement(buildBatchInsertSQL(tapTable));
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});
             if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
             if (recordEvent instanceof TapInsertRecordEvent) {
-                if (preparedStatement == null || preparedStatement.isClosed()) {
-                    preparedStatement = conn.prepareStatement(buildBatchInsertSQL(tapTable));
-                }
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> after = insertRecordEvent.getAfter();
                 addBatchInsertRecord(tapTable, after, preparedStatement);
@@ -453,7 +449,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                         updateAfter.put(fieldName, entry.getValue());
                     }
                 }
-                
                 String sql = "UPDATE " + tapTable.getName() +
                         " SET " + buildKeyAndValue(tapTable, updateAfter, ",") +
                         " WHERE " + buildKeyAndValue(tapTable, filterAfter, "AND");
@@ -470,6 +465,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         }
         executeBatchInsert(preparedStatement);
         //Need to tell flow engine the write result
+        preparedStatement.close();
         writeListResultConsumer.accept(writeListResult()
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
@@ -478,10 +474,9 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
     private void executeBatchInsert(PreparedStatement preparedStatement) {
         try {
-            if (preparedStatement != null && !preparedStatement.isClosed()) {
+            if (preparedStatement != null) {
                 preparedStatement.executeBatch();
                 preparedStatement.clearBatch();
-                preparedStatement.close();
             }
         } catch (SQLException e) {
             e.printStackTrace();
