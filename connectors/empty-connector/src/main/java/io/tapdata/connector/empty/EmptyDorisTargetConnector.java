@@ -219,7 +219,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
                     inserted.incrementAndGet();
                 }
 
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
 
@@ -229,7 +229,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
                     primaryKeyRecordMap.put(primaryKey(connectorContext, before), value);
                     updated.incrementAndGet();
                 }
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapDeleteRecordEvent) {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
@@ -237,7 +237,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
                     primaryKeyRecordMap.remove(primaryKey(connectorContext, before));
                 }
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
         //Need to tell flow engine the write result

@@ -40,7 +40,7 @@ public class SourceNodeDriver extends Driver {
     private String streamOffsetStr;
     private String batchOffsetStr;
     private SourceStateListener sourceStateListener;
-    private int batchLimit = 100;
+    private int batchLimit = 1000;
     private Long batchCount;
     private boolean batchCompleted = false;
     private final Object streamLock = new int[0];
@@ -158,7 +158,7 @@ public class SourceNodeDriver extends Driver {
                     sourceStateListener.stateChanged(STATE_BATCH_STARTED);
             }, TAG);
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
-                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, 100, (events) -> {
+                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, batchLimit, (events) -> {
                         if (events != null && !events.isEmpty()) {
                             PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
 //                            offer(events, (theEvents) -> filterEvents(theEvents));
