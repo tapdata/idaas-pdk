@@ -1,9 +1,7 @@
 package io.tapdata.entity.event.ddl.table;
 
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.schema.TapTable;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +12,7 @@ public class TapAlterTableEvent extends TapTableEvent {
     //
     private Map<String, TapField> changedNameFields;
     private List<TapField> insertFields;
-    private List<String> deletedFields;
+    private List<String> deleteFields;
 
     /**
      * 表名
@@ -37,8 +35,8 @@ public class TapAlterTableEvent extends TapTableEvent {
                 alterTableEvent.changedNameFields = new ConcurrentHashMap<>(changedNameFields);
             if(insertFields != null)
                 alterTableEvent.insertFields = new CopyOnWriteArrayList<>(insertFields);
-            if(deletedFields != null)
-                alterTableEvent.deletedFields = new CopyOnWriteArrayList<>(deletedFields);
+            if(deleteFields != null)
+                alterTableEvent.deleteFields = new CopyOnWriteArrayList<>(deleteFields);
             alterTableEvent.name = name;
             alterTableEvent.storageEngine = storageEngine;
             alterTableEvent.charset = charset;
@@ -86,11 +84,11 @@ public class TapAlterTableEvent extends TapTableEvent {
         this.insertFields = insertFields;
     }
 
-    public List<String> getDeletedFields() {
-        return deletedFields;
+    public List<String> getDeleteFields() {
+        return deleteFields;
     }
 
-    public void setDeletedFields(List<String> deletedFields) {
-        this.deletedFields = deletedFields;
+    public void setDeleteFields(List<String> deleteFields) {
+        this.deleteFields = deleteFields;
     }
 }

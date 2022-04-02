@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TapEvent implements Serializable {
+public abstract class TapEvent implements Serializable {
     /**
      * The time when the event is created
      */
