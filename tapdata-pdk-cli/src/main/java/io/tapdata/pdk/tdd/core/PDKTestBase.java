@@ -32,6 +32,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.*;
 
+import javax.xml.crypto.Data;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,19 +63,19 @@ public class PDKTestBase {
     public PDKTestBase() {
         String testConfig = CommonUtils.getProperty("pdk_test_config_file", "");
         testConfigFile = new File(testConfig);
-        if(!testConfigFile.isFile())
+        if (!testConfigFile.isFile())
             throw new IllegalArgumentException("TDD test config file doesn't exist or not a file, please check " + testConfigFile);
 
         String jarUrl = CommonUtils.getProperty("pdk_test_jar_file", "");
         String tddJarUrl = CommonUtils.getProperty("pdk_external_jar_path", "./dist") + "/tdd-connector-v1.0-SNAPSHOT.jar";
         File tddJarFile = new File(tddJarUrl);
-        if(!tddJarFile.isFile())
+        if (!tddJarFile.isFile())
             throw new IllegalArgumentException("TDD jar file doesn't exist or not a file, please check " + tddJarFile);
 
-        if(StringUtils.isBlank(jarUrl))
+        if (StringUtils.isBlank(jarUrl))
             throw new IllegalArgumentException("Please specify jar file in env properties or java system properties, key is pdk_test_jar_file");
         jarFile = new File(jarUrl);
-        if(!jarFile.isFile())
+        if (!jarFile.isFile())
             throw new IllegalArgumentException("PDK jar file " + jarUrl + " is not a file or not exists");
         TapConnectorManager.getInstance().start(Arrays.asList(jarFile, tddJarFile));
         testConnector = TapConnectorManager.getInstance().getTapConnectorByJarName(jarFile.getName());
@@ -83,9 +84,9 @@ public class PDKTestBase {
             TapNodeSpecification specification = nodeInfo.getTapNodeSpecification();
             String iconPath = specification.getIcon();
             PDKLogger.info(TAG, "Found connector name {} id {} group {} version {} icon {}", specification.getName(), specification.getId(), specification.getGroup(), specification.getVersion(), specification.getIcon());
-            if(StringUtils.isNotBlank(iconPath)){
+            if (StringUtils.isNotBlank(iconPath)) {
                 InputStream is = nodeInfo.readResource(iconPath);
-                if(is == null){
+                if (is == null) {
                     PDKLogger.error(TAG, "Icon image file doesn't be found for url {} which defined in spec json file.");
                 }
             }
@@ -113,7 +114,7 @@ public class PDKTestBase {
     }
 
     public void completed(boolean withError) {
-        if(completed.compareAndSet(false, true)){
+        if (completed.compareAndSet(false, true)) {
             finishSuccessfully = !withError;
             PDKLogger.enable(false);
             synchronized (completed) {
@@ -125,11 +126,11 @@ public class PDKTestBase {
     public void waitCompleted(long seconds) throws Throwable {
         while (!completed.get()) {
             synchronized (completed) {
-                if(completed.get()){
+                if (completed.get()) {
                     try {
                         completed.wait(seconds * 1000);
                         completed.set(true);
-                        if(lastThrowable == null && !finishSuccessfully)
+                        if (lastThrowable == null && !finishSuccessfully)
                             throw new TimeoutException("Waited " + seconds + " seconds and still not completed, consider timeout execution.");
                     } catch (InterruptedException interruptedException) {
                         interruptedException.printStackTrace();
@@ -139,7 +140,7 @@ public class PDKTestBase {
                 }
             }
         }
-        if(lastThrowable != null)
+        if (lastThrowable != null)
             throw lastThrowable;
     }
 
@@ -214,20 +215,20 @@ public class PDKTestBase {
 
     public void consumeQualifiedTapNodeInfo(Consumer<TapNodeInfo> consumer) {
         Collection<TapNodeInfo> tapNodeInfoCollection = testConnector.getTapNodeClassFactory().getConnectorTapNodeInfos();
-        if(tapNodeInfoCollection.isEmpty())
+        if (tapNodeInfoCollection.isEmpty())
             throw new CoreException(ErrorCodes.TDD_TAPNODEINFO_NOT_FOUND, "No connector or processor is found in jar " + jarFile);
 
         String pdkId = null;
-        if(testOptions != null){
+        if (testOptions != null) {
             pdkId = (String) testOptions.get("pdkId");
         }
-        if(pdkId == null) {
+        if (pdkId == null) {
             pdkId = CommonUtils.getProperty("pdk_test_pdk_id", null);
-            if(pdkId == null)
+            if (pdkId == null)
                 Assertions.fail("Test pdkId is not specified");
         }
         for (TapNodeInfo nodeInfo : tapNodeInfoCollection) {
-            if(nodeInfo.getTapNodeSpecification().getId().equals(pdkId)) {
+            if (nodeInfo.getTapNodeSpecification().getId().equals(pdkId)) {
                 consumer.accept(nodeInfo);
                 break;
             }
@@ -252,7 +253,7 @@ public class PDKTestBase {
     @AfterEach
     public void tearDown() {
         PDKLogger.info(TAG, "tearDown");
-        if(dag != null){
+        if (dag != null) {
             DataFlowEngine.getInstance().stopDataFlow(dag.getId());
         }
     }
@@ -273,7 +274,7 @@ public class PDKTestBase {
 
             boolean equalResult = objectIsEqual(leftValue, rightValue);
 
-            if(!equalResult){
+            if (!equalResult) {
                 different = true;
                 builder.append("\t").append("Key ").append(entry.getKey()).append("\n");
                 builder.append("\t\t").append("Left ").append(diff.leftValue()).append(" class ").append(diff.leftValue().getClass().getSimpleName()).append("\n");
@@ -285,18 +286,18 @@ public class PDKTestBase {
 
     public boolean objectIsEqual(Object leftValue, Object rightValue) {
         boolean equalResult = false;
-        if((leftValue instanceof List) && (rightValue instanceof List)){
-            if(((List<?>) leftValue).size() == ((List<?>) rightValue).size()){
-                for (int i = 0; i < ((List<?>) leftValue).size(); i++) {
-                    equalResult = objectIsEqual(((List<?>) leftValue).get(i), ((List<?>) rightValue).get(i));
-                    if(!equalResult) break;
-                }
-            }
-        }
+//        if ((leftValue instanceof List) && (rightValue instanceof List)) {
+//            if (((List<?>) leftValue).size() == ((List<?>) rightValue).size()) {
+//                for (int i = 0; i < ((List<?>) leftValue).size(); i++) {
+//                    equalResult = objectIsEqual(((List<?>) leftValue).get(i), ((List<?>) rightValue).get(i));
+//                    if (!equalResult) break;
+//                }
+//            }
+//        }
 
-        if((leftValue instanceof byte[]) && (rightValue instanceof byte[])){
+        if ((leftValue instanceof byte[]) && (rightValue instanceof byte[])) {
             equalResult = Arrays.equals((byte[]) leftValue, (byte[]) rightValue);
-        } else if((leftValue instanceof byte[]) && (rightValue instanceof String)){
+        } else if ((leftValue instanceof byte[]) && (rightValue instanceof String)) {
             //byte[] vs string, base64 decode string
             try {
 //                    byte[] rightBytes = Base64.getDecoder().decode((String) rightValue);
@@ -304,43 +305,73 @@ public class PDKTestBase {
                 equalResult = Arrays.equals((byte[]) leftValue, rightBytes);
             } catch (Throwable ignored) {
             }
-        } else if((leftValue instanceof Number) && (rightValue instanceof Number)){
+        } else if ((leftValue instanceof Number) && (rightValue instanceof Number)) {
             //number vs number, equal by value
             BigDecimal leftB = null;
             BigDecimal rightB = null;
-            if(leftValue instanceof BigDecimal){
+            if (leftValue instanceof BigDecimal) {
                 leftB = (BigDecimal) leftValue;
             }
-            if(rightValue instanceof BigDecimal){
+            if (rightValue instanceof BigDecimal) {
                 rightB = (BigDecimal) rightValue;
             }
-            if(leftB == null){
+            if (leftB == null) {
                 leftB = BigDecimal.valueOf(((Number) leftValue).doubleValue());
             }
-            if(rightB == null){
+            if (rightB == null) {
                 rightB = BigDecimal.valueOf(((Number) rightValue).doubleValue());
             }
             equalResult = leftB.compareTo(rightB) == 0;
-        } else if((leftValue instanceof Boolean)){
-            if(rightValue instanceof Number){
+        } else if ((leftValue instanceof Boolean)) {
+            if (rightValue instanceof Number) {
                 //boolean true == (!=0), false == 0
                 Boolean leftBool = (Boolean) leftValue;
-                if(Boolean.TRUE.equals(leftBool)){
+                if (Boolean.TRUE.equals(leftBool)) {
                     equalResult = ((Number) rightValue).longValue() != 0;
                 } else {
                     equalResult = ((Number) rightValue).longValue() == 0;
                 }
-            } else if(rightValue instanceof String){
+            } else if (rightValue instanceof String) {
                 //boolean true == "true", false == "false"
                 Boolean leftBool = (Boolean) leftValue;
-                if(Boolean.TRUE.equals(leftBool)){
+                if (Boolean.TRUE.equals(leftBool)) {
                     equalResult = ((String) rightValue).equalsIgnoreCase("true");
                 } else {
                     equalResult = ((String) rightValue).equalsIgnoreCase("false");
                 }
             }
+        }else{
+            equalResult = leftValue.equals(rightValue);
         }
         return equalResult;
+    }
+
+    public DataMap buildInsertRecord() {
+        DataMap insertRecord = new DataMap();
+        insertRecord.put("id", "id_2");
+        insertRecord.put("tapString", "1234");
+        insertRecord.put("tapString10", "0987654321");
+        insertRecord.put("tapInt", 123123);
+        insertRecord.put("tapBoolean", true);
+        insertRecord.put("tapNumber", 1233);
+        insertRecord.put("tapNumber52", 343.22);
+        insertRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
+        return insertRecord;
+    }
+
+    public DataMap buildFilterMap() {
+        DataMap filterMap = new DataMap();
+        filterMap.put("id", "id_2");
+        filterMap.put("tapString", "1234");
+        return filterMap;
+    }
+
+    public DataMap buildUpdateMap() {
+        DataMap updateMap = new DataMap();
+        updateMap.put("id", "id_2");
+        updateMap.put("tapString", "1234");
+        updateMap.put("tapInt", 5555);
+        return updateMap;
     }
 
     public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap after, PatrolEvent patrolEvent) {
@@ -365,13 +396,13 @@ public class PDKTestBase {
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendCreateTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag,PatrolEvent patrolEvent) {
+    public void sendCreateTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag, PatrolEvent patrolEvent) {
         TapCreateTableEvent createTableEvent = new TapCreateTableEvent();
         dataFlowEngine.sendExternalTapEvent(dag.getId(), createTableEvent);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendDropTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag,PatrolEvent patrolEvent) {
+    public void sendDropTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag, PatrolEvent patrolEvent) {
         TapDropTableEvent tapDropTableEvent = new TapDropTableEvent();
         dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDropTableEvent);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
@@ -389,7 +420,7 @@ public class PDKTestBase {
 
         $(() -> Assertions.assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
         for (Map.Entry<String, Object> entry : verifyRecord.entrySet()) {
-            $(() -> Assertions.assertEquals(entry.getValue(), filterResult.getResult().get(entry.getKey()), "The value of \"tapInt\" should not be \"5555\", please make sure TapUpdateRecordEvent is handled well in writeRecord method"));
+            $(() -> Assertions.assertTrue(objectIsEqual(entry.getValue(), filterResult.getResult().get(entry.getKey())), "The value of \"" + entry.getKey() + "\" should be \"" + entry.getValue() + "\",but actual it is \"" + filterResult.getResult().get(entry.getKey()) + "\", please make sure TapUpdateRecordEvent is handled well in writeRecord method"));
         }
     }
 

@@ -1,8 +1,6 @@
 package io.tapdata.pdk.tdd.tests.target.intermediate;
 
 import io.tapdata.entity.event.control.PatrolEvent;
-import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
-import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
@@ -70,7 +68,7 @@ public class CreateTableTest extends PDKTestBase {
                                 PDKLogger.info("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     verifyTableFields();
-                                    insertOneRecord(dataFlowEngine, dag);
+                                    processCreateTable(dataFlowEngine, dag);
 
                                 }
                             });
@@ -112,22 +110,9 @@ public class CreateTableTest extends PDKTestBase {
         $(() -> Assertions.assertFalse(finalMissingOriginType, builder.toString()));
     }
 
-    private void insertOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
-
-        DataMap insertRecord = new DataMap();
-        insertRecord.put("id", "id_2");
-        insertRecord.put("tapString", "1234");
-        insertRecord.put("tapString10", "0987654321");
-        insertRecord.put("tapInt", 123123);
-        insertRecord.put("tapBoolean", true);
-        insertRecord.put("tapNumber", 1233);
-        insertRecord.put("tapNumber52", 343.22);
-        insertRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
-
-
-        DataMap filterMap = new DataMap();
-        filterMap.put("id", "id_2");
-        filterMap.put("tapString", "1234");
+    private void processCreateTable(DataFlowEngine dataFlowEngine, TapDAG dag) {
+        DataMap insertRecord = buildInsertRecord();
+        DataMap filterMap = buildFilterMap();
 
         sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
             if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
@@ -136,8 +121,38 @@ public class CreateTableTest extends PDKTestBase {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                         sendCreateTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId1, innerState1) -> {
                             if (innerNodeId1.equals(targetNodeId) && innerState1 == PatrolEvent.STATE_LEAVE) {
-                                verifyRecordNotExists(targetNode,filterMap);
-                                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId2, innerState2) -> completed()));
+                                processDML(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId2, innerState2) -> {
+                                    if (innerNodeId2.equals(targetNodeId) && innerState2 == PatrolEvent.STATE_LEAVE) {
+                                        sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId3, innerState3) -> {
+                                            if(innerNodeId3.equals(targetNodeId) && innerState3 == PatrolEvent.STATE_LEAVE){
+                                                completed();
+                                            }
+                                        }));
+                                    }
+                                }));
+                            }
+                        }));
+                    }
+                }));
+            }
+        }));
+    }
+
+    private void processDML(DataFlowEngine dataFlowEngine, TapDAG dag, PatrolEvent patrolEvent) {
+        DataMap insertRecord = buildInsertRecord();
+        DataMap filterMap = buildFilterMap();
+        DataMap updateMap = buildUpdateMap();
+
+        sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
+                sendUpdateRecordEvent(dataFlowEngine, dag, filterMap, updateMap, new PatrolEvent().patrolListener((innerNodeId1, innerState1) -> {
+                    if (innerNodeId1.equals(targetNodeId) && innerState1 == PatrolEvent.STATE_LEAVE) {
+                        verifyUpdateOneRecord(targetNode, filterMap, updateMap);
+                        sendDeleteRecordEvent(dataFlowEngine, dag, filterMap, new PatrolEvent().patrolListener((innerNodeId2, innerState2) -> {
+                            if (innerNodeId2.equals(targetNodeId) && innerState2 == PatrolEvent.STATE_LEAVE) {
+                                verifyRecordNotExists(targetNode, filterMap);
+                                dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
                             }
                         }));
                     }

@@ -83,24 +83,12 @@ public class DMLTest extends PDKTestBase {
                 }
             }
         });
-//        completed();
         waitCompleted(50);
     }
 
     private void insertOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
-        DataMap insertRecord = new DataMap();
-        insertRecord.put("id", "id_2");
-        insertRecord.put("tapString", "1234");
-        insertRecord.put("tapString10", "0987654321");
-        insertRecord.put("tapInt", 123123);
-        insertRecord.put("tapBoolean", true);
-        insertRecord.put("tapNumber", 1233);
-        insertRecord.put("tapNumber52", 343.22);
-        insertRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
-
-        DataMap filterMap = new DataMap();
-        filterMap.put("id", "id_2");
-        filterMap.put("tapString", "1234");
+        DataMap insertRecord = buildInsertRecord();
+        DataMap filterMap =buildFilterMap();
         sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
                 verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
@@ -111,28 +99,21 @@ public class DMLTest extends PDKTestBase {
 
 
     private void updateOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
-        DataMap after = new DataMap();
-        DataMap before = new DataMap();
-        before.put("id", "id_2");
-        before.put("tapString", "1234");
-        after.put("id", "id_2");
-        after.put("tapString", "1234");
-        after.put("tapInt", "5555");
-        sendUpdateRecordEvent(dataFlowEngine, dag, before, after, new PatrolEvent().patrolListener((nodeId, state) -> {
+        DataMap updateMap = buildUpdateMap();
+        DataMap filterMap = buildFilterMap();
+        sendUpdateRecordEvent(dataFlowEngine, dag, filterMap, updateMap, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
-                verifyUpdateOneRecord(targetNode, before, after);
+                verifyUpdateOneRecord(targetNode, filterMap, updateMap);
                 deleteOneRecord(dataFlowEngine, dag);
             }
         }));
     }
 
     private void deleteOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
-        DataMap before = new DataMap();
-        before.put("id", "id_2");
-        before.put("tapString", "1234");
-        sendDeleteRecordEvent(dataFlowEngine, dag, before, new PatrolEvent().patrolListener((nodeId, state) -> {
+        DataMap filterMap = buildFilterMap();
+        sendDeleteRecordEvent(dataFlowEngine, dag, filterMap, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
-                verifyRecordNotExists(targetNode, before);
+                verifyRecordNotExists(targetNode, filterMap);
                 completed();
             }
         }));

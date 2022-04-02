@@ -440,7 +440,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 addBatchInsertRecord(tapTable, after, preparedStatement);
                 inserted.incrementAndGet();
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
-                executeInsertAndClose(preparedStatement);
+                executeBatchInsert(preparedStatement);
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
                 Map<String, Object> filterAfter = new LinkedHashMap<>();
@@ -460,7 +460,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 stmt.execute(sql);
                 updated.incrementAndGet();
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
-                executeInsertAndClose(preparedStatement);
+                executeBatchInsert(preparedStatement);
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> after = deleteRecordEvent.getBefore();
                 String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, after, "AND");
@@ -468,7 +468,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 deleted.incrementAndGet();
             }
         }
-        executeInsertAndClose(preparedStatement);
+        executeBatchInsert(preparedStatement);
         //Need to tell flow engine the write result
         writeListResultConsumer.accept(writeListResult()
                 .insertedCount(inserted.get())
@@ -476,10 +476,15 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 .removedCount(deleted.get()));
     }
 
-    private void executeInsertAndClose(PreparedStatement preparedStatement) throws SQLException {
-        if (preparedStatement != null && !preparedStatement.isClosed()) {
-            preparedStatement.executeBatch();
-            preparedStatement.close();
+    private void executeBatchInsert(PreparedStatement preparedStatement) {
+        try {
+            if (preparedStatement != null && !preparedStatement.isClosed()) {
+                preparedStatement.executeBatch();
+                preparedStatement.clearBatch();
+                preparedStatement.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
