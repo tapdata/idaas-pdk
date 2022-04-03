@@ -1,13 +1,20 @@
 package io.tapdata.pdk.cli.commands;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.collect.Lists;
+import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.cli.CommonCli;
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.cli.MavenCli;
 import org.codehaus.plexus.classworlds.ClassWorld;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
+import java.io.*;
 import java.util.List;
 
 /**
@@ -56,7 +63,22 @@ public class ConnectorProjectBootCli extends CommonCli {
     MavenCli mavenCli = new MavenCli(new ClassWorld("maven", getClass().getClassLoader()));
     System.setProperty("maven.multiModuleProjectDirectory", ".");
     String[] params = paramsList.toArray(new String[]{});
-    return mavenCli.doMain(params, "..", System.out, System.err
-    );
+    int state = mavenCli.doMain(params, "..", System.out, System.err);
+    if(0 == state) setSpecNameAndId();
+
+    return state;
+  }
+
+  private void setSpecNameAndId() throws IOException {
+    String specPath = output + "/" + artifactId.toLowerCase() + "-connector/src/main/resources/spec.json";
+    String specJson = FileUtils.readFileToString(new File(specPath), "utf8");
+    JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
+    DataMap dataMap = jsonParser.fromJson(specJson);
+    DataMap propertyMap = jsonParser.fromJson(jsonParser.toJson(dataMap.get("properties")));
+    propertyMap.put("name",artifactId);
+    propertyMap.put("id",artifactId.toLowerCase());
+    dataMap.put("properties",propertyMap);
+    String outputSpec = JSON.toJSONString(dataMap, SerializerFeature.PrettyFormat);
+    FileUtils.writeStringToFile(new File(specPath),outputSpec,"utf-8");
   }
 }
