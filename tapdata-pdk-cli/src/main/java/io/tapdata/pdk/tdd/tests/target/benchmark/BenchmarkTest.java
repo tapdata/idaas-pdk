@@ -71,6 +71,7 @@ public class BenchmarkTest extends PDKTestBase {
                                     PDKLogger.info("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                     PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "Millis : {}", Duration.between(startTime, Instant.now()).toMillis());
                                     PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "QPS : {}", String.format("%f", 10000.0 / Duration.between(startTime, Instant.now()).toMillis()));
+                                    completed();
                                 }
                             });
                             //Line up after batch read
