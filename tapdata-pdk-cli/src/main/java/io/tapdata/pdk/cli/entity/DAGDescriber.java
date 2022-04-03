@@ -88,6 +88,7 @@ public class DAGDescriber {
                     }
                     TapDAGNodeEx startNode = nodeMap.get(dagLine.get(0));
                     TapDAGNodeEx endNode = nodeMap.get(dagLine.get(1));
+                    //TODO 当dagLine与id不匹配时可能出现空指针异常
                     List<String> childNodeIds = startNode.getChildNodeIds();
                     if(childNodeIds == null) {
                         childNodeIds = new ArrayList<>();

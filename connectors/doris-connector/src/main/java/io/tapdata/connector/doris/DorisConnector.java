@@ -254,8 +254,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         if (tapValue instanceof DateTime) {
             // TODO 依据不同的TapField进行不同类型的格式化
             result = this.formatTapDateTime((DateTime) tapValue, "yyyy-MM-dd HH:mm:ss");
-        } else if (tapField.getTapType() instanceof TapMap) {
-            result = toJson(result);
         }
         return result;
     }
