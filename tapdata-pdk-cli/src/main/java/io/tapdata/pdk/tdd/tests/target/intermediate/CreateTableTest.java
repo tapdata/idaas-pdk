@@ -53,7 +53,7 @@ public class CreateTableTest extends PDKTestBase {
                         new TapDAGNodeEx().id(targetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(nodeInfo.getNodeType()).version(spec.getVersion()).
                                 table(new TapTable(tableId)).connectionConfig(connectionOptions)
                 ));
-                dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList("s1", "t2")));
+                dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(sourceNodeId, targetNodeId)));
                 dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
 
                 dag = dataFlowDescriber.toDag();
