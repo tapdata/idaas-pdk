@@ -144,6 +144,8 @@ public class TDDCli extends CommonCli {
                 System.out.println("------------- Maven package Failed --------------");
                 System.exit(0);
             }
+        } else {
+            throw new IllegalArgumentException("File " + file.getAbsolutePath() + " is not exist");
         }
 
         CommonUtils.setProperty("pdk_test_jar_file", jarFile);
