@@ -25,10 +25,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
- * Implemented both TapTarget and TapSource, means the connector can be Source and Target at the same time.
- * If the connector want to be only Source or Target, then only implement one interface, TapSource or TapTarget.
- *
- * Please revise "spec.json" under resources directory, to specify your connector's id, group, icon and user input form etc.
+ * Different Connector need use different "spec.json" file with different pdk id which specified in Annotation "TapConnectorClass"
+ * In parent class "ConnectorBase", provides many simplified methods to develop connector
  */
 @TapConnectorClass("spec.json")
 public class ${libName}Connector extends ConnectorBase implements TapConnector {
@@ -93,14 +91,11 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
         //TODO execute login test here
         consumer.accept(testItem(TestItem.ITEM_LOGIN, TestItem.RESULT_SUCCESSFULLY));
         //Read test
-        //TODO execute read test here
+        //TODO execute read test by checking role permission
         consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
         //Write test
-        //TODO execute write test here
+        //TODO execute write test by checking role permission
         consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
-        //Read log test to check CDC capability
-        //TODO execute read log test here
-        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY));
 
         //When test failed
 //        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
@@ -111,9 +106,13 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
     /**
      * Register connector capabilities here.
      *
-     * To be as a source, please implement at least one of batchReadFunction or streamReadFunction.
-     * To be as a target, please implement WriteRecordFunction.
-     * To be as a source and target, please implement the functions that source and target required.
+     * To be as a target, please implement WriteRecordFunction and QueryByFilterFunction.
+     * If the database need create table before record insertion, then please implement CreateTableFunction and DropTableFunction,
+     *  Flow engine will generate the data types for each field base on incoming records for CreateTableFunction to create the table.
+     *
+     * If defined data types in spec.json is not covered all the TapValue,
+     * like TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue,
+     * then please provide the custom codec for missing TapValue by using codeRegistry.
      *
      * @param connectorFunctions
      * @param codecRegistry
@@ -137,7 +136,11 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
 
-
+        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+            if (tapRawValue != null && tapRawValue.getValue() != null)
+                return toJson(tapRawValue.getValue());
+            return "null";
+        });
     }
 
     /**

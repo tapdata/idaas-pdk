@@ -127,7 +127,7 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
 //        connectorFunctions.supportBatchRead(this::batchRead);
 //        connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportBatchCount(this::batchCount);
+//        connectorFunctions.supportBatchCount(this::batchCount);
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
 
@@ -139,61 +139,6 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
-
-        codecRegistry.registerFromTapValue(TapRawValue.class, "TEXT", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapMapValue.class, "TEXT", tapMapValue -> {
-            if (tapMapValue != null && tapMapValue.getValue() != null)
-                return toJson(tapMapValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapArrayValue.class, "TEXT", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapBooleanValue.class, "TEXT", tapValue -> {
-            if (tapValue != null) {
-                Boolean value = tapValue.getValue();
-                if (value != null && value) {
-                    return "true";
-                }
-            }
-            return "false";
-        });
-        codecRegistry.registerFromTapValue(TapBinaryValue.class, "TEXT", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "TEXT", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
-            return "null";
-        });
-
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TEXT", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
-            return "null";
-        });
-
-        codecRegistry.registerFromTapValue(TapDateValue.class, "TEXT", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
-            return "null";
-        });
-    }
-
-    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
-        primaryKeyRecordMap.clear();
-    }
-
-    private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
-//        throw new NullPointerException("aaaa");
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
@@ -206,32 +151,6 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
             }
             listConsumer.accept(filterResults);
         }
-    }
-
-    /**
-     * This method will be invoked any time when Flow engine need to save stream offset.
-     * If stream read has started, this method need return current stream offset, otherwise return null.
-     *
-     * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
-     * @param connectorContext the node context in a DAG
-     */
-    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
-        //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Flow engine knows, otherwise the result will be unpredictable.
-//        if(offsetStartTime != null)
-//            throw new NotSupportedException();
-        //TODO return stream offset
-        return null;
-    }
-
-    /**
-     * The method will be invoked any time when Flow engine need to save batch offset.
-     * If batch read has started, this method need return current batch offset, otherwise return null.
-     *
-     * @param connectorContext the node context in a DAG
-     * @return
-     */
-    private Object batchOffset(TapConnectorContext connectorContext) {
-        return null;
     }
 
     /**
@@ -299,28 +218,6 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
             builder.append(value.get(primaryKey));
         }
         return builder.toString();
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @return
-     */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
-        //TODO Count the batch size.
-        return primaryKeyRecordMap.size();
     }
 
     /**

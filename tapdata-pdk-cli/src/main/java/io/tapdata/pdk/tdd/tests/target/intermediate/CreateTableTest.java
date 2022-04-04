@@ -60,7 +60,7 @@ public class CreateTableTest extends PDKTestBase {
                 if (dag != null) {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
-                        if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
+                        if (fromState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions();
                             checkFunctions();
                         } else if (toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {

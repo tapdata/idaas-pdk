@@ -44,7 +44,6 @@ public class SourceNodeDriver extends Driver {
     private Long batchCount;
     private boolean batchCompleted = false;
     private final Object streamLock = new int[0];
-    private final AtomicBoolean firstBatchRecordsWillOffer = new AtomicBoolean(false);
     private final AtomicBoolean firstBatchRecordsOffered = new AtomicBoolean(false);
 
     public SourceNode getSourceNode() {
@@ -242,7 +241,7 @@ public class SourceNodeDriver extends Driver {
 
     private void offerToQueue(List<TapEvent> events) {
         offer(events, this::filterEvents);
-        if(firstBatchRecordsWillOffer.get() && firstBatchRecordsOffered.compareAndSet(false, true)) {
+        if(firstBatchRecordsOffered.compareAndSet(false, true)) {
             CommonUtils.ignoreAnyError(() -> {
                 if(sourceStateListener != null)
                     sourceStateListener.stateChanged(STATE_FIRST_BATCH_RECORDS_OFFERED);
@@ -302,33 +301,46 @@ public class SourceNodeDriver extends Driver {
         }, TAG);
     }
 
-    public List<TapEvent> filterEvents(List<TapEvent> events) {
+    public List<TapEvent> filterEvents(List<TapEvent> events, boolean needClone) {
         LinkedHashMap<String, TapField> nameFieldMap = sourceNode.getConnectorContext().getTable().getNameFieldMap();
         TapCodecFilterManager codecFilterManager = sourceNode.getCodecFilterManager();
         List<TapEvent> newEvents = new ArrayList<>();
         for(TapEvent tapEvent : events) {
             if(tapEvent instanceof TapBaseEvent) {
-                firstBatchRecordsWillOffer.compareAndSet(false, true);
-
                 ((TapBaseEvent) tapEvent).setTable(sourceNode.getConnectorContext().getTable());
             }
             if(tapEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertDMLEvent = (TapInsertRecordEvent) tapEvent;
-                TapInsertRecordEvent newInsertDMLEvent = new TapInsertRecordEvent();
-                insertDMLEvent.clone(newInsertDMLEvent);
+                TapInsertRecordEvent newInsertDMLEvent = null;
+                if(needClone) {
+                    newInsertDMLEvent = new TapInsertRecordEvent();
+                    insertDMLEvent.clone(newInsertDMLEvent);
+                } else {
+                    newInsertDMLEvent = insertDMLEvent;
+                }
                 codecFilterManager.transformToTapValueMap(newInsertDMLEvent.getAfter(), nameFieldMap);
                 newEvents.add(newInsertDMLEvent);
             } else if(tapEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateDMLEvent = (TapUpdateRecordEvent) tapEvent;
-                TapUpdateRecordEvent newUpdateDMLEvent = new TapUpdateRecordEvent();
-                updateDMLEvent.clone(newUpdateDMLEvent);
+                TapUpdateRecordEvent newUpdateDMLEvent = null;
+                if(needClone) {
+                    newUpdateDMLEvent = new TapUpdateRecordEvent();
+                    updateDMLEvent.clone(newUpdateDMLEvent);
+                } else {
+                    newUpdateDMLEvent = updateDMLEvent;
+                }
                 codecFilterManager.transformToTapValueMap(newUpdateDMLEvent.getAfter(), nameFieldMap);
                 codecFilterManager.transformToTapValueMap(newUpdateDMLEvent.getBefore(), nameFieldMap);
                 newEvents.add(newUpdateDMLEvent);
             } else if(tapEvent instanceof TapDeleteRecordEvent) {
                 TapDeleteRecordEvent deleteDMLEvent = (TapDeleteRecordEvent) tapEvent;
-                TapDeleteRecordEvent newDeleteDMLEvent = new TapDeleteRecordEvent();
-                deleteDMLEvent.clone(newDeleteDMLEvent);
+                TapDeleteRecordEvent newDeleteDMLEvent = null;
+                if(needClone) {
+                    newDeleteDMLEvent = new TapDeleteRecordEvent();
+                    deleteDMLEvent.clone(newDeleteDMLEvent);
+                } else {
+                    newDeleteDMLEvent = deleteDMLEvent;
+                }
                 codecFilterManager.transformToTapValueMap(newDeleteDMLEvent.getBefore(), nameFieldMap);
                 newEvents.add(newDeleteDMLEvent);
             } else {
