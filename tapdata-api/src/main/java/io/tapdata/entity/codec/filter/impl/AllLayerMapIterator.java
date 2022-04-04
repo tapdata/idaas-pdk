@@ -28,21 +28,18 @@ public class AllLayerMapIterator implements MapIterator {
     public void iterate(Map<String, Object> map, Consumer<Map.Entry<String, Object>> consumer) {
         Set<Map.Entry<String, Object>> entrySet = map.entrySet();
         for(Map.Entry<String, Object> entry : entrySet) {
-            if(entry.getValue() instanceof Map) {
-                Map<String, Object> mapFlat = new LinkedHashMap<>();
-                iterateWithPrefix(entry.getKey() + ".",(Map<String, Object>) entry.getValue(),mapFlat);
-                entry.setValue(mapFlat);
-            }
+            if(entry.getValue() instanceof Map)
+                iterateWithPrefix(entry.getKey() + ".", (Map<String, Object>) entry.getValue(), consumer);
             consumer.accept(entry);
         }
-   }
+    }
 
-    private void iterateWithPrefix(String prefix, Map<String, Object> obj,Map<String, Object> mapFlat) {
+    private void iterateWithPrefix(String prefix, Map<String, Object> obj, Consumer<Map.Entry<String, Object>> consumer) {
         for (Map.Entry<String, Object> entry : obj.entrySet()) {
             if(entry.getValue() instanceof Map) {
-                iterateWithPrefix(prefix + entry.getKey() + ".", (Map<String, Object>) entry.getValue(),mapFlat);
-            } else{
-                mapFlat.put(prefix + entry.getKey(),entry.getValue());
+                iterateWithPrefix(prefix + entry.getKey() + ".", (Map<String, Object>) entry.getValue(), consumer);
+            } else {
+                consumer.accept(new TapEntry(entry, prefix));
             }
         }
     }
