@@ -20,8 +20,9 @@ public abstract class Driver {
     }
 
     public void offer(List<TapEvent> events, Replacer<List<TapEvent>> replacer) {
+        boolean disableReplacer = queues.size() <= 1; //performance optimization. If only one queue, don't clone events.
         for(SingleThreadBlockingQueue<List<TapEvent>> queue : queues) {
-            if(replacer != null)
+            if(!disableReplacer && replacer != null)
                 queue.offer(replacer.replace(events));
             else
                 queue.offer(events);

@@ -242,7 +242,7 @@ public class SourceNodeDriver extends Driver {
 
     private void offerToQueue(List<TapEvent> events) {
         offer(events, this::filterEvents);
-        if(firstBatchRecordsWillOffer.get() && firstBatchRecordsOffered.compareAndSet(false, true)) {
+        if(firstBatchRecordsOffered.compareAndSet(false, true)) {
             CommonUtils.ignoreAnyError(() -> {
                 if(sourceStateListener != null)
                     sourceStateListener.stateChanged(STATE_FIRST_BATCH_RECORDS_OFFERED);
