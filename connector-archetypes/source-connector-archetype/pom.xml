@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.tapdata.pdk</groupId>
-  <artifactId>source-target-connector-archetype</artifactId>
+  <artifactId>source-connector-archetype</artifactId>
   <version>1.0.0</version>
   <packaging>maven-archetype</packaging>
 
-  <name>source-target-connector-archetype</name>
+  <name>source-connector-archetype</name>
 
   <build>
     <extensions>

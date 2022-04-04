@@ -10,7 +10,7 @@ import picocli.CommandLine;
  */
 public class BootMain {
     public static void main(String... args) {
-        args = new String[]{"template", "-g", "xyz.dexter", "-n", "DexterTest", "-v", "0.0.1", "-o", "${home}/tpadata/idaas-pdk/connectors"};
+        args = new String[]{"template", "-t", "target", "-g", "io.tapdata", "-n", "XDB", "-v", "0.0.1", "-o", "./connectors"};
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
     }

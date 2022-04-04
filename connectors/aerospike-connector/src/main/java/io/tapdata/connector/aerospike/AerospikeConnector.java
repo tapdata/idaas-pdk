@@ -160,6 +160,12 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         return builder.toString();
     }
 
+    /**
+     *
+     * @param connectorContext
+     * @param filters
+     * @param listConsumer
+     */
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
         String keySet = connectorContext.getTable().getName();
         LinkedHashMap<String, TapField> nameFieldMap = connectorContext.getTable().getNameFieldMap();

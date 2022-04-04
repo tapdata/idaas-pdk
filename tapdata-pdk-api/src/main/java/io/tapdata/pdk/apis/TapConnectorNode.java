@@ -18,13 +18,13 @@ public interface TapConnectorNode extends TapNode  {
      *  @param connectionContext
      * @param consumer
      */
-    void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer);
+    void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable;
 
     /**
      * Test connection
      * @param databaseContext
      * @return
      */
-    void connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer);
+    void connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer) throws Throwable;
 
 }

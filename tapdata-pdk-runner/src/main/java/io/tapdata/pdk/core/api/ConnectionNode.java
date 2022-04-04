@@ -13,11 +13,11 @@ public class ConnectionNode extends Node {
     TapConnectorNode connectorNode;
     TapConnectionContext connectionContext;
 
-    public void discoverSchema(Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(Consumer<List<TapTable>> consumer) throws Throwable {
         connectorNode.discoverSchema(connectionContext, consumer);
     }
 
-    public void connectionTest(Consumer<TestItem> consumer) {
+    public void connectionTest(Consumer<TestItem> consumer) throws Throwable {
         connectorNode.connectionTest(connectionContext, consumer);
     }
 

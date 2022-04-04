@@ -70,35 +70,26 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
-        try {
-            dorisConfig = DorisConfig.load(connectionContext.getConnectionConfig());
-            String dbUrl = dorisConfig.getDatabaseUrl();
-            conn = DriverManager.getConnection(dbUrl, dorisConfig.getUser(), dorisConfig.getPassword());
-        } catch (Exception e) {
-            throw new RuntimeException("Create Connection Failed!");
-        }
+    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable {
+        dorisConfig = DorisConfig.load(connectionContext.getConnectionConfig());
+        String dbUrl = dorisConfig.getDatabaseUrl();
+        conn = DriverManager.getConnection(dbUrl, dorisConfig.getUser(), dorisConfig.getPassword());
 
         List<TapTable> tapTableList = new LinkedList<>();
-        try {
-            DatabaseMetaData databaseMetaData = conn.getMetaData();
-            ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), dorisConfig.getDatabase(), null, new String[]{TABLE_COLUMN_NAME});
-            while (tableResult.next()) {
-                String tableName = tableResult.getString("TABLE_NAME");
-                // TODO 暂时无法通过jdbc获取键信息
-                TapTable table = table(tableName);
-                ResultSet columnsResult = databaseMetaData.getColumns(conn.getCatalog(), dorisConfig.getDatabase(), tableName, null);
-                while (columnsResult.next()) {
-                    TapField tapField = new DorisColumn(columnsResult).getTapField();
-                    table.add(tapField);
-                }
-                tapTableList.add(table);
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), dorisConfig.getDatabase(), null, new String[]{TABLE_COLUMN_NAME});
+        while (tableResult.next()) {
+            String tableName = tableResult.getString("TABLE_NAME");
+            // TODO 暂时无法通过jdbc获取键信息
+            TapTable table = table(tableName);
+            ResultSet columnsResult = databaseMetaData.getColumns(conn.getCatalog(), dorisConfig.getDatabase(), tableName, null);
+            while (columnsResult.next()) {
+                TapField tapField = new DorisColumn(columnsResult).getTapField();
+                table.add(tapField);
             }
-            consumer.accept(tapTableList);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("discoverSchema Failed! Execute SQL Failed!");
+            tapTableList.add(table);
         }
+        consumer.accept(tapTableList);
     }
 
     /**
@@ -114,7 +105,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
      * @return
      */
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         //Assume below tests are successfully, below tests are recommended, but not required.
         //Connection test
         initConnection(connectionContext.getConnectionConfig());
