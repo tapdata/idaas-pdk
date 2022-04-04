@@ -49,23 +49,13 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
-        //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
-        //Sample code shows how to define tables with specified fields.
-
+        //TODO Load tables from database, connection information in connectionContext#getConnectionConfig
+        //Sample code shows how to define tables.
         consumer.accept(list(
                 //Define first table
-                table("empty-table1")
-                        //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE")),
+                table("empty-table1"),
                 //Define second table
-                table("empty-table2")
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE"))
+                table("empty-table2"))
         ));
     }
 
@@ -202,7 +192,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param listConsumer tell flow engine the filter results according to filters
      */
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer){
-        //Filter is extactly match.
+        //Filter is exactly match.
         //If query by the filter, no value is in database, please still create a FitlerResult with null value in it. So that flow engine can understand the filter has no value.
 
         //TODO Implement the query by filter

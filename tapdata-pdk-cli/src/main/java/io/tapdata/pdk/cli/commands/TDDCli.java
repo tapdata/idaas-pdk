@@ -12,6 +12,12 @@ import io.tapdata.pdk.tdd.core.PDKTestBase;
 import io.tapdata.pdk.tdd.tests.basic.BasicTest;
 import io.tapdata.pdk.tdd.tests.target.beginner.DMLTest;
 import io.tapdata.pdk.tdd.tests.target.intermediate.CreateTableTest;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.maven.cli.CliRequest;
+import org.apache.maven.cli.MavenCli;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.codehaus.plexus.classworlds.ClassWorld;
 import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
@@ -22,8 +28,7 @@ import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import picocli.CommandLine;
 
-import java.io.File;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
@@ -114,7 +119,34 @@ public class TDDCli extends CommonCli {
     }
 
     private void testPDKJar(File file, String testConfig) throws Throwable {
-        CommonUtils.setProperty("pdk_test_jar_file", file.getAbsolutePath());
+        String jarFile = null;
+        if(file.isFile()) {
+            jarFile = file.getAbsolutePath();
+        } else if(file.isDirectory()) {
+            if(!file.getAbsolutePath().contains("connectors")) {
+                throw new IllegalArgumentException("Connector project is under connectors directory, are you passing the correct connector project directory? " + file.getAbsolutePath());
+            }
+
+            MavenCli mavenCli = new MavenCli();
+            System.setProperty("maven.multiModuleProjectDirectory", file.getAbsolutePath());
+            System.out.println(file.getName() + " is packaging...");
+            int state = mavenCli.doMain(new String[]{"clean", "package"}, file.getAbsolutePath(), System.out, System.out);
+            if (0 == state){
+                MavenXpp3Reader reader = new MavenXpp3Reader();
+                Model model = reader.read(new FileReader(FilenameUtils.concat(file.getAbsolutePath(), "pom.xml")));
+                jarFile = FilenameUtils.concat(file.getAbsolutePath(), "../../dist/" + model.getArtifactId() + "-v" + model.getVersion() + ".jar");
+                System.out.println("------------- Maven package successfully -------------");
+                System.out.println("Connector jar is " + jarFile);
+//                System.setProperty("maven.multiModuleProjectDirectory", ".");
+                Thread.currentThread().setContextClassLoader(TDDCli.class.getClassLoader());
+            } else {
+                System.out.println("");
+                System.out.println("------------- Maven package Failed --------------");
+                System.exit(0);
+            }
+        }
+
+        CommonUtils.setProperty("pdk_test_jar_file", jarFile);
         CommonUtils.setProperty("pdk_test_config_file", testConfig);
 
         PDKTestBase testBase = new PDKTestBase();
@@ -158,7 +190,7 @@ public class TDDCli extends CommonCli {
             System.out.print(builder.toString());
         }
         System.out.println("*****************************************************TDD Results*****************************************************");
-        System.out.println("Congratulations! PDK " + file.getName() + " has passed all tests!");
+        System.out.println("Congratulations! PDK " + jarFile + " has passed all tests!");
         System.exit(0);
     }
 

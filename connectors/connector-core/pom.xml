@@ -20,12 +20,6 @@
     <!--<dependencyManagement>-->
     <dependencies>
         <dependency>
-            <groupId>org.toile-libre.libe</groupId>
-            <artifactId>curl</artifactId>
-            <version>0.0.39</version>
-        </dependency>
-
-        <dependency>
             <groupId>io.tapdata.pdk</groupId>
             <artifactId>tapdata-pdk-api</artifactId>
             <scope>provided</scope>
