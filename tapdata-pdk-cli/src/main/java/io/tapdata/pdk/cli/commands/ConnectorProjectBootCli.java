@@ -16,7 +16,6 @@ import picocli.CommandLine;
 
 import java.io.*;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * @author Dexter
@@ -84,8 +83,24 @@ public class ConnectorProjectBootCli extends CommonCli {
         MavenCli mavenCli = new MavenCli(new ClassWorld("maven", getClass().getClassLoader()));
         System.setProperty("maven.multiModuleProjectDirectory", ".");
         String[] params = paramsList.toArray(new String[]{});
-        int state = mavenCli.doMain(params, "..", System.out, System.err);
-        if (0 == state) setSpecNameAndId();
+        ByteArrayOutputStream outBaos = new ByteArrayOutputStream();
+        ByteArrayOutputStream errBaos = new ByteArrayOutputStream();
+        PrintStream outps = new PrintStream(outBaos);
+        PrintStream errps = new PrintStream(errBaos);
+        int state = mavenCli.doMain(params, "..", outps,errps);
+        if (0 == state){
+            setSpecNameAndId();
+            System.out.println(outBaos);
+            System.out.println("------------- Template Generation Success -------------");
+            System.out.println("|="+artifactId+" connector project location : " + output + "/" + artifactId.toLowerCase() + "-connector");
+            System.out.println("|="+artifactId+" connector spec file : " + output + "/" + artifactId.toLowerCase() + "-connector/src/main/resources/spec.json");
+        }
+        else {
+            System.out.println(outBaos);
+            System.out.println(errBaos);
+            System.out.println("Please check and remove it if the folder \""+ output + "/" + artifactId.toLowerCase()  +"\" already exists");
+            System.out.println("------------- Template Generation Failed --------------");
+        }
 
         return state;
     }
