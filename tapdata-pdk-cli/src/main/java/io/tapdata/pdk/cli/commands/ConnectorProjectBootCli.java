@@ -46,7 +46,6 @@ public class ConnectorProjectBootCli extends CommonCli {
     @Override
     protected Integer execute() throws Exception {
         List<String> paramsList = Lists.newArrayList();
-        type = type.toLowerCase();
         switch (type) {
             case "source":
                 paramsList.add("-DarchetypeArtifactId=source-connector-archetype");
@@ -54,8 +53,11 @@ public class ConnectorProjectBootCli extends CommonCli {
             case "target":
                 paramsList.add("-DarchetypeArtifactId=target-connector-archetype");
                 break;
+            case "targetNeedTable":
+                paramsList.add("-DarchetypeArtifactId=target-need-table-connector-archetype");
+                break;
             default:
-                throw new IllegalArgumentException("Type is illegal, expect source or target, but " + type);
+                throw new IllegalArgumentException("Type is illegal, expect source, target or targetNeedTable, but " + type);
         }
         paramsList.add("archetype:generate");
         paramsList.add("-DarchetypeGroupId=io.tapdata.pdk");

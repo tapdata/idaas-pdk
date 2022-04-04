@@ -8,6 +8,7 @@ import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.value.*;
 import io.tapdata.pdk.apis.TapConnector;
@@ -21,10 +22,7 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -175,6 +173,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
 
     private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
 //        throw new NullPointerException("aaaa");
+
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
@@ -254,28 +253,6 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
             builder.append(value.get(primaryKey));
         }
         return builder.toString();
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @return
-     */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
-        //TODO Count the batch size.
-        return primaryKeyRecordMap.size();
     }
 
     /**

@@ -3,10 +3,14 @@ package ${package};
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.value.*;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -56,16 +60,16 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
                 //Define first table
                 table("empty-table1")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE")),
+                        .add(field("id", "varchar").isPrimaryKey(true).partitionKeyPos(1))
+                        .add(field("description", "string"))
+                        .add(field("name", "varchar"))
+                        .add(field("age", "int")),
                 //Define second table
                 table("empty-table2")
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE"))
+                        .add(field("id", "varchar").isPrimaryKey(true).partitionKeyPos(1))
+                        .add(field("description", "string"))
+                        .add(field("name", "varchar"))
+                        .add(field("age", "int"))
         ));
     }
 
@@ -124,16 +128,45 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
 
         //If database need insert record before table created, then please implement the below two methods.
-//        connectorFunctions.supportCreateTable(this::createTable);
-//        connectorFunctions.supportDropTable(this::dropTable);
+        connectorFunctions.supportCreateTable(this::createTable);
+        connectorFunctions.supportDropTable(this::dropTable);
 
         //If database need insert record before table created, please implement the custom codec for the TapValue that data types in spec.json didn't cover.
         //TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue
-//        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
-//            if (tapRawValue != null && tapRawValue.getValue() != null)
-//                return toJson(tapRawValue.getValue());
-//            return "null";
-//        });
+        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+            if (tapRawValue != null && tapRawValue.getValue() != null)
+                return toJson(tapRawValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
+            if (tapMapValue != null && tapMapValue.getValue() != null)
+                return toJson(tapMapValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapArrayValue.class, "text", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
+            if (tapValue != null) {
+                Boolean value = tapValue.getValue();
+                if (value != null && value) {
+                    return 1;
+                }
+            }
+            return 0;
+        });
+        codecRegistry.registerFromTapValue(TapBinaryValue.class, "text", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "datetime", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
 
 
         //Below capabilities, developer can decide to implement or not.
@@ -202,7 +235,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param listConsumer tell flow engine the filter results according to filters
      */
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer){
-        //Filter is extactly match.
+        //Filter is exactly match.
         //If query by the filter, no value is in database, please still create a FitlerResult with null value in it. So that flow engine can understand the filter has no value.
 
         //TODO Implement the query by filter
@@ -229,6 +262,23 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
             builder.append(value.get(primaryKey));
         }
         return builder.toString();
+    }
+
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+        TapTable table = connectorContext.getTable();
+        //TODO implement drop table
+    }
+
+    private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
+        //TODO implement create table.
+        TapTable table = connectorContext.getTable();
+        LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
+        for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
+            TapField field = entry.getValue();
+            String originType = field.getOriginType();
+            //originType is the data types defined in spec.json
+            //TODO use the generated originType to create table.
+        }
     }
 
     /**

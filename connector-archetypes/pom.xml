@@ -20,6 +20,7 @@
     <modules>
         <module>source-connector-archetype</module>
         <module>target-connector-archetype</module>
+        <module>target-need-table-connector-archetype</module>
     </modules>
 
 </project>
