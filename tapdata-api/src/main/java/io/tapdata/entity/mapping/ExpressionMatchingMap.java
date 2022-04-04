@@ -57,14 +57,6 @@ public class ExpressionMatchingMap<T> {
         return new ExpressionMatchingMap<>(json, typeHolder);
     }
 
-    public static DefaultExpressionMatchingMap map(String json) {
-        return new DefaultExpressionMatchingMap(InstanceFactory.instance(JsonParser.class).fromJson(json, new TypeHolder<Map<String, DataMap>>(){}));
-    }
-
-    public static DefaultExpressionMatchingMap map(Map<String, DataMap> map) {
-        return new DefaultExpressionMatchingMap(map);
-    }
-
     public ExpressionMatchingMap(String json, TypeHolder<Map<String, T>> typeHolder) {
         this(InstanceFactory.instance(JsonParser.class).fromJson(json, typeHolder));
     }
