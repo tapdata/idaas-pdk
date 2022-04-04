@@ -17,7 +17,7 @@ public class TDDBenchmarkMain1 {
                 "-t", "io.tapdata.pdk.tdd.tests.target.benchmark.BenchmarkTest",
 //                "B:\\code\\tapdata\\idaas-pdk\\dist\\aerospike-connector-v1.0-SNAPSHOT.jar",
 //                "B:\\code\\tapdata\\idaas-pdk\\dist\\doris-connector-v1.0-SNAPSHOT.jar",
-                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/empty-connector-v1.1-SNAPSHOT.jar",
+                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/connectors/empty-connector",
 
         };
 
