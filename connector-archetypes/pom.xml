@@ -2,23 +2,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>idaas-pdk</artifactId>
-    <groupId>io.tapdata.pdk</groupId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
-  <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>idaas-pdk</artifactId>
+        <groupId>io.tapdata.pdk</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>connector-archetypes</artifactId>
+    <artifactId>connector-archetypes</artifactId>
 
-  <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
-  </properties>
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+    </properties>
 
-  <packaging>pom</packaging>
-  <modules>
-    <module>source-target-connector-archetype</module>
-  </modules>
+    <packaging>pom</packaging>
+    <modules>
+        <module>source-connector-archetype</module>
+        <module>target-connector-archetype</module>
+    </modules>
 
 </project>

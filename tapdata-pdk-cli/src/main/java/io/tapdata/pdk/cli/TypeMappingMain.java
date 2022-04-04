@@ -50,7 +50,7 @@ public class TypeMappingMain {
 
 //        ExpressionMatchingMap<TapMapping> map1 = ExpressionMatchingMap.map(str, new TypeHolder<Map<String, TapMapping>>(){});
 //        map1.get("");
-        DefaultExpressionMatchingMap matchingMap = ExpressionMatchingMap.map(str);
+        DefaultExpressionMatchingMap matchingMap = DefaultExpressionMatchingMap.map(str);
         matchingMap.setValueFilter(defaultMap -> {
             TapMapping tapMapping = (TapMapping) defaultMap.get(TapMapping.FIELD_TYPE_MAPPING);
             if(tapMapping == null) {

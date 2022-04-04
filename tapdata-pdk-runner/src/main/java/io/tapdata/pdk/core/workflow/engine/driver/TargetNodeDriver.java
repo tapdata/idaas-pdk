@@ -240,21 +240,21 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         targetTable.setNameFieldMap(nameFieldMap);
     }
 
-    private void replaceTableFromDiscovered() {
-        targetNode.getConnector().discoverSchema(targetNode.getConnectorContext(), (tables) -> {
-            if(tables != null) {
-                for(TapTable table : tables) {
-                    if(table != null) {
-                        TapTable targetTable = targetNode.getConnectorContext().getTable();
-                        if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
-                            targetNode.getConnectorContext().setTable(table);
-                            break;
-                        }
-                    }
-                }
-            }
-        });
-    }
+//    private void replaceTableFromDiscovered() {
+//        targetNode.getConnector().discoverSchema(targetNode.getConnectorContext(), (tables) -> {
+//            if(tables != null) {
+//                for(TapTable table : tables) {
+//                    if(table != null) {
+//                        TapTable targetTable = targetNode.getConnectorContext().getTable();
+//                        if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
+//                            targetNode.getConnectorContext().setTable(table);
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        });
+//    }
 
     private void handleDDLEvent(TapDDLEvent event) {
         classHandlers.handle(event);

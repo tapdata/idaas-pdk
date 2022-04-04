@@ -29,11 +29,16 @@ public class BasicTest extends PDKTestBase {
 
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 LinkedHashMap<String, TestItem> testItemMap = new LinkedHashMap<>();
-                connectionNode.connectionTest(testItem -> {
-                    Assertions.assertNotNull(testItem, "TestItem is null");
-                    TestItem old = testItemMap.put(testItem.getItem(), testItem);
-                    Assertions.assertNull(old, "TestItem has duplicated item " + testItem.getItem());
-                });
+                try {
+                    connectionNode.connectionTest(testItem -> {
+                        Assertions.assertNotNull(testItem, "TestItem is null");
+                        TestItem old = testItemMap.put(testItem.getItem(), testItem);
+                        Assertions.assertNull(old, "TestItem has duplicated item " + testItem.getItem());
+                    });
+                } catch (Throwable throwable) {
+                    throwable.printStackTrace();
+                    Assertions.fail(throwable);
+                }
                 Assertions.assertFalse(testItemMap.isEmpty(), "TestItem is needed to return at least one from connectionTest method");
 
                 connectionNode.getConnectorNode().destroy();
@@ -49,7 +54,12 @@ public class BasicTest extends PDKTestBase {
 
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 List<TapTable> allTables = new ArrayList<>();
-                connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                try {
+                    connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                } catch (Throwable throwable) {
+                    throwable.printStackTrace();
+                    Assertions.fail(throwable);
+                }
                 Assertions.assertFalse(allTables.isEmpty(), "At least one table can be discovered from discoverSchema method.");
                 for(TapTable table : allTables) {
                     Assertions.assertNotNull(table, "Discovered table can not be null");

@@ -36,9 +36,9 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
 
     /**
      * The method invocation life circle is below,
-     * initiated -> discoverSchema -> ended
+     * initiated -> discoverSchema -> destroy -> ended
      *
-     * You need to create the connection to your data source and release the connection after usage in this method.
+     * You need to create the connection to your data source and release the connection in destroy method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
      * Consumer can accept multiple times, especially huge number of table list.
@@ -51,6 +51,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
+
         consumer.accept(list(
                 //Define first table
                 table("empty-table1")
@@ -70,9 +71,9 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
 
     /**
      * The method invocation life circle is below,
-     * initiated -> connectionTest -> ended
+     * initiated -> connectionTest -> destroy -> ended
      *
-     * You need to create the connection to your data source and release the connection after usage in this method.
+     * You need to create the connection to your data source and release the connection in destroy method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
      * consumer can call accept method multiple times to test different items
@@ -102,7 +103,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
         //When test failed
 //        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
         //When test successfully, but some warn is reported.
-        //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
+//        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
     }
 
     /**

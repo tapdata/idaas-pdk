@@ -1,17 +1,20 @@
 package io.tapdata.entity.type;
 
 public class TapTime extends TapType {
-    private Long scale;
-    public TapTime scale(Long scale) {
+    /**
+     * 3（毫秒）， 6（微秒）， 9（纳秒）
+     */
+    private Integer scale;
+    public TapTime scale(Integer scale) {
         this.scale = scale;
         return this;
     }
 
-    public Long getScale() {
+    public Integer getScale() {
         return scale;
     }
 
-    public void setScale(Long scale) {
+    public void setScale(Integer scale) {
         this.scale = scale;
     }
 }

@@ -7,8 +7,8 @@ public class TapDateTime extends TapType {
      * 秒点之后算scale
      *
      */
-    private Long scale;
-    public TapDateTime scale(Long scale) {
+    private Integer scale;
+    public TapDateTime scale(Integer scale) {
         this.scale = scale;
         return this;
     }
@@ -21,11 +21,11 @@ public class TapDateTime extends TapType {
         return this;
     }
 
-    public Long getScale() {
+    public Integer getScale() {
         return scale;
     }
 
-    public void setScale(Long scale) {
+    public void setScale(Integer scale) {
         this.scale = scale;
     }
 
