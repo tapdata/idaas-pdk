@@ -1,9 +1,8 @@
 package io.tapdata.pdk.core.api.impl;
 
 import io.tapdata.pdk.apis.utils.TypeConverter;
-import io.tapdata.pdk.core.annotations.Implementation;
+import io.tapdata.entity.annotations.Implementation;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;

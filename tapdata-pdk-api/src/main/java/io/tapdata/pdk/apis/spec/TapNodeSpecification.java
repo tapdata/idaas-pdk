@@ -1,6 +1,7 @@
 package io.tapdata.pdk.apis.spec;
 
-import java.util.Map;
+import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.utils.DataMap;
 
 /**
  * Node specification to register node with form components.
@@ -14,7 +15,8 @@ public class TapNodeSpecification {
     private String group; //Unique key for each enterprise.
     private String version;
     private String icon;
-    private Map<String, Object> configOptions;
+    private DataMap configOptions; //include connection and node
+    private DefaultExpressionMatchingMap dataTypesMap;
 
     public String verify() {
         if(name == null)
@@ -80,11 +82,19 @@ public class TapNodeSpecification {
         this.icon = icon;
     }
 
-    public Map<String, Object> getConfigOptions() {
+    public DataMap getConfigOptions() {
         return configOptions;
     }
 
-    public void setConfigOptions(Map<String, Object> configOptions) {
+    public void setConfigOptions(DataMap configOptions) {
         this.configOptions = configOptions;
+    }
+
+    public DefaultExpressionMatchingMap getDataTypesMap() {
+        return dataTypesMap;
+    }
+
+    public void setDataTypesMap(DefaultExpressionMatchingMap dataTypesMap) {
+        this.dataTypesMap = dataTypesMap;
     }
 }

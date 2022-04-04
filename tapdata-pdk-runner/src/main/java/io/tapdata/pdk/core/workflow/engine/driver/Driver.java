@@ -1,5 +1,6 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
+import io.tapdata.entity.codec.filter.Replacer;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.core.utils.queue.SingleThreadBlockingQueue;
 
@@ -14,9 +15,18 @@ public abstract class Driver {
             queues.add(queue);
     }
 
-    public void offer(List<TapEvent> tapEvents) {
+    public void offer(List<TapEvent> events) {
+        offer(events, null);
+    }
+
+    public void offer(List<TapEvent> events, Replacer<List<TapEvent>> replacer) {
         for(SingleThreadBlockingQueue<List<TapEvent>> queue : queues) {
-            queue.offer(tapEvents);
+            if(replacer != null)
+                queue.offer(replacer.replace(events));
+            else
+                queue.offer(events);
         }
     }
+
+    public void destroy() {}
 }

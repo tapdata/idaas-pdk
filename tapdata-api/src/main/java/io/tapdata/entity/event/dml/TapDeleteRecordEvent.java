@@ -1,13 +1,28 @@
 package io.tapdata.entity.event.dml;
 
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.TapUtils;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class TapDeleteRecordEvent extends TapRecordEvent {
 
     private Map<String, Object> before;
+
+    @Override
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapDeleteRecordEvent) {
+            TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) tapEvent;
+            if(before != null)
+                deleteRecordEvent.before = InstanceFactory.instance(TapUtils.class).cloneMap(before);
+        }
+    }
+
     public TapDeleteRecordEvent init() {
         time = System.currentTimeMillis();
         return this;

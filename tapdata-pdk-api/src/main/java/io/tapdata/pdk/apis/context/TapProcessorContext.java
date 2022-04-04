@@ -1,21 +1,21 @@
 package io.tapdata.pdk.apis.context;
 
-import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
 public class TapProcessorContext extends TapContext {
-    private DefaultMap nodeConfig;
+    private DataMap nodeConfig;
 
-    public TapProcessorContext(TapNodeSpecification specification, DefaultMap nodeConfig) {
+    public TapProcessorContext(TapNodeSpecification specification, DataMap nodeConfig) {
         super(specification);
         this.nodeConfig = nodeConfig;
     }
 
-    public DefaultMap getNodeConfig() {
+    public DataMap getNodeConfig() {
         return nodeConfig;
     }
 
-    public void setNodeConfig(DefaultMap nodeConfig) {
+    public void setNodeConfig(DataMap nodeConfig) {
         this.nodeConfig = nodeConfig;
     }
 }

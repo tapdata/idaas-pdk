@@ -1,17 +1,18 @@
 package io.tapdata.entity.event.ddl.table;
 
-import io.tapdata.entity.event.ddl.TapDDLEvent;
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.schema.TapTable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TapAlterTableEvent extends TapTableEvent {
     //
     private Map<String, TapField> changedNameFields;
     private List<TapField> insertFields;
-    private List<String> deletedFields;
+    private List<String> deleteFields;
 
     /**
      * 表名
@@ -25,6 +26,23 @@ public class TapAlterTableEvent extends TapTableEvent {
      * 字符编码
      */
     private String charset;
+
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapAlterTableEvent) {
+            TapAlterTableEvent alterTableEvent = (TapAlterTableEvent) tapEvent;
+            if(changedNameFields != null)
+                alterTableEvent.changedNameFields = new ConcurrentHashMap<>(changedNameFields);
+            if(insertFields != null)
+                alterTableEvent.insertFields = new CopyOnWriteArrayList<>(insertFields);
+            if(deleteFields != null)
+                alterTableEvent.deleteFields = new CopyOnWriteArrayList<>(deleteFields);
+            alterTableEvent.name = name;
+            alterTableEvent.storageEngine = storageEngine;
+            alterTableEvent.charset = charset;
+        }
+    }
+
 
     public String getName() {
         return name;
@@ -66,11 +84,11 @@ public class TapAlterTableEvent extends TapTableEvent {
         this.insertFields = insertFields;
     }
 
-    public List<String> getDeletedFields() {
-        return deletedFields;
+    public List<String> getDeleteFields() {
+        return deleteFields;
     }
 
-    public void setDeletedFields(List<String> deletedFields) {
-        this.deletedFields = deletedFields;
+    public void setDeleteFields(List<String> deleteFields) {
+        this.deleteFields = deleteFields;
     }
 }

@@ -17,6 +17,7 @@
         <module>vika-connector</module>
         <module>tdd-connector</module>
         <module>aerospike-connector</module>
+        <module>doris-connector</module>
     </modules>
 
     <build>

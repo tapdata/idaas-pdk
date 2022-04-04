@@ -1,21 +1,34 @@
 package io.tapdata.connector.aerospike;
 
+import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
+import com.aerospike.client.Record;
+import com.aerospike.client.policy.WritePolicy;
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.connector.aerospike.bean.AerospikeNamespaces;
+import io.tapdata.connector.aerospike.bean.AerospikeSet;
+import io.tapdata.connector.aerospike.bean.IRecord;
+import io.tapdata.connector.aerospike.bean.TapAerospikeRecord;
+import io.tapdata.connector.aerospike.utils.AerospikeSinkConfig;
+import io.tapdata.connector.aerospike.utils.AerospikeStringSink;
 import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.value.DateTime;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.FilterResult;
+import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
-import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
+import org.junit.Assert;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,16 +38,28 @@ import java.util.function.Consumer;
 @TapConnectorClass("spec.json")
 public class AerospikeConnector extends ConnectorBase implements TapConnector {
     public static final String TAG = AerospikeConnector.class.getSimpleName();
-    private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
+
+    private AerospikeSinkConfig sinkConfig;
+    private AerospikeStringSink aerospikeStringSink;
+    private final WritePolicy policy = new WritePolicy();
+
+    public void initConnection(Map<String, Object> configMap) throws Exception {
+        if (aerospikeStringSink == null) {
+            aerospikeStringSink = new AerospikeStringSink();
+            sinkConfig = AerospikeSinkConfig.load(configMap);
+            policy.timeoutDelay = 20;
+            aerospikeStringSink.open(sinkConfig);
+        }
+    }
 
     /**
      * The method invocation life circle is below,
      * initiated -> discoverSchema -> ended
-     *
+     * <p>
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     *
+     * <p>
      * Consumer can accept multiple times, especially huge number of table list.
      * This is sync method, once the method return, Flow engine will consider schema has been discovered.
      *
@@ -43,65 +68,72 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
-        //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
-        //Sample code shows how to define tables with specified fields.
-        consumer.accept(list(
-                //Define first table
-                table("empty-table1")
-                        //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE")),
-                //Define second table
-                table("empty-table2")
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE"))
-        ));
+        // Load schema from database, connection information in connectionContext#getConnectionConfig
+
+        try {
+            initConnection(connectionContext.getConnectionConfig());
+        } catch (Exception e) {
+            throw new RuntimeException("Create Connection Failed!");
+        }
+
+        // 获得表信息,获得真实的AS表数据
+        String namespace = sinkConfig.getKeyspace();
+        ArrayList<AerospikeSet> sets = AerospikeNamespaces.getSets(aerospikeStringSink.client, namespace);
+        if (sets == null) {
+            throw new RuntimeException(namespace + " is not exist!");
+        }
+        for (AerospikeSet set : sets) {
+            consumer.accept(list(table(set.getSetName())));
+        }
+
+        try {
+            aerospikeStringSink.close();
+            aerospikeStringSink = null;
+        } catch (Exception e) {
+            throw new RuntimeException("Release Connection Failed!");
+        }
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated -> connectionTest -> ended
-     *
-     * You need to create the connection to your data source and release the connection after usage in this method.
-     * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     *
-     * consumer can call accept method multiple times to test different items
-     *
-     * @param connectionContext
-     * @return
-     */
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         //Assume below tests are successfully, below tests are recommended, but not required.
         //Connection test
-        //TODO execute connection test here
+        try {
+            initConnection(connectionContext.getConnectionConfig());
+        } catch (Exception e) {
+            consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
+        }
+        Assert.assertTrue(aerospikeStringSink.isConnected());
         consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
+
         //Login test
         //TODO execute login test here
         consumer.accept(testItem(TestItem.ITEM_LOGIN, TestItem.RESULT_SUCCESSFULLY));
-        //Read test
-        //TODO execute read test here
-        consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
-        //Write test
-        //TODO execute write test here
-        consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
-        //Read log test to check CDC capability
-        //TODO execute read log test here
-        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY));
 
-        //When test failed
-//        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
+
+        //Write test
+        //TODO execute Write test here
+        //TODO 检测写权限
+        consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
+
+        //Read test
+        //TODO execute Read test here
+        consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
+
+
+        try {
+            aerospikeStringSink.close();
+        } catch (Exception e) {
+            consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection Close failed"));
+        }
+
         //When test successfully, but some warn is reported.
- //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
+        //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
     }
 
     /**
      * Register connector capabilities here.
-     *
+     * <p>
      * To be as a source, please implement at least one of batchReadFunction or streamReadFunction.
      * To be as a target, please implement WriteRecordFunction.
      * To be as a source and target, please implement the functions that source and target required.
@@ -111,81 +143,107 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
-        connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportBatchCount(this::batchCount);
-        connectorFunctions.supportBatchOffset(this::batchOffset);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
-
         connectorFunctions.supportWriteRecord(this::writeRecord);
-
-        //Below capabilities, developer can decide to implement or not.
-//        connectorFunctions.supportCreateTable(this::createTable);
-//        connectorFunctions.supportQueryByFilter(this::queryByFilter);
-//        connectorFunctions.supportAlterTable(this::alterTable);
-//        connectorFunctions.supportDropTable(this::dropTable);
-//        connectorFunctions.supportClearTable(this::clearTable);
+        connectorFunctions.supportQueryByFilter(this::queryByFilter);
     }
 
-    /**
-     * This method will be invoked any time when Flow engine need to save stream offset.
-     * If stream read has started, this method need return current stream offset, otherwise return null.
-     *
-     * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
-     * @param connectorContext the node context in a DAG
-     */
-    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
-        //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Flow engine knows, otherwise the result will be unpredictable.
-//        if(offsetStartTime != null)
-//            throw new NotSupportedException();
-        //TODO return stream offset
-        return null;
+
+    private String generateASPrimaryKey(Map<String, Object> recordMap, Collection<String> primaryKeyNames, Character splitSymbol) {
+        StringBuilder builder = new StringBuilder();
+        for (String fieldName : primaryKeyNames) {
+            builder.append(fieldName);
+            builder.append(splitSymbol);
+            builder.append(recordMap.get(fieldName).toString());
+            builder.append(splitSymbol);
+        }
+        if (builder.length() != 0) builder.delete(builder.length() - 1, builder.length());
+        return builder.toString();
     }
 
-    /**
-     * The method will be invoked any time when Flow engine need to save batch offset.
-     * If batch read has started, this method need return current batch offset, otherwise return null.
-     *
-     * @param connectorContext the node context in a DAG
-     * @return
-     */
-    private Object batchOffset(TapConnectorContext connectorContext) {
-        return null;
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+        String keySet = connectorContext.getTable().getName();
+        LinkedHashMap<String, TapField> nameFieldMap = connectorContext.getTable().getNameFieldMap();
+        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+        List<FilterResult> result = new LinkedList<>();
+        for (TapFilter filter : filters) {
+            FilterResult filterResult = new FilterResult();
+            String key = generateASPrimaryKey(filter.getMatch(), primaryKeys, '_');
+            try {
+                Record filterRecordResult = aerospikeStringSink.read(keySet, key);
+                if (filterRecordResult != null) {
+                    filterResult.setResult(filterRecordResult.bins);
+                }
+                result.add(filterResult);
+            } catch (AerospikeException aerospikeException) {
+                filterResult.setError(aerospikeException);
+            }
+        }
+        listConsumer.accept(result);
     }
 
     /**
      * The method invocation life circle is below,
      * initiated ->
-     *  if(needCreateTable)
-     *      createTable
-     *  if(needClearTable)
-     *      clearTable
-     *  writeRecord
+     * if(needCreateTable)
+     * createTable
+     * if(needClearTable)
+     * clearTable
+     * writeRecord
      * -> destroy -> ended
      *
      * @param connectorContext
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
-        //TODO write records into database
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Exception {
+        //write records into database
+        initConnection(connectorContext.getConnectionConfig());
 
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
-        for(TapRecordEvent recordEvent : tapRecordEvents) {
-            if(recordEvent instanceof TapInsertRecordEvent) {
+        for (TapRecordEvent recordEvent : tapRecordEvents) {
+            TapTable targetTable = connectorContext.getTable();
+            Collection<String> primaryKeys = targetTable.primaryKeys();
+
+            String keySet = targetTable.getName();
+            String newKey;
+            IRecord<String> newRecord;
+            LinkedHashMap<String, TapField> nameFieldMap = targetTable.getNameFieldMap();
+            if (recordEvent instanceof TapInsertRecordEvent) {
+                TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
+                Map<String, Object> after = insertRecordEvent.getAfter();
+                for (String columnName : nameFieldMap.keySet()) {
+                    TapField tapField = nameFieldMap.get(columnName);
+                    Object value = after.get(columnName);
+                    if (value instanceof DateTime) {
+                        // TODO 依据不同的TapField进行不同类型的格式化
+                        String dateValue = this.formatTapDateTime((DateTime) value, "yyyy-MM-dd HH:mm:ss");
+                        after.put(columnName, dateValue);
+                    }
+                }
+                newKey = generateASPrimaryKey(after, primaryKeys, '_');
+                newRecord = new TapAerospikeRecord(toJson(after), newKey);
+                aerospikeStringSink.write(newRecord, keySet);
                 inserted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
-            } else if(recordEvent instanceof TapUpdateRecordEvent) {
+            } else if (recordEvent instanceof TapUpdateRecordEvent) {
+                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
+                Map<String, Object> after = updateRecordEvent.getAfter();
+                newKey = generateASPrimaryKey(after, primaryKeys, '_');
+                newRecord = new TapAerospikeRecord(toJson(after), newKey);
+                aerospikeStringSink.write(newRecord, keySet);
                 updated.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
-            } else if(recordEvent instanceof TapDeleteRecordEvent) {
+            } else if (recordEvent instanceof TapDeleteRecordEvent) {
+                TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
+                Map<String, Object> before = deleteRecordEvent.getBefore();
+                newKey = generateASPrimaryKey(before, primaryKeys, '_');
+                Key key = new Key(sinkConfig.getKeyspace(), keySet, newKey);
+                aerospikeStringSink.client.delete(policy, key);
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
+
         //Need to tell flow engine the write result
         writeListResultConsumer.accept(writeListResult()
                 .insertedCount(inserted.get())
@@ -195,112 +253,24 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
 
     /**
      * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @return
-     */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
-        //TODO Count the batch size.
-        return 20L;
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param tapReadOffsetConsumer
-     */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
-        //TODO batch read all records from database, use consumer#accept to send to flow engine.
-
-        //Below is sample code to generate records directly.
-        for (int j = 0; j < 1; j++) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 20; i++) {
-                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                        entry("id", counter.incrementAndGet()),
-                        entry("description", "123"),
-                        entry("name", "123"),
-                        entry("age", 12)
-                ), connectorContext.getTable());
-                tapEvents.add(recordEvent);
-            }
-            tapReadOffsetConsumer.accept(tapEvents);
-        }
-        counter.set(counter.get() + 1000);
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param consumer
-     */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
-
-        //Below is sample code to generate stream records directly
-        while(!isShutDown.get()) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 10; i++) {
-                TapInsertRecordEvent event = insertRecordEvent(map(
-                        entry("id", counter.incrementAndGet()),
-                        entry("description", "123"),
-                        entry("name", "123"),
-                        entry("age", 12)
-                ), connectorContext.getTable());
-                tapEvents.add(event);
-            }
-
-            sleep(1000L);
-            consumer.accept(tapEvents);
-        }
-    }
-
-    /**
-     * The method invocation life circle is below,
      * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
-     *
+     * <p>
      * In connectorContext,
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
      */
     @Override
     public void destroy() {
-        //TODO release resources
+        if (aerospikeStringSink != null) {
+            try {
+                aerospikeStringSink.close();
+                aerospikeStringSink = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("release Connection Failed!");
+            }
+        }
+
         isShutDown.set(true);
     }
 }

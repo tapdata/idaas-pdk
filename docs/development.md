@@ -1,17 +1,17 @@
 # Development Guide
 
-## Open types
+## Data types
 
-**Open types is only required for your data source which need create table before insert records**, like MySQL, Oracle, Postgres, etc.
+**Data types is only required for your data source which need create table before insert records**, like MySQL, Oracle, Postgres, etc.
 
-Open types is the mapping of data type (include capabilities) with TapType.   
+Data types is the mapping of data type (include capabilities) with TapType.   
 TapType is the generic type definition in iDaaS Flow Engine.
 
-* PDK connector define open types json mapping, let Flow Engine know the mapping of data types with TapTypes. 
+* PDK connector define data types json mapping, let Flow Engine know the mapping of data types with TapTypes. 
 * Records with TapTypes will flow into Flow Engine to do processing, join, etc. 
-* Once the records with TapTypes will flow into a PDK target, Flow engine will conjecture the best data types for PDK developer to create the table, base on the input of open types json mapping.  
+* Once the records with TapTypes will flow into a PDK target, Flow engine will conjecture the best data types for PDK developer to create the table, base on the input of data types json mapping.  
 
-For more about [Open type](open-type.md).
+For more about [Data Types](dataTypes.md).
 
 If without TapType, the conversion lines is like below, which is very complex to maintain. 
 ![This is an image](images/withoutTapType.png)

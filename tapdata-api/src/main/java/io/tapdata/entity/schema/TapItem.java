@@ -1,12 +1,13 @@
 package io.tapdata.entity.schema;
 
+import java.io.Serializable;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class TapItem<T> {
+public abstract class TapItem<T> implements Serializable {
     /**
      * 从上到下的层级
      * Database的下一级就是Table的列表

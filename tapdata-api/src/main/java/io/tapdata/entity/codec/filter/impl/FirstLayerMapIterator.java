@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class FirstLayerMapIterator<T> implements MapIterator<T> {
+public class FirstLayerMapIterator implements MapIterator {
     @Override
-    public void iterate(Map<String, T> map, Consumer<Map.Entry<String, T>> consumer) {
-        Set<Map.Entry<String, T>> entrySet = map.entrySet();
-        for(Map.Entry<String, T> entry : entrySet) {
+    public void iterate(Map<String, Object> map, Consumer<Map.Entry<String, Object>> consumer) {
+        Set<Map.Entry<String, Object>> entrySet = map.entrySet();
+        for(Map.Entry<String, Object> entry : entrySet) {
             consumer.accept(entry);
         }
     }

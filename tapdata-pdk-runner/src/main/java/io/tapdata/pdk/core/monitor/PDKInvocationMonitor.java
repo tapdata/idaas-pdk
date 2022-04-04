@@ -15,12 +15,19 @@ import java.util.function.Consumer;
  * TODO start monitor thread for checking slow invocation
  */
 public class PDKInvocationMonitor {
+    private static final String TAG = PDKInvocationMonitor.class.getSimpleName();
     private static volatile PDKInvocationMonitor instance;
     private static final Object lock = new int[0];
 
     private Map<PDKMethod, InvocationCollector> methodInvocationCollectorMap = new ConcurrentHashMap<>();
 
+    private Consumer<String> errorListener;
+
     private PDKInvocationMonitor() {}
+
+    public void setErrorListener(Consumer<String> errorListener) {
+        this.errorListener = errorListener;
+    }
 
     public static PDKInvocationMonitor getInstance() {
         if(instance == null) {
@@ -55,12 +62,14 @@ public class PDKInvocationMonitor {
     }
 
     private void invokePDKMethodPrivate(PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
-        String invokeId = methodStart(method);
+        String invokeId = methodStart(method, logTag);
         Throwable theError = null;
         try {
             r.run();
         } catch(CoreException coreException) {
             theError = coreException;
+            if(errorListener != null)
+                errorListener.accept(describeError(method, coreException, message, logTag));
             if(errorConsumer != null) {
                 errorConsumer.accept(coreException);
             } else {
@@ -68,6 +77,8 @@ public class PDKInvocationMonitor {
             }
         } catch(Throwable throwable) {
             theError = throwable;
+            if(errorListener != null)
+                errorListener.accept(describeError(method, throwable, message, logTag));
             CoreException coreException = new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
             if(errorConsumer != null) {
                 errorConsumer.accept(coreException);
@@ -79,10 +90,15 @@ public class PDKInvocationMonitor {
         }
     }
 
-    public String methodStart(PDKMethod method) {
+    private String describeError(PDKMethod method, Throwable throwable, String message, String logTag) {
+        return logTag + ": Invoke PDKMethod " + method.name() + " failed, error " + message + " context message " + message;
+    }
+
+    public String methodStart(PDKMethod method, String logTag) {
         final String invokeId = CommonUtils.processUniqueId();
         InvocationCollector collector = methodInvocationCollectorMap.computeIfAbsent(method, InvocationCollector::new);
         collector.getInvokeIdTimeMap().put(invokeId, System.currentTimeMillis());
+        PDKLogger.debug(logTag, "methodStart {} invokeId {}", method, invokeId);
         return invokeId;
     }
 
@@ -95,9 +111,9 @@ public class PDKInvocationMonitor {
                 long takes = System.currentTimeMillis() - time;
                 collector.getTotalTakes().add(takes);
                 if(error != null) {
-                    PDKLogger.error(logTag, "{} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
+                    PDKLogger.error(logTag, "methodEnd {} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
                 } else {
-                    PDKLogger.debug(logTag, "{} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
+                    PDKLogger.debug(logTag, "methodEnd {} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
                 }
                 return takes;
             }

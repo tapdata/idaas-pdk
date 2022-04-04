@@ -1,12 +1,21 @@
 package io.tapdata.pdk.core.workflow.engine;
 
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.control.PatrolEvent;
+import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.Validator;
 import io.tapdata.pdk.core.utils.state.StateListener;
 import io.tapdata.pdk.core.utils.state.StateMachine;
+import io.tapdata.pdk.core.workflow.engine.driver.ProcessorNodeDriver;
+import io.tapdata.pdk.core.workflow.engine.driver.SourceNodeDriver;
+import io.tapdata.pdk.core.workflow.engine.driver.TargetNodeDriver;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,13 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DataFlowWorker {
     private static final String TAG = DataFlowWorker.class.getSimpleName();
 
-    private TapDAGWithWorker dag;
+    private TapDAG dag;
     private JobOptions jobOptions;
-    private static final String STATE_NONE = "None";
-    private static final String STATE_INITIALIZING = "Initializing";
-    private static final String STATE_INITIALIZED = "Initialized";
-    private static final String STATE_INITIALIZE_FAILED = "Initialize failed";
-    private static final String STATE_TERMINATED = "Terminated";
+    public static final String STATE_NONE = "None";
+    public static final String STATE_INITIALIZING = "Initializing";
+    public static final String STATE_INITIALIZED = "Initialized";
+    public static final String STATE_INITIALIZE_FAILED = "Initialize failed";
+    public static final String STATE_RECORDS_SENT = "Records sent";
+    public static final String STATE_TERMINATED = "Terminated";
     private StateMachine<String, DataFlowWorker> stateMachine;
     private AtomicBoolean started = new AtomicBoolean(false);
     private LastError lastError;
@@ -74,13 +84,18 @@ public class DataFlowWorker {
 //                .setOperateListener(this::handleGetServicesNodes)
 //                .setOperateFailedListener(this::handleGetServicesNodesFailed);
             stateMachine.configState(STATE_NONE, stateMachine.execute().nextStates(STATE_INITIALIZING, STATE_TERMINATED))
-                    .configState(STATE_INITIALIZING, stateMachine.execute(this::handleInitializing).nextStates(STATE_INITIALIZED, STATE_TERMINATED, STATE_INITIALIZE_FAILED))
+                    .configState(STATE_INITIALIZING, stateMachine.execute(this::handleInitializing).nextStates(STATE_RECORDS_SENT, STATE_INITIALIZED, STATE_TERMINATED, STATE_INITIALIZE_FAILED))
                     .configState(STATE_INITIALIZE_FAILED, stateMachine.execute(this::handleInitializeFailed).nextStates(STATE_INITIALIZING, STATE_TERMINATED))
-                    .configState(STATE_INITIALIZED, stateMachine.execute(this::handleInitialized).nextStates(STATE_TERMINATED))
+                    .configState(STATE_RECORDS_SENT, stateMachine.execute(this::handleRecordsSent).nextStates(STATE_INITIALIZED, STATE_TERMINATED))
+                    .configState(STATE_INITIALIZED, stateMachine.execute(this::handleInitialized).nextStates(STATE_RECORDS_SENT, STATE_TERMINATED))
                     .configState(STATE_TERMINATED, stateMachine.execute(this::handleTerminated).nextStates(STATE_INITIALIZING, STATE_NONE))
                     .errorOccurred(this::handleError);
             stateMachine.enableAsync(Executors.newSingleThreadExecutor()); //Use one thread for a worker
         }
+    }
+
+    private void handleRecordsSent(DataFlowWorker dataFlowWorker, StateMachine<String, DataFlowWorker> stringDataFlowWorkerStateMachine) {
+
     }
 
     private void handleInitializeFailed(DataFlowWorker dataFlowWorker, StateMachine<String, DataFlowWorker> stringDataFlowWorkerStateMachine) {
@@ -93,9 +108,52 @@ public class DataFlowWorker {
         //Start head nodes
         List<String> headNodeIds = dag.getHeadNodeIds();
         for(String nodeId : headNodeIds) {
-            TapDAGNodeWithWorker nodeWorker = dag.getNodeMap().get(nodeId);
+            TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
             if(nodeWorker.sourceNodeDriver != null) {
-                nodeWorker.sourceNodeDriver.start();
+                nodeWorker.sourceNodeDriver.start(state -> {
+                    if(state == SourceNodeDriver.STATE_FIRST_BATCH_RECORDS_OFFERED) {
+                        stateMachine.gotoState(STATE_RECORDS_SENT, "First batch of records has sent out");
+                    }
+                });
+            }
+        }
+    }
+    public void sendExternalEvent(TapEvent event) {
+        sendExternalEvent(event, null);
+    }
+    public void sendExternalEvent(TapEvent event, String nodeId) {
+        if(nodeId != null) {
+            TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+            if(nodeWorker != null) {
+                if(nodeWorker.sourceNodeDriver != null) {
+//                    nodeWorker.sourceNodeDriver.getSourceNode().offerExternalEvent(event);
+                    filterExternalEvent(event, nodeWorker);
+                    nodeWorker.sourceNodeDriver.receivedExternalEvent(Collections.singletonList(event));//offer(Collections.singletonList(event));
+                } else {
+                    PDKLogger.warn(TAG, "External event can only send from source node, the nodeId {} is not a source node", nodeId);
+                }
+                //Processor not consider at this moment.
+            }
+        } else {
+            List<String> headNodeIds = dag.getHeadNodeIds();
+            for(String theNodeId : headNodeIds) {
+                TapDAGNodeEx nodeWorker = dag.getNodeMap().get(theNodeId);
+                if(nodeWorker.sourceNodeDriver != null) {
+                    filterExternalEvent(event, nodeWorker);
+                    nodeWorker.sourceNodeDriver.receivedExternalEvent(Collections.singletonList(event));//offer(Collections.singletonList(event));
+                }
+            }
+        }
+    }
+
+    private void filterExternalEvent(TapEvent event, TapDAGNodeEx nodeWorker) {
+        if(event instanceof PatrolEvent) {
+            PatrolEvent patrolEvent = (PatrolEvent) event;
+            String associateId = nodeWorker.sourceNodeDriver.getSourceNode().getAssociateId();
+            if(patrolEvent.applyState(associateId, PatrolEvent.STATE_ENTER)) {
+                if(patrolEvent.getPatrolListener() != null) {
+                    CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(associateId, PatrolEvent.STATE_ENTER), TAG);
+                }
             }
         }
     }
@@ -106,16 +164,40 @@ public class DataFlowWorker {
 
         //Setup all nodes, build path for nodes. s
         for(String nodeId : headNodeIds) {
-            TapDAGNodeWithWorker nodeWorker = dag.getNodeMap().get(nodeId);
+            TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
             nodeWorker.setup(dag, jobOptions);
         }
 
         stateMachine.gotoState(STATE_INITIALIZED, "DataFlow " + dag.getId() + " init successfully");
     }
 
-    private void checkAllNodesInDAG(TapDAGWithWorker dagNodes) {
+    private void checkAllNodesInDAG(TapDAG dagNodes) {
         //TODO check all node information are correct, PDK can be found correctly.
         //If startNodes not source, or tail nodes not target, remove them.
+    }
+
+    public SourceNodeDriver getSourceNodeDriver(String nodeId) {
+        TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+        if(nodeWorker != null) {
+            return nodeWorker.sourceNodeDriver;
+        }
+        return null;
+    }
+
+    public TargetNodeDriver getTargetNodeDriver(String nodeId) {
+        TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+        if(nodeWorker != null) {
+            return nodeWorker.targetNodeDriver;
+        }
+        return null;
+    }
+
+    public ProcessorNodeDriver getProcessorNodeDriver(String nodeId) {
+        TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+        if(nodeWorker != null) {
+            return nodeWorker.processorNodeDriver;
+        }
+        return null;
     }
 
     public synchronized void start() {
@@ -134,10 +216,39 @@ public class DataFlowWorker {
     }
 
     public synchronized void stop() {
-
+        if(dag != null) {
+            List<String> headNodeIds = dag.getHeadNodeIds();
+            for(String nodeId : headNodeIds) {
+                TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+                destroyNode(nodeWorker);
+            }
+        }
     }
 
-    public synchronized void init(TapDAGWithWorker newDag, JobOptions jobOptions) {
+    private void destroyNode(TapDAGNodeEx nodeWorker) {
+        if(nodeWorker == null) return;
+        List<String> childNodeIds = nodeWorker.getChildNodeIds();
+        if(childNodeIds != null) {
+            for(String childNodeId : childNodeIds) {
+                destroyNode(dag.getNodeMap().get(childNodeId));
+            }
+        }
+        PDKIntegration.releaseAssociateId(nodeWorker.getId());
+        if(nodeWorker.sourceNodeDriver != null) {
+            CommonUtils.ignoreAnyError(() -> nodeWorker.sourceNodeDriver.destroy(), TAG);
+            nodeWorker.sourceNodeDriver = null;
+        }
+        if(nodeWorker.processorNodeDriver != null) {
+            CommonUtils.ignoreAnyError(() -> nodeWorker.processorNodeDriver.destroy(), TAG);
+            nodeWorker.processorNodeDriver = null;
+        }
+        if(nodeWorker.targetNodeDriver != null) {
+            CommonUtils.ignoreAnyError(() -> nodeWorker.targetNodeDriver.destroy(), TAG);
+            nodeWorker.targetNodeDriver = null;
+        }
+    }
+
+    public synchronized void init(TapDAG newDag, JobOptions jobOptions) {
         Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, newDag);
         Validator.checkAllNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, newDag.getId(), newDag.getHeadNodeIds());
 

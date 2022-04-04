@@ -3,8 +3,8 @@ package io.tapdata.pdk.cli.entity;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.workflow.engine.JobOptions;
-import io.tapdata.pdk.core.workflow.engine.TapDAGNodeWithWorker;
-import io.tapdata.pdk.core.workflow.engine.TapDAGWithWorker;
+import io.tapdata.pdk.core.workflow.engine.TapDAGNodeEx;
+import io.tapdata.pdk.core.workflow.engine.TapDAG;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +17,7 @@ public class DAGDescriber {
     private static final String TAG = DAGDescriber.class.getSimpleName();
 
     private String id;
-    private List<TapDAGNodeWithWorker> nodes;
+    private List<TapDAGNodeEx> nodes;
     private JobOptions jobOptions;
     private List<List<String>> dag;
 
@@ -29,11 +29,11 @@ public class DAGDescriber {
         this.jobOptions = jobOptions;
     }
 
-    public List<TapDAGNodeWithWorker> getNodes() {
+    public List<TapDAGNodeEx> getNodes() {
         return nodes;
     }
 
-    public void setNodes(List<TapDAGNodeWithWorker> nodes) {
+    public void setNodes(List<TapDAGNodeEx> nodes) {
         this.nodes = nodes;
     }
 
@@ -53,9 +53,9 @@ public class DAGDescriber {
         this.dag = dag;
     }
 
-    public TapDAGWithWorker toDag() {
+    public TapDAG toDag() {
         if(nodes != null) {
-            TapDAGWithWorker dagWithWorker = new TapDAGWithWorker();
+            TapDAG dagWithWorker = new TapDAG();
             if(id == null) {
                 PDKLogger.error(TAG, "Missing dag id while generating DAG");
                 return null;
@@ -63,17 +63,17 @@ public class DAGDescriber {
             dagWithWorker.setId(id);
             List<String> headNodeIds = new CopyOnWriteArrayList<>();
             dagWithWorker.setHeadNodeIds(headNodeIds);
-            Map<String, TapDAGNodeWithWorker> nodeMap = new ConcurrentHashMap<>();
+            Map<String, TapDAGNodeEx> nodeMap = new ConcurrentHashMap<>();
             dagWithWorker.setNodeMap(nodeMap);
             //Put into a map
-            for(TapDAGNodeWithWorker node : nodes) {
+            for(TapDAGNodeEx node : nodes) {
                 if(node == null) continue;
                 String result = node.verify();
                 if(result != null) {
                     PDKLogger.warn(TAG, "Node verify failed, {} node json {}", result, JSON.toJSONString(node));
                     continue;
                 }
-                TapDAGNodeWithWorker old = nodeMap.put(node.getId(), node);
+                TapDAGNodeEx old = nodeMap.put(node.getId(), node);
                 if(old != null) {
                     PDKLogger.warn(TAG, "Node id {} is duplicated, node is replaced, removed node json {}", node.getId(), JSON.toJSONString(old));
                 }
@@ -86,8 +86,8 @@ public class DAGDescriber {
                         PDKLogger.warn(TAG, "DagLine is illegal {}", Arrays.toString(dagLine.toArray()));
                         continue;
                     }
-                    TapDAGNodeWithWorker startNode = nodeMap.get(dagLine.get(0));
-                    TapDAGNodeWithWorker endNode = nodeMap.get(dagLine.get(1));
+                    TapDAGNodeEx startNode = nodeMap.get(dagLine.get(0));
+                    TapDAGNodeEx endNode = nodeMap.get(dagLine.get(1));
                     List<String> childNodeIds = startNode.getChildNodeIds();
                     if(childNodeIds == null) {
                         childNodeIds = new ArrayList<>();
@@ -109,7 +109,7 @@ public class DAGDescriber {
             }
 
             //Prepare head node id list
-            for(TapDAGNodeWithWorker node : nodes) {
+            for(TapDAGNodeEx node : nodes) {
                 if(node.getParentNodeIds() == null || node.getParentNodeIds().isEmpty()) {
                     if(node.getChildNodeIds() != null && !node.getChildNodeIds().isEmpty()) {
                         if(!headNodeIds.contains(node.getId()))

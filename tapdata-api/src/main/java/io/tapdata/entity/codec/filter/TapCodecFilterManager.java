@@ -3,6 +3,7 @@ package io.tapdata.entity.codec.filter;
 import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.codec.filter.impl.AllLayerMapIterator;
 import io.tapdata.entity.codec.filter.impl.FirstLayerMapIterator;
 import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.schema.TapField;
@@ -15,12 +16,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class TapCodecFilterManager {
-    private MapIterator<Object> mapIterator;
+    private MapIterator mapIterator;
     private final TapCodecRegistry codecRegistry;
 
     public TapCodecFilterManager(TapCodecRegistry codecRegistry) {
         this.codecRegistry = codecRegistry;
-        mapIterator = new FirstLayerMapIterator<>();
+        mapIterator = new AllLayerMapIterator();
     }
 
     public void transformToTapValueMap(Map<String, Object> value, Map<String, TapField> nameFieldMap) {
@@ -68,11 +69,15 @@ public class TapCodecFilterManager {
         });
     }
 
-    public MapIterator<Object> getMapIterator() {
+    public String getOriginTypeByTapType(Class<? extends TapType> tapTypeClass) {
+        return codecRegistry.getOriginTypeByTapType(tapTypeClass);
+    }
+
+    public MapIterator getMapIterator() {
         return mapIterator;
     }
 
-    public void setMapIterator(MapIterator<Object> mapIterator) {
+    public void setMapIterator(MapIterator mapIterator) {
         this.mapIterator = mapIterator;
     }
 }

@@ -1,8 +1,6 @@
 package io.tapdata.pdk.apis.logger;
 
 import io.tapdata.pdk.apis.utils.FormatUtils;
-import io.tapdata.pdk.apis.utils.ImplementationUtils;
-import io.tapdata.pdk.apis.utils.TapUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -14,6 +12,13 @@ public class PDKLogger {
 
     private PDKLogger() {
     }
+
+    private static boolean enable = true;
+
+    public static void enable(boolean enable1) {
+        enable = enable1;
+    }
+
     public interface LogListener {
         void debug(String log);
 
@@ -31,59 +36,73 @@ public class PDKLogger {
     }
 
     public static void debug(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.debug(log);
         else
-            System.out.println(log);
+            System.out.println("[DEBUG] " + log);
     }
 
     public static void info(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.info(log);
         else
-            System.out.println(log);
+            System.out.println("[INFO] " + log);
     }
 
     public static void info(String tag, Long spendTime, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params), spendTime);
         if (logListener != null)
             logListener.info(log);
         else
-            System.out.println(log);
+            System.out.println("[INFO] " + log);
     }
 
     public static void infoWithData(String tag, String dataType, String data, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params), dataType, data);
         if (logListener != null)
             logListener.info(log);
         else
-            System.out.println(log);
+            System.out.println("[INFO] " + log);
     }
 
     public static void warn(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.warn(log);
         else
-            System.out.println(log);
+            System.out.println("[WARN] " + log);
     }
 
     public static void error(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.error(log);
         else
-            System.out.println(log);
+            System.out.println("[ERROR] " + log);
     }
 
     public static void fatal(String tag, String msg, Object... params) {
+        if(!enable) return;
+
         String log = getLogMsgFatal(tag, FormatUtils.format(msg, params));
         if (logListener != null)
             logListener.fatal(log);
         else
-            System.out.println(log);
+            System.out.println("[FATAL] " + log);
     }
 
     private static String getLogMsg(String tag, String msg) {
@@ -91,7 +110,8 @@ public class PDKLogger {
         builder.append("$$time:: " + dateString()).
                 append(" $$tag:: " + tag).
                 append(" ").
-                append("[" + msg + "]");
+                append("[" + msg + "]").
+                append(" $$thread:: " + Thread.currentThread().getName());
 
         return builder.toString();
     }
@@ -102,7 +122,8 @@ public class PDKLogger {
                 append(" $$time:: " + dateString()).
                 append(" $$tag:: " + tag).
                 append(" ").
-                append("[" + msg + "]");
+                append("[" + msg + "]").
+                append(" $$thread:: " + Thread.currentThread().getName());
         return builder.toString();
     }
 
@@ -111,7 +132,8 @@ public class PDKLogger {
         builder.append("$$time:: " + dateString()).
                 append(" $$tag:: " + tag).
                 append(" [" + msg + "]").
-                append(" $$spendTime:: " + spendTime);
+                append(" $$spendTime:: " + spendTime).
+                append(" $$thread:: " + Thread.currentThread().getName());
 
         return builder.toString();
     }
@@ -122,7 +144,8 @@ public class PDKLogger {
                 append(" $$tag:: " + tag).
                 append(" [" + msg + "]").
                 append(" $$dataType:: " + dataType).
-                append(" $$data:: " + data);
+                append(" $$data:: " + data).
+                append(" $$thread:: " + Thread.currentThread().getName());
 
         return builder.toString();
     }

@@ -3,7 +3,9 @@ package io.tapdata.entity.schema;
 
 import io.tapdata.entity.type.TapType;
 
-public class TapField {
+import java.io.Serializable;
+
+public class TapField implements Serializable {
     public TapField() {}
 
     public TapField(String name, String originType) {
@@ -67,8 +69,8 @@ public class TapField {
     /**
      * Primary key position, start from 1.
      */
-    private Long primaryKeyPos;
-    public TapField primaryKeyPos(Long primaryKeyPos) {
+    private Integer primaryKeyPos;
+    public TapField primaryKeyPos(Integer primaryKeyPos) {
         this.primaryKeyPos = primaryKeyPos;
         return this;
     }
@@ -112,14 +114,14 @@ public class TapField {
         this.autoIncStartValue = autoIncStartValue;
         return this;
     }
-    /**
-     * Unique field
-     */
-    private Boolean unique;
-    public TapField unique(Boolean unique) {
-        this.unique = unique;
-        return this;
-    }
+//    /**
+//     * Unique field
+//     */
+//    private Boolean unique;
+//    public TapField unique(Boolean unique) {
+//        this.unique = unique;
+//        return this;
+//    }
     /**
      * Check expression, ensure the data can only be write when satisfy the check expression.
      */
@@ -153,6 +155,28 @@ public class TapField {
     public TapField tapType(TapType tapType) {
         this.tapType = tapType;
         return this;
+    }
+
+    public TapField clone() {
+        TapField newField = new TapField();
+        newField.nullable = nullable;
+        newField.name = name;
+        newField.originType = originType;
+        newField.partitionKeyPos = partitionKeyPos;
+        newField.pos = pos;
+        newField.primaryKeyPos = primaryKeyPos;
+        newField.autoInc = autoInc;
+        newField.autoIncStartValue = autoIncStartValue;
+        newField.check = check;
+        newField.comment = comment;
+        newField.constraint = constraint;
+        newField.defaultValue = defaultValue;
+        newField.foreignKeyField = foreignKeyField;
+        newField.foreignKeyTable = foreignKeyTable;
+        newField.isPartitionKey = isPartitionKey;
+        newField.isPrimaryKey = isPrimaryKey;
+        newField.tapType = tapType; //XXX need clone?
+        return newField;
     }
 
     public Object getDefaultValue() {
@@ -202,11 +226,11 @@ public class TapField {
         this.pos = pos;
     }
 
-    public Long getPrimaryKeyPos() {
+    public Integer getPrimaryKeyPos() {
         return primaryKeyPos;
     }
 
-    public void setPrimaryKeyPos(Long primaryKeyPos) {
+    public void setPrimaryKeyPos(Integer primaryKeyPos) {
         this.primaryKeyPos = primaryKeyPos;
     }
 
@@ -242,13 +266,13 @@ public class TapField {
         this.autoIncStartValue = autoIncStartValue;
     }
 
-    public Boolean getUnique() {
-        return unique;
-    }
-
-    public void setUnique(Boolean unique) {
-        this.unique = unique;
-    }
+//    public Boolean getUnique() {
+//        return unique;
+//    }
+//
+//    public void setUnique(Boolean unique) {
+//        this.unique = unique;
+//    }
 
     public String getCheck() {
         return check;

@@ -1,0 +1,40 @@
+{
+  "properties": {
+    "name": "EmptySource-PDK",
+    "icon": "icons/sourceIcon.png",
+    "id": "emptySource"
+  },
+  "configOptions": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "title": "Host",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "port": {
+          "type": "string",
+          "title": "Port",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        }
+      }
+    }
+  },
+  "dataTypes": {
+    "DOUBLE": {
+      "bit": 64,
+      "to": "TapNumber"
+    },
+    "VARCHAR[($byte)]": {
+      "byte": "65535",
+      "to": "TapString"
+    },
+    "TEXT": {
+      "byte": "2147483643",
+      "to": "TapString"
+    }
+  }
+}

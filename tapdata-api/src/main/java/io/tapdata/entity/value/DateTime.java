@@ -1,5 +1,6 @@
 package io.tapdata.entity.value;
 
+import java.util.Objects;
 import java.util.TimeZone;
 
 public class DateTime {
@@ -17,6 +18,26 @@ public class DateTime {
      * 时区 GMT+8
      */
     private TimeZone timeZone;
+
+    public DateTime() {
+
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DateTime that = (DateTime) o;
+        return Objects.equals(seconds, that.seconds) &&
+                Objects.equals(timeZone, that.timeZone) &&
+                Objects.equals(nano, that.nano);
+    }
+
+    @Override
+    public String toString() {
+        return "DateTime nano " + nano + " seconds " + seconds + " timeZone " + timeZone;
+    }
 
     public Long getSeconds() {
         return seconds;

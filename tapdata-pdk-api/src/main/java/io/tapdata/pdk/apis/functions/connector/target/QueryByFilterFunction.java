@@ -1,5 +1,7 @@
 package io.tapdata.pdk.apis.functions.connector.target;
 
+import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.context.TapProcessorContext;
 
@@ -11,5 +13,5 @@ import java.util.function.Consumer;
  *
  */
 public interface QueryByFilterFunction {
-    void query(TapProcessorContext nodeContext, List<TapFilter> filters, Consumer<List<TapFilter>> consumer) throws Throwable;
+    void query(TapConnectorContext nodeContext, List<TapFilter> filters, Consumer<List<FilterResult>> consumer) throws Throwable;
 }

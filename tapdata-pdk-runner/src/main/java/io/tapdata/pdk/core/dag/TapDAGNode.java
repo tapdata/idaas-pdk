@@ -1,14 +1,14 @@
 package io.tapdata.pdk.core.dag;
 
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.pdk.apis.common.DefaultMap;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 
 import java.util.List;
 
 public class TapDAGNode {
-    protected DefaultMap nodeConfig;
-    protected DefaultMap connectionConfig;
+    protected DataMap nodeConfig;
+    protected DataMap connectionConfig;
     protected String id;
     protected String pdkId;
     protected String group;
@@ -85,11 +85,11 @@ public class TapDAGNode {
         this.childNodeIds = childNodeIds;
     }
 
-    public DefaultMap getNodeConfig() {
+    public DataMap getNodeConfig() {
         return nodeConfig;
     }
 
-    public void setNodeConfig(DefaultMap nodeConfig) {
+    public void setNodeConfig(DataMap nodeConfig) {
         this.nodeConfig = nodeConfig;
     }
 
@@ -117,11 +117,11 @@ public class TapDAGNode {
         this.version = version;
     }
 
-    public DefaultMap getConnectionConfig() {
+    public DataMap getConnectionConfig() {
         return connectionConfig;
     }
 
-    public void setConnectionConfig(DefaultMap connectionConfig) {
+    public void setConnectionConfig(DataMap connectionConfig) {
         this.connectionConfig = connectionConfig;
     }
 }

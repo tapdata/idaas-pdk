@@ -1,11 +1,22 @@
 package io.tapdata.pdk.core.api;
 
 import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.event.TapBaseEvent;
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.mapping.TypeExprResult;
+import io.tapdata.entity.mapping.type.TapMapping;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.TapConnectorNode;
-import io.tapdata.pdk.apis.common.DefaultMap;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
+import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.apis.TapProcessor;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -19,8 +30,14 @@ import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
+import io.tapdata.pdk.core.utils.LoggerUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PDKIntegration {
     private static TapConnectorManager tapConnectorManager;
@@ -31,7 +48,7 @@ public class PDKIntegration {
 
     public abstract static class ConnectionBuilder<T extends Node> {
         protected String associateId;
-        protected DefaultMap connectionConfig;
+        protected DataMap connectionConfig;
         protected String pdkId;
         protected String group;
         protected String version;
@@ -73,7 +90,7 @@ public class PDKIntegration {
             return this;
         }
 
-        public ConnectionBuilder<T> withConnectionConfig(DefaultMap connectionConfig) {
+        public ConnectionBuilder<T> withConnectionConfig(DataMap connectionConfig) {
             this.connectionConfig = connectionConfig;
             return this;
         }
@@ -97,11 +114,11 @@ public class PDKIntegration {
     }
 
     public abstract static class ProcessorBuilder<T extends Node> {
-        protected DefaultMap nodeConfig;
+        protected DataMap nodeConfig;
         protected String dagId;
 
         protected String associateId;
-        protected DefaultMap connectionConfig;
+        protected DataMap connectionConfig;
         protected String pdkId;
         protected String group;
         protected String version;
@@ -145,7 +162,7 @@ public class PDKIntegration {
             return this;
         }
 
-        public ProcessorBuilder<T> withConnectionConfig(DefaultMap connectionConfig) {
+        public ProcessorBuilder<T> withConnectionConfig(DataMap connectionConfig) {
             this.connectionConfig = connectionConfig;
             return this;
         }
@@ -166,7 +183,7 @@ public class PDKIntegration {
             return this;
         }
 
-        public ProcessorBuilder<T> withNodeConfig(DefaultMap nodeConfig) {
+        public ProcessorBuilder<T> withNodeConfig(DataMap nodeConfig) {
             this.nodeConfig = nodeConfig;
             return this;
         }
@@ -182,10 +199,10 @@ public class PDKIntegration {
 
     public abstract static class ConnectorBuilder<T extends Node> {
         protected TapTable table;
-        protected DefaultMap nodeConfig;
+        protected DataMap nodeConfig;
         protected String dagId;
         protected String associateId;
-        protected DefaultMap connectionConfig;
+        protected DataMap connectionConfig;
         protected String pdkId;
         protected String group;
         protected String version;
@@ -231,7 +248,7 @@ public class PDKIntegration {
             return this;
         }
 
-        public ConnectorBuilder<T> withConnectionConfig(DefaultMap connectionConfig) {
+        public ConnectorBuilder<T> withConnectionConfig(DataMap connectionConfig) {
             this.connectionConfig = connectionConfig;
             return this;
         }
@@ -256,7 +273,7 @@ public class PDKIntegration {
             return this;
         }
 
-        public ConnectorBuilder<T> withNodeConfig(DefaultMap nodeConfig) {
+        public ConnectorBuilder<T> withNodeConfig(DataMap nodeConfig) {
             this.nodeConfig = nodeConfig;
             return this;
         }
@@ -425,5 +442,4 @@ public class PDKIntegration {
         init();
         return new ConnectionConnectorBuilder();
     }
-
 }

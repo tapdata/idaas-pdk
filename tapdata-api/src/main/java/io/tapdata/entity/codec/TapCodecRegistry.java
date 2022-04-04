@@ -1,13 +1,17 @@
 package io.tapdata.entity.codec;
 
+import io.tapdata.entity.type.TapType;
 import io.tapdata.entity.value.TapValue;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TapCodecRegistry {
     private final Map<Class<?>, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<? extends TapValue<?, ?>>, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
+    private final Map<Class<?>, String> tapTypeOriginTypeMap = new ConcurrentHashMap<>();
 
 //    private final Map<String, ToTapValueCodec<?>> fieldToTapValueCodecMap = new ConcurrentHashMap<>();
 
@@ -23,8 +27,13 @@ public class TapCodecRegistry {
         classToTapValueCodecMap.remove(anyClass);
     }
 
-    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<? extends TapValue<?, ?>> tapTypeClass, FromTapValueCodec<T> fromTapValueCodec) {
-        classFromTapValueCodecMap.put(tapTypeClass, fromTapValueCodec);
+    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, String originType, FromTapValueCodec<T> fromTapValueCodec) {
+        Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
+        if(types != null && types.length == 2 && types[1] instanceof Class) {
+            Class<?> theTapTypeClass = (Class<?>) types[1];
+            tapTypeOriginTypeMap.put(theTapTypeClass, originType);
+        }
+        classFromTapValueCodecMap.put(tapValueClass, fromTapValueCodec);
         return this;
     }
 
@@ -58,6 +67,9 @@ public class TapCodecRegistry {
         return codec;
     }
 
+    public String getOriginTypeByTapType(Class<? extends TapType> tapTypeClass) {
+        return tapTypeOriginTypeMap.get(tapTypeClass);
+    }
 //    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
 //        ToTapValueCodec<?> codec = fieldToTapValueCodecMap.get(fieldName);
 //        return codec;

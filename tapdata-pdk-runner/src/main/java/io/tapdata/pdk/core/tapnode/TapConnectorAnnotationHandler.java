@@ -2,6 +2,9 @@ package io.tapdata.pdk.core.tapnode;
 
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.mapping.ExpressionMatchingMap;
+import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
@@ -26,7 +29,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
 
     @Override
     public void handle(Set<Class<?>> classes) throws CoreException {
-        if (classes != null) {
+        if (classes != null && !classes.isEmpty()) {
             newerIdGroupTapNodeInfoMap = new ConcurrentHashMap<>();
             PDKLogger.info(TAG, "--------------TapConnector Classes Start------------- size {}", classes.size());
             for (Class<?> clazz : classes) {
@@ -61,9 +64,19 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                             }
 
                             tapNodeSpecification.setConfigOptions(tapNodeContainer.getConfigOptions());
+                            if(tapNodeContainer.getDataTypes() != null) {
+                                DefaultExpressionMatchingMap matchingMap = ExpressionMatchingMap.map(tapNodeContainer.getDataTypes());
+                                matchingMap.setValueFilter(defaultMap -> {
+                                    TapMapping tapMapping = (TapMapping) defaultMap.get(TapMapping.FIELD_TYPE_MAPPING);
+                                    if(tapMapping == null) {
+                                        defaultMap.put(TapMapping.FIELD_TYPE_MAPPING, TapMapping.build(defaultMap));
+                                    }
+                                });
+                                tapNodeSpecification.setDataTypesMap(matchingMap);
+                            }
                             String connectorType = findConnectorType(clazz);
                             if (connectorType == null) {
-                                PDKLogger.error(TAG, "Connector class for id {} title {} only have TapConnector annotation, but not implement either TapSource or TapTarget which is must, {} will be ignored...", tapNodeSpecification.idAndGroup(), tapNodeSpecification.getName(), clazz);
+                                PDKLogger.error(TAG, "Connector class for id {} title {} only have TapConnector annotation, but not implement the necessary methods, {} will be ignored...", tapNodeSpecification.idAndGroup(), tapNodeSpecification.getName(), clazz);
                                 continue;
                             }
                             TapNodeInfo tapNodeInfo = newerIdGroupTapNodeInfoMap.get(tapNodeSpecification.idAndGroup());
@@ -106,7 +119,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                 if (connectorFunctions.getBatchReadFunction() != null || connectorFunctions.getStreamReadFunction() != null) {
                     isSource = true;
                 }
-                if (connectorFunctions.getDmlFunction() != null) {
+                if (connectorFunctions.getWriteRecordFunction() != null) {
                     isTarget = true;
                 }
             } catch (Throwable e) {

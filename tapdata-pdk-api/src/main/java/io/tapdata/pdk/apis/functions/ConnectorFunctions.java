@@ -11,11 +11,13 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private StreamOffsetFunction streamOffsetFunction;
     private WriteRecordFunction writeRecordFunction;
     private QueryByFilterFunction queryByFilterFunction;
+    private QueryByAdvanceFilterFunction queryByAdvanceFilterFunction;
     private TransactionFunction transactionFunction;
     private CreateTableFunction createTableFunction;
     private AlterTableFunction alterTableFunction;
     private ClearTableFunction clearTableFunction;
     private DropTableFunction dropTableFunction;
+    private ControlFunction controlFunction;
     /**
      * Flow engine may get current batch offset at any time.
      * To continue batch read for the batch offset when job resumed from pause or stopped accidentally.
@@ -25,6 +27,11 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
      */
     public ConnectorFunctions supportBatchOffset(BatchOffsetFunction function) {
         batchOffsetFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportControlFunction(ControlFunction function) {
+        controlFunction = function;
         return this;
     }
 
@@ -97,6 +104,19 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return this;
     }
 
+    public ConnectorFunctions supportQueryByAdvanceFilter(QueryByAdvanceFilterFunction function) {
+        this.queryByAdvanceFilterFunction = function;
+        return this;
+    }
+
+    public WriteRecordFunction getWriteRecordFunction() {
+        return writeRecordFunction;
+    }
+
+    public QueryByAdvanceFilterFunction getQueryByAdvanceFilterFunction() {
+        return queryByAdvanceFilterFunction;
+    }
+
     public BatchReadFunction getBatchReadFunction() {
         return batchReadFunction;
     }
@@ -115,10 +135,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public StreamOffsetFunction getStreamOffsetFunction() {
         return streamOffsetFunction;
-    }
-
-    public WriteRecordFunction getDmlFunction() {
-        return writeRecordFunction;
     }
 
     public QueryByFilterFunction getQueryByFilterFunction() {
@@ -143,5 +159,9 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public DropTableFunction getDropTableFunction() {
         return dropTableFunction;
+    }
+
+    public ControlFunction getControlFunction() {
+        return controlFunction;
     }
 }
