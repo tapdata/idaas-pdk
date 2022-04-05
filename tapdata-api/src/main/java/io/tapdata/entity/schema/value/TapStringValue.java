@@ -1,6 +1,6 @@
-package io.tapdata.entity.value;
+package io.tapdata.entity.schema.value;
 
-import io.tapdata.entity.type.TapString;
+import io.tapdata.entity.schema.type.TapString;
 
 public class TapStringValue extends TapValue<String, TapString> {
     public TapStringValue() {}

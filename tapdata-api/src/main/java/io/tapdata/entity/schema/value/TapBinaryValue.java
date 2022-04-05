@@ -1,5 +1,5 @@
-package io.tapdata.entity.value;
-import io.tapdata.entity.type.TapBinary;
+package io.tapdata.entity.schema.value;
+import io.tapdata.entity.schema.type.TapBinary;
 
 public class TapBinaryValue extends TapValue<byte[], TapBinary> {
     public TapBinaryValue() {}

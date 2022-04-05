@@ -1,9 +1,7 @@
 package io.tapdata.entity.mapping.type;
 
-import io.tapdata.entity.type.TapBinary;
-import io.tapdata.entity.type.TapMap;
-import io.tapdata.entity.type.TapString;
-import io.tapdata.entity.type.TapType;
+import io.tapdata.entity.schema.type.TapMap;
+import io.tapdata.entity.schema.type.TapType;
 
 import java.util.Map;
 

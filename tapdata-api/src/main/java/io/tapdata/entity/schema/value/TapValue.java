@@ -1,6 +1,6 @@
-package io.tapdata.entity.value;
+package io.tapdata.entity.schema.value;
 
-import io.tapdata.entity.type.TapType;
+import io.tapdata.entity.schema.type.TapType;
 
 public abstract class TapValue<T, P extends TapType> {
     /**

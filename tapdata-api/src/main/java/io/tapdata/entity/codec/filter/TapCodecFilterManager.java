@@ -4,16 +4,12 @@ import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.filter.impl.AllLayerMapIterator;
-import io.tapdata.entity.codec.filter.impl.FirstLayerMapIterator;
 import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.type.TapType;
-import io.tapdata.entity.value.TapValue;
+import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.value.TapValue;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public class TapCodecFilterManager {
     private MapIterator mapIterator;

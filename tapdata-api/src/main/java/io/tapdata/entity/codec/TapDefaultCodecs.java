@@ -1,5 +1,6 @@
 package io.tapdata.entity.codec;
 
+import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.value.*;
 

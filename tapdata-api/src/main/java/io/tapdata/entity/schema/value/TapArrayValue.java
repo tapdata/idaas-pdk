@@ -1,6 +1,6 @@
-package io.tapdata.entity.value;
+package io.tapdata.entity.schema.value;
 
-import io.tapdata.entity.type.TapArray;
+import io.tapdata.entity.schema.type.TapArray;
 
 import java.util.List;
 

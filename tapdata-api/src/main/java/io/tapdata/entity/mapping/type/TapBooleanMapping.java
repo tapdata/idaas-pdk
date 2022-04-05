@@ -1,8 +1,7 @@
 package io.tapdata.entity.mapping.type;
 
-import io.tapdata.entity.type.TapBoolean;
-import io.tapdata.entity.type.TapDate;
-import io.tapdata.entity.type.TapType;
+import io.tapdata.entity.schema.type.TapBoolean;
+import io.tapdata.entity.schema.type.TapType;
 
 import java.util.Map;
 

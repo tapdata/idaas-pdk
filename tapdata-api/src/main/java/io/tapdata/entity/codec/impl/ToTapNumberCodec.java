@@ -3,7 +3,7 @@ package io.tapdata.entity.codec.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.value.TapNumberValue;
+import io.tapdata.entity.schema.value.TapNumberValue;
 
 @Implementation(value = ToTapValueCodec.class, type = TapDefaultCodecs.TAP_NUMBER_VALUE, buildNumber = 0)
 public class ToTapNumberCodec implements ToTapValueCodec<TapNumberValue> {

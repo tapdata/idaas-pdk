@@ -1,6 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
-import io.tapdata.entity.type.TapType;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 
 import java.util.Map;

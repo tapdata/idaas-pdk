@@ -6,7 +6,6 @@ import io.tapdata.entity.conversion.TargetTypesGenerator;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.type.TapType;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

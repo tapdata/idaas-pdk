@@ -1,7 +1,7 @@
 package io.tapdata.entity.codec;
 
-import io.tapdata.entity.type.TapType;
-import io.tapdata.entity.value.TapValue;
+import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.value.TapValue;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.Type;

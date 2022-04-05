@@ -1,6 +1,6 @@
-package io.tapdata.entity.value;
+package io.tapdata.entity.schema.value;
 
-import io.tapdata.entity.type.TapYear;
+import io.tapdata.entity.schema.type.TapYear;
 
 public class TapYearValue extends TapValue<DateTime, TapYear> {
     public TapYearValue() {}

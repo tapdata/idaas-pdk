@@ -1,5 +1,5 @@
-package io.tapdata.entity.value;
-import io.tapdata.entity.type.TapDate;
+package io.tapdata.entity.schema.value;
+import io.tapdata.entity.schema.type.TapDate;
 
 public class TapDateValue extends TapValue<DateTime, TapDate> {
     public TapDateValue() {}

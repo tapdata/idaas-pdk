@@ -1,4 +1,4 @@
-package io.tapdata.entity.value;
+package io.tapdata.entity.schema.value;
 
 import java.util.Objects;
 import java.util.TimeZone;

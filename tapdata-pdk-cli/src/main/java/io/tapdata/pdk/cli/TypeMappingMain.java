@@ -2,7 +2,7 @@ package io.tapdata.pdk.cli;
 
 import io.tapdata.entity.mapping.*;
 import io.tapdata.entity.mapping.type.TapMapping;
-import io.tapdata.entity.type.TapType;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;

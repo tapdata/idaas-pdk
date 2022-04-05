@@ -1,4 +1,4 @@
-package io.tapdata.entity.type;
+package io.tapdata.entity.schema.type;
 
 public class TapTime extends TapType {
     /**

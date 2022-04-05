@@ -1,8 +1,7 @@
 package io.tapdata.entity.mapping.type;
 
-import io.tapdata.entity.type.TapRaw;
-import io.tapdata.entity.type.TapType;
-import io.tapdata.entity.type.TapYear;
+import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.type.TapYear;
 
 import java.util.List;
 import java.util.Map;

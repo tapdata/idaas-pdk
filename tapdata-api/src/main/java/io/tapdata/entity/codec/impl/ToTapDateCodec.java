@@ -3,8 +3,8 @@ package io.tapdata.entity.codec.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.value.DateTime;
-import io.tapdata.entity.value.TapDateValue;
+import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.entity.schema.value.TapDateValue;
 
 import java.util.Date;
 

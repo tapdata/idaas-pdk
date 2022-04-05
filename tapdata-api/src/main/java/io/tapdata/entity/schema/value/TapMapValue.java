@@ -1,5 +1,5 @@
-package io.tapdata.entity.value;
-import io.tapdata.entity.type.TapMap;
+package io.tapdata.entity.schema.value;
+import io.tapdata.entity.schema.type.TapMap;
 
 import java.util.Map;
 

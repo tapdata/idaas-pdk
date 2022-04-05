@@ -1,4 +1,4 @@
-package io.tapdata.entity.type;
+package io.tapdata.entity.schema.type;
 
 /**
  * 不是为了数据库写入， 而是我们在内存里写， 带到目标库。

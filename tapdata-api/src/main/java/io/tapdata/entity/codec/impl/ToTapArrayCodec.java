@@ -3,7 +3,7 @@ package io.tapdata.entity.codec.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.value.TapArrayValue;
+import io.tapdata.entity.schema.value.TapArrayValue;
 
 import java.util.List;
 

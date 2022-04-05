@@ -1,5 +1,5 @@
-package io.tapdata.entity.value;
-import io.tapdata.entity.type.TapNumber;
+package io.tapdata.entity.schema.value;
+import io.tapdata.entity.schema.type.TapNumber;
 
 
 public class TapNumberValue extends TapValue<Double, TapNumber> {

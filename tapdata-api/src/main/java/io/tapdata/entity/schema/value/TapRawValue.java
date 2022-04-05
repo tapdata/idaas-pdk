@@ -1,6 +1,6 @@
-package io.tapdata.entity.value;
+package io.tapdata.entity.schema.value;
 
-import io.tapdata.entity.type.TapRaw;
+import io.tapdata.entity.schema.type.TapRaw;
 
 public class TapRawValue extends TapValue<Object, TapRaw> {
     public TapRawValue() {}

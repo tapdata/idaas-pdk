@@ -1,6 +1,6 @@
 package io.tapdata.entity.codec.filter;
 
-import io.tapdata.entity.value.TapValue;
+import io.tapdata.entity.schema.value.TapValue;
 
 import java.util.Map;
 

@@ -1,7 +1,7 @@
 package io.tapdata.entity.schema;
 
 
-import io.tapdata.entity.type.TapType;
+import io.tapdata.entity.schema.type.TapType;
 
 import java.io.Serializable;
 
