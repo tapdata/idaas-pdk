@@ -7,7 +7,7 @@ public abstract class TapBytesBase extends TapMapping {
     public static final String KEY_BYTE = "byte";
     public static final String KEY_BYTE_DEFAULT = "defaultByte";
 
-    protected String  fixed;
+    protected String fixed;
     protected Long bytes;
     protected Long defaultBytes;
 
@@ -19,33 +19,37 @@ public abstract class TapBytesBase extends TapMapping {
         }
 
         Object byteDefaultObject = info.get(KEY_BYTE_DEFAULT);
-        if(byteDefaultObject instanceof Number) {
-            defaultBytes = ((Number) byteDefaultObject).longValue();
-        }
+        defaultBytes = objectToNumber(byteDefaultObject);
 
         Object byteObj = info.get(KEY_BYTE);
-        if(byteObj instanceof Number) {
-            bytes = ((Number) byteObj).longValue();
-        } else if(byteObj instanceof String) {
+        bytes = objectToNumber(byteObj);
+    }
+
+    private Long objectToNumber(Object obj) {
+        Long number = null;
+        if(obj instanceof Number) {
+            number = ((Number) obj).longValue();
+        } else if(obj instanceof String) {
             //4g 64k 16m
-            String str = (String) byteObj;
+            String str = (String) obj;
             str = str.trim().toLowerCase();
             if(str.endsWith("k")) {
-                bytes = calculateBytes(str, 1024);
+                number = calculateBytes(str, 1024);
             } else if(str.endsWith("m")) {
-                bytes = calculateBytes(str, 1024L * 1024);
+                number = calculateBytes(str, 1024L * 1024);
             } else if(str.endsWith("g")) {
-                bytes = calculateBytes(str, 1024L * 1024 * 1024);
+                number = calculateBytes(str, 1024L * 1024 * 1024);
             } else if(str.endsWith("t")) {
-                bytes = calculateBytes(str, 1024L * 1024 * 1024 * 1024);
+                number = calculateBytes(str, 1024L * 1024 * 1024 * 1024);
             } else if(str.endsWith("p")) {
-                bytes = calculateBytes(str, 1024L * 1024 * 1024 * 1024 * 1024);
+                number = calculateBytes(str, 1024L * 1024 * 1024 * 1024 * 1024);
             } else {
                 try {
-                    bytes = Long.parseLong(str);
+                    number = Long.parseLong(str);
                 } catch(Throwable ignored) {}
             }
         }
+        return number;
     }
 
     private Long calculateBytes(String str, long ratio) {

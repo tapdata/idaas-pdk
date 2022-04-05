@@ -17,11 +17,11 @@ public class TapNumberMapping extends TapMapping {
     public static final String KEY_SCALE_DEFAULT = "scaleDefault";
     public static final String KEY_UNSIGNED = "unsigned";
     public static final String KEY_ZEROFILL = "zerofill";
-    public static final String KEY_LENGTH = "length";
-    public static final String KEY_LENGTH_DEFAULT = "lengthDefault";
+    public static final String KEY_BIT = "bit";
+    public static final String KEY_BIT_DEFAULT = "bitDefault";
 
-    private Integer length;
-    private Integer defaultLength;
+    private Integer bit;
+    private Integer defaultBit;
 
     private Integer minPrecision;
     private Integer maxPrecision;
@@ -37,13 +37,13 @@ public class TapNumberMapping extends TapMapping {
 
     @Override
     public void from(Map<String, Object> info) {
-        Object bitObj = getObject(info, KEY_LENGTH);
+        Object bitObj = getObject(info, KEY_BIT);
         if (bitObj instanceof Number) {
-            length = ((Number) bitObj).intValue();
+            bit = ((Number) bitObj).intValue();
         }
-        Object defaultLengthObj = getObject(info, KEY_LENGTH_DEFAULT);
+        Object defaultLengthObj = getObject(info, KEY_BIT_DEFAULT);
         if(defaultLengthObj instanceof Number) {
-            defaultLength = ((Number) defaultLengthObj).intValue();
+            defaultBit = ((Number) defaultLengthObj).intValue();
         }
 
         Object precisionObj = getObject(info, KEY_PRECISION);
@@ -103,7 +103,7 @@ public class TapNumberMapping extends TapMapping {
             theZerofill = true;
         }
 
-        String lengthStr = getParam(params, KEY_LENGTH);
+        String lengthStr = getParam(params, KEY_BIT);
         Integer length = null;
         if (lengthStr != null) {
             try {
@@ -113,7 +113,7 @@ public class TapNumberMapping extends TapMapping {
             }
         }
         if(length == null)
-            length = defaultLength;
+            length = defaultBit;
 
         String precisionStr = getParam(params, KEY_PRECISION);
         Integer precision = null;
@@ -142,7 +142,7 @@ public class TapNumberMapping extends TapMapping {
         return new TapNumber()
                 .precision(precision)
                 .scale(scale)
-                .length(length)
+                .bit(length)
                 .unsigned(theUnsigned)
                 .zerofill(theZerofill);
     }
@@ -160,9 +160,9 @@ public class TapNumberMapping extends TapMapping {
                 theFinalExpression = clearBrackets(theFinalExpression, zerofill);
             }
 
-            if (tapNumber.getLength() != null) {
-                theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_LENGTH, false);
-                theFinalExpression = theFinalExpression.replace("$" + KEY_LENGTH, String.valueOf(tapNumber.getLength()));
+            if (tapNumber.getBit() != null) {
+                theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_BIT, false);
+                theFinalExpression = theFinalExpression.replace("$" + KEY_BIT, String.valueOf(tapNumber.getBit()));
             }
             if (tapNumber.getPrecision() != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_PRECISION, false);
@@ -225,11 +225,11 @@ public class TapNumberMapping extends TapMapping {
         this.zerofill = zerofill;
     }
 
-    public Integer getLength() {
-        return length;
+    public Integer getBit() {
+        return bit;
     }
 
-    public void setLength(Integer length) {
-        this.length = length;
+    public void setBit(Integer bit) {
+        this.bit = bit;
     }
 }
