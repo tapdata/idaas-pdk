@@ -2,15 +2,11 @@ package io.tapdata.connector.empty;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
-import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.value.*;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
