@@ -4,7 +4,7 @@ Data Types in spec.json is to describe the capabilities of data types for Increm
 
 **If the database support insert record without table creation, like MongoDB, Kafka, etc, then please ignore this document, just leave dataTypes empty in spec.json.**
 
-##The format to describe the data types
+## The format to describe the data types
 
 - key is data type expression to easily matching multiple data types with several combinations which are the same type of data. 
 - value is the capabilities description for min, max value, unsigned, etc. 
