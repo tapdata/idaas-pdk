@@ -70,9 +70,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable {
-        dorisConfig = DorisConfig.load(connectionContext.getConnectionConfig());
-        String dbUrl = dorisConfig.getDatabaseUrl();
-        conn = DriverManager.getConnection(dbUrl, dorisConfig.getUser(), dorisConfig.getPassword());
+        initConnection(connectionContext.getConnectionConfig());
 
         List<TapTable> tapTableList = new LinkedList<>();
         DatabaseMetaData databaseMetaData = conn.getMetaData();

@@ -86,9 +86,15 @@ public class DAGDescriber {
                         PDKLogger.warn(TAG, "DagLine is illegal {}", Arrays.toString(dagLine.toArray()));
                         continue;
                     }
-                    TapDAGNodeEx startNode = nodeMap.get(dagLine.get(0));
-                    TapDAGNodeEx endNode = nodeMap.get(dagLine.get(1));
-                    //TODO 当dagLine与id不匹配时可能出现空指针异常
+                    TapDAGNodeEx startNode = nodeMap.getOrDefault(dagLine.get(0), null);
+                    TapDAGNodeEx endNode = nodeMap.getOrDefault(dagLine.get(1), null);
+                    if (startNode == null || endNode == null) {
+                        String startNodeId = startNode == null ? "null" : startNode.getId();
+                        String endNodeId = endNode == null ? "null" : endNode.getId();
+                        PDKLogger.error(TAG, "Node in DAG is not found from {} to {}. [ {} -> {}]", dagLine.get(0), dagLine.get(1), startNodeId, endNodeId);
+
+                        return null;
+                    }
                     List<String> childNodeIds = startNode.getChildNodeIds();
                     if(childNodeIds == null) {
                         childNodeIds = new ArrayList<>();
