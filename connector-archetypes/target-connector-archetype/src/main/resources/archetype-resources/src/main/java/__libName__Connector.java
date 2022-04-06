@@ -56,7 +56,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
                 table("empty-table1"),
                 //Define second table
                 table("empty-table2"))
-        ));
+        );
     }
 
     /**
