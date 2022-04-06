@@ -131,17 +131,17 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
             if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
+                return "raw";//toJson(tapRawValue.getValue());
             return "null";
         });
         codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
             if (tapMapValue != null && tapMapValue.getValue() != null)
-                return toJson(tapMapValue.getValue());
+                return "map";//toJson(tapMapValue.getValue());
             return "null";
         });
         codecRegistry.registerFromTapValue(TapArrayValue.class, "text", tapValue -> {
             if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
+                return "array";//toJson(tapValue.getValue());
             return "null";
         });
         codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
@@ -155,12 +155,12 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
         });
         codecRegistry.registerFromTapValue(TapBinaryValue.class, "text", tapValue -> {
             if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
+                return "binary";//toJson(tapValue.getValue());
             return "null";
         });
         codecRegistry.registerFromTapValue(TapTimeValue.class, "datetime", tapValue -> {
             if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
+                return "time"; //toJson(tapValue.getValue());
             return "null";
         });
     }

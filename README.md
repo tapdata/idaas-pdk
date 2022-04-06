@@ -64,7 +64,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
     }
 
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC API or log to read stream records from database, use consumer#accept to send to flow engine.
+        //TODO using CDC API or log to read stream records from database, use consumer#accept to send to incremental engine.
         //Below is sample code to generate stream records directly
         while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
@@ -83,7 +83,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
 
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> consumer) {
         //TODO write records into database
-        //Need to tell flow engine the write result
+        //Need to tell incremental engine the write result
         consumer.accept(writeListResult()
                 .insertedCount(tapRecordEvents.size()));
     }
@@ -98,11 +98,11 @@ spec.json describes three types information,
     - Connector name, icon and id.
 * [configOptions](docs/configOptions.md)
     - Describe a form for user to input the information for how to connect and which database to open.
-* [dataTypes](docs/dataTypes.md) (Not ready yet)
+* [dataTypes](docs/dataTypes.md) 
     - This will be required when current data source need create table with proper types before insert records.
       Otherwise, this key can be empty.
     - Describe the capability of types for current data source.
-    - iDaaS Flow Engine will generate proper types when table creation is needed.
+    - iDaaS Incremental Engine will generate proper types when table creation is needed.
 
 ```json
 {
@@ -115,15 +115,24 @@ spec.json describes three types information,
     "connection": {
       "type": "object",
       "properties": {
-        "token": {
+        "host": {
           "type": "string",
           "title": "Host",
+          "required": true,
           "x-decorator": "FormItem",
           "x-component": "Input"
         },
-        "spaceId": {
+        "port": {
+          "type": "number",
+          "title": "Port",
+          "required": true,
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "database": {
           "type": "string",
           "title": "Database",
+          "required": true,
           "x-decorator": "FormItem",
           "x-component": "Input"
         }
@@ -131,24 +140,8 @@ spec.json describes three types information,
     }
   },
   "dataTypes": {
-    "double": {
-      "bit": 64,
-      "to": "TapNumber"
-    },
-    "decimal[($precision,$scale)]": {
-      "bit": 128,
-      "precision": [
-        1,
-        27
-      ],
-      "defaultPrecision": 10,
-      "scale": [
-        0,
-        9
-      ],
-      "defaultScale": 0,
-      "to": "TapNumber"
-    }
+    "double": {"bit": 64, "to": "TapNumber"},
+    "decimal[($precision,$scale)]": {"precision": [1, 27], "defaultPrecision": 10, "scale": [0, 9], "defaultScale": 0, "to": "TapNumber"}
   }
 }
 
@@ -169,49 +162,59 @@ Install from source
   cd idaas-pdk
   mvn clean install
 ```
-Create target connector project which don't need create table before insert records
+There are three types project templates. Assume "group" is "io.tapdata" and "name" is "XDB" and "version" is "0.0.1".
+* Target (Need create table before insertion)
+```shell
+./bin/tap template --type targetNeedTable --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
+```  
+* Target (No table creation requirement)
 ```shell
 ./bin/tap template --type target --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
 ```
-
-Create target connector project which need create table before insert records
-```shell
-./bin/tap template --type targetNeedTable --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
-```
-
-Create source connector project
+* Source
 ```shell
 ./bin/tap template --type source --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
 ```
-Use IntelliJ IDE to open idaas-pdk, you can find your project under connectors module. 
+
+Use IntelliJ IDE to open idaas-pdk, you can find it named "xdb-connector" under connectors module. 
 * IntelliJ download: [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
 
 
 ## Development Guide
 PDK need developer to provide below, 
-* Provide open types json mapping for data types to TapTypes.
-* Provide the methods for developers to implement the corresponding source and target features.
+* Provide data types expression in spec.json for the database which need create table before record insertion.
+* Implement the methods that PDK required.
+* Use TDD to verify that the methods are implemented correctly.
 
 [Get started](docs/development.md)
 
 ## Test Driven Development
-PDK connector will run unit tests during maven package. Also when register to Tapdata, your connector must pass those unit tests before the register to Tapdata.
-This is the way we ensure our PDK connector quality. 
-
-[TDD tests](docs/tdd.md)
-
-## PDK Registration
+Provide json file which given the values of "configOptions" required from "spec.json" file.
+```json
+{
+    "connection": {
+      "host": "192.168.153.132",
+      "port": 9030,
+      "database": "test"
+    }
+}
 ```
-./bin/tap register
-  Push PDK jar file into Tapdata
-      [FILE...]            One ore more pdk jar files
-  -a, --auth=<authToken>   Provide auth token to register
-  -h, --help               TapData cli help
-  -l, --latest             whether replace the latest version, default is true
-  -t, --tm=<tmUrl>         Tapdata TM url
-  
-./bin/tap register -a token-abcdefg-hijklmnop -t http://host:port dist/your-connector-v1.0-SNAPSHOT.jar
+The json file can be outside of git project as you may don't want to expose your password or ip/port, etc.
+
+To run TDD command,
+
+```shell
+./bin/tap tdd --testConfig xdb_tdd.json ./connectors/xdb-connector
 ```
+Once PDK connector pass TDD tests, proves that the PDK connector is ready to work in Tapdata. You can also contribute the PDK connector to idaas-pdk open source project. 
+
+## How to contribute to idaas-pdk
+* Fork idaas-pdk
+* Create ${database}-connector module under connectors 
+* Implemented the methods that PDK required, and the features you want to provide 
+* Pass TDD tests
+* Submit Pull Request
+* Will merge after review
 
 ## Roadmap
 
