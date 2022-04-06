@@ -5,11 +5,11 @@
 **Data types is only required for your data source which need create table before insert records**, like MySQL, Oracle, Postgres, etc.
 
 Data types is the mapping of data type (include capabilities) with TapType.   
-TapType is the generic type definition in iDaaS Flow Engine.
+TapType is the generic type definition in iDaaS Incremental Engine.
 
-* PDK connector define data types json mapping, let Flow Engine know the mapping of data types with TapTypes. 
-* Records with TapTypes will flow into Flow Engine to do processing, join, etc. 
-* Once the records with TapTypes will flow into a PDK target, Flow engine will conjecture the best data types for PDK developer to create the table, base on the input of data types json mapping.  
+* PDK connector define data types json mapping, let Incremental Engine know the mapping of data types with TapTypes. 
+* Records with TapTypes will flow into Incremental Engine to do processing, join, etc. 
+* Once the records with TapTypes will flow into a PDK target, Incremental engine will conjecture the best data types for PDK developer to create the table, base on the input of data types json mapping.  
 
 For more about [Data Types](dataTypes.md).
 
@@ -23,7 +23,7 @@ With TapType in the middle of type conversion, the conversion can be maintainabl
 Above is the important concept to implement PDK connector, especially for the data source which need create table for insert records. 
 
 ### TapType
-There are 10 types of TapType. 
+There are 11 types of TapType. 
 * TapBoolean
 * TapDate
 * TapArray
@@ -34,8 +34,9 @@ There are 10 types of TapType.
 * TapMap
 * TapString
 * TapDateTime
+* TapYear
 
-We also have 10 types of TapValue for each TapType to combine value with it's TapType.
+We also have 11 types of TapValue for each TapType to combine value with it's TapType.
 * TapBooleanValue
 * TapDateValue
 * TapArrayValue
@@ -46,7 +47,10 @@ We also have 10 types of TapValue for each TapType to combine value with it's Ta
 * TapMapValue
 * TapStringValue
 * TapDateTimeValue
-
+* TapYearValue
+  
+Below is schema class diagram
+  ![This is an image](images/schemaClassDiagram.png)
 
 ## idaas-pdk modules
 * **connectors**
@@ -58,12 +62,14 @@ We also have 10 types of TapValue for each TapType to combine value with it's Ta
         - File connector to append record in user specified local file
     - **tdd-connector**
         - TDD Connector provide sample data for PDK tests
+* **tapdata-api**
+    - Tapdata API, fundamental class definition, like TapType, TapValue, TapMapping, TapEvent, etc
 * **tapdata-pdk-api**
     - PDK API, every connector depend on the API
 * **tapdata-pdk-cli**
     - Run PDK in CLI, like register to Tapdata, test methods, etc
 * **tapdata-pdk-runner**
-    - Provide integration API to Tapdata FlowEngine, also provide a tiny flow engine for test purpose
+    - Provide integration API to Tapdata Incremental Engine, also provide a tiny incremental engine for test purpose
     
 ## Develop PDK connector
 
@@ -72,17 +78,17 @@ There are 11 methods to implement. The more developer implement, the more featur
     - BatchOffset
       - Return current batch offset, PDK developer define what is batch offset. Batch offset will be provided in batch read method when recover the batch read.
         
-    - BatchCount (must as a source)
+    - BatchCount
         - Return the total record size for batch read.
-    - BatchRead (must as a source)
-        - Return the record events from batch read, once this method end, flow engine will consider batch read is finished.
+    - BatchRead 
+        - Return the record events from batch read, once this method end, incremental engine will consider batch read is finished.
     - StreamRead
         - Return the record events or ddl events from stream read, this method will always be called once it returns.       
     - StreamOffset
         - Return current stream offset the latest batch. 
 
 * PDK Target methods to implement 
-    - writeRecord (must as a target)
+    - writeRecord 
         - Write record events into target data source. 
     - QueryByFilter
         - Verify the record with certain filter is exists or not. if exists, then update, other wise do insert. 
@@ -99,6 +105,13 @@ Source methods invocation state diagram
 ![This is an image](images/sourceStateDiagram.jpg)
 Target methods invocation state diagram
 ![This is an image](images/targetStateDiagram.jpg)
+
+TapEvent class diagram
+![This is an image](images/eventClassDiagram.png)
+
+Record conversion from source to target diagram
+![This is an image](images/recordFlowDiagram.jpg)
+
 ### Batch Read
 ```java
 @TapConnectorClass("spec.json")
@@ -111,10 +124,10 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
      * @param connectorContext
      * @param offset the offset that batch read start from
      * @param batchSize the batch size for the max record list size when consumer#accept a batch
-     * @param consumer push records in Flow engine
+     * @param consumer push records in Incremental engine
      */
     private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> consumer) {
-        //TODO batch read all records from database when offset == null, use consumer#accept to send to flow engine.
+        //TODO batch read all records from database when offset == null, use consumer#accept to send to incremental engine.
         //TODO if offset != null, batch read records started from the offset condition. 
         
         //Below is sample code to generate records directly.
@@ -197,7 +210,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
+        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to incremental engine.
         //TODO if offset != null, stream read will continue from offset condition. 
         
         //Below is sample code to generate stream records directly
@@ -280,17 +293,42 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
 
+        //Only need for a source connector
         codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));
+
+        //If database need insert record before table created, please implement the custom codec for the TapValue that data types in spec.json didn't cover.
+        //TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue
+        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+            if (tapRawValue != null && tapRawValue.getValue() != null)
+                return toJson(tapRawValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
+            if (tapValue != null) {
+                Boolean value = tapValue.getValue();
+                if (value != null && value) {
+                    return 1;
+                }
+            }
+            return 0;
+        });
     }
 }
 ```
 
 ### Custom Codec
-PDK can recognize generic types in your records and convert them into TapValue.
+* Source codec
+  
+    - PDK can recognize generic types in your records and convert them into TapValue.
 
-To convert custom class, developer need to provide the codec for how to convert the custom class into a type of TapValue. So that different data source can be able to insert this value. 
+    - To convert custom class, developer need to provide the codec for how to convert the custom class into a type of TapValue, so that different data source can be able to insert this value.
+    
+    - The origin object will be stored in the field originValue of TapValue, if the target is the same data source, connector can still get the original value to insert.
 
-The origin object will be stored in the field originValue of TapValue, if the target is the same data source, connector can still get the original value to insert. 
+* Target codec (Only for the database that need create table before record insertion)
+    - Data types json mapping is not covered all the TapValue, then please provide the custom codec for the TapValue can be converted to which data type and provide the conversion method.   
+
+
 
 ```java
 @TapConnectorClass("spec.json")
@@ -299,6 +337,23 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
         //TDDUser object will be convert into json string.  
         codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));
+
+        //If database need insert record before table created, please implement the custom codec for the TapValue that data types in spec.json didn't cover.
+        //TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue
+        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+            if (tapRawValue != null && tapRawValue.getValue() != null)
+                return toJson(tapRawValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
+            if (tapValue != null) {
+                Boolean value = tapValue.getValue();
+                if (value != null && value) {
+                    return 1;
+                }
+            }
+            return 0;
+        });
     }
 }
 ```
@@ -325,7 +380,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
-        //Need to tell flow engine the write result
+        //Need to tell incremental engine the write result
         writeListResultConsumer.accept(writeListResult()
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
@@ -335,27 +390,22 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
 ```
 
 ## After development
+Provide json file which given the values of "configOptions" required from "spec.json" file.
+```json
+{
+    "connection": {
+      "host": "192.168.153.132",
+      "port": 9030,
+      "database": "test"
+    }
+}
+```
+The json file can be outside of git project as you may don't want to expose your password or ip/port, etc.
+
+To run TDD command,
+
 ```shell
-  cd yourConnector
-  mvn package
+./bin/tap tdd --testConfig xdb_tdd.json ./connectors/xdb-connector
 ```
-During mvn package, [TDD](tdd.md) unit tests will be executed, developer need to fix the unit test errors before register to Tapdata. 
-
-The PDK connector jar will be generated under idaas-pdk/dist directory. 
-
-
-## Register your connector into Tapdata
-```
-./bin/tap register
-  Push PDK jar file into Tapdata
-      [FILE...]            One ore more pdk jar files
-  -a, --auth=<authToken>   Provide auth token to register
-  -h, --help               TapData cli help
-  -l, --latest             whether replace the latest version, default is true
-  -t, --tm=<tmUrl>         Tapdata TM url
-```
-    ./bin/tap register -a token-abcdefg-hijklmnop -t http://host:port dist/your-connector-v1.0-SNAPSHOT.jar
-
-## Now you can use your PDK connector in Tapdata website
-
+Once PDK connector pass TDD tests, proves that the PDK connector is ready to work in Tapdata. You can also contribute the PDK connector to idaas-pdk open source project.
 
