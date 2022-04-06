@@ -37,6 +37,8 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
     private Connection conn;
     private Statement stmt;
     private static final String TABLE_COLUMN_NAME = "TABLE";
+    private static final DorisDMLInstance DMLInstance = DorisDMLInstance.getInstance();
+    private static final DorisDDLInstance DDLInstance = DorisDDLInstance.getInstance();
 
 
     private void initConnection(DataMap config) {
@@ -182,7 +184,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         Set<String> columnNames = connectorContext.getTable().getNameFieldMap().keySet();
         List<FilterResult> filterResults = new LinkedList<>();
         for (TapFilter filter : filters) {
-            String sql = "SELECT * FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, filter.getMatch(), "AND");
+            String sql = "SELECT * FROM " + tapTable.getName() + " WHERE " + DMLInstance.buildKeyAndValue(tapTable, filter.getMatch(), "AND");
             FilterResult filterResult = new FilterResult();
             try {
                 DataMap resultMap = new DataMap();
@@ -205,99 +207,15 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
     }
 
-    private String buildDistributedKey(Collection<String> primaryKeyNames) {
-        StringBuilder builder = new StringBuilder();
-        for (String fieldName : primaryKeyNames) {
-            builder.append(fieldName);
-            builder.append(',');
-        }
-        builder.delete(builder.length() - 1, builder.length());
-        return builder.toString();
-    }
-
-    private String buildColumnDefinition(TapTable tapTable) {
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        StringBuilder builder = new StringBuilder();
-        for (String columnName : nameFieldMap.keySet()) {
-            TapField tapField = nameFieldMap.get(columnName);
-            if (tapField.getOriginType() == null) continue;
-            builder.append(tapField.getName()).append(' ');
-            builder.append(tapField.getOriginType()).append(' ');
-            if (tapField.getNullable() != null && !tapField.getNullable()) {
-                builder.append("NOT NULL").append(' ');
-            } else {
-                builder.append("NULL").append(' ');
-            }
-            if (tapField.getDefaultValue() != null) {
-                builder.append("DEFAULT").append(' ').append(tapField.getDefaultValue()).append(' ');
-            }
-            builder.append(',');
-        }
-        builder.delete(builder.length() - 1, builder.length());
-        return builder.toString();
-    }
-
-    private Object getFieldOriginValue(TapField tapField, Object tapValue) {
-        Object result = tapValue;
-        if (tapValue instanceof DateTime) {
-            // TODO 依据不同的TapField进行不同类型的格式化
-            result = this.formatTapDateTime((DateTime) tapValue, "yyyy-MM-dd HH:mm:ss");
-        }
-        return result;
-    }
-
-    private String buildInsertKeyAndValues(TapTable tapTable, Map<String, Object> record) {
-        // 之前作为单条记录插入使用 insert into table values ([buildInsertKeyAndValues])
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        StringBuilder builder = new StringBuilder();
-        for (String columnName : nameFieldMap.keySet()) {
-            TapField tapField = nameFieldMap.get(columnName);
-            Object tapValue = record.get(columnName);
-            if (tapField.getOriginType() == null) continue;
-            if (tapValue == null) {
-                if (tapField.getNullable() != null && !tapField.getNullable()) {
-                    builder.append("\'").append(tapField.getDefaultValue()).append("'").append(',');
-                } else {
-                    builder.append("null").append(',');
-                }
-            } else {
-                builder.append("'").append(getFieldOriginValue(tapField, tapValue)).append("'").append(',');
-            }
-        }
-        builder.delete(builder.length() - 1, builder.length());
-        return builder.toString();
-    }
-
-    private void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
-        preparedStatement.clearParameters();
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        int pos = 1;
-        for (String columnName : nameFieldMap.keySet()) {
-            TapField tapField = nameFieldMap.get(columnName);
-            Object tapValue = insertRecord.get(columnName);
-            if (tapField.getOriginType() == null) continue;
-            if (tapValue == null) {
-                if (tapField.getNullable() != null && !tapField.getNullable()) {
-                    preparedStatement.setObject(pos, tapField.getDefaultValue());
-                } else {
-                    preparedStatement.setObject(pos, null);
-                }
-            } else {
-                preparedStatement.setObject(pos, getFieldOriginValue(tapField, tapValue));
-            }
-            pos += 1;
-        }
-        preparedStatement.addBatch();
-    }
 
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTable();
         Collection<String> primaryKeys = tapTable.primaryKeys();
         String sql = "CREATE TABLE " + tapTable.getName() +
-                "(" + this.buildColumnDefinition(tapTable) + ")" +
-                "UNIQUE KEY (" + this.buildDistributedKey(primaryKeys) + " ) " +
-                "DISTRIBUTED BY HASH(" + this.buildDistributedKey(primaryKeys) + " ) BUCKETS 10 " +
+                "(" + DDLInstance.buildColumnDefinition(tapTable) + ")" +
+                "UNIQUE KEY (" + DDLInstance.buildDistributedKey(primaryKeys) + " ) " +
+                "DISTRIBUTED BY HASH(" + DDLInstance.buildDistributedKey(primaryKeys) + " ) BUCKETS 10 " +
                 "PROPERTIES(\"replication_num\" = \"1\")";
 
         try {
@@ -371,35 +289,6 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         }
     }
 
-    private String buildBatchInsertSQL(TapTable tapTable) {
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        int fieldCount = 0;
-        for (Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
-            TapField tapField = nameFieldMap.get(entry.getKey());
-            if (tapField.getOriginType() == null) continue;
-            fieldCount += 1;
-        }
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < fieldCount; i++) {
-            stringBuilder.append("?, ");
-        }
-        stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
-        return "INSERT INTO " + tapTable.getName() + " VALUES (" + stringBuilder + ")";
-    }
-
-    private String buildKeyAndValue(TapTable tapTable, Map<String, Object> record, String splitSymbol) {
-        StringBuilder builder = new StringBuilder();
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        for (Map.Entry<String, Object> entry : record.entrySet()) {
-            String fieldName = entry.getKey();
-            builder.append(fieldName).append("=").append("'").
-                    append(getFieldOriginValue(nameFieldMap.get(fieldName), entry.getValue())).
-                    append("' ").append(splitSymbol).append(" ");
-        }
-        builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
-        return builder.toString();
-    }
-
 
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
         initConnection(connectorContext.getConnectionConfig());
@@ -412,14 +301,14 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         TapTable tapTable = connectorContext.getTable();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
 
-        PreparedStatement preparedStatement = conn.prepareStatement(buildBatchInsertSQL(tapTable));
+        PreparedStatement preparedStatement = conn.prepareStatement(DorisDDLInstance.buildBatchInsertSQL(tapTable));
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});
             if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> after = insertRecordEvent.getAfter();
-                addBatchInsertRecord(tapTable, after, preparedStatement);
+                DMLInstance.addBatchInsertRecord(tapTable, after, preparedStatement);
                 inserted.incrementAndGet();
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 executeBatchInsert(preparedStatement);
@@ -436,15 +325,15 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                     }
                 }
                 String sql = "UPDATE " + tapTable.getName() +
-                        " SET " + buildKeyAndValue(tapTable, updateAfter, ",") +
-                        " WHERE " + buildKeyAndValue(tapTable, filterAfter, "AND");
+                        " SET " + DMLInstance.buildKeyAndValue(tapTable, updateAfter, ",") +
+                        " WHERE " + DMLInstance.buildKeyAndValue(tapTable, filterAfter, "AND");
                 stmt.execute(sql);
                 updated.incrementAndGet();
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 executeBatchInsert(preparedStatement);
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> after = deleteRecordEvent.getBefore();
-                String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + buildKeyAndValue(tapTable, after, "AND");
+                String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + DMLInstance.buildKeyAndValue(tapTable, after, "AND");
                 stmt.execute(sql);
                 deleted.incrementAndGet();
             }
