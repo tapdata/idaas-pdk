@@ -16,7 +16,6 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.utils.FormatUtils;
 import io.tapdata.entity.utils.TapUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
-import org.toilelibre.libe.curl.Curl;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -26,20 +25,6 @@ public class ConnectorBase {
     private TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
     private JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
     private SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
-
-    /**
-     * @XXX
-     * This CURL lib has bug, need bug fixing
-     *
-     * @param curl
-     * @param params
-     * @return
-     * @XXX This CURL lib has bug, need bug fixing
-     */
-    public DataMap curl(String curl, Object... params) {
-        String result = Curl.$(format(curl, params));
-        return fromJson(result, DataMap.class);
-    }
 
     public void interval(Runnable runnable, int seconds) {
         tapUtils.interval(runnable, seconds);

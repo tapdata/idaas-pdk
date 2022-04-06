@@ -23,10 +23,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
- * Implemented both TapTarget and TapSource, means the connector can be Source and Target at the same time.
- * If the connector want to be only Source or Target, then only implement one interface, TapSource or TapTarget.
- *
- * Please revise "spec.json" under resources directory, to specify your connector's id, group, icon and user input form etc.
+ * Different Connector need use different "spec.json" file with different pdk id which specified in Annotation "TapConnectorClass"
+ * In parent class "ConnectorBase", provides many simplified methods to develop connector
  */
 @TapConnectorClass("spec.json")
 public class ${libName}Connector extends ConnectorBase implements TapConnector {
@@ -42,7 +40,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
      * Consumer can accept multiple times, especially huge number of table list.
-     * This is sync method, once the method return, Flow engine will consider schema has been discovered.
+     * This is sync method, once the method return, Incremental engine will consider schema has been discovered.
      *
      * @param connectionContext
      * @param consumer
@@ -135,14 +133,14 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
     }
 
     /**
-     * This method will be invoked any time when Flow engine need to save stream offset.
+     * This method will be invoked any time when Incremental engine need to save stream offset.
      * If stream read has started, this method need return current stream offset, otherwise return null.
      *
      * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
      * @param connectorContext the node context in a DAG
      */
     Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
-        //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Flow engine knows, otherwise the result will be unpredictable.
+        //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Incremental engine knows, otherwise the result will be unpredictable.
 //        if(offsetStartTime != null)
 //            throw new NotSupportedException();
         //TODO return stream offset in runtime
@@ -150,7 +148,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
     }
 
     /**
-     * The method will be invoked any time when Flow engine need to save batch offset.
+     * The method will be invoked any time when Incremental engine need to save batch offset.
      * If batch read has started, this method need return current batch offset, otherwise return null.
      *
      * @param connectorContext the node context in a DAG
@@ -194,7 +192,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
-        //Need to tell flow engine the write result
+        //Need to tell incremental engine the write result
         writeListResultConsumer.accept(writeListResult()
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
@@ -241,7 +239,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param tapReadOffsetConsumer
      */
     private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
-        //TODO batch read all records from database, use consumer#accept to send to flow engine.
+        //TODO batch read all records from database, use consumer#accept to send to incremental engine.
 
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
@@ -278,7 +276,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
+        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to incremental engine.
 
         //Below is sample code to generate stream records directly
         while(!isShutDown.get()) {

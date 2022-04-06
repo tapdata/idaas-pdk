@@ -42,7 +42,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
      *
      * Consumer can accept multiple times, especially huge number of table list.
-     * This is sync method, once the method return, Flow engine will consider schema has been discovered.
+     * This is sync method, once the method return, Incremental engine will consider schema has been discovered.
      *
      * @param connectionContext
      * @param consumer
@@ -56,7 +56,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
                 table("empty-table1"),
                 //Define second table
                 table("empty-table2"))
-        ));
+        );
     }
 
     /**
@@ -98,7 +98,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      *
      * To be as a target, please implement WriteRecordFunction and QueryByFilterFunction.
      * If the database need create table before record insertion, then please implement CreateTableFunction and DropTableFunction,
-     *  Flow engine will generate the data types for each field base on incoming records for CreateTableFunction to create the table.
+     *  Incremental engine will generate the data types for each field base on incoming records for CreateTableFunction to create the table.
      *
      * If defined data types in spec.json is not covered all the TapValue,
      * like TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue,
@@ -177,7 +177,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
-        //Need to tell flow engine the write result
+        //Need to tell incremental engine the write result
         writeListResultConsumer.accept(writeListResult()
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
@@ -189,11 +189,11 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      *
      * @param connectorContext
      * @param filters Multple fitlers, need return multiple filter results
-     * @param listConsumer tell flow engine the filter results according to filters
+     * @param listConsumer tell incremental engine the filter results according to filters
      */
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer){
         //Filter is exactly match.
-        //If query by the filter, no value is in database, please still create a FitlerResult with null value in it. So that flow engine can understand the filter has no value.
+        //If query by the filter, no value is in database, please still create a FitlerResult with null value in it. So that incremental engine can understand the filter has no value.
 
         //TODO Implement the query by filter
 //        if(filters != null) {
