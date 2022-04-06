@@ -40,7 +40,7 @@ The "to" means the data type expression will be converted to the specified TapTy
 
 Some TapType have extra fields
 * TapNumber
-```json
+```text
 { 
     "to": "TapNumber",
   
@@ -59,7 +59,7 @@ Some TapType have extra fields
 ```
 for example
 
-```json
+```text
 {
   "int[($bit)]": {"bit": 32, "defaultBit": 8, "to": "TapNumber"},
   "double[($precision,$scale)[unsigned]": {"precision": [1, 64], "defaultPrecision": 10, "scale": [0, 8], "defaultScale": 4, "unsigned":  "unsigned", "to":  "TapNumber"},
@@ -68,7 +68,7 @@ for example
 
 ```    
 * TapString
-```json
+```text
 {
     "byte" : "16m", //Max length of string, support string with suffix "k", "m", "g", "t", "p", also number
     "defaultByte" : "1m", //Max length of string, support string with suffix "k", "m", "g", "t", "p", also number
@@ -76,14 +76,14 @@ for example
 }
 ```
 for example
-```json
+```text
 {
   "text": {"byte":  "2m", "to":  "TapString"}, 
   "varchar[($byte)]": {"byte":  1024, "defaultByte":  128, "to":  "TapString"}
 }
 ```
 * TapBinary
-```json
+```text
 {
     "byte" : "16m", //Max length of binary，support string with suffix "k", "m", "g", "t", "p", also number
     "defaultByte" : "1m", //Max length of binary，support string with suffix "k", "m", "g", "t", "p", also number
@@ -91,21 +91,21 @@ for example
 }
 ```
 * TapDate
-```json
+```text
 {
     "range" : ["1000-01-01", "9999-12-31"], //Date range in format YYYY-MM-DD
     "gmt" : 0, //gmt
 }
 ```
 * TapDateTime
-```json
+```text
 {
     "range" : ["1000-01-01 00:00:00", "9999-12-31 23:59:59"], //Date time range in format YYYY-MM-DD hh:mm:ss
     "gmt" : 0, //gmt
 }
 ```
 * TapTime
-```json
+```text
 {
     "range" : ["-838:59:59","838:59:59"], //Time range in format hh:mm:ss
     "gmt" : 0, //gmt
@@ -125,7 +125,7 @@ Example of Doris data type expression is below,
     "largeint":{"bit":128, "to":"TapNumber"},
     "float":{"bit":32, "to":"TapNumber"},
     "double":{"bit":64, "to":"TapNumber"},
-    "decimal[($precision,$scale)]":{"bit": 128, "precision": [1, 27], "defaultPrecision": 10, "scale": [0, 9], "defaultScale": 0, "to": "TapNumber"},
+    "decimal[($precision,$scale)]":{"precision": [1, 27], "defaultPrecision": 10, "scale": [0, 9], "defaultScale": 0, "to": "TapNumber"},
     "date":{"byte":3, "range":["0000-01-01", "9999-12-31"], "to":"TapDate"},
     "datetime":{"byte":8, "range":["0000-01-01 00:00:00","9999-12-31 23:59:59"],"to":"TapDateTime"},
     "char[($byte)]":{"byte":255, "to": "TapString", "defaultByte": 1},

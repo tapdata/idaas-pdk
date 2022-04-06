@@ -141,7 +141,7 @@ spec.json describes three types information,
   },
   "dataTypes": {
     "double": {"bit": 64, "to": "TapNumber"},
-    "decimal[($precision,$scale)]": {"bit": 128, "precision": [1, 27], "defaultPrecision": 10, "scale": [0, 9], "defaultScale": 0, "to": "TapNumber"}
+    "decimal[($precision,$scale)]": {"precision": [1, 27], "defaultPrecision": 10, "scale": [0, 9], "defaultScale": 0, "to": "TapNumber"}
   }
 }
 
