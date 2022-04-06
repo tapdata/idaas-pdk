@@ -169,9 +169,19 @@ Install from source
   cd idaas-pdk
   mvn clean install
 ```
-Create connector project
+Create target connector project which don't need create table before insert records
 ```shell
-./bin/tap template --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
+./bin/tap template --type target --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
+```
+
+Create target connector project which need create table before insert records
+```shell
+./bin/tap template --type targetNeedTable --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
+```
+
+Create source connector project
+```shell
+./bin/tap template --type source --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
 ```
 Use IntelliJ IDE to open idaas-pdk, you can find your project under connectors module. 
 * IntelliJ download: [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
