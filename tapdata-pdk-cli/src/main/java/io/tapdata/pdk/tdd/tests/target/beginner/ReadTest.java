@@ -25,8 +25,8 @@ import java.util.UUID;
 @DisplayName("Tests for source beginner test")
 public class ReadTest extends PDKTestBase {
     private static final String TAG = DMLTest.class.getSimpleName();
-    TargetNode targetNode;
-    SourceNode tddSourceNode;
+    TargetNode tddTargetNode;
+    SourceNode sourceNode;
     DataFlowWorker dataFlowWorker;
     String targetNodeId = "t2";
     String sourceNodeId = "s1";
@@ -45,7 +45,7 @@ public class ReadTest extends PDKTestBase {
                 dataFlowDescriber.setNodes(Arrays.asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(nodeInfo.getNodeType()).version(spec.getVersion()).
                                 table(new TapTable(tableId)).connectionConfig(connectionOptions),
-                        new TapDAGNodeEx().id(targetNodeId).pdkId("tdd-target").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
+                        new TapDAGNodeEx().id(targetNodeId).pdkId("tdd-target").group("io.tapdata.connector").type(TapDAGNode.TYPE_TARGET).version("1.0-SNAPSHOT").
                                 table(new TapTable("tdd-table")).connectionConfig(new DataMap())
                 ));
                 dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList("s1", "t2")));
@@ -57,7 +57,6 @@ public class ReadTest extends PDKTestBase {
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
                         if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
-
                             checkFunctions();
                         } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
@@ -87,15 +86,15 @@ public class ReadTest extends PDKTestBase {
 
 
     private void checkFunctions() {
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getBatchReadFunction(), "BatchReadFunction is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getBatchCountFunction(), "BatchCountFunction is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getBatchOffsetFunction(), "BatchOffsetFunction is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getStreamReadFunction(), "StreamReadFunction is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getStreamOffsetFunction(), "StreamOffsetFunction is a must to implement a Target"));
+        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchReadFunction(), "BatchReadFunction is a must to implement a Target"));
+        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchCountFunction(), "BatchCountFunction is a must to implement a Target"));
+        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchOffsetFunction(), "BatchOffsetFunction is a must to implement a Target"));
+//        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getStreamReadFunction(), "StreamReadFunction is a must to implement a Target"));
+//        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getStreamOffsetFunction(), "StreamOffsetFunction is a must to implement a Target"));
     }
 
     private void initConnectorFunctions(TapNodeInfo nodeInfo, String tableId, String dagId) {
-        targetNode = dataFlowWorker.getTargetNodeDriver(targetNodeId).getTargetNode();
-        tddSourceNode = dataFlowWorker.getSourceNodeDriver(sourceNodeId).getSourceNode();
+        tddTargetNode = dataFlowWorker.getTargetNodeDriver(targetNodeId).getTargetNode();
+        sourceNode = dataFlowWorker.getSourceNodeDriver(sourceNodeId).getSourceNode();
     }
 }

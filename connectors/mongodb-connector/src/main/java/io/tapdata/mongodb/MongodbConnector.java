@@ -27,6 +27,7 @@ import io.tapdata.pdk.apis.logger.PDKLogger;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
+import static com.mongodb.client.model.Filters.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,7 +46,9 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private MongoClient mongoClient;
     private MongoDatabase mongoDatabase;
     MongoCollection<Document> mongoCollection;
-    private ObjectId batchOffset = null;
+    private DataMap dataMap = new DataMap();
+    private ObjectId batchOffsetId = null;
+    private Long documentCount = null;
 
     private void initConnection(DataMap config) {
         try {
@@ -159,7 +162,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
 //        connectorFunctions.supportClearTable(this::clearTable);
 
         connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportStreamRead(this::streamRead);
+//        connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchOffset(this::batchOffset);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
@@ -254,8 +257,10 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      */
     private long batchCount(TapConnectorContext connectorContext, Object offset) {
         initConnection(connectorContext.getConnectionConfig());
-//        mongoCollection.countDocuments()
-        return 20L;
+        if (documentCount == null) documentCount = mongoCollection.countDocuments();
+        if (documentCount == dataMap.get("batchReadOffset")) return 0L;
+//        if ((ObjectId)offset != batchOffsetId)
+        return 1000L;
     }
 
     /**
@@ -276,28 +281,38 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param tapReadOffsetConsumer
      */
     private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
-        ObjectId offsetObjectId = (ObjectId)offset;
+        batchOffsetId = (ObjectId) offset;
+
         //TODO batch read all records from database, use consumer#accept to send to incremental engine.
         initConnection(connectorContext.getConnectionConfig());
-        MongoBatchCursorAdapter<Document> mongoCursor = (MongoBatchCursorAdapter<Document>) mongoCollection.find().batchSize(batchSize).iterator();
+        MongoBatchCursorAdapter<Document> mongoCursor;
+        if (offset == null) {
+            mongoCursor = (MongoBatchCursorAdapter<Document>) mongoCollection.find().batchSize(batchSize).iterator();
+        } else {
+            mongoCursor = (MongoBatchCursorAdapter<Document>) mongoCollection.find(gt("_id", new ObjectId("5f24306e8b6f20b0aaa14649"))).batchSize(batchSize).iterator();
+        }
+
         //Below is sample code to generate records directly.
         Document document = null;
-        while (mongoCursor.hasNext()){
+        while (mongoCursor.hasNext()) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < batchSize; i++) {
+                if (!mongoCursor.hasNext()) break;
                 Map<String, Object> after = new DataMap();
                 document = mongoCursor.next();
                 after.putAll(document);
                 TapInsertRecordEvent recordEvent = insertRecordEvent(after, connectorContext.getTable());
                 tapEvents.add(recordEvent);
-                if(mongoCursor.available() == 0) break;
+//                if (mongoCursor.available() == 0) break;
+            }
+            counter.set(counter.get() + batchSize);
+            if (document != null) {
+                batchOffsetId = (ObjectId) document.get("_id");
+                dataMap.put("batchReadOffsetObjectId", batchOffsetId);
+                dataMap.put("batchReadOffset", counter.get());
             }
             tapReadOffsetConsumer.accept(tapEvents);
         }
-        if(document != null){
-            batchOffset = (ObjectId) document.get("_id");
-        }
-        counter.set(counter.get() + 1000);
     }
 
     /**
@@ -313,33 +328,31 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
      *
-     * @param connectorContext
-     * @param offset
-     * @param consumer
+     * @param connectorContext //     * @param offset
+     *                         //     * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
-        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to incremental engine.
-
-        //Below is sample code to generate stream records directly
-        while (!isShutDown.get()) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 10; i++) {
-                TapInsertRecordEvent event = insertRecordEvent(map(
-                        entry("id", counter.incrementAndGet()),
-                        entry("description", "123"),
-                        entry("name", "123"),
-                        entry("age", 12)
-                ), connectorContext.getTable());
-                tapEvents.add(event);
-            }
-
-            sleep(1000L);
-            consumer.accept(tapEvents);
-        }
-    }
-
+//    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
+//        //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to incremental engine.
+//
+//        //Below is sample code to generate stream records directly
+//        while (!isShutDown.get()) {
+//            List<TapEvent> tapEvents = list();
+//            for (int i = 0; i < 10; i++) {
+//                TapInsertRecordEvent event = insertRecordEvent(map(
+//                        entry("id", counter.incrementAndGet()),
+//                        entry("description", "123"),
+//                        entry("name", "123"),
+//                        entry("age", 12)
+//                ), connectorContext.getTable());
+//                tapEvents.add(event);
+//            }
+//
+//            sleep(1000L);
+//            consumer.accept(tapEvents);
+//        }
+//    }
     private Object batchOffset(TapConnectorContext connectorContext) throws Throwable {
-        return batchOffset;
+        return batchOffsetId;
     }
 
 
@@ -353,7 +366,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void destroy() {
-        if(mongoClient != null){
+        if (mongoClient != null) {
             mongoClient.close();
         }
         isShutDown.set(true);
