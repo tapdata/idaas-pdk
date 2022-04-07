@@ -19,6 +19,30 @@
           "title": "Port",
           "x-decorator": "FormItem",
           "x-component": "Input"
+        },
+        "database":{
+          "type": "string",
+          "title": "Database",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "userName":{
+          "type": "string",
+          "title": "Username",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "password":{
+          "type": "string",
+          "title": "Password",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "collection":{
+          "type": "string",
+          "title": "Collection",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
         }
 
       }
