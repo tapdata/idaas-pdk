@@ -297,7 +297,10 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         while (mongoCursor.hasNext()) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < batchSize; i++) {
-                if (!mongoCursor.hasNext()) break;
+                if (!mongoCursor.hasNext()){
+                    batchSize = i + 1;
+                    break;
+                }
                 Map<String, Object> after = new DataMap();
                 document = mongoCursor.next();
                 after.putAll(document);
@@ -313,6 +316,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             }
             tapReadOffsetConsumer.accept(tapEvents);
         }
+        PDKLogger.info(TAG, "batchRead Count {}", counter.get());
     }
 
     /**
