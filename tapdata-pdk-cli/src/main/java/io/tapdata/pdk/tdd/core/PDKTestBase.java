@@ -434,7 +434,11 @@ public class PDKTestBase {
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
         $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
-        $(() -> Assertions.assertNotNull(filterResult.getError(), "Table does not exist , error should be threw"));
+        if(filterResult.getResult() == null) {
+            $(() -> Assertions.assertNull(filterResult.getResult(), "Table does not exist, result should be null"));
+        } else {
+            $(() -> Assertions.assertNotNull(filterResult.getError(), "Table does not exist, error should be threw"));
+        }
     }
 
     protected void verifyRecordNotExists(TargetNode targetNode, DataMap filterMap) {
