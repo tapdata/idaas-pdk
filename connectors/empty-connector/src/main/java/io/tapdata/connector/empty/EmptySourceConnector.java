@@ -256,7 +256,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate records directly.
@@ -293,7 +293,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param offset
      * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
+    private void streamRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> consumer) {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate stream records directly
