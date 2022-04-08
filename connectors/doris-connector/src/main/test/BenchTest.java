@@ -44,7 +44,7 @@ public class BenchTest {
             preparedStatement.setObject(10,"[1.1,2.2,3.3]");
             preparedStatement.setObject(11,"[{\"age\":1,\"description\":\"d\",\"gender\":1,\"id\":\"a\",\"name\":\"n\"},{\"age\":2,\"description\":\"b\",\"gender\":10,\"id\":\"b\",\"name\":\"a\"}]");
             preparedStatement.setObject(12,"{\"age\":11,\"description\":\"d1\",\"gender\":1,\"id\":\"a1\",\"name\":\"n1\"}");
-            preparedStatement.setObject(13,1233.0);
+            preparedStatement.setObject(13,123.0);
             preparedStatement.setObject(14,343.22);
             preparedStatement.setObject(15,"exUDAg==");
             preparedStatement.setObject(16,"2022-04-02 20:34:16");

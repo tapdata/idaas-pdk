@@ -353,7 +353,7 @@ public class PDKTestBase {
         insertRecord.put("tapString10", "0987654321");
         insertRecord.put("tapInt", 123123);
         insertRecord.put("tapBoolean", true);
-        insertRecord.put("tapNumber", 1233);
+        insertRecord.put("tapNumber", 123.0);
         insertRecord.put("tapNumber52", 343.22);
         insertRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
         return insertRecord;
