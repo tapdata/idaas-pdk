@@ -415,7 +415,7 @@ public class PDKTestBase {
         List<TapFilter> filters = Collections.singletonList(filter);
         List<FilterResult> results = new ArrayList<>();
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(before) + " for queryByFilter, then filterResults size has to be 1"));
+        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(before) + " for queryByFilter, then filterResults size has to be 1. Please make sure writeRecord method update record correctly and queryByFilter can query it out for verification. "));
         FilterResult filterResult = results.get(0);
 
         $(() -> Assertions.assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
@@ -459,7 +459,7 @@ public class PDKTestBase {
 
         List<FilterResult> results = new ArrayList<>();
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1"));
+        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1. Please make sure writeRecord method write record correctly and queryByFilter can query it out for verification. "));
         FilterResult filterResult = results.get(0);
         $(() -> Assertions.assertNull(filterResult.getError(), "Error occurred while queryByFilter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " error " + filterResult.getError()));
         $(() -> Assertions.assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));

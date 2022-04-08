@@ -4,6 +4,7 @@ import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.filter.impl.AllLayerMapIterator;
+import io.tapdata.entity.codec.filter.impl.FirstLayerMapIterator;
 import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
@@ -18,6 +19,7 @@ public class TapCodecFilterManager {
     public TapCodecFilterManager(TapCodecRegistry codecRegistry) {
         this.codecRegistry = codecRegistry;
         mapIterator = new AllLayerMapIterator();
+//        mapIterator = new FirstLayerMapIterator();
     }
 
     public void transformToTapValueMap(Map<String, Object> value, Map<String, TapField> nameFieldMap) {

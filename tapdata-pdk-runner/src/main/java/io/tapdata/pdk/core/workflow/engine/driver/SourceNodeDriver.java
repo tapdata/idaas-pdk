@@ -145,7 +145,7 @@ public class SourceNodeDriver extends Driver {
 //            }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
 //        }
 
-        BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
+    BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
         if (batchReadFunction != null) {
             Object recoveredOffset = null;
             if(batchOffsetStr != null) {
@@ -209,7 +209,7 @@ public class SourceNodeDriver extends Driver {
             }, TAG);
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
                 while(true) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, (events) -> {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, batchLimit, (events) -> {
                         if (events != null) {
                             PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offerToQueue(events);

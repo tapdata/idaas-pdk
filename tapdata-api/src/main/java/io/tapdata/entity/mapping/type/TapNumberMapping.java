@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
 
@@ -175,6 +176,42 @@ public class TapNumberMapping extends TapMapping {
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
         }
         return theFinalExpression;
+    }
+
+    @Override
+    public long matchingScore(TapField field) {
+        if (field.getTapType() instanceof TapNumber) {
+            TapNumber tapNumber = (TapNumber) field.getTapType();
+
+            long score = 0L;
+
+            Integer precision = tapNumber.getPrecision();
+            Integer scale = tapNumber.getScale();
+            if(precision != null && scale != null && minPrecision != null && minScale != null && maxPrecision != null && maxScale != null) {
+                if(minPrecision <= precision && precision <= maxPrecision) {
+                    score += 1000L - (maxPrecision - precision); // The closest to maxPrecision the better.
+                } else {
+                    return -1; //if precision didn't match, it is not acceptable
+                }
+                if(minScale <= scale && scale <= maxScale) {
+                    score += 500;
+                } else {
+                    score += 1; //loss scale, somehow is acceptable as lowest priority
+                }
+            }
+
+            Integer bit = tapNumber.getBit();
+            if(bit != null && this.bit != null) {
+                if(bit <= this.bit) {
+                    score = 1000L - (this.bit - bit); //The closest to max bit, the better
+                } else {
+                    return -1L; //if bit didn't match, it is not acceptable
+                }
+            }
+            return score;
+        }
+
+        return -1L;
     }
 
     public Integer getMinPrecision() {

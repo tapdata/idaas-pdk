@@ -87,6 +87,14 @@ public abstract class TapDateBase extends TapMapping {
         this.max = max;
     }
 
+    public Long getBytes() {
+        return bytes;
+    }
+
+    public void setBytes(Long bytes) {
+        this.bytes = bytes;
+    }
+
     public Integer getGmt() {
         return gmt;
     }

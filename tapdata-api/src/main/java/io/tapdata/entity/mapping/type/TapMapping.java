@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 
@@ -138,4 +139,12 @@ public abstract class TapMapping {
     public void setQueryOnly(Boolean queryOnly) {
         this.queryOnly = queryOnly;
     }
+
+    /**
+     * The bigger the best
+     *
+     * @param field
+     * @return
+     */
+    public abstract long matchingScore(TapField field);
 }
