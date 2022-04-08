@@ -1,6 +1,8 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapBinary;
+import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.type.TapType;
 
 import java.util.Map;
@@ -40,5 +42,26 @@ public class TapBinaryMapping extends TapBytesBase {
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
         }
         return theFinalExpression;
+    }
+
+    @Override
+    public long matchingScore(TapField field) {
+        if (field.getTapType() instanceof TapBinary) {
+            TapBinary tapBinary = (TapBinary) field.getTapType();
+
+            Long width = tapBinary.getWidth();
+            if(width == null && bytes != null) {
+                return bytes;
+            } else if(bytes != null) {
+                if(width <= bytes) {
+                    return (Long.MAX_VALUE - (bytes - width));
+                } else {
+                    return -1L; // unacceptable
+                }
+            }
+
+            return 0L;
+        }
+        return -1L;
     }
 }

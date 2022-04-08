@@ -9,6 +9,8 @@ import io.tapdata.entity.schema.TapField;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Implementation(TargetTypesGenerator.class)
@@ -31,6 +33,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
     String calculateBestTypeMapping(TapField field, DefaultExpressionMatchingMap matchingMap) {
         AtomicReference<String> hitTapMapping = new AtomicReference<>();
+        AtomicLong bestScore = new AtomicLong(-1);
         matchingMap.iterate(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
             if(tapMapping != null) {
@@ -40,8 +43,12 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 String originType = tapMapping.fromTapType(expressionValueEntry.getKey(), field.getTapType());
                 //TODO need better conversion implementation here.
                 if(originType != null) {
-                    hitTapMapping.set(originType);
-                    return true;
+                    long score = tapMapping.matchingScore(field);
+                    if(score >= 0 && score > bestScore.get()) {
+                        bestScore.set(score);
+                        hitTapMapping.set(originType);
+                    }
+                    return false;
                 }
             }
             return false;

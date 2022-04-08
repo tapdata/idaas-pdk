@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapMap;
 import io.tapdata.entity.schema.type.TapType;
 
@@ -21,5 +22,13 @@ public class TapMapMapping extends TapSizeBase {
             return removeBracketVariables(typeExpression, 0);
         }
         return null;
+    }
+
+    @Override
+    public long matchingScore(TapField field) {
+        if (field.getTapType() instanceof TapMap) {
+            return 0L;
+        }
+        return -1L;
     }
 }

@@ -353,7 +353,7 @@ public class PDKTestBase {
         insertRecord.put("tapString10", "0987654321");
         insertRecord.put("tapInt", 123123);
         insertRecord.put("tapBoolean", true);
-        insertRecord.put("tapNumber", 1233);
+        insertRecord.put("tapNumber", 123.0);
         insertRecord.put("tapNumber52", 343.22);
         insertRecord.put("tapBinary", new byte[]{123, 21, 3, 2});
         return insertRecord;
@@ -421,6 +421,23 @@ public class PDKTestBase {
         $(() -> Assertions.assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
         for (Map.Entry<String, Object> entry : verifyRecord.entrySet()) {
             $(() -> Assertions.assertTrue(objectIsEqual(entry.getValue(), filterResult.getResult().get(entry.getKey())), "The value of \"" + entry.getKey() + "\" should be \"" + entry.getValue() + "\",but actual it is \"" + filterResult.getResult().get(entry.getKey()) + "\", please make sure TapUpdateRecordEvent is handled well in writeRecord method"));
+        }
+    }
+
+    protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {
+        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
+        TapFilter filter = new TapFilter();
+        filter.setMatch(filterMap);
+        List<TapFilter> filters = Collections.singletonList(filter);
+
+        List<FilterResult> results = new ArrayList<>();
+        CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
+        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1"));
+        FilterResult filterResult = results.get(0);
+        if(filterResult.getResult() == null) {
+            $(() -> Assertions.assertNull(filterResult.getResult(), "Table does not exist, result should be null"));
+        } else {
+            $(() -> Assertions.assertNotNull(filterResult.getError(), "Table does not exist, error should be threw"));
         }
     }
 

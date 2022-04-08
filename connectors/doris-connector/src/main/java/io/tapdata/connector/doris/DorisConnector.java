@@ -197,7 +197,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                     break;
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
                 filterResult.setError(e);
             } finally {
                 filterResults.add(filterResult);

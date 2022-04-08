@@ -199,7 +199,7 @@ public class TDDBenchmarkConnector extends ConnectorBase implements TapConnector
 //                        entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
 //                        entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
 //                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
-                        entry("tapNumber", 1233),
+                        entry("tapNumber", 123.0),
 //                        entry("tapNumber(8)", 1111),
                         entry("tapNumber52", 343.22),
 //                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
