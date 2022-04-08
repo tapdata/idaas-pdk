@@ -152,15 +152,21 @@ spec.json describes three types information,
 ## How to create PDK java project?
 
 Requirements
-*	install java 8 and above
-*   install maven
+*	java 8 and above
+*   maven (https://maven.apache.org/download.cgi)
 
-Install from source
+For Windows
+* gitbash (https://gitforwindows.org/)
+* setup maven (https://mkyong.com/maven/how-to-install-maven-in-windows/)
+
+
+
+Install from source code. Please use gitbash to execute below commands for Windows, 
 
 ```shell
-  git clone https://github.com/tapdata/idaas-pdk.git
-  cd idaas-pdk
-  mvn clean install
+git clone https://github.com/tapdata/idaas-pdk.git
+cd idaas-pdk
+mvn clean install
 ```
 There are three types project templates. Assume "group" is "io.tapdata" and "name" is "XDB" and "version" is "0.0.1".
 * Target (Need create table before insertion)

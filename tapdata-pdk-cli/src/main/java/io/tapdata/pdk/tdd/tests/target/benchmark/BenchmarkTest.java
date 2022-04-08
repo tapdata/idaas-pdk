@@ -68,9 +68,10 @@ public class BenchmarkTest extends PDKTestBase {
                         } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                                    Instant now = Instant.now();
                                     PDKLogger.info("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
-                                    PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "Millis : {}", Duration.between(startTime, Instant.now()).toMillis());
-                                    PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "QPS : {}", String.format("%f", 10000.0 / Duration.between(startTime, Instant.now()).toMillis()));
+                                    PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "Millis : {}", Duration.between(startTime, now).toMillis());
+                                    PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "QPS : {}", String.format("%f", (1000000.0 / Duration.between(startTime, now).toMillis()) * 1000));
                                     completed();
                                 }
                             });
