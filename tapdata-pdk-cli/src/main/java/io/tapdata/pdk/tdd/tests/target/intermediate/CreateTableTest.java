@@ -119,6 +119,7 @@ public class CreateTableTest extends PDKTestBase {
                 verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
                 sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
+                        verifyTableNotExists(targetNode,filterMap);
                         sendCreateTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId1, innerState1) -> {
                             if (innerNodeId1.equals(targetNodeId) && innerState1 == PatrolEvent.STATE_LEAVE) {
                                 processDML(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId2, innerState2) -> {
