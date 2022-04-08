@@ -236,15 +236,16 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      *
      * @param connectorContext
      * @param offset
+     * @param recordSize
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to incremental engine.
 
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < recordSize; i++) {
                 TapInsertRecordEvent recordEvent = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
@@ -273,15 +274,16 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      *
      * @param connectorContext
      * @param offset
+     * @param recordSize
      * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
+    private void streamRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> consumer) {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to incremental engine.
 
         //Below is sample code to generate stream records directly
         while(!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < recordSize; i++) {
                 TapInsertRecordEvent event = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),
