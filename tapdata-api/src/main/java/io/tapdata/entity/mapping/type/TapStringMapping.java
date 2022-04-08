@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.type.TapType;
 
@@ -45,5 +46,26 @@ public class TapStringMapping extends TapBytesBase {
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
         }
         return theFinalExpression;
+    }
+
+    @Override
+    public long matchingScore(TapField field) {
+        if (field.getTapType() instanceof TapString) {
+            TapString tapString = (TapString) field.getTapType();
+
+            Long width = tapString.getWidth();
+            if(width == null && bytes != null) {
+                return bytes;
+            } else if(bytes != null) {
+                if(width <= bytes) {
+                    return (Long.MAX_VALUE - (bytes - width));
+                } else {
+                    return -1L; // unacceptable
+                }
+            }
+
+            return 0L;
+        }
+        return -1L;
     }
 }
