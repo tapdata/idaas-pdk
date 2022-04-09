@@ -1,11 +1,8 @@
 {
   "connection": {
-    "host": "192.168.153.132",
-    "port": 27017,
-    "database": "db_example",
-    "userName": "",
-    "password": "",
-    "collection": "test2"
+    "uri": "mongodb://192.168.153.132:27017/",
+    "database": "sample_training",
+    "collection": "grades"
   },
   "node": {
   },
