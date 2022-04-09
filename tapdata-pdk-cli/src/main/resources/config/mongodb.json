@@ -1,0 +1,15 @@
+{
+  "connection": {
+    "host": "192.168.153.132",
+    "port": 27017,
+    "database": "db_example",
+    "userName": "",
+    "password": "",
+    "collection": "test2"
+  },
+  "node": {
+  },
+  "test": {
+    "pdkId" : "mongodb"
+  }
+}
