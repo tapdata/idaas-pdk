@@ -9,13 +9,9 @@ import java.io.Serializable;
 import java.util.Map;
 
 public class MongoDBConfig implements Serializable {
-    private String host;
-    private int port;
     private String database;
-    private String userName;
-    private String password;
     private String collection;
-
+    private String uri;
 
     public static MongoDBConfig load(String jsonFile) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new JsonFactory());
@@ -27,21 +23,12 @@ public class MongoDBConfig implements Serializable {
         return mapper.readValue((new ObjectMapper()).writeValueAsString(map), MongoDBConfig.class);
     }
 
-
-    public String getHost() {
-        return host;
+    public String getUri() {
+        return uri;
     }
 
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
+    public void setUri(String uri) {
+        this.uri = uri;
     }
 
     public String getDatabase() {
@@ -51,23 +38,6 @@ public class MongoDBConfig implements Serializable {
     public void setDatabase(String database) {
         this.database = database;
     }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
 
     public String getCollection() {
         return collection;

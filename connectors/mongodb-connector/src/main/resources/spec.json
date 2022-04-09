@@ -8,33 +8,15 @@
     "connection":{
       "type":"object",
       "properties":{
-        "host":{
+        "uri":{
           "type": "string",
-          "title": "Host",
-          "x-decorator": "FormItem",
-          "x-component": "Input"
-        },
-        "port":{
-          "type": "number",
-          "title": "Port",
+          "title": "ConnectionUri",
           "x-decorator": "FormItem",
           "x-component": "Input"
         },
         "database":{
           "type": "string",
           "title": "Database",
-          "x-decorator": "FormItem",
-          "x-component": "Input"
-        },
-        "userName":{
-          "type": "string",
-          "title": "Username",
-          "x-decorator": "FormItem",
-          "x-component": "Input"
-        },
-        "password":{
-          "type": "string",
-          "title": "Password",
           "x-decorator": "FormItem",
           "x-component": "Input"
         },
