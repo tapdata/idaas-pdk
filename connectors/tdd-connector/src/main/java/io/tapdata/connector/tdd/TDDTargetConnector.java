@@ -2,6 +2,7 @@ package io.tapdata.connector.tdd;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.event.control.ControlEvent;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
@@ -24,6 +25,7 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -33,6 +35,8 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
     public static final String TAG = TDDTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
+    private boolean streamReadMode = false;
+    private Integer streamReadCount = 0;
 
     /**
      * The method invocation life circle is below,
@@ -120,6 +124,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportAlterTable(this::alterTable);
         connectorFunctions.supportDropTable(this::dropTable);
         connectorFunctions.supportClearTable(this::clearTable);
+        connectorFunctions.supportControlFunction(this::control);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
             if (tapRawValue != null && tapRawValue.getValue() != null)
@@ -155,6 +160,17 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
                 return toJson(tapValue.getValue());
             return "null";
         });
+    }
+
+
+    private void control(TapConnectorContext tapConnectorContext, ControlEvent controlEvent) {
+        Map<String, Object> info = controlEvent.getInfo();
+        if (info != null) {
+            streamReadMode = (boolean) info.getOrDefault("streamRead", false);
+            Consumer<Integer> callback = (Consumer<Integer>) info.get("callback");
+            if (callback != null) callback.accept(streamReadCount);
+        }
+
     }
 
     private void clearTable(TapConnectorContext connectorContext, TapClearTableEvent clearTableEvent) {
@@ -209,6 +225,9 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
                 deleted.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
+        }
+        if (streamReadMode) {
+            streamReadCount += inserted.intValue();
         }
         //Need to tell flow engine the write result
         writeListResultConsumer.accept(writeListResult()
