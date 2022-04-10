@@ -419,7 +419,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param connectorContext //     * @param offset
      *                         //     * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, Consumer<List<TapEvent>> consumer) {
+    private void streamRead(TapConnectorContext connectorContext, Object offset, int eventBatchSize, Consumer<List<TapEvent>> consumer) {
         while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             ChangeStreamIterable<Document> changeStream;
@@ -429,9 +429,8 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 changeStream = mongoCollection.watch(pipeline).resumeAfter(resumeToken).fullDocument(FullDocument.UPDATE_LOOKUP);
             }
 
-            int maxEventsSize = 1;
             MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
-            while (tapEvents.size() != maxEventsSize && cursor.hasNext()) {
+            while (tapEvents.size() < eventBatchSize && cursor.hasNext()) {
                 ChangeStreamDocument<Document> event = cursor.next();
                 resumeToken = event.getResumeToken();
                 OperationType operationType = event.getOperationType();
