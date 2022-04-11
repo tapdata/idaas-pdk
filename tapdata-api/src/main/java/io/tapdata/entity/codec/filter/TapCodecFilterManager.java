@@ -30,22 +30,24 @@ public class TapCodecFilterManager {
             String fieldName = entry.getKey();
             if(theValue != null && fieldName != null) {
                 ToTapValueCodec<?> valueCodec = this.codecRegistry.getToTapValueCodec(theValue.getClass());
-                if(valueCodec == null)
-                    throw new UnknownCodecException("toTapValueMap codec not found for value class " + theValue.getClass());
-                String originType = null;
-                TapType typeFromSchema = null;
-                if(nameFieldMap != null) {
-                    TapField field = nameFieldMap.get(fieldName);
-                    if(field != null) {
-                        originType = field.getOriginType();
-                        typeFromSchema = field.getTapType();
+//                if(valueCodec == null)
+//                    throw new UnknownCodecException("toTapValueMap codec not found for value class " + theValue.getClass());
+                if(valueCodec != null) {
+                    String originType = null;
+                    TapType typeFromSchema = null;
+                    if(nameFieldMap != null) {
+                        TapField field = nameFieldMap.get(fieldName);
+                        if(field != null) {
+                            originType = field.getOriginType();
+                            typeFromSchema = field.getTapType();
+                        }
                     }
+                    TapValue tapValue = valueCodec.toTapValue(theValue);
+                    tapValue.setOriginType(originType);
+                    tapValue.setTapType(typeFromSchema);
+                    tapValue.setOriginValue(theValue);
+                    entry.setValue(tapValue);
                 }
-                TapValue tapValue = valueCodec.toTapValue(theValue);
-                tapValue.setOriginType(originType);
-                tapValue.setTapType(typeFromSchema);
-                tapValue.setOriginValue(theValue);
-                entry.setValue(tapValue);
             }
         });
     }
