@@ -40,8 +40,8 @@ public class DMLTest extends PDKTestBase {
                 DataFlowEngine dataFlowEngine = DataFlowEngine.getInstance();
 
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
-                dataFlowDescriber.setId("tdd->" + nodeInfo.getTapNodeSpecification().getId());
-                String tableId = dataFlowDescriber.getId().replace('-', '_').replace('>', '_') + "_" + UUID.randomUUID().toString();
+                dataFlowDescriber.setId("tddTo" + nodeInfo.getTapNodeSpecification().getId());
+                String tableId = testTableName(dataFlowDescriber.getId());
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(Arrays.asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").

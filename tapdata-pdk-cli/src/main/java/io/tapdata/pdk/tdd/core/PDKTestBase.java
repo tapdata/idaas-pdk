@@ -96,6 +96,10 @@ public class PDKTestBase {
         PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> Assertions.fail(errorMessage)));
     }
 
+    public String testTableName(String id) {
+        return id.replace('-', '_').replace('>', '_') + "_" + UUID.randomUUID().toString().replace("-", "");
+    }
+
     public interface AssertionCall {
         void assertIt();
     }

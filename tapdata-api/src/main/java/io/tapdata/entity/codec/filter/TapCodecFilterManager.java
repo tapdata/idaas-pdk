@@ -18,8 +18,8 @@ public class TapCodecFilterManager {
 
     public TapCodecFilterManager(TapCodecRegistry codecRegistry) {
         this.codecRegistry = codecRegistry;
-        mapIterator = new AllLayerMapIterator();
-//        mapIterator = new FirstLayerMapIterator();
+//        mapIterator = new AllLayerMapIterator();
+        mapIterator = new FirstLayerMapIterator();
     }
 
     public void transformToTapValueMap(Map<String, Object> value, Map<String, TapField> nameFieldMap) {

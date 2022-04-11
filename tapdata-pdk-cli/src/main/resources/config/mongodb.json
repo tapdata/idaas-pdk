@@ -1,12 +1,8 @@
 {
   "connection": {
-    "uri": "mongodb://192.168.153.132:27017/",
+    "uri": "mongodb://localhost:27017/",
     "database": "sample_training",
-    "collection": "grades"
   },
   "node": {
-  },
-  "test": {
-    "pdkId" : "mongodb"
   }
 }

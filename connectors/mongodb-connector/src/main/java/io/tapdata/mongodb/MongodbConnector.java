@@ -1,6 +1,5 @@
 package io.tapdata.mongodb;
 
-import com.mongodb.MongoCredential;
 import com.mongodb.client.*;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -43,6 +42,7 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.singletonList;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -60,6 +60,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private MongoDBConfig mongoConfig;
     private MongoClient mongoClient;
     private MongoDatabase mongoDatabase;
+    private final int[] lock = new int[0];
     MongoCollection<Document> mongoCollection;
     private ObjectId batchOffsetId = null;
     private Long batchReadOffset;
@@ -68,17 +69,13 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private BsonDocument resumeToken = null;
 
 
-    private void initConnection(DataMap config) {
-        try {
-            mongoConfig = MongoDBConfig.load(config);
-            if (mongoClient == null) {
-                mongoClient = MongoClients.create(mongoConfig.getUri());
-                mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
-                mongoCollection = mongoDatabase.getCollection(mongoConfig.getCollection());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Create Connection Failed!");
+    private void initConnection(DataMap config) throws IOException {
+        mongoConfig = MongoDBConfig.load(config);
+        if (mongoClient == null) {
+            mongoClient = MongoClients.create(mongoConfig.getUri());
+            mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
+            mongoDatabase.listCollectionNames();
+//                mongoCollection = mongoDatabase.getCollection(mongoConfig.getCollection());
         }
     }
 
@@ -97,7 +94,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable {
         initConnection(connectionContext.getConnectionConfig());
         MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
         for (String collectionName : collectionNames) {
@@ -119,7 +116,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @return
      */
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         initConnection(connectionContext.getConnectionConfig());
         consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
         //Login test
@@ -227,7 +224,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
@@ -237,6 +234,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         List<Document> insertList = new ArrayList<>();
         UpdateOptions options = new UpdateOptions().upsert(true);
+        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
 
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             if (recordEvent instanceof TapInsertRecordEvent) {
@@ -246,7 +244,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 if (!insertList.isEmpty()) {
-                    mongoCollection.insertMany(insertList);
+                    collection.insertMany(insertList);
                 }
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
@@ -264,12 +262,12 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     }
                 }
 
-                mongoCollection.updateOne(and(filterAfter.toArray(new Bson[0])), Updates.combine(updateAfter.toArray(new Bson[0])), options);
+                collection.updateOne(and(filterAfter.toArray(new Bson[0])), Updates.combine(updateAfter.toArray(new Bson[0])), options);
                 updated.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 if (!insertList.isEmpty()) {
-                    mongoCollection.insertMany(insertList);
+                    collection.insertMany(insertList);
                 }
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
@@ -280,13 +278,13 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     filterBefore.add(eq(entry.getKey(), entry.getValue()));
                 }
 
-                mongoCollection.deleteOne(and(filterBefore.toArray(new Bson[0])));
+                collection.deleteOne(and(filterBefore.toArray(new Bson[0])));
                 deleted.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
         if (!insertList.isEmpty()) {
-            mongoCollection.insertMany(insertList);
+            collection.insertMany(insertList);
         }
         //Need to tell incremental engine the write result
         writeListResultConsumer.accept(writeListResult()
@@ -304,6 +302,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      */
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
         Set<String> columnNames = connectorContext.getTable().getNameFieldMap().keySet();
+        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
         if (filters != null) {
             List<FilterResult> filterResults = new ArrayList<>();
             for (TapFilter filter : filters) {
@@ -311,7 +310,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 for (Map.Entry<String, Object> entry : filter.getMatch().entrySet()) {
                     bsonList.add(eq(entry.getKey(), entry.getValue()));
                 }
-                MongoCursor<Document> cursor = mongoCollection.find(and(bsonList.toArray(new Bson[0]))).iterator();
+                MongoCursor<Document> cursor = collection.find(and(bsonList.toArray(new Bson[0]))).iterator();
                 FilterResult filterResult = new FilterResult();
                 while (cursor.hasNext()) {
                     Document document = cursor.next();
@@ -345,9 +344,9 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
+    private long batchCount(TapConnectorContext connectorContext, Object offset) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
-        if (documentCount == null) documentCount = mongoCollection.countDocuments();
+        if (documentCount == null) documentCount = getMongoCollection(connectorContext.getTable()).countDocuments();
         if (Objects.equals(documentCount, batchReadOffset)) return 0L;
         return 10L;
     }
@@ -369,14 +368,15 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
         MongoCursor<Document> mongoCursor;
+        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
         if (offset == null) {
-            mongoCursor = mongoCollection.find().batchSize(eventBatchSize).iterator();
+            mongoCursor = collection.find().batchSize(eventBatchSize).iterator();
         } else {
             batchOffsetId = (ObjectId) offset;
-            mongoCursor = mongoCollection.find(gt("_id", batchOffsetId)).batchSize(eventBatchSize).iterator();
+            mongoCursor = collection.find(gt("_id", batchOffsetId)).batchSize(eventBatchSize).iterator();
         }
 
         Document lastDocument = null;
@@ -424,9 +424,9 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             List<TapEvent> tapEvents = list();
             ChangeStreamIterable<Document> changeStream;
             if (resumeToken == null) {
-                changeStream = mongoCollection.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
+                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
             } else {
-                changeStream = mongoCollection.watch(pipeline).resumeAfter(resumeToken).fullDocument(FullDocument.UPDATE_LOOKUP);
+                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).resumeAfter(resumeToken).fullDocument(FullDocument.UPDATE_LOOKUP);
             }
 
             MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
@@ -461,6 +461,17 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             }
             if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
         }
+    }
+
+    private MongoCollection<Document> getMongoCollection(TapTable table) {
+        if(mongoCollection == null) {
+            synchronized (lock) {
+                if(mongoCollection == null) {
+                    mongoCollection = mongoDatabase.getCollection(table.getName());
+                }
+            }
+        }
+        return mongoCollection;
     }
 
     private Object batchOffset(TapConnectorContext connectorContext) throws Throwable {
