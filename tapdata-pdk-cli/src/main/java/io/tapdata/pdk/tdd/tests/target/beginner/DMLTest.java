@@ -112,16 +112,41 @@ public class DMLTest extends PDKTestBase {
     private void deleteOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap filterMap = buildFilterMap();
         sendDeleteRecordEvent(dataFlowEngine, dag, filterMap, new PatrolEvent().patrolListener((nodeId, state) -> {
-            if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
+            if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 verifyRecordNotExists(targetNode, filterMap);
-                completed();
+                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
+                    if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
+                        consumeQualifiedTapNodeInfo(nodeInfo -> {
+                            Assertions.assertNotNull(connectionOptions, "Missing \"connection\" key in test config json file. The value of \"connection\" key is the user input values of json form items. ");
+
+                            prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
+                                List<TapTable> allTables = new ArrayList<>();
+                                try {
+                                    connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                                } catch (Throwable throwable) {
+                                    throwable.printStackTrace();
+                                    Assertions.fail(throwable);
+                                }
+                                TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
+                                for(TapTable table : allTables) {
+                                    if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                                        $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                                    }
+                                }
+                                connectionNode.getConnectorNode().destroy();
+                                completed();
+                            });
+                        });
+                    }
+                }));
             }
         }));
     }
 
     private void checkFunctions() {
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
+        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "WriteRecord is a must to implement a Target, please implement it in registerCapabilities method."));
+        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly, please implement it in registerCapabilities method."));
+        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getDropTableFunction(), "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method."));
     }
 
     private void initConnectorFunctions(TapNodeInfo nodeInfo, String tableId, String dagId) {

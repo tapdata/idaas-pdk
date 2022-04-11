@@ -9,6 +9,7 @@ import com.mongodb.client.model.changestream.OperationType;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
@@ -154,6 +155,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
+        connectorFunctions.supportDropTable(this::dropTable);
 
         codecRegistry.registerToTapValue(ObjectId.class, value -> {
             ObjectId objValue = (ObjectId) value;
@@ -197,6 +199,10 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportStreamRead(this::streamRead);
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
 
+    }
+
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+        getMongoCollection(connectorContext.getTable()).drop();
     }
 
 //    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
