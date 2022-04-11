@@ -1,0 +1,11 @@
+{
+  "properties": {
+    "name": "TDDBenchmarkNoTableSource",
+    "icon": "icons/icon.png",
+    "id": "tdd-benchmark-notable-source"
+  },
+  "configOptions": {
+  },
+  "dataTypes" : {
+  }
+}

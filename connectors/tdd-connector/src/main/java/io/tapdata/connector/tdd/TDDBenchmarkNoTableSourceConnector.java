@@ -14,14 +14,16 @@ import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-@TapConnectorClass("sourceBenchmarkSpec.json")
-public class TDDBenchmarkConnector extends ConnectorBase implements TapConnector {
-    public static final String TAG = TDDBenchmarkConnector.class.getSimpleName();
+@TapConnectorClass("sourceBenchmarkNoTableSpec.json")
+public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements TapConnector {
+    public static final String TAG = TDDBenchmarkNoTableSourceConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
 
@@ -46,29 +48,6 @@ public class TDDBenchmarkConnector extends ConnectorBase implements TapConnector
         consumer.accept(list(
                 //Define first table
                 table("tdd-table")
-                        //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(1))
-                        .add(field("tapString", "tapString").isPrimaryKey(true).primaryKeyPos(2))
-                        .add(field("tddUser", "tapString"))
-                        .add(field("tapString10", "tapString(10)"))
-                        .add(field("tapString10Fixed", "tapString(10) fixed"))
-                        .add(field("tapInt", "int"))
-                        .add(field("tapBoolean", "tapBoolean"))
-                        .add(field("tapDate", "tapDate"))
-                        .add(field("tapArrayString", "tapArray"))
-                        .add(field("tapArrayDouble", "tapArray"))
-                        .add(field("tapArrayTDDUser", "tapArray"))
-                        .add(field("tapRawTDDUser", "tapRaw"))
-                        .add(field("tapNumber", "tapNumber"))
-//                        .add(field("tapNumber8", "tapNumber(8)"))
-                        .add(field("tapNumber52", "tapNumber(5, 2)"))
-                        .add(field("tapBinary", "tapBinary"))
-                        .add(field("tapTime", "tapTime"))
-                        .add(field("tapMapStringString", "tapMap"))
-                        .add(field("tapMapStringDouble", "tapMap"))
-                        .add(field("tapMapStringTDDUser", "tapMap"))
-                        .add(field("tapDateTime", "tapDateTime"))
-                        .add(field("tapDateTimeTimeZone", "tapDateTime"))
         ));
     }
 
@@ -178,38 +157,21 @@ public class TDDBenchmarkConnector extends ConnectorBase implements TapConnector
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private Date date = new Date();
     private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
-
+//        Map<String, Object> map = new HashMap<>();
+//        for(int m = 0; m < 100; m++) {
+//            map.put("k" + m, "v" + m);
+//        }
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1000; j++) {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < batchSize; i++) {
-                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                        entry("id", "id_" + counter.get()),
-                        entry("tapString", "123"),
-//                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
-                        entry("tapString10", "1234567890"),
-//                        entry("tapString10Fixed", "1"),
-                        entry("tapInt", 123123),
-                        entry("tapBoolean", true),
-                        entry("tapDate", date),
-//                        entry("tapArrayString", list("1", "2", "3")),
-//                        entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
-//                        entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
-//                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
-                        entry("tapNumber", 123.0),
-//                        entry("tapNumber(8)", 1111),
-                        entry("tapNumber52", 343.22),
-//                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
-                        entry("tapTime", date),
-//                        entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
-//                        entry("tapMapStringDouble", map(entry("a", 1.0), entry("b", 2.0))),
-//                        entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
-                        entry("tapDateTime", date),
-                        entry("tapDateTimeTimeZone", date)
-                ), connectorContext.getTable());
+                Map<String, Object> map = new HashMap<>();
+                for(int m = 0; m < 1; m++) {
+                    map.put("k" + m, "v" + m);
+                }
+                TapInsertRecordEvent recordEvent = insertRecordEvent(map, connectorContext.getTable());
                 counter.incrementAndGet();
                 tapEvents.add(recordEvent);
             }
