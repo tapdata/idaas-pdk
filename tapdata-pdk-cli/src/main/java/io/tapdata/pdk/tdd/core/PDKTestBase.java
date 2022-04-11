@@ -14,6 +14,8 @@ import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
+import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
@@ -32,16 +34,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.*;
 
-import javax.xml.crypto.Data;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class PDKTestBase {
     private static final String TAG = PDKTestBase.class.getSimpleName();
@@ -101,7 +103,7 @@ public class PDKTestBase {
     }
 
     public interface AssertionCall {
-        void assertIt();
+        void assertIt() throws InvocationTargetException, IllegalAccessException;
     }
 
     public void $(AssertionCall assertionCall) {
@@ -110,6 +112,22 @@ public class PDKTestBase {
         } catch (Throwable throwable) {
             lastThrowable = throwable;
             completed(true);
+        }
+    }
+
+    public static SupportFunction support(Class<? extends TapFunction> function, String errorMessage) {
+        return new SupportFunction(function, errorMessage);
+    }
+
+    public void checkFunctions(ConnectorFunctions connectorFunctions, List<SupportFunction> functions) {
+        for(SupportFunction supportFunction : functions) {
+            try {
+                Method method = connectorFunctions.getClass().getDeclaredMethod("get" + supportFunction.getFunction().getSimpleName());
+                $(() -> Assertions.assertNotNull(method.invoke(connectorFunctions), supportFunction.getErrorMessage()));
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+                $(() -> Assertions.fail("Check function for " + supportFunction.getFunction().getSimpleName() + " failed, method not found for " + e.getMessage()));
+            }
         }
     }
 

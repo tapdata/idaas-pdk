@@ -4,6 +4,9 @@ package io.tapdata.pdk.tdd.tests.target.beginner;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
+import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -14,11 +17,14 @@ import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
+import io.tapdata.pdk.tdd.core.SupportFunction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 @DisplayName("Tests for target beginner test")
@@ -59,7 +65,7 @@ public class DMLTest extends PDKTestBase {
                         if(toState.equals(DataFlowWorker.STATE_INITIALIZING)){
                             initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
 
-                            checkFunctions();
+                            checkFunctions(targetNode.getConnectorFunctions(), DMLTest.testFunctions());
                         } else if(toState.equals(DataFlowWorker.STATE_INITIALIZED)){
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
@@ -143,10 +149,12 @@ public class DMLTest extends PDKTestBase {
         }));
     }
 
-    private void checkFunctions() {
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "WriteRecord is a must to implement a Target, please implement it in registerCapabilities method."));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly, please implement it in registerCapabilities method."));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getDropTableFunction(), "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method."));
+    public static List<SupportFunction> testFunctions() {
+        return Arrays.asList(
+                support(WriteRecordFunction.class, "WriteRecord is a must to implement a Target, please implement it in registerCapabilities method."),
+                support(QueryByFilterFunction.class, "QueryByFilter is needed for TDD to verify the record is written correctly, please implement it in registerCapabilities method."),
+                support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
+        );
     }
 
     private void initConnectorFunctions(TapNodeInfo nodeInfo, String tableId, String dagId) {

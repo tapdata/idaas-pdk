@@ -3,6 +3,11 @@ package io.tapdata.pdk.tdd.tests.target.beginner;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.pdk.apis.functions.connector.source.*;
+import io.tapdata.pdk.apis.functions.connector.target.CreateTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
+import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -13,6 +18,7 @@ import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
+import io.tapdata.pdk.tdd.core.SupportFunction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -85,7 +91,7 @@ public class ReadTest extends PDKTestBase {
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
                         if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions();
-                            checkFunctions();
+                            checkFunctions(sourceNode.getConnectorFunctions(), ReadTest.testFunctions());
                         } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
@@ -148,14 +154,24 @@ public class ReadTest extends PDKTestBase {
 
     }
 
-
-    private void checkFunctions() {
-        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchReadFunction(), "BatchReadFunction is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchCountFunction(), "BatchCountFunction is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchOffsetFunction(), "BatchOffsetFunction is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getStreamReadFunction(), "StreamReadFunction is a must to implement a Target"));
-//        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getStreamOffsetFunction(), "StreamOffsetFunction is a must to implement a Target"));
+    public static List<SupportFunction> testFunctions() {
+        return Arrays.asList(
+                support(WriteRecordFunction.class, "WriteRecord is a must to verify batchRead and streamRead, please implement it in registerCapabilities method."),
+                support(BatchReadFunction.class, "BatchReadFunction is a must to read initial records, please implement it in registerCapabilities method."),
+                support(BatchCountFunction.class, "BatchCountFunction is a must for the total size of initial records, please implement it in registerCapabilities method."),
+                support(BatchOffsetFunction.class, "BatchOffsetFunction is a must for incremental engine to record offset of batch read, please implement it in registerCapabilities method."),
+                support(StreamReadFunction.class, "StreamReadFunction is a must to read incremental records, please implement it in registerCapabilities method."),
+                support(StreamOffsetFunction.class, "StreamOffsetFunction is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method.")
+        );
     }
+
+//    private void checkFunctions() {
+//        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchReadFunction(), "BatchReadFunction is a must to implement a Target"));
+//        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchCountFunction(), "BatchCountFunction is a must to implement a Target"));
+//        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getBatchOffsetFunction(), "BatchOffsetFunction is a must to implement a Target"));
+//        $(() -> Assertions.assertNotNull(sourceNode.getConnectorFunctions().getStreamReadFunction(), "StreamReadFunction is a must to implement a Target"));
+////        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getStreamOffsetFunction(), "StreamOffsetFunction is a must to implement a Target"));
+//    }
 
     private void initConnectorFunctions() {
         tddTargetNode = dataFlowWorker.getTargetNodeDriver(targetNodeId).getTargetNode();

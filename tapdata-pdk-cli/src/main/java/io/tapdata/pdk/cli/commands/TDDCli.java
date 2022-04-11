@@ -8,9 +8,12 @@ import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
+import io.tapdata.pdk.core.utils.ReflectionUtil;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
+import io.tapdata.pdk.tdd.core.SupportFunction;
 import io.tapdata.pdk.tdd.tests.basic.BasicTest;
 import io.tapdata.pdk.tdd.tests.target.beginner.DMLTest;
+import io.tapdata.pdk.tdd.tests.target.beginner.ReadTest;
 import io.tapdata.pdk.tdd.tests.target.intermediate.CreateTableTest;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.cli.CliRequest;
@@ -18,6 +21,7 @@ import org.apache.maven.cli.MavenCli;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.classworlds.ClassWorld;
+import org.junit.jupiter.api.Assertions;
 import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
@@ -29,6 +33,7 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import picocli.CommandLine;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
@@ -219,6 +224,11 @@ public class TDDCli extends CommonCli {
         TapCodecRegistry codecRegistry = new TapCodecRegistry();
         connector.registerCapabilities(connectorFunctions, codecRegistry);
 
+        List<Class<? extends PDKTestBase>> tests = Arrays.asList(
+                DMLTest.class,
+                ReadTest.class,
+                CreateTableTest.class
+        );
 
 //        builder.append("\n-------------PDK connector idAndGroupAndVersion " + tapNodeInfo.getTapNodeSpecification().idAndGroup() + "-------------").append("\n");
 //        builder.append("             Node class " + tapNodeInfo.getNodeClass() + " run ");
@@ -229,13 +239,34 @@ public class TDDCli extends CommonCli {
         } else {
             selectorsAddClass(selectors, BasicTest.class, testResultSummary);
 
-            if(connectorFunctions.getWriteRecordFunction() != null && connectorFunctions.getCreateTableFunction() == null) {
-                selectorsAddClass(selectors, DMLTest.class, testResultSummary);
+            for(Class<? extends PDKTestBase> testClass : tests) {
+                boolean allFound = true;
+                List<SupportFunction> functions = (List<SupportFunction>) ReflectionUtil.invokeStaticMethod(testClass.getName(), "testFunctions");
+                for(SupportFunction supportFunction : functions) {
+                    try {
+                        Method method = connectorFunctions.getClass().getDeclaredMethod("get" + supportFunction.getFunction().getSimpleName());
+                        Object func = method.invoke(connectorFunctions);
+                        if(func == null) {
+                            allFound = false;
+                            break;
+                        }
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();
+                        allFound = false;
+                        break;
+                    }
+                }
+                if(allFound) {
+                    selectorsAddClass(selectors, testClass, testResultSummary);
+                }
             }
-
-            if(connectorFunctions.getCreateTableFunction() != null && connectorFunctions.getDropTableFunction() != null) {
-                selectorsAddClass(selectors, CreateTableTest.class, testResultSummary);
-            }
+//            if(connectorFunctions.getWriteRecordFunction() != null && connectorFunctions.getCreateTableFunction() == null) {
+//                selectorsAddClass(selectors, DMLTest.class, testResultSummary);
+//            }
+//
+//            if(connectorFunctions.getCreateTableFunction() != null && connectorFunctions.getDropTableFunction() != null) {
+//                selectorsAddClass(selectors, CreateTableTest.class, testResultSummary);
+//            }
         }
 //        builder.append(selectors.size() + " test classes").append("\n");
 //        for(DiscoverySelector selector : selectors) {
