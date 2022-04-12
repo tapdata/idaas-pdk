@@ -12,6 +12,7 @@ import io.tapdata.connector.aerospike.bean.TapAerospikeRecord;
 import io.tapdata.connector.aerospike.utils.AerospikeSinkConfig;
 import io.tapdata.connector.aerospike.utils.AerospikeStringSink;
 import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
@@ -144,6 +145,7 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
+        connectorFunctions.supportDropTable(this::dropTable);
     }
 
 
@@ -254,6 +256,12 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
+    }
+
+    private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) {
+        TapTable targetTable = tapConnectorContext.getTable();
+        String keySet = targetTable.getName();
+        aerospikeStringSink.dropKeySet(keySet);
     }
 
     /**

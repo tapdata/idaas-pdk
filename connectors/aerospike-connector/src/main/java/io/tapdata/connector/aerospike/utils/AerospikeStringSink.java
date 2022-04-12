@@ -68,6 +68,10 @@ public class AerospikeStringSink {
         this.client.put(this.writePolicy, key, bins);
     }
 
+    public void dropKeySet(String keySet){
+        this.client.truncate(null,this.aerospikeSinkConfig.getKeyspace(),keySet,null);
+    }
+
     private void createClient() {
         String[] hosts = this.aerospikeSinkConfig.getSeedHosts().split(",");
         if (hosts.length <= 0) {
