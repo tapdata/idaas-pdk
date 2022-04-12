@@ -2,11 +2,12 @@ package io.tapdata.pdk.apis.functions.connector.source;
 
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.functions.connector.TapFunction;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface BatchReadFunction {
+public interface BatchReadFunction extends TapFunction {
     /**
      * @param connectorContext the node context in a DAG
      * @param offsetState if null, means start from very beginning, otherwise is the start point for batch reading.

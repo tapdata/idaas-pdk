@@ -4,6 +4,7 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.context.TapProcessorContext;
+import io.tapdata.pdk.apis.functions.connector.TapFunction;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -12,6 +13,6 @@ import java.util.function.Consumer;
  * Will be used when upsert function not implemented. for query update/insert model
  *
  */
-public interface QueryByFilterFunction {
+public interface QueryByFilterFunction extends TapFunction {
     void query(TapConnectorContext nodeContext, List<TapFilter> filters, Consumer<List<FilterResult>> consumer) throws Throwable;
 }

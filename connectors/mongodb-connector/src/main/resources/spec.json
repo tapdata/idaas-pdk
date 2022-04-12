@@ -1,0 +1,35 @@
+{
+  "properties": {
+    "name": "MongoDB",
+    "icon": "icons/icon.png",
+    "id": "mongodb"
+  },
+  "configOptions": {
+    "connection":{
+      "type":"object",
+      "properties":{
+        "uri":{
+          "type": "string",
+          "title": "ConnectionUri",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "database":{
+          "type": "string",
+          "title": "Database",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "collection":{
+          "type": "string",
+          "title": "Collection",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        }
+
+      }
+    }
+  },
+  "dataTypes": {
+  }
+}

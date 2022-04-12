@@ -5,6 +5,10 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
+import io.tapdata.pdk.apis.functions.connector.target.CreateTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
+import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -14,6 +18,7 @@ import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
+import io.tapdata.pdk.tdd.core.SupportFunction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,7 +67,7 @@ public class CreateTableTest extends PDKTestBase {
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
                         if (fromState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions();
-                            checkFunctions();
+                            checkFunctions(targetNode.getConnectorFunctions(), CreateTableTest.testFunctions());
                         } else if (toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
@@ -119,6 +124,7 @@ public class CreateTableTest extends PDKTestBase {
                 verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
                 sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
+                        verifyRecordNotExists(targetNode,filterMap);
                         verifyTableNotExists(targetNode,filterMap);
                         sendCreateTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId1, innerState1) -> {
                             if (innerNodeId1.equals(targetNodeId) && innerState1 == PatrolEvent.STATE_LEAVE) {
@@ -162,13 +168,22 @@ public class CreateTableTest extends PDKTestBase {
         }));
     }
 
-    private void checkFunctions() {
-        ConnectorFunctions connectorFunctions = targetNode.getConnectorFunctions();
-        $(() -> Assertions.assertNotNull(connectorFunctions.getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(connectorFunctions.getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
-        $(() -> Assertions.assertNotNull(connectorFunctions.getCreateTableFunction(), "CreateTable is needed for database who need create table before insert records"));
-//        $(() -> Assertions.assertNotNull(connectorFunctions.getBatchCountFunction(), "BatchCount is needed for verify how many records have inserted"));
+    public static List<SupportFunction> testFunctions() {
+        return Arrays.asList(
+                support(WriteRecordFunction.class, "WriteRecord is a must to implement a Target, please implement it in registerCapabilities method."),
+                support(QueryByFilterFunction.class, "QueryByFilter is needed for TDD to verify the record is written correctly, please implement it in registerCapabilities method."),
+                support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method."),
+                support(CreateTableFunction.class, "CreateTable is needed for database who need create table before insert records, please implement it in registerCapabilities method.")
+        );
     }
+
+//    private void checkFunctions() {
+//        ConnectorFunctions connectorFunctions = targetNode.getConnectorFunctions();
+//        $(() -> Assertions.assertNotNull(connectorFunctions.getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
+//        $(() -> Assertions.assertNotNull(connectorFunctions.getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
+//        $(() -> Assertions.assertNotNull(connectorFunctions.getCreateTableFunction(), "CreateTable is needed for database who need create table before insert records"));
+////        $(() -> Assertions.assertNotNull(connectorFunctions.getBatchCountFunction(), "BatchCount is needed for verify how many records have inserted"));
+//    }
 
     private void initConnectorFunctions() {
         targetNode = dataFlowWorker.getTargetNodeDriver(targetNodeId).getTargetNode();

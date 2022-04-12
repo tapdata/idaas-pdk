@@ -3,11 +3,12 @@ package io.tapdata.pdk.apis.functions.connector.target;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.functions.connector.TapFunction;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface WriteRecordFunction {
+public interface WriteRecordFunction extends TapFunction {
 
     /**
      * insert, update, delete events.
