@@ -161,7 +161,8 @@ public class ReadTest extends PDKTestBase {
                 support(BatchCountFunction.class, "BatchCountFunction is a must for the total size of initial records, please implement it in registerCapabilities method."),
                 support(BatchOffsetFunction.class, "BatchOffsetFunction is a must for incremental engine to record offset of batch read, please implement it in registerCapabilities method."),
                 support(StreamReadFunction.class, "StreamReadFunction is a must to read incremental records, please implement it in registerCapabilities method."),
-                support(StreamOffsetFunction.class, "StreamOffsetFunction is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method.")
+                support(StreamOffsetFunction.class, "StreamOffsetFunction is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method."),
+                support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
         );
     }
 

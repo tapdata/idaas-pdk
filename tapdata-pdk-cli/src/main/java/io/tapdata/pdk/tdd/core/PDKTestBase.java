@@ -473,8 +473,13 @@ public class PDKTestBase {
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
         $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
-        $(() -> Assertions.assertNull(filterResult.getError(), "Should be no value, error should not be threw"));
-        $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
+        Object result = filterResult.getResult();
+        if(result == null) {
+            $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
+        } else {
+            $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
+            $(() -> Assertions.assertNotNull(filterResult.getError(), "If table not exist case, an error should be throw, otherwise not correct. "));
+        }
     }
 
     protected void verifyBatchRecordExists(SourceNode sourceNode, TargetNode targetNode, DataMap filterMap) {
