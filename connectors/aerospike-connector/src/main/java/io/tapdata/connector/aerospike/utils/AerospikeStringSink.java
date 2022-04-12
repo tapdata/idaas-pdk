@@ -8,12 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AerospikeStringSink {
     public AerospikeStringSink() {
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(AerospikeStringSink.class);
     private AerospikeSinkConfig aerospikeSinkConfig;
     private WritePolicy writePolicy;
     public AerospikeClient client;
@@ -38,8 +38,6 @@ public class AerospikeStringSink {
         if (this.client != null) {
             this.client.close();
         }
-
-        LOG.info("Connection Closed");
     }
 
     public Record read(String keySet, String keyStr) {
@@ -60,7 +58,7 @@ public class AerospikeStringSink {
         for (Map.Entry<String, Object> entry : record.getBinValuesMap().entrySet()) {
             String binKey = entry.getKey();
             if (binKey.length() > 14) {
-                binKey = binKey.substring(0,14);
+                binKey = binKey.substring(0, 14);
             }
             Bin bin = new Bin(binKey, entry.getValue());
             bins[idx++] = bin;
@@ -68,8 +66,14 @@ public class AerospikeStringSink {
         this.client.put(this.writePolicy, key, bins);
     }
 
-    public void dropKeySet(String keySet){
-        this.client.truncate(null,this.aerospikeSinkConfig.getKeyspace(),keySet,null);
+    public void dropKeySet(String keySet) {
+        this.client.truncate(null, this.aerospikeSinkConfig.getKeyspace(), keySet, null);
+    }
+
+    public int getKeySetRecordCount(String KetSet) {
+        final AtomicInteger count = new AtomicInteger(0);
+        this.client.scanAll(null, "test", KetSet, (key, record) -> count.incrementAndGet());
+        return count.get();
     }
 
     private void createClient() {

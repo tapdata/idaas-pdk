@@ -1,9 +1,6 @@
 package empty;
 
-import com.aerospike.client.AerospikeClient;
-import com.aerospike.client.Bin;
-import com.aerospike.client.Key;
-import com.aerospike.client.Record;
+import com.aerospike.client.*;
 import com.aerospike.client.policy.WritePolicy;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -19,6 +16,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BasicTest {
     private AerospikeNamespaces aerospikeNamespaces;
@@ -191,6 +189,14 @@ public class BasicTest {
 //        client.put(policy, key, b);
 
         // delete data
-        client.delete(policy,key);
+//        final AtomicInteger count = new AtomicInteger(0);
+//        client.scanAll(null, "test", "createTableTest__aerospike_ff8e2e74_aa8b_43ad_ab6c_e4a878ae9104", new ScanCallback() {
+//            @Override
+//            public void scanCallback(Key key, Record record) throws AerospikeException {
+//                count.incrementAndGet();
+//            }
+//        });
+//        System.out.println(count);
+//        client.delete(policy,key);
     }
 }

@@ -1,8 +1,6 @@
 package io.tapdata.connector.aerospike;
 
-import com.aerospike.client.AerospikeException;
-import com.aerospike.client.Key;
-import com.aerospike.client.Record;
+import com.aerospike.client.*;
 import com.aerospike.client.policy.WritePolicy;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.aerospike.bean.AerospikeNamespaces;
@@ -32,6 +30,7 @@ import org.junit.Assert;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -82,8 +81,10 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
         if (sets == null) {
             throw new RuntimeException(namespace + " is not exist!");
         }
+
         for (AerospikeSet set : sets) {
-            consumer.accept(list(table(set.getSetName())));
+            String ketSet = set.getSetName();
+            if (aerospikeStringSink.getKeySetRecordCount(ketSet) != 0) consumer.accept(list(table(ketSet)));
         }
 
         try {
@@ -162,7 +163,6 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
     }
 
     /**
-     *
      * @param connectorContext
      * @param filters
      * @param listConsumer
@@ -258,7 +258,8 @@ public class AerospikeConnector extends ConnectorBase implements TapConnector {
                 .removedCount(deleted.get()));
     }
 
-    private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) {
+    private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) throws Exception {
+        initConnection(tapConnectorContext.getConnectionConfig());
         TapTable targetTable = tapConnectorContext.getTable();
         String keySet = targetTable.getName();
         aerospikeStringSink.dropKeySet(keySet);
