@@ -4,6 +4,9 @@ package io.tapdata.pdk.tdd.tests.target.beginner;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
+import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -14,11 +17,14 @@ import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
+import io.tapdata.pdk.tdd.core.SupportFunction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 @DisplayName("Tests for target beginner test")
@@ -32,16 +38,18 @@ public class DMLTest extends PDKTestBase {
     String targetNodeId = "t2";
     String sourceNodeId = "s1";
 
+    TapNodeInfo tapNodeInfo;
     @Test
     @DisplayName("Test method handleDML")
     void targetTest() throws Throwable {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
+            tapNodeInfo = nodeInfo;
             try {
                 DataFlowEngine dataFlowEngine = DataFlowEngine.getInstance();
 
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
-                dataFlowDescriber.setId("tdd->" + nodeInfo.getTapNodeSpecification().getId());
-                String tableId = dataFlowDescriber.getId().replace('-', '_').replace('>', '_') + "_" + UUID.randomUUID().toString();
+                dataFlowDescriber.setId("tddTo" + nodeInfo.getTapNodeSpecification().getId());
+                String tableId = testTableName(dataFlowDescriber.getId());
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(Arrays.asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
@@ -50,7 +58,7 @@ public class DMLTest extends PDKTestBase {
                                 table(new TapTable(tableId)).connectionConfig(connectionOptions)
                 ));
                 dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList("s1", "t2")));
-                dataFlowDescriber.setJobOptions(new JobOptions());
+                dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
 
                 dag = dataFlowDescriber.toDag();
                 if(dag != null){
@@ -59,7 +67,7 @@ public class DMLTest extends PDKTestBase {
                         if(toState.equals(DataFlowWorker.STATE_INITIALIZING)){
                             initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
 
-                            checkFunctions();
+                            checkFunctions(targetNode.getConnectorFunctions(), DMLTest.testFunctions());
                         } else if(toState.equals(DataFlowWorker.STATE_INITIALIZED)){
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
@@ -91,8 +99,30 @@ public class DMLTest extends PDKTestBase {
         DataMap filterMap =buildFilterMap();
         sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
-                verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
-                updateOneRecord(dataFlowEngine, dag);
+
+                prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                    List<TapTable> allTables = new ArrayList<>();
+                    try {
+                        connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                    } catch (Throwable throwable) {
+                        throwable.printStackTrace();
+                        Assertions.fail(throwable);
+                    }
+                    TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
+                    boolean found = false;
+                    for(TapTable table : allTables) {
+                        if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    connectionNode.getConnectorNode().destroy();
+                    if(!found)
+                        $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable.getName()));
+
+                    verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
+                    updateOneRecord(dataFlowEngine, dag);
+                });
             }
         }));
     }
@@ -112,16 +142,39 @@ public class DMLTest extends PDKTestBase {
     private void deleteOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap filterMap = buildFilterMap();
         sendDeleteRecordEvent(dataFlowEngine, dag, filterMap, new PatrolEvent().patrolListener((nodeId, state) -> {
-            if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
+            if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 verifyRecordNotExists(targetNode, filterMap);
-                completed();
+                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
+                    if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
+                        prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                            List<TapTable> allTables = new ArrayList<>();
+                            try {
+                                connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                            } catch (Throwable throwable) {
+                                throwable.printStackTrace();
+                                Assertions.fail(throwable);
+                            }
+                            TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
+                            for(TapTable table : allTables) {
+                                if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                                    $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                                }
+                            }
+                            connectionNode.getConnectorNode().destroy();
+                            completed();
+                        });
+                    }
+                }));
             }
         }));
     }
 
-    private void checkFunctions() {
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getWriteRecordFunction(), "WriteRecord is a must to implement a Target"));
-        $(() -> Assertions.assertNotNull(targetNode.getConnectorFunctions().getQueryByFilterFunction(), "QueryByFilter is needed for TDD to verify the record is written correctly"));
+    public static List<SupportFunction> testFunctions() {
+        return Arrays.asList(
+                support(WriteRecordFunction.class, "WriteRecord is a must to implement a Target, please implement it in registerCapabilities method."),
+                support(QueryByFilterFunction.class, "QueryByFilter is needed for TDD to verify the record is written correctly, please implement it in registerCapabilities method."),
+                support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
+        );
     }
 
     private void initConnectorFunctions(TapNodeInfo nodeInfo, String tableId, String dagId) {

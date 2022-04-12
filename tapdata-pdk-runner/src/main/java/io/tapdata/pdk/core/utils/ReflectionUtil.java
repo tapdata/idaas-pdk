@@ -348,6 +348,11 @@ public class ReflectionUtil {
         return method.invoke(null, args);
     }
 
+    public static Object invokeStaticMethod(String className,
+                                            String methodName) throws Exception {
+        return invokeStaticMethod(className, methodName, new Object[0]);
+    }
+
     /**
      * 5. 新建实例
      * 这里说的方法是执行带参数的构造函数来新建实例的方法。如果不需要参数，可以直接使用newoneClass.newInstance()来实现。

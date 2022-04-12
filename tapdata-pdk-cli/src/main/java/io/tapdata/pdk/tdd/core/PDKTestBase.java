@@ -14,6 +14,8 @@ import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
+import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
@@ -32,16 +34,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.*;
 
-import javax.xml.crypto.Data;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class PDKTestBase {
     private static final String TAG = PDKTestBase.class.getSimpleName();
@@ -96,8 +98,12 @@ public class PDKTestBase {
         PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> Assertions.fail(errorMessage)));
     }
 
+    public String testTableName(String id) {
+        return id.replace('-', '_').replace('>', '_') + "_" + UUID.randomUUID().toString().replace("-", "");
+    }
+
     public interface AssertionCall {
-        void assertIt();
+        void assertIt() throws InvocationTargetException, IllegalAccessException;
     }
 
     public void $(AssertionCall assertionCall) {
@@ -106,6 +112,22 @@ public class PDKTestBase {
         } catch (Throwable throwable) {
             lastThrowable = throwable;
             completed(true);
+        }
+    }
+
+    public static SupportFunction support(Class<? extends TapFunction> function, String errorMessage) {
+        return new SupportFunction(function, errorMessage);
+    }
+
+    public void checkFunctions(ConnectorFunctions connectorFunctions, List<SupportFunction> functions) {
+        for(SupportFunction supportFunction : functions) {
+            try {
+                Method method = connectorFunctions.getClass().getDeclaredMethod("get" + supportFunction.getFunction().getSimpleName());
+                $(() -> Assertions.assertNotNull(method.invoke(connectorFunctions), supportFunction.getErrorMessage()));
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+                $(() -> Assertions.fail("Check function for " + supportFunction.getFunction().getSimpleName() + " failed, method not found for " + e.getMessage()));
+            }
         }
     }
 
@@ -451,8 +473,13 @@ public class PDKTestBase {
         CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
         $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1"));
         FilterResult filterResult = results.get(0);
-        $(() -> Assertions.assertNull(filterResult.getError(), "Should be no value, error should not be threw"));
-        $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
+        Object result = filterResult.getResult();
+        if(result == null) {
+            $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
+        } else {
+            $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
+            $(() -> Assertions.assertNotNull(filterResult.getError(), "If table not exist case, an error should be throw, otherwise not correct. "));
+        }
     }
 
     protected void verifyBatchRecordExists(SourceNode sourceNode, TargetNode targetNode, DataMap filterMap) {
