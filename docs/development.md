@@ -1,56 +1,6 @@
 # Development Guide
 
-## Data types
 
-**Data types is only required for your data source which need create table before insert records**, like MySQL, Oracle, Postgres, etc.
-
-Data types is the mapping of data type (include capabilities) with TapType.   
-TapType is the generic type definition in iDaaS Incremental Engine.
-
-* PDK connector define data types json mapping, let Incremental Engine know the mapping of data types with TapTypes. 
-* Records with TapTypes will flow into Incremental Engine to do processing, join, etc. 
-* Once the records with TapTypes will flow into a PDK target, Incremental engine will conjecture the best data types for PDK developer to create the table, base on the input of data types json mapping.  
-
-For more about [Data Types](dataTypes.md).
-
-If without TapType, the conversion lines is like below, which is very complex to maintain. 
-![This is an image](images/withoutTapType.png)
-
-With TapType in the middle of type conversion, the conversion can be maintainable and the fundamental for data processing, join, etc.
-
-![This is an image](images/withTapType.png)
-
-Above is the important concept to implement PDK connector, especially for the data source which need create table for insert records. 
-
-### TapType
-There are 11 types of TapType. 
-* TapBoolean
-* TapDate
-* TapArray
-* TapRaw
-* TapNumber
-* TapBinary
-* TapTime
-* TapMap
-* TapString
-* TapDateTime
-* TapYear
-
-We also have 11 types of TapValue for each TapType to combine value with it's TapType.
-* TapBooleanValue
-* TapDateValue
-* TapArrayValue
-* TapRawValue
-* TapNumberValue
-* TapBinaryValue
-* TapTimeValue
-* TapMapValue
-* TapStringValue
-* TapDateTimeValue
-* TapYearValue
-  
-Below is schema class diagram
-  ![This is an image](images/schemaClassDiagram.png)
 
 ## idaas-pdk modules
 * **connectors**
@@ -101,6 +51,8 @@ There are 11 methods to implement. The more developer implement, the more featur
     - ClearTable
         - Clear table by user selection.
 
+## Plugin diagrams
+
 Source methods invocation state diagram
 ![This is an image](images/sourceStateDiagram.jpg)
 Target methods invocation state diagram
@@ -112,6 +64,7 @@ TapEvent class diagram
 Record conversion from source to target diagram
 ![This is an image](images/recordFlowDiagram.jpg)
 
+## Methods 讲代码里没有的部分
 ### Batch Read
 ```java
 @TapConnectorClass("spec.json")
@@ -388,24 +341,3 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
     }
 }
 ```
-
-## After development
-Provide json file which given the values of "configOptions" required from "spec.json" file.
-```json
-{
-    "connection": {
-      "host": "192.168.153.132",
-      "port": 9030,
-      "database": "test"
-    }
-}
-```
-The json file can be outside of git project as you may don't want to expose your password or ip/port, etc.
-
-To run TDD command,
-
-```shell
-./bin/tap tdd --testConfig xdb_tdd.json ./connectors/xdb-connector
-```
-Once PDK connector pass TDD tests, proves that the PDK connector is ready to work in Tapdata. You can also contribute the PDK connector to idaas-pdk open source project.
-

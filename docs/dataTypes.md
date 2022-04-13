@@ -1,5 +1,56 @@
 # Data Types
 
+**Data types is only required for your data source which need create table before insert records**, like MySQL, Oracle, Postgres, etc.
+
+Data types is the mapping of data type (include capabilities) with TapType.   
+TapType is the generic type definition in iDaaS Incremental Engine.
+
+* PDK connector define data types json mapping, let Incremental Engine know the mapping of data types with TapTypes.
+* Records with TapTypes will flow into Incremental Engine to do processing, join, etc.
+* Once the records with TapTypes will flow into a PDK target, Incremental engine will conjecture the best data types for PDK developer to create the table, base on the input of data types json mapping.
+
+For more about [Data Types](dataTypes.md).
+
+If without TapType, the conversion lines is like below, which is very complex to maintain.
+![This is an image](images/withoutTapType.png)
+
+With TapType in the middle of type conversion, the conversion can be maintainable and the fundamental for data processing, join, etc.
+
+![This is an image](images/withTapType.png)
+
+Above is the important concept to implement PDK connector, especially for the data source which need create table for insert records.
+
+### TapType
+There are 11 types of TapType.
+* TapBoolean
+* TapDate
+* TapArray
+* TapRaw
+* TapNumber
+* TapBinary
+* TapTime
+* TapMap
+* TapString
+* TapDateTime
+* TapYear
+
+We also have 11 types of TapValue for each TapType to combine value with it's TapType.
+* TapBooleanValue
+* TapDateValue
+* TapArrayValue
+* TapRawValue
+* TapNumberValue
+* TapBinaryValue
+* TapTimeValue
+* TapMapValue
+* TapStringValue
+* TapDateTimeValue
+* TapYearValue
+
+Below is schema class diagram
+![This is an image](images/schemaClassDiagram.png)
+
+
 Data Types in spec.json is to describe the capabilities of data types for Incremental Engine to conjecture the best data types to create table before record insertion. 
 
 **If the database support insert record without table creation, like MongoDB, Kafka, etc, then please ignore this document, just leave dataTypes empty in spec.json.**

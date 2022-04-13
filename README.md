@@ -161,28 +161,20 @@ mvn clean install
 There are three types project templates. Assume "group" is "io.tapdata" and "name" is "XDB" and "version" is "0.0.1".
 * Target (Need create table before insertion)
 ```shell
-./bin/tap template --type targetNeedTable --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
+./bin/pdk template --type targetNeedTable --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
 ```  
 * Target (No table creation requirement)
 ```shell
-./bin/tap template --type target --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
+./bin/pdk template --type target --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
 ```
 * Source
 ```shell
-./bin/tap template --type source --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
+./bin/pdk template --type source --group io.tapdata --name XDB --version 0.0.1 --output ./connectors
 ```
 
 Use IntelliJ IDE to open idaas-pdk, you can find it named "xdb-connector" under connectors module. 
 * IntelliJ download: [https://www.jetbrains.com/idea/](https://www.jetbrains.com/idea/)
 
-
-## Development Guide
-PDK need developer to provide below, 
-* Provide data types expression in spec.json for the database which need create table before record insertion.
-* Implement the methods that PDK required.
-* Use TDD to verify that the methods are implemented correctly.
-
-[Get started](docs/development.md)
 
 ## Test Driven Development
 Provide json file which given the values of "configOptions" required from "spec.json" file.
@@ -200,9 +192,19 @@ The json file can be outside of git project as you may don't want to expose your
 To run TDD command,
 
 ```shell
-./bin/tap tdd --testConfig xdb_tdd.json ./connectors/xdb-connector
+./bin/pdk test --testConfig xdb_tdd.json ./connectors/xdb-connector
 ```
-Once PDK connector pass TDD tests, proves that the PDK connector is ready to work in Tapdata. You can also contribute the PDK connector to idaas-pdk open source project. 
+Once PDK connector pass TDD tests, proves that the PDK connector is ready to work in Tapdata. You can also contribute the PDK connector to idaas-pdk open source project.
+
+[TDD test cases](docs/development.md)
+
+## Development Guide
+PDK need developer to provide below,
+* Provide data types expression in spec.json for the database which need create table before record insertion.
+* Implement the methods that PDK required.
+* Use TDD to verify that the methods are implemented correctly.
+
+[Get started](docs/development.md)
 
 ## How to contribute to idaas-pdk
 * Fork idaas-pdk
