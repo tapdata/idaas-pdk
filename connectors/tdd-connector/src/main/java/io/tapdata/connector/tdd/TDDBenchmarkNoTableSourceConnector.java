@@ -154,7 +154,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, String offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1000; j++) {

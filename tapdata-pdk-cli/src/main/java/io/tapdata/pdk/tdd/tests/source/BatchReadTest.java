@@ -14,10 +14,12 @@ import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
+import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import io.tapdata.pdk.tdd.core.SupportFunction;
 import io.tapdata.pdk.tdd.tests.target.DMLTest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -47,10 +49,12 @@ public class BatchReadTest extends PDKTestBase {
     DataMap lastRecordToEqual;
     int eventBatchSize = 5;
 
+    TapNodeInfo tapNodeInfo;
     @Test
     @DisplayName("Test method handleRead")
     void sourceTest() throws Throwable {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
+            tapNodeInfo = nodeInfo;
             sourceToTargetId = nodeInfo.getTapNodeSpecification().getId() + " ->tdd target";
             originToSourceId = "origin-> " + nodeInfo.getTapNodeSpecification().getId();
 
@@ -153,7 +157,28 @@ public class BatchReadTest extends PDKTestBase {
                                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) lastEvent;
                                 StringBuilder builder = new StringBuilder();
                                 assertTrue(mapEquals(lastRecordToEqual, insertRecordEvent.getAfter(), builder), "Last record is not match " + builder.toString());
-                                completed();
+
+                                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
+                                    if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
+                                        prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                                            List<TapTable> allTables = new ArrayList<>();
+                                            try {
+                                                connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                                            } catch (Throwable throwable) {
+                                                throwable.printStackTrace();
+                                                Assertions.fail(throwable);
+                                            }
+                                            TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
+                                            for(TapTable table : allTables) {
+                                                if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                                                    $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                                                }
+                                            }
+                                            connectionNode.getConnectorNode().destroy();
+                                            completed();
+                                        });
+                                    }
+                                }));
                             });
                             dataFlowEngine.sendExternalTapEvent(sourceToTargetId, callbackPatrol);
                         }

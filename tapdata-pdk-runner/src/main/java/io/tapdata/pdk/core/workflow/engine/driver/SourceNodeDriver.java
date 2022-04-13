@@ -154,17 +154,13 @@ public class SourceNodeDriver extends Driver {
 
         BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
         if (batchReadFunction != null) {
-            Object recoveredOffset = null;
-            if(batchOffsetStr != null) {
-                recoveredOffset = JSON.parse(batchOffsetStr, Feature.SupportAutoType);
-            }
-            Object finalRecoveredOffset = recoveredOffset;
+
             CommonUtils.ignoreAnyError(() -> {
                 if(sourceStateListener != null)
                     sourceStateListener.stateChanged(STATE_BATCH_STARTED);
             }, TAG);
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
-                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, batchLimit, (events) -> {
+                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), batchOffsetStr, batchLimit, (events) -> {
                         if (events != null && !events.isEmpty()) {
                             if(events.size() > batchLimit)
                                 throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
@@ -181,10 +177,10 @@ public class SourceNodeDriver extends Driver {
                             BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
                             if(batchOffsetFunction != null) {
                                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_OFFSET, () -> {
-                                    Object offsetState = batchOffsetFunction.batchOffset(getSourceNode().getConnectorContext());
+                                    String offsetState = batchOffsetFunction.batchOffset(getSourceNode().getConnectorContext());
                                     if(offsetState != null) {
                                         PDKLogger.debug(TAG, "Batch read update offset from {} to {}", this.batchOffsetStr, offsetState);
-                                        batchOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+                                        batchOffsetStr = offsetState;
                                     }
                                 }, "Batch offset " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
                             }
@@ -206,19 +202,14 @@ public class SourceNodeDriver extends Driver {
 
         StreamReadFunction streamReadFunction = sourceNode.getConnectorFunctions().getStreamReadFunction();
         if (streamReadFunction != null) {
-            Object recoveredOffset = null;
-            if(streamOffsetStr != null) {
-                recoveredOffset = JSON.parse(streamOffsetStr, Feature.SupportAutoType);
-            }
 
-            Object finalRecoveredOffset = recoveredOffset;
             CommonUtils.ignoreAnyError(() -> {
                 if(sourceStateListener != null)
                     sourceStateListener.stateChanged(STATE_STREAM_STARTED);
             }, TAG);
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
                 while(true) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalRecoveredOffset, batchLimit, (events) -> {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), streamOffsetStr, batchLimit, (events) -> {
                         if (events != null) {
                             PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offerToQueue(events);
@@ -233,10 +224,10 @@ public class SourceNodeDriver extends Driver {
                         StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
                         if(streamOffsetFunction != null) {
                             pdkInvocationMonitor.invokePDKMethod(PDKMethod.STREAM_OFFSET, () -> {
-                                Object offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), null);
+                                String offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), null);
                                 if (offsetState != null) {
                                     PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
-                                    this.streamOffsetStr = JSON.toJSONString(offsetState, SerializerFeature.WriteClassName);
+                                    this.streamOffsetStr = offsetState;
                                 }
                             }, "Stream read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
                                 PDKLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());

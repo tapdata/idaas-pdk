@@ -143,7 +143,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
      * @param connectorContext the node context in a DAG
      */
-    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
+    String streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
         //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Flow engine knows, otherwise the result will be unpredictable.
 //        if(offsetStartTime != null)
 //            throw new NotSupportedException();
@@ -158,7 +158,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param connectorContext the node context in a DAG
      * @return
      */
-    private Object batchOffset(TapConnectorContext connectorContext) {
+    private String batchOffset(TapConnectorContext connectorContext) {
         return null;
     }
 
@@ -256,7 +256,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, String offset, int recordSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate records directly.

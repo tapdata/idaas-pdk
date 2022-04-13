@@ -8,5 +8,5 @@ public interface BatchOffsetFunction extends TapFunction {
      *
      * @param connectorContext the node context in a DAG
      */
-    Object batchOffset(TapConnectorContext connectorContext) throws Throwable;
+    String batchOffset(TapConnectorContext connectorContext) throws Throwable;
 }

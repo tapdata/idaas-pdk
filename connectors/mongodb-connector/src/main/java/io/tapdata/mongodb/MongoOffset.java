@@ -2,12 +2,10 @@ package io.tapdata.mongodb;
 
 import org.bson.types.ObjectId;
 
-import java.util.Collection;
-
 public class MongoOffset {
     private String sortKey;
     private Object value;
-    private Boolean isObjectId;
+    private Boolean objectId;
 
     public MongoOffset() {}
     public MongoOffset(String sortKey, Object value) {
@@ -16,7 +14,7 @@ public class MongoOffset {
     }
 
     public Object value() {
-        if(isObjectId != null && isObjectId && (value instanceof String)) {
+        if(objectId != null && objectId && (value instanceof String)) {
             return new ObjectId((String) value);
         }
         return value;
@@ -37,18 +35,18 @@ public class MongoOffset {
     public void setValue(Object value) {
         if(value instanceof ObjectId) {
             this.value = ((ObjectId)value).toString();
-            this.isObjectId = true;
+            this.objectId = true;
         } else {
             this.value = value;
-            this.isObjectId = null;
+            this.objectId = null;
         }
     }
 
     public Boolean getObjectId() {
-        return isObjectId;
+        return objectId;
     }
 
     public void setObjectId(Boolean objectId) {
-        isObjectId = objectId;
+        this.objectId = objectId;
     }
 }

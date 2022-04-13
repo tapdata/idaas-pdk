@@ -463,7 +463,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) throws Throwable {
+    private void batchRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
         MongoCursor<Document> mongoCursor;
         MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
@@ -473,17 +473,14 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         if (offset == null) {
             mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
         } else {
-            if(offset instanceof MongoOffset) {
-                MongoOffset mongoOffset = (MongoOffset) offset;
-                mongoCursor = collection.find(Objects.requireNonNull(queryCondition(mongoOffset.value()))).sort(Sorts.ascending(firstPrimaryKey))
+            MongoOffset mongoOffset = fromJson(offset, MongoOffset.class);
+            Object offsetValue = mongoOffset.value();
+            if(offsetValue != null) {
+                mongoCursor = collection.find(queryCondition(offsetValue)).sort(Sorts.ascending(firstPrimaryKey))
                         .batchSize(batchSize).iterator();
             } else {
-                FindIterable<Document> iterable = collection.find();
-                if(firstPrimaryKey != null) {
-                    iterable.sort(Sorts.ascending(firstPrimaryKey));
-                }
-                mongoCursor = iterable.batchSize(batchSize).iterator();
-                PDKLogger.warn(TAG, "Offset format is illegal {}, expect MongoOffset. Final offset will be null to do the batchRead", offset);
+                mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
+                PDKLogger.warn(TAG, "Offset format is illegal {}, no offset value has been found. Final offset will be null to do the batchRead", offset);
             }
         }
 
@@ -511,11 +508,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     }
 
     private Bson queryCondition(Object value) {
-        if(firstPrimaryKey != null) {
-            return gt(firstPrimaryKey, value);
-        }
-
-        return null;
+        return gt(firstPrimaryKey, value);
     }
 
     private void initFirstPrimaryKey(TapTable table) {
@@ -530,7 +523,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         }
     }
 
-    private Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+    private String streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
         if(resumeToken != null) {
             return resumeToken.toJson();
         }
@@ -553,12 +546,12 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param connectorContext //     * @param offset
      *                         //     * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, int eventBatchSize, Consumer<List<TapEvent>> consumer) {
+    private void streamRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> consumer) {
         while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             ChangeStreamIterable<Document> changeStream;
-            if (offset instanceof String) {
-                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).resumeAfter(BsonDocument.parse((String) offset)).fullDocument(FullDocument.UPDATE_LOOKUP);
+            if (offset != null) {
+                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).resumeAfter(BsonDocument.parse(offset)).fullDocument(FullDocument.UPDATE_LOOKUP);
             } else {
                 changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
             }
@@ -608,8 +601,8 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         return mongoCollection;
     }
 
-    private Object batchOffset(TapConnectorContext connectorContext) throws Throwable {
-        return batchOffset;
+    private String batchOffset(TapConnectorContext connectorContext) throws Throwable {
+        return toJson(batchOffset);
     }
 
 

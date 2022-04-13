@@ -16,5 +16,5 @@ public interface StreamReadFunction extends TapFunction {
      * @param recordSize
      * @param consumer accept the table and offsetState for the record.
      */
-    void streamRead(TapConnectorContext nodeContext, Object offsetState, int recordSize, Consumer<List<TapEvent>> consumer) throws Throwable;
+    void streamRead(TapConnectorContext nodeContext, String offsetState, int recordSize, Consumer<List<TapEvent>> consumer) throws Throwable;
 }
