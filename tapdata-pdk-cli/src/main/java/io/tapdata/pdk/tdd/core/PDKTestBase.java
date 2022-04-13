@@ -16,6 +16,9 @@ import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
+import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
+import io.tapdata.pdk.apis.functions.connector.source.BatchOffsetFunction;
+import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
@@ -472,6 +475,21 @@ public class PDKTestBase {
         for (Map.Entry<String, Object> entry : verifyRecord.entrySet()) {
             $(() -> Assertions.assertTrue(objectIsEqual(entry.getValue(), filterResult.getResult().get(entry.getKey())), "The value of \"" + entry.getKey() + "\" should be \"" + entry.getValue() + "\",but actual it is \"" + filterResult.getResult().get(entry.getKey()) + "\", please make sure TapUpdateRecordEvent is handled well in writeRecord method"));
         }
+    }
+
+    protected String getBatchOffset(SourceNode sourceNode) throws Throwable {
+        BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
+        return batchOffsetFunction.batchOffset(sourceNode.getConnectorContext());
+    }
+
+    protected String getStreamOffset(SourceNode sourceNode, Long offsetStartTime) throws Throwable {
+        StreamOffsetFunction queryByFilterFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
+        return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), offsetStartTime);
+    }
+
+    protected long getBatchCount(SourceNode sourceNode, String offset) throws Throwable {
+        BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
+        return batchCountFunction.count(sourceNode.getConnectorContext(), offset);
     }
 
     protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {

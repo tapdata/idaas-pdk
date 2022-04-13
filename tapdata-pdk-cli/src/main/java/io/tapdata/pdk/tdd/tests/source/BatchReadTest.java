@@ -158,8 +158,9 @@ public class BatchReadTest extends PDKTestBase {
                                 StringBuilder builder = new StringBuilder();
                                 assertTrue(mapEquals(lastRecordToEqual, insertRecordEvent.getAfter(), builder), "Last record is not match " + builder.toString());
 
-                                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
-                                    if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
+                                //in originDag, mongodb connector is the target, the dropTableEvent can be handled as a target.
+                                sendDropTableEvent(dataFlowEngine, originDag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
+                                    if (innerNodeId.equals(testTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                                         prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
                                             List<TapTable> allTables = new ArrayList<>();
                                             try {
@@ -168,7 +169,7 @@ public class BatchReadTest extends PDKTestBase {
                                                 throwable.printStackTrace();
                                                 Assertions.fail(throwable);
                                             }
-                                            TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
+                                            TapTable targetTable = originDag.getNodeMap().get(testTargetNodeId).getTable();
                                             for(TapTable table : allTables) {
                                                 if(table.getName() != null && table.getName().equals(targetTable.getName())) {
                                                     $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
