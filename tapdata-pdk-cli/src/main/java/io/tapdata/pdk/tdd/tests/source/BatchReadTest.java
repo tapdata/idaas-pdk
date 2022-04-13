@@ -153,6 +153,7 @@ public class BatchReadTest extends PDKTestBase {
                                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) lastEvent;
                                 StringBuilder builder = new StringBuilder();
                                 assertTrue(mapEquals(lastRecordToEqual, insertRecordEvent.getAfter(), builder), "Last record is not match " + builder.toString());
+                                completed();
                             });
                             dataFlowEngine.sendExternalTapEvent(sourceToTargetId, callbackPatrol);
                         }

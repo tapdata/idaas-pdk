@@ -12,8 +12,8 @@ public class TDDMain {
     //
     public static void main(String... args) {
         args = new String[]{
-//                "tdd", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\aerospike.json",
-                "tdd", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\mongodb.json",
+//                "test", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\aerospike.json",
+                "test", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\mongodb.json",
                 "-t", "io.tapdata.pdk.tdd.tests.target.DMLTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.source.ReadTest",
 //                "B:\\code\\tapdata\\idaas-pdk\\dist\\aerospike-connector-v1.0-SNAPSHOT.jar",
