@@ -1,4 +1,4 @@
-package io.tapdata.pdk.tdd.tests.target.beginner;
+package io.tapdata.pdk.tdd.tests.target;
 
 
 import io.tapdata.entity.event.control.PatrolEvent;
@@ -23,8 +23,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
 @DisplayName("Tests for target beginner test")

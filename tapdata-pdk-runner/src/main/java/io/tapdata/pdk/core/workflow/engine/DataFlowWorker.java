@@ -121,16 +121,16 @@ public class DataFlowWorker {
     public void sendExternalEvent(TapEvent event) {
         sendExternalEvent(event, null);
     }
-    public void sendExternalEvent(TapEvent event, String nodeId) {
-        if(nodeId != null) {
-            TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
+    public void sendExternalEvent(TapEvent event, String sourceNodeId) {
+        if(sourceNodeId != null) {
+            TapDAGNodeEx nodeWorker = dag.getNodeMap().get(sourceNodeId);
             if(nodeWorker != null) {
                 if(nodeWorker.sourceNodeDriver != null) {
 //                    nodeWorker.sourceNodeDriver.getSourceNode().offerExternalEvent(event);
                     filterExternalEvent(event, nodeWorker);
                     nodeWorker.sourceNodeDriver.receivedExternalEvent(Collections.singletonList(event));//offer(Collections.singletonList(event));
                 } else {
-                    PDKLogger.warn(TAG, "External event can only send from source node, the nodeId {} is not a source node", nodeId);
+                    PDKLogger.warn(TAG, "External event can only send from source node, the nodeId {} is not a source node", sourceNodeId);
                 }
                 //Processor not consider at this moment.
             }

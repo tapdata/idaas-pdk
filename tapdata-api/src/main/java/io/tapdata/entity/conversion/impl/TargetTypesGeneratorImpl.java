@@ -16,15 +16,15 @@ import java.util.concurrent.atomic.AtomicReference;
 @Implementation(TargetTypesGenerator.class)
 public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
-    public LinkedHashMap<String, TapField> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap matchingMap, TapCodecFilterManager codecFilterManager) {
-        if(sourceFields == null || matchingMap == null)
+    public LinkedHashMap<String, TapField> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap targetMatchingMap, TapCodecFilterManager targetCodecFilterManager) {
+        if(sourceFields == null || targetMatchingMap == null)
             return null;
         LinkedHashMap<String, TapField> targetFieldMap = new LinkedHashMap<>();
         for(Map.Entry<String, TapField> entry : sourceFields.entrySet()) {
             TapField field = entry.getValue();
-            String originType = calculateBestTypeMapping(field, matchingMap);
+            String originType = calculateBestTypeMapping(field, targetMatchingMap);
             if(originType == null && field.getTapType() != null) {
-                originType = codecFilterManager.getOriginTypeByTapType(field.getTapType().getClass());
+                originType = targetCodecFilterManager.getOriginTypeByTapType(field.getTapType().getClass());
             }
             targetFieldMap.put(field.getName(), field.clone().originType(originType));
         }

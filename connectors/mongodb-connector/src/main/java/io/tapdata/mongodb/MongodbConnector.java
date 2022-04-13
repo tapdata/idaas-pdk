@@ -1,6 +1,7 @@
 package io.tapdata.mongodb;
 
 import com.mongodb.client.*;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -25,17 +26,14 @@ import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import io.tapdata.pdk.apis.entity.FilterResult;
-import io.tapdata.pdk.apis.entity.TapFilter;
-import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import org.bson.BsonDocument;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
+import org.bson.types.*;
 
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Filters.*;
@@ -63,23 +61,21 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private MongoDatabase mongoDatabase;
     private final int[] lock = new int[0];
     MongoCollection<Document> mongoCollection;
-    private ObjectId batchOffsetId = null;
-    private Long batchReadOffset;
+    private MongoOffset batchOffset = null;
     private Long documentCount = null;
     private final List<Bson> pipeline = singletonList(match(in("operationType", asList("insert", "update", "delete"))));
     private BsonDocument resumeToken = null;
-
+    private Collection<String> primaryKeys;
+    private String firstPrimaryKey;
 
     private void initConnection(DataMap config) throws IOException {
         mongoConfig = MongoDBConfig.load(config);
         if (mongoClient == null) {
-            mongoClient = MongoClients.create(mongoConfig.getUri());
+            mongoClient = MongoClientFactory.getMongoClient(mongoConfig.getUri());
             mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
             mongoDatabase.listCollectionNames();
-//                mongoCollection = mongoDatabase.getCollection(mongoConfig.getCollection());
         }
     }
-
 
     /**
      * The method invocation life circle is below,
@@ -99,9 +95,8 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         initConnection(connectionContext.getConnectionConfig());
         MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
         for (String collectionName : collectionNames) {
-            consumer.accept(list(table(collectionName)));
+            consumer.accept(list(table(collectionName).defaultPrimaryKeys(singletonList("_id"))));
         }
-
     }
 
     /**
@@ -155,11 +150,30 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
+        connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportDropTable(this::dropTable);
 
         codecRegistry.registerToTapValue(ObjectId.class, value -> {
             ObjectId objValue = (ObjectId) value;
             return new TapStringValue(objValue.toHexString());
+        });
+        codecRegistry.registerToTapValue(Binary.class, value -> {
+           Binary binary = (Binary) value;
+           return new TapBinaryValue(binary.getData());
+        });
+        codecRegistry.registerToTapValue(Code.class, value -> {
+            Code code = (Code) value;
+            return new TapStringValue(code.getCode());
+        });
+
+        codecRegistry.registerToTapValue(Decimal128.class, value -> {
+            Decimal128 decimal128 = (Decimal128) value;
+            return new TapNumberValue(decimal128.doubleValue());
+        });
+
+        codecRegistry.registerToTapValue(Symbol.class, value -> {
+            Symbol symbol = (Symbol) value;
+            return new TapStringValue(symbol.getSymbol());
         });
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "json", tapRawValue -> {
@@ -197,11 +211,11 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchOffset(this::batchOffset);
         connectorFunctions.supportStreamRead(this::streamRead);
-//        connectorFunctions.supportStreamOffset(this::streamOffset);
-
+        connectorFunctions.supportStreamOffset(this::streamOffset);
     }
 
-    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
+        initConnection(connectorContext.getConnectionConfig());
         getMongoCollection(connectorContext.getTable()).drop();
     }
 
@@ -298,7 +312,66 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
     }
+    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
+        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
+        if (tapAdvanceFilter != null) {
+            FilterResults filterResults = new FilterResults();
+            List<Bson> bsonList = new ArrayList<>();
+            DataMap match = tapAdvanceFilter.getMatch();
+            if(match != null) {
+                for (Map.Entry<String, Object> entry : match.entrySet()) {
+                    bsonList.add(eq(entry.getKey(), entry.getValue()));
+                }
+            }
+            List<QueryOperator> ops = tapAdvanceFilter.getOperators();
+            if(ops != null) {
+                for(QueryOperator op : ops) {
+                    switch (op.getOperator()) {
+                        case QueryOperator.GT:
+                            bsonList.add(gt(op.getKey(), op.getValue()));
+                            break;
+                        case QueryOperator.GTE:
+                            bsonList.add(gte(op.getKey(), op.getValue()));
+                            break;
+                        case QueryOperator.LT:
+                            bsonList.add(lt(op.getKey(), op.getValue()));
+                            break;
+                        case QueryOperator.LTE:
+                            bsonList.add(lte(op.getKey(), op.getValue()));
+                            break;
+                    }
+                }
+            }
 
+            Integer limit = tapAdvanceFilter.getLimit();
+            if(limit == null)
+                limit = 1000;
+            Bson query;
+            if(bsonList.isEmpty())
+                query = new Document();
+            else
+                query = and(bsonList.toArray(new Bson[0]));
+
+            FindIterable<Document> iterable = collection.find(query).limit(limit);
+            List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
+            if(sortOnList != null) {
+                for(SortOn sortOn : sortOnList) {
+                    switch (sortOn.getSort()) {
+                        case SortOn.ASCENDING:
+                            iterable.sort(Sorts.ascending(sortOn.getKey()));
+                            break;
+                        case SortOn.DESCENDING:
+                            iterable.sort(Sorts.descending(sortOn.getKey()));
+                            break;
+                    }
+                }
+            }
+            for (Document document : iterable) {
+                filterResults.add(document);
+            }
+            consumer.accept(filterResults);
+        }
+    }
     /**
      * The method will mainly be used by TDD tests. To verify the record has writen correctly or not.
      *
@@ -352,9 +425,25 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      */
     private long batchCount(TapConnectorContext connectorContext, Object offset) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
-        if (documentCount == null) documentCount = getMongoCollection(connectorContext.getTable()).countDocuments();
-        if (Objects.equals(documentCount, batchReadOffset)) return 0L;
-        return 10L;
+        initFirstPrimaryKey(connectorContext.getTable());
+
+        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
+        if (offset == null) {
+            return collection.countDocuments();
+        } else {
+            if((offset instanceof MongoOffset)) {
+                MongoOffset mongoOffset = (MongoOffset) offset;
+                return collection.countDocuments(queryCondition(mongoOffset.value()));
+            } else {
+                long count = collection.countDocuments();
+                PDKLogger.error(TAG, "Offset format is illegal {}, expect MongoOffset. Final offset will be null to do the batchCount {}", offset, count);
+                return count;
+            }
+        }
+
+//        if (documentCount == null) documentCount = getMongoCollection(connectorContext.getTable()).countDocuments();
+//        if (Objects.equals(documentCount, batchReadOffset)) return 0L;
+//        return 10L;
     }
 
     /**
@@ -378,35 +467,74 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         initConnection(connectorContext.getConnectionConfig());
         MongoCursor<Document> mongoCursor;
         MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
+        initFirstPrimaryKey(connectorContext.getTable());
+
+        final int batchSize = 5000;
         if (offset == null) {
-            mongoCursor = collection.find().batchSize(eventBatchSize).iterator();
+            mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
         } else {
-            batchOffsetId = (ObjectId) offset;
-            mongoCursor = collection.find(gt("_id", batchOffsetId)).batchSize(eventBatchSize).iterator();
+            if(offset instanceof MongoOffset) {
+                MongoOffset mongoOffset = (MongoOffset) offset;
+                mongoCursor = collection.find(Objects.requireNonNull(queryCondition(mongoOffset.value()))).sort(Sorts.ascending(firstPrimaryKey))
+                        .batchSize(batchSize).iterator();
+            } else {
+                FindIterable<Document> iterable = collection.find();
+                if(firstPrimaryKey != null) {
+                    iterable.sort(Sorts.ascending(firstPrimaryKey));
+                }
+                mongoCursor = iterable.batchSize(batchSize).iterator();
+                PDKLogger.warn(TAG, "Offset format is illegal {}, expect MongoOffset. Final offset will be null to do the batchRead", offset);
+            }
         }
 
         Document lastDocument = null;
+        List<TapEvent> tapEvents = list();
         while (mongoCursor.hasNext()) {
-            List<TapEvent> tapEvents = list();
-            for (int cnt = 1; cnt < eventBatchSize + 1; cnt++) {
-                if (!mongoCursor.hasNext()) {
-                    eventBatchSize = cnt;
-                    break;
+//            Map<String, Object> after = new DataMap();
+//            after.putAll(lastDocument);
+            lastDocument = mongoCursor.next();
+            tapEvents.add(insertRecordEvent(lastDocument, connectorContext.getTable()));
+
+            if(tapEvents.size() == eventBatchSize) {
+                if(firstPrimaryKey != null) {
+                    Object value = lastDocument.get(firstPrimaryKey);
+                    batchOffset = new MongoOffset(firstPrimaryKey, value);
                 }
-                Map<String, Object> after = new DataMap();
-                lastDocument = mongoCursor.next();
-                after.putAll(lastDocument);
-                TapInsertRecordEvent recordEvent = insertRecordEvent(after, connectorContext.getTable());
-                tapEvents.add(recordEvent);
+                tapReadOffsetConsumer.accept(tapEvents);
+                tapEvents = list();
             }
-            counter.set(counter.get() + eventBatchSize);
-            if (lastDocument != null) {
-                batchOffsetId = (ObjectId) lastDocument.get("_id");
-                batchReadOffset = counter.get();
-            }
+        }
+        if(!tapEvents.isEmpty()) {
             tapReadOffsetConsumer.accept(tapEvents);
         }
-        PDKLogger.info(TAG, "batchRead Count {}", counter.get());
+//        PDKLogger.info(TAG, "batchRead Count {}", counter.get());
+    }
+
+    private Bson queryCondition(Object value) {
+        if(firstPrimaryKey != null) {
+            return gt(firstPrimaryKey, value);
+        }
+
+        return null;
+    }
+
+    private void initFirstPrimaryKey(TapTable table) {
+        if(primaryKeys == null || primaryKeys.isEmpty()) {
+            primaryKeys = table.primaryKeys();
+        }
+        if(firstPrimaryKey == null && primaryKeys != null && !primaryKeys.isEmpty()) {
+            for (String primaryKey : primaryKeys) {
+                firstPrimaryKey = primaryKey;
+                break;
+            }
+        }
+    }
+
+    private Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+        if(resumeToken != null) {
+            return resumeToken.toJson();
+        }
+        return null;
     }
 
     /**
@@ -429,10 +557,10 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             ChangeStreamIterable<Document> changeStream;
-            if (resumeToken == null) {
-                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
+            if (offset instanceof String) {
+                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).resumeAfter(BsonDocument.parse((String) offset)).fullDocument(FullDocument.UPDATE_LOOKUP);
             } else {
-                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).resumeAfter(resumeToken).fullDocument(FullDocument.UPDATE_LOOKUP);
+                changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
             }
 
             MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
@@ -481,7 +609,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     }
 
     private Object batchOffset(TapConnectorContext connectorContext) throws Throwable {
-        return batchOffsetId;
+        return batchOffset;
     }
 
 
@@ -495,9 +623,9 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void destroy() {
-        if (mongoClient != null) {
-            mongoClient.close();
-        }
+//        if (mongoClient != null) {
+//            mongoClient.close();
+//        }
         isShutDown.set(true);
     }
 }

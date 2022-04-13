@@ -7,5 +7,5 @@ import io.tapdata.entity.schema.TapField;
 import java.util.LinkedHashMap;
 
 public interface TargetTypesGenerator {
-    LinkedHashMap<String, TapField> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap matchingMap, TapCodecFilterManager codecFilterManager);
+    LinkedHashMap<String, TapField> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap targetMatchingMap, TapCodecFilterManager targetCodecFilterManager);
 }

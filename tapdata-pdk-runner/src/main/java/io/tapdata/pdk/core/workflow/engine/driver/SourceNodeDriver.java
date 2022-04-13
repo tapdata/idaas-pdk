@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.workflow.engine.driver;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
@@ -16,21 +17,26 @@ import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.pdk.apis.entity.QueryOperator;
+import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.api.SourceNode;
+import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
@@ -40,6 +46,7 @@ public class SourceNodeDriver extends Driver {
     private String streamOffsetStr;
     private String batchOffsetStr;
     private SourceStateListener sourceStateListener;
+
     private int batchLimit = 1000;
     private Long batchCount;
     private boolean batchCompleted = false;
@@ -145,7 +152,7 @@ public class SourceNodeDriver extends Driver {
 //            }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
 //        }
 
-    BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
+        BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
         if (batchReadFunction != null) {
             Object recoveredOffset = null;
             if(batchOffsetStr != null) {
@@ -376,6 +383,81 @@ public class SourceNodeDriver extends Driver {
                     }
                 }
             }
+        } else {
+            //field data types is unknown, read 10 records to sample out the field data types
+            table.setNameFieldMap(sampleRecords(table));
         }
+    }
+
+    private LinkedHashMap<String, TapField> sampleRecords(TapTable table) {
+        final int sampleSize = 10;
+        LinkedHashMap<String, TapField> nameFieldMap = new LinkedHashMap<>();
+        QueryByAdvanceFilterFunction queryByAdvanceFilterFunction = sourceNode.getConnectorFunctions().getQueryByAdvanceFilterFunction();
+        if (queryByAdvanceFilterFunction != null) {
+            PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_QUERY_BY_ADVANCE_FILTER,
+                    () -> queryByAdvanceFilterFunction.query(sourceNode.getConnectorContext(), TapAdvanceFilter.create().limit(10), (filterResults) -> {
+                        if (filterResults != null && filterResults.getResults() != null) {
+                            PDKLogger.debug(TAG, "Batch read {} of events for sample field data types", filterResults.getResults().size());
+                            fillNameFieldsFromSampleRecords(nameFieldMap, filterResults.getResults(), table.getDefaultPrimaryKeys());
+                        }
+                    }), "Batch read for sample data types " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+        }
+        if(nameFieldMap.isEmpty()) {
+            StringBuilder builder = new StringBuilder("Missing fields in table " + table.getName() + ". Please load field information for the table. ");
+            if(queryByAdvanceFilterFunction == null)
+                builder.append("Or implement queryByAdvanceFilterFunction for incremental engine to construct fields by sampling several records. ");
+            else
+                builder.append("Or provide initial records for incremental engine to construst fields by sample several records. ");
+            throw new CoreException(ErrorCodes.SOURCE_MISSING_FIELDS_IN_TABLE, builder.toString());
+        }
+        return nameFieldMap;
+    }
+
+    private void fillNameFieldsFromSampleRecords(LinkedHashMap<String, TapField> nameFieldMap, List<Map<String, Object>> mapList, List<String> defaultPrimaryKeys) {
+        TapCodecFilterManager codecFilterManager = sourceNode.getCodecFilterManager();
+        Map<String, ToTapValueCodec<?>> combinedMap = new LinkedHashMap<>();
+        Map<String, Object> combinedValueMap = new HashMap<>();
+        //Sample records
+        for(Map<String, Object> value : mapList) {
+            for(Map.Entry<String, Object> entry : value.entrySet()) {
+                ToTapValueCodec<?> existingCodec = combinedMap.get(entry.getKey());
+
+                if(entry.getValue() != null) {
+                    ToTapValueCodec<?> newCodec = codecFilterManager.getToTapValueCodec(entry.getValue());
+                    if(newCodec != null && existingCodec == null) {
+                        combinedMap.put(entry.getKey(), newCodec);
+                        combinedValueMap.put(entry.getKey(), entry.getValue());
+                    } else if(newCodec != null) { // newCodec != null && existingCodec != null
+                        if(!newCodec.equals(existingCodec)) {
+                            PDKLogger.error(TAG, "Found conflict field {} while sampling records, existing codec is {}, new codec is {}, the new codec will be ignored.", entry.getKey(), existingCodec.getClass().getSimpleName(), newCodec.getClass().getSimpleName());
+                        }
+                    }
+                }
+            }
+        }
+
+        //generate nameFieldMap
+        int counter = 0;
+        int primaryPos = 0;
+        for(Map.Entry<String, ToTapValueCodec<?>> entry : combinedMap.entrySet()) {
+            TapValue<?, ?> tapValue = entry.getValue().toTapValue(combinedValueMap.get(entry.getKey()));
+            if(tapValue != null) {
+                TapType tapType = tapValue.createDefaultTapType();
+                TapField field = new TapField(entry.getKey(), tapType.getClass().getSimpleName()).tapType(tapType).pos(++counter);
+                if(defaultPrimaryKeys != null && defaultPrimaryKeys.contains(entry.getKey())) {
+                    field.isPrimaryKey(true).primaryKeyPos(++primaryPos);
+                }
+                nameFieldMap.put(entry.getKey(), field);
+            }
+        }
+    }
+
+    public int getBatchLimit() {
+        return batchLimit;
+    }
+
+    public void setBatchLimit(int batchLimit) {
+        this.batchLimit = batchLimit;
     }
 }

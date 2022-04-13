@@ -99,7 +99,7 @@ public class PDKTestBase {
     }
 
     public String testTableName(String id) {
-        return id.replace('-', '_').replace('>', '_') + "_" + UUID.randomUUID().toString().replace("-", "");
+        return id.replace('-', '_').replace(" ", "").replace('>', '_') + "_" + UUID.randomUUID().toString().replace("-", "");
     }
 
     public interface AssertionCall {
@@ -303,7 +303,26 @@ public class PDKTestBase {
                 builder.append("\t\t").append("Right ").append(diff.rightValue()).append(" class ").append(diff.rightValue().getClass().getSimpleName()).append("\n");
             }
         }
-        return different;
+        Map<String, Object> onlyOnLeft = difference.entriesOnlyOnLeft();
+        if(!onlyOnLeft.isEmpty()) {
+            different = true;
+            for(Map.Entry<String, Object> entry : onlyOnLeft.entrySet()) {
+                builder.append("\t").append("Key ").append(entry.getKey()).append("\n");
+                builder.append("\t\t").append("Left ").append(entry.getValue()).append(" class ").append(entry.getValue().getClass().getSimpleName()).append("\n");
+                builder.append("\t\t").append("Right ").append("N/A").append("\n");
+            }
+        }
+        //Allow more on right.
+//        Map<String, Object> onlyOnRight = difference.entriesOnlyOnRight();
+//        if(!onlyOnRight.isEmpty()) {
+//            different = true;
+//            for(Map.Entry<String, Object> entry : onlyOnRight.entrySet()) {
+//                builder.append("\t").append("Key ").append(entry.getKey()).append("\n");
+//                builder.append("\t\t").append("Left ").append("N/A").append("\n");
+//                builder.append("\t\t").append("Right ").append(entry.getValue()).append(" class ").append(entry.getValue().getClass().getSimpleName()).append("\n");
+//            }
+//        }
+        return !different;
     }
 
     public boolean objectIsEqual(Object leftValue, Object rightValue) {
@@ -396,10 +415,19 @@ public class PDKTestBase {
         return updateMap;
     }
 
+    public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap after) {
+        sendInsertRecordEvent(dataFlowEngine, dag, after, null);
+    }
+
     public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap after, PatrolEvent patrolEvent) {
         TapInsertRecordEvent tapInsertRecordEvent = new TapInsertRecordEvent();
         tapInsertRecordEvent.setAfter(after);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), tapInsertRecordEvent);
+        if(patrolEvent != null)
+            dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
+    }
+
+    public void sendPatrolEvent(DataFlowEngine dataFlowEngine, TapDAG dag, PatrolEvent patrolEvent) {
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
@@ -501,7 +529,7 @@ public class PDKTestBase {
         sourceNode.getCodecFilterManager().transformFromTapValueMap(result);
 
         StringBuilder builder = new StringBuilder();
-        $(() -> Assertions.assertFalse(mapEquals(filterMap, result, builder), builder.toString()));
+        $(() -> Assertions.assertTrue(mapEquals(filterMap, result, builder), builder.toString()));
     }
 
     public TapConnector getTestConnector() {

@@ -2,6 +2,7 @@ package io.tapdata.connector.tdd;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.control.ControlEvent;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
@@ -24,8 +25,9 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -35,8 +37,8 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
     public static final String TAG = TDDTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
-    private boolean streamReadMode = false;
-    private Integer streamReadCount = 0;
+    private Map<String, Map<String, Object>> primaryKeyRecordMap = new ConcurrentHashMap<>();
+    private List<List<TapRecordEvent>> batchList = new CopyOnWriteArrayList<>();
 
     /**
      * The method invocation life circle is below,
@@ -166,19 +168,21 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
     private void control(TapConnectorContext tapConnectorContext, ControlEvent controlEvent) {
         Map<String, Object> info = controlEvent.getInfo();
         if (info != null) {
-            streamReadMode = (boolean) info.getOrDefault("streamRead", false);
-            Consumer<Integer> callback = (Consumer<Integer>) info.get("callback");
-            if (callback != null) callback.accept(streamReadCount);
+            Consumer<Map<String, Object>> callback = (Consumer<Map<String, Object>>) info.get("connectorCallback");
+            Map<String, Object> map = new HashMap<>();
+            map.put("primaryKeyRecordMap", primaryKeyRecordMap);
+            map.put("batchList", batchList);
+            if (callback != null) callback.accept(map);
         }
 
     }
 
     private void clearTable(TapConnectorContext connectorContext, TapClearTableEvent clearTableEvent) {
-
+        primaryKeyRecordMap.clear();
     }
 
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
-
+        primaryKeyRecordMap.clear();
     }
 
     private void alterTable(TapConnectorContext connectorContext, TapAlterTableEvent alterTableEvent) {
@@ -193,6 +197,14 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
 
     }
 
+    private String primaryKey(TapConnectorContext connectorContext, Map<String, Object> value) {
+        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+        StringBuilder builder = new StringBuilder();
+        for(String primaryKey : primaryKeys) {
+            builder.append(value.get(primaryKey));
+        }
+        return builder.toString();
+    }
     /**
      * The method invocation life circle is below,
      * initiated ->
@@ -209,7 +221,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
      */
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
         //TODO write records into database
-
+        batchList.add(new ArrayList<>(tapRecordEvents));
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
@@ -217,17 +229,29 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
         for(TapRecordEvent recordEvent : tapRecordEvents) {
             if(recordEvent instanceof TapInsertRecordEvent) {
                 inserted.incrementAndGet();
+                TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
+                Map<String, Object> value = insertRecordEvent.getAfter();
+                primaryKeyRecordMap.put(primaryKey(connectorContext, value), value);
                 PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapUpdateRecordEvent) {
-                updated.incrementAndGet();
+                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
+
+                Map<String, Object> value = updateRecordEvent.getAfter();
+                Map<String, Object> before = updateRecordEvent.getBefore();
+                if(value != null && before != null) {
+                    primaryKeyRecordMap.put(primaryKey(connectorContext, before), value);
+                    updated.incrementAndGet();
+                }
                 PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapDeleteRecordEvent) {
+                TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
+                Map<String, Object> before = deleteRecordEvent.getBefore();
+                if(before != null) {
+                    primaryKeyRecordMap.remove(primaryKey(connectorContext, before));
+                }
                 deleted.incrementAndGet();
                 PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
-        }
-        if (streamReadMode) {
-            streamReadCount += inserted.intValue();
         }
         //Need to tell flow engine the write result
         writeListResultConsumer.accept(writeListResult()

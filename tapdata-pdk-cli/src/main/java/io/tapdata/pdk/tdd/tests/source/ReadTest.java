@@ -1,12 +1,10 @@
-package io.tapdata.pdk.tdd.tests.target.beginner;
+package io.tapdata.pdk.tdd.tests.source;
 
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.source.*;
-import io.tapdata.pdk.apis.functions.connector.target.CreateTableFunction;
 import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
-import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
@@ -19,6 +17,7 @@ import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import io.tapdata.pdk.tdd.core.SupportFunction;
+import io.tapdata.pdk.tdd.tests.target.DMLTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +44,8 @@ public class ReadTest extends PDKTestBase {
     String originToSourceId;
     TapDAG originDag;
 
+    DAGDescriber dataFlowDescriber;
+
     @Test
     @DisplayName("Test method handleRead")
     void sourceTest() throws Throwable {
@@ -56,7 +57,7 @@ public class ReadTest extends PDKTestBase {
 
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 // #1
-                DAGDescriber dataFlowDescriber = new DAGDescriber();
+                dataFlowDescriber = new DAGDescriber();
                 dataFlowDescriber.setId(sourceToTargetId);
                 String tableId = dataFlowDescriber.getId().replace('-', '_').replace('>', '_') + "_" + UUID.randomUUID().toString();
 
@@ -68,7 +69,7 @@ public class ReadTest extends PDKTestBase {
                                 table(new TapTable("tdd-table")).connectionConfig(new DataMap())
                 ));
                 dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(testSourceNodeId, targetNodeId)));
-                dataFlowDescriber.setJobOptions(new JobOptions());
+                dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
                 dag = dataFlowDescriber.toDag();
 
                 // #2
@@ -82,27 +83,47 @@ public class ReadTest extends PDKTestBase {
                                 table(new TapTable(tableId)).connectionConfig(connectionOptions)
                 ));
                 originDataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(originNodeId, testTargetNodeId)));
-                originDataFlowDescriber.setJobOptions(new JobOptions());
+                originDataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
 
                 originDag = originDataFlowDescriber.toDag();
-
-                if (dag != null) {
-                    JobOptions jobOptions = dataFlowDescriber.getJobOptions();
-                    dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
-                        if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
-                            initConnectorFunctions();
-                            checkFunctions(sourceNode.getConnectorFunctions(), ReadTest.testFunctions());
-                        } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
+                if(originDag != null) {
+                    dataFlowEngine.startDataFlow(originDag, originDataFlowDescriber.getJobOptions(), (fromState, toState, dataFlowWorker) -> {
+                        if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
-                                if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
-                                    processStreamInsert();
+                                if (nodeId.equals(testTargetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                                    //One record should have been written to target.
+                                    verifyBatchRead();
+                                    PatrolEvent streamPatrolEvent = new PatrolEvent();
+                                    streamPatrolEvent.addInfo("streamRead", true);
+                                    dataFlowEngine.sendExternalTapEvent(sourceToTargetId, streamPatrolEvent);
+                                    AtomicInteger cnt = new AtomicInteger();
+                                    for (int i = 0; i < 10; i++) {
+                                        DataMap dataMap = buildInsertRecord();
+                                        dataMap.put("id", "id_" + i);
+                                        sendInsertRecordEvent(dataFlowEngine, originDag, dataMap, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
+                                            if (innerNodeId.equals(testTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
+                                                cnt.addAndGet(1);
+                                            }
+                                        }));
+                                    }
+                                    ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> {
+                                        PatrolEvent innerPatrolEvent = new PatrolEvent();
+                                        innerPatrolEvent.addInfo("callback", (Consumer<Integer>) streamCount -> {
+                                            Assertions.assertEquals(cnt.get(), streamCount);
+                                            completed();
+                                        });
+                                        dataFlowEngine.sendExternalTapEvent(sourceToTargetId, innerPatrolEvent);
+                                    }, 5, TimeUnit.SECONDS);
+
                                 }
                             });
-                            dataFlowEngine.sendExternalTapEvent(sourceToTargetId, patrolEvent);
+                            dataFlowEngine.sendExternalTapEvent(originToSourceId, patrolEvent);
                         }
                     });
                 }
+
+
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 CommonUtils.logError(TAG, "Start failed", throwable);
@@ -116,6 +137,26 @@ public class ReadTest extends PDKTestBase {
             }
         });
         waitCompleted(5000000);
+    }
+
+    private void verifyBatchRead() {
+        if (dag != null) {
+            JobOptions jobOptions = dataFlowDescriber.getJobOptions();
+            dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
+                if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
+                    initConnectorFunctions();
+                    checkFunctions(sourceNode.getConnectorFunctions(), ReadTest.testFunctions());
+                } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
+                    PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
+                        PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                        if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+                            processStreamInsert();
+                        }
+                    });
+                    dataFlowEngine.sendExternalTapEvent(sourceToTargetId, patrolEvent);
+                }
+            });
+        }
     }
 
     private void processStreamInsert() {

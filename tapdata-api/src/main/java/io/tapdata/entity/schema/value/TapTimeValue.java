@@ -1,6 +1,7 @@
 package io.tapdata.entity.schema.value;
 
 import io.tapdata.entity.schema.type.TapTime;
+import io.tapdata.entity.schema.type.TapType;
 
 public class TapTimeValue extends TapValue<DateTime, TapTime> {
     public TapTimeValue() {}
@@ -8,4 +9,8 @@ public class TapTimeValue extends TapValue<DateTime, TapTime> {
         value = dateTime;
     }
 
+    @Override
+    public TapType createDefaultTapType() {
+        return new TapTime();
+    }
 }

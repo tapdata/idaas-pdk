@@ -21,9 +21,9 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         if(tapNumber != null) {
             Integer scale = tapNumber.getScale();
             //TODO need more code
-            if(scale == null || scale == 0)
-                return tapValue.getValue().longValue();
-            else
+//            if(scale == null || scale == 0)
+//                return tapValue.getValue().longValue();
+//            else
                 return tapValue.getValue();
         }
         return tapValue.getValue();

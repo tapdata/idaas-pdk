@@ -15,5 +15,5 @@ import java.util.function.Consumer;
  *
  */
 public interface QueryByAdvanceFilterFunction extends TapFunction {
-    void query(TapConnectorContext nodeContext, List<TapAdvanceFilter> filters, Consumer<List<FilterResults>> consumer) throws Throwable;
+    void query(TapConnectorContext connectorContext, TapAdvanceFilter filter, Consumer<FilterResults> consumer) throws Throwable;
 }

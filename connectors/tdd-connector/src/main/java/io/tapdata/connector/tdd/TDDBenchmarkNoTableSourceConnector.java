@@ -161,7 +161,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < batchSize; i++) {
                 Map<String, Object> map = new HashMap<>();
-                for(int m = 0; m < 1; m++) {
+                for(int m = 0; m < 100; m++) {
                     String key = String.valueOf(m);
                     map.put(key, key);
                 }

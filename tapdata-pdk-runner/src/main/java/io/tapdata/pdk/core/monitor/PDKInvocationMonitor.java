@@ -68,21 +68,23 @@ public class PDKInvocationMonitor {
             r.run();
         } catch(CoreException coreException) {
             theError = coreException;
-            if(errorListener != null)
-                errorListener.accept(describeError(method, coreException, message, logTag));
+
             if(errorConsumer != null) {
                 errorConsumer.accept(coreException);
             } else {
+                if(errorListener != null)
+                    errorListener.accept(describeError(method, coreException, message, logTag));
                 throw coreException;
             }
         } catch(Throwable throwable) {
             theError = throwable;
-            if(errorListener != null)
-                errorListener.accept(describeError(method, throwable, message, logTag));
+
             CoreException coreException = new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
             if(errorConsumer != null) {
                 errorConsumer.accept(coreException);
             } else {
+                if(errorListener != null)
+                    errorListener.accept(describeError(method, throwable, message, logTag));
                 throw coreException;
             }
         } finally {
@@ -91,7 +93,7 @@ public class PDKInvocationMonitor {
     }
 
     private String describeError(PDKMethod method, Throwable throwable, String message, String logTag) {
-        return logTag + ": Invoke PDKMethod " + method.name() + " failed, error " + message + " context message " + message;
+        return logTag + ": Invoke PDKMethod " + method.name() + " failed, error " + throwable.getMessage() + " context message " + message;
     }
 
     public String methodStart(PDKMethod method, String logTag) {

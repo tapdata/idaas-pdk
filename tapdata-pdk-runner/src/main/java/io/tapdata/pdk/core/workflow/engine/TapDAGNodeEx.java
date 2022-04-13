@@ -78,6 +78,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                             .withDagId(dag.getId())
                             .build());
                 }
+                sourceNodeDriver.setBatchLimit(jobOptions.eventBatchSize);
                 break;
             case TapDAGNode.TYPE_PROCESSOR:
                 if(processorNodeDriver == null) {
@@ -101,6 +102,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                 if(sourceNodeDriver.getSourceNode() == null) {
                     sourceNodeDriver.setSourceNode(sourceAndTargetNode.getSourceNode());
                 }
+                sourceNodeDriver.setBatchLimit(jobOptions.eventBatchSize);
 
                 if(targetNodeDriver == null) {
                     targetNodeDriver = new TargetNodeDriver();
@@ -108,6 +110,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                 if(targetNodeDriver.getTargetNode() == null) {
                     targetNodeDriver.setTargetNode(sourceAndTargetNode.getTargetNode());
                 }
+                targetNodeDriver.setActionsBeforeStart(jobOptions.actionsBeforeStart);
                 break;
             case TapDAGNode.TYPE_TARGET:
                 if(targetNodeDriver == null) {
@@ -118,8 +121,8 @@ public class TapDAGNodeEx extends TapDAGNode {
                             .withTapDAGNode(this)
                             .withDagId(dag.getId())
                             .build());
-                    targetNodeDriver.setActionsBeforeStart(jobOptions.actionsBeforeStart);
                 }
+                targetNodeDriver.setActionsBeforeStart(jobOptions.actionsBeforeStart);
                 break;
         }
         if(childNodeIds != null) {

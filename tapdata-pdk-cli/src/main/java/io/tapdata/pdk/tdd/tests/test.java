@@ -1,4 +1,4 @@
-package io.tapdata.pdk.tdd.tests.target.expert;
+package io.tapdata.pdk.tdd.tests;
 
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;

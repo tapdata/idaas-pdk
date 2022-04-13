@@ -19,6 +19,17 @@ public class TapTable extends TapItem<TapField> {
      */
     private LinkedHashMap<String, TapField> nameFieldMap;
 
+    /**
+     * For the database which don't need create table before insert records.
+     *
+     * Given the default primary keys, if user don't give the specific primary key, will use defaultPrimaryKeys as primary keys.
+     */
+    private List<String> defaultPrimaryKeys;
+    public TapTable defaultPrimaryKeys(List<String> defaultPrimaryKeys) {
+        this.defaultPrimaryKeys = defaultPrimaryKeys;
+        return this;
+    }
+
     private List<TapIndex> indexList;
 
     private String id;
@@ -149,5 +160,13 @@ public class TapTable extends TapItem<TapField> {
 
     public void setIndexList(List<TapIndex> indexList) {
         this.indexList = indexList;
+    }
+
+    public List<String> getDefaultPrimaryKeys() {
+        return defaultPrimaryKeys;
+    }
+
+    public void setDefaultPrimaryKeys(List<String> defaultPrimaryKeys) {
+        this.defaultPrimaryKeys = defaultPrimaryKeys;
     }
 }

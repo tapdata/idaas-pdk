@@ -3,6 +3,12 @@ package io.tapdata.pdk.core.workflow.engine;
 import java.util.List;
 
 public class JobOptions {
+    protected int eventBatchSize = 1000;
+    public JobOptions eventBatchSize(int eventBatchSize) {
+        this.eventBatchSize = eventBatchSize;
+        return this;
+    }
+
     protected int queueSize = 20;
     public JobOptions queueSize(int queueSize) {
         this.queueSize = queueSize;
@@ -45,5 +51,13 @@ public class JobOptions {
 
     public void setActionsBeforeStart(List<String> actionsBeforeStart) {
         this.actionsBeforeStart = actionsBeforeStart;
+    }
+
+    public int getEventBatchSize() {
+        return eventBatchSize;
+    }
+
+    public void setEventBatchSize(int eventBatchSize) {
+        this.eventBatchSize = eventBatchSize;
     }
 }

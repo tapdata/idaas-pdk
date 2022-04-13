@@ -1,10 +1,9 @@
-package io.tapdata.pdk.tdd.tests.target.intermediate;
+package io.tapdata.pdk.tdd.tests.target;
 
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.functions.connector.target.CreateTableFunction;
 import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
@@ -48,8 +47,7 @@ public class CreateTableTest extends PDKTestBase {
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
                 dataFlowDescriber.setId("createTableTest->" + nodeInfo.getTapNodeSpecification().getId());
 
-                String tableId = dataFlowDescriber.getId() + "_" + UUID.randomUUID();
-                tableId = tableId.replace('-', '_').replace('>', '_');
+                String tableId = testTableName(dataFlowDescriber.getId());
 
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(Arrays.asList(

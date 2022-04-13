@@ -15,14 +15,14 @@ public class TDDMain1 {
 //                "tdd", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\aerospike.json",
 //                "tdd", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\doris.json",
 //                "tdd", "-c", "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/config/doris.json",
-                "tdd", "-c", "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/config/empty.json",
-//                "-t", "io.tapdata.pdk.tdd.tests.target.intermediate.CreateTableTest",
+                "tdd", "-c", "tapdata-pdk-cli/src/main/resources/config/empty.json",
+//                "-t", "io.tapdata.pdk.tdd.tests.target.CreateTableTest",
 //                "B:\\code\\tapdata\\idaas-pdk\\connectors\\aerospike-connector\\target\\aerospike-connector-v1.0-SNAPSHOT.jar",
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/doris-connector-v1.0-SNAPSHOT.jar",
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/empty-connector-v1.1-SNAPSHOT.jar",
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/file-connector-v1.0-SNAPSHOT.jar",
 
-                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/connectors/empty-connector",
+                "connectors/empty-connector",
         };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
