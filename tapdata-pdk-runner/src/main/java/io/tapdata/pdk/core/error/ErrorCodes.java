@@ -48,4 +48,5 @@ public interface ErrorCodes {
     int TDD_FORCE_QUIT = 70003;
 
     int SOURCE_MISSING_FIELDS_IN_TABLE = 80000;
+    int SOURCE_EXCEEDED_BATCH_SIZE = 80001;
 }

@@ -166,6 +166,8 @@ public class SourceNodeDriver extends Driver {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
                     () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalRecoveredOffset, batchLimit, (events) -> {
                         if (events != null && !events.isEmpty()) {
+                            if(events.size() > batchLimit)
+                                throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
                             PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
 //                            offer(events, (theEvents) -> filterEvents(theEvents));
                             offerToQueue(events);

@@ -138,11 +138,7 @@ public class BatchReadTest extends PDKTestBase {
                             callbackPatrol.addInfo("connectorCallback", (Consumer<Map<String, Object>>) stringObjectMap -> {
                                 Map<String, Map<String, Object>> primaryKeyRecordMap = (Map<String, Map<String, Object>>) stringObjectMap.get("primaryKeyRecordMap");
                                 List<List<TapRecordEvent>> batchList = (List<List<TapRecordEvent>>) stringObjectMap.get("batchList");
-//                                for(List<TapRecordEvent> batch : batchList) {
-//                                    assertTrue(batch.size() <= eventBatchSize, "In batchRead method, each batch should not be larger than " + eventBatchSize + " actual is " + batch.size() + ". Please review batchRead method, parameter \"eventBatchSize\" limit the max of each batch. ");
-//                                }
-//                                assertEquals(3, batchList.size(), "11 records, 5 for eventBatchSize, 3 batches should be records, but " + batchList.size());
-//                                assertEquals(1, batchList.get(2).size(), "11 records, 5 for eventBatchSize, 3 batches should be records, last batch should only have 1 record, but " + batchList.get(2).size());
+
                                 assertNotNull(primaryKeyRecordMap, "Please check your batchRead method.");
                                 assertEquals(primaryKeyRecordMap.size(), 11, "11 records should be inserted, please check your batchRead method.");
 
