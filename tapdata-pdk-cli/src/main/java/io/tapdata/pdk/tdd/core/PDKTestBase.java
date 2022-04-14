@@ -141,7 +141,7 @@ public class PDKTestBase {
     public void completed(boolean withError) {
         if (completed.compareAndSet(false, true)) {
             finishSuccessfully = !withError;
-            PDKLogger.enable(false);
+//            PDKLogger.enable(false);
             synchronized (completed) {
                 completed.notifyAll();
             }
@@ -167,6 +167,8 @@ public class PDKTestBase {
         }
         if (lastThrowable != null)
             throw lastThrowable;
+
+        tearDown();
     }
 
     public Map<String, DataMap> readTestConfig(File testConfigFile) {
@@ -267,7 +269,7 @@ public class PDKTestBase {
 
     @BeforeEach
     public void setup() {
-        PDKLogger.info(TAG, "setup");
+        PDKLogger.info(TAG, "************************{} setup************************", this.getClass().getSimpleName());
         Map<String, DataMap> testConfigMap = readTestConfig(testConfigFile);
         Assertions.assertNotNull(testConfigMap, "testConfigFile " + testConfigFile + " read to json failed");
         connectionOptions = testConfigMap.get("connection");
@@ -277,9 +279,10 @@ public class PDKTestBase {
 
     @AfterEach
     public void tearDown() {
-        PDKLogger.info(TAG, "tearDown");
         if (dag != null) {
-            DataFlowEngine.getInstance().stopDataFlow(dag.getId());
+            if(DataFlowEngine.getInstance().stopDataFlow(dag.getId())) {
+                PDKLogger.info(TAG, "************************{} tearDown************************", this.getClass().getSimpleName());
+            }
         }
     }
 

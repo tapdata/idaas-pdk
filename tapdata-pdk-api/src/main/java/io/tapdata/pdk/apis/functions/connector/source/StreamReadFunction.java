@@ -1,6 +1,7 @@
 package io.tapdata.pdk.apis.functions.connector.source;
 
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
 
@@ -16,5 +17,5 @@ public interface StreamReadFunction extends TapFunction {
      * @param recordSize
      * @param consumer accept the table and offsetState for the record.
      */
-    void streamRead(TapConnectorContext nodeContext, String offsetState, int recordSize, Consumer<List<TapEvent>> consumer) throws Throwable;
+    void streamRead(TapConnectorContext nodeContext, String offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable;
 }

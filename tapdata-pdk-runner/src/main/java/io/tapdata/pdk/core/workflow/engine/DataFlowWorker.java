@@ -12,6 +12,7 @@ import io.tapdata.pdk.core.utils.state.StateListener;
 import io.tapdata.pdk.core.utils.state.StateMachine;
 import io.tapdata.pdk.core.workflow.engine.driver.ProcessorNodeDriver;
 import io.tapdata.pdk.core.workflow.engine.driver.SourceNodeDriver;
+import io.tapdata.pdk.core.workflow.engine.driver.SourceStateListener;
 import io.tapdata.pdk.core.workflow.engine.driver.TargetNodeDriver;
 
 import java.util.Arrays;
@@ -37,6 +38,7 @@ public class DataFlowWorker {
     private LastError lastError;
 //    private SingleThreadQueue<Runnable> singleThreadQueue;
     private ExecutorService workerThread;
+    private SourceStateListener sourceStateListener;
 
     public static class LastError {
         private CoreException coreException;
@@ -111,6 +113,11 @@ public class DataFlowWorker {
             TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
             if(nodeWorker.sourceNodeDriver != null) {
                 nodeWorker.sourceNodeDriver.start(state -> {
+                    if(sourceStateListener != null) {
+                        CommonUtils.ignoreAnyError(() -> {
+                            sourceStateListener.stateChanged(state);
+                        }, TAG);
+                    }
                     if(state == SourceNodeDriver.STATE_FIRST_BATCH_RECORDS_OFFERED) {
                         stateMachine.gotoState(STATE_RECORDS_SENT, "First batch of records has sent out");
                     }
@@ -281,5 +288,13 @@ public class DataFlowWorker {
         if(stateMachine != null) {
             stateMachine.removeStateListener(stateListener);
         }
+    }
+
+    public SourceStateListener getSourceStateListener() {
+        return sourceStateListener;
+    }
+
+    public void setSourceStateListener(SourceStateListener sourceStateListener) {
+        this.sourceStateListener = sourceStateListener;
     }
 }

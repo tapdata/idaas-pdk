@@ -77,6 +77,7 @@ public class PDKInvocationMonitor {
                 throw coreException;
             }
         } catch(Throwable throwable) {
+            throwable.printStackTrace();
             theError = throwable;
 
             CoreException coreException = new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);

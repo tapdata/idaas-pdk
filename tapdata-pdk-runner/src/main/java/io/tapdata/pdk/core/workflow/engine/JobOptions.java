@@ -29,6 +29,34 @@ public class JobOptions {
         return this;
     }
 
+    protected boolean enableBatchRead = true;
+    public JobOptions enableBatchRead(boolean enableBatchRead) {
+        this.enableBatchRead = enableBatchRead;
+        return this;
+    }
+
+    protected boolean enableStreamRead = true;
+    public JobOptions enableStreamRead(boolean enableStreamRead) {
+        this.enableStreamRead = enableStreamRead;
+        return this;
+    }
+
+    public boolean isEnableBatchRead() {
+        return enableBatchRead;
+    }
+
+    public void setEnableBatchRead(boolean enableBatchRead) {
+        this.enableBatchRead = enableBatchRead;
+    }
+
+    public boolean isEnableStreamRead() {
+        return enableStreamRead;
+    }
+
+    public void setEnableStreamRead(boolean enableStreamRead) {
+        this.enableStreamRead = enableStreamRead;
+    }
+
     public int getQueueSize() {
         return queueSize;
     }

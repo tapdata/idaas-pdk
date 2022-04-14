@@ -20,12 +20,14 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.entity.QueryOperator;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.apis.utils.StateListener;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
@@ -47,11 +49,14 @@ public class SourceNodeDriver extends Driver {
     private String batchOffsetStr;
     private SourceStateListener sourceStateListener;
 
+    private boolean enableBatchRead = true;
+    private boolean enableStreamRead = true;
     private int batchLimit = 1000;
     private Long batchCount;
     private boolean batchCompleted = false;
     private final Object streamLock = new int[0];
     private final AtomicBoolean firstBatchRecordsOffered = new AtomicBoolean(false);
+    private final AtomicBoolean shutDown = new AtomicBoolean(false);
 
     public SourceNode getSourceNode() {
         return sourceNode;
@@ -73,10 +78,8 @@ public class SourceNodeDriver extends Driver {
     public static final int STATE_BATCH_STARTED = 10;
     public static final int STATE_BATCH_ENDED = 20;
     public static final int STATE_STREAM_STARTED = 30;
+    public static final int STATE_STREAM_ENDED = 40;
     public static final int STATE_ENDED = 100;
-    public interface SourceStateListener {
-        void stateChanged(int state);
-    }
     public void start() {
         start(null);
     }
@@ -107,7 +110,7 @@ public class SourceNodeDriver extends Driver {
 
 
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
-        if (batchCountFunction != null) {
+        if (enableBatchRead && batchCountFunction != null) {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_COUNT, () -> {
                 batchCount = batchCountFunction.count(sourceNode.getConnectorContext(), null);
             }, "Batch count " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
@@ -153,7 +156,7 @@ public class SourceNodeDriver extends Driver {
 //        }
 
         BatchReadFunction batchReadFunction = sourceNode.getConnectorFunctions().getBatchReadFunction();
-        if (batchReadFunction != null) {
+        if (enableBatchRead && batchReadFunction != null) {
 
             CommonUtils.ignoreAnyError(() -> {
                 if(sourceStateListener != null)
@@ -201,16 +204,13 @@ public class SourceNodeDriver extends Driver {
         }
 
         StreamReadFunction streamReadFunction = sourceNode.getConnectorFunctions().getStreamReadFunction();
-        if (streamReadFunction != null) {
-
-            CommonUtils.ignoreAnyError(() -> {
-                if(sourceStateListener != null)
-                    sourceStateListener.stateChanged(STATE_STREAM_STARTED);
-            }, TAG);
+        if (enableStreamRead && streamReadFunction != null) {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
-                while(true) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), streamOffsetStr, batchLimit, (events) -> {
+                while(!shutDown.get()) {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), streamOffsetStr, batchLimit, StreamReadConsumer.create((events) -> {
                         if (events != null) {
+                            if(events.size() > batchLimit)
+                                throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
                             PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offerToQueue(events);
 
@@ -233,7 +233,20 @@ public class SourceNodeDriver extends Driver {
                                 PDKLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
                             });
                         }
-                    });
+                    }).stateListener((from, to) -> {
+                        if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED) {
+                            CommonUtils.ignoreAnyError(() -> {
+                                if(sourceStateListener != null)
+                                    sourceStateListener.stateChanged(STATE_STREAM_STARTED);
+                            }, TAG);
+                        } else if (to == StreamReadConsumer.STATE_STREAM_READ_ENDED){
+                            CommonUtils.ignoreAnyError(() -> {
+                                if(sourceStateListener != null)
+                                    sourceStateListener.stateChanged(STATE_STREAM_ENDED);
+                            }, TAG);
+                        }
+
+                    }));
                 }
             }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
         }
@@ -452,5 +465,21 @@ public class SourceNodeDriver extends Driver {
 
     public void setBatchLimit(int batchLimit) {
         this.batchLimit = batchLimit;
+    }
+
+    public boolean isEnableBatchRead() {
+        return enableBatchRead;
+    }
+
+    public void setEnableBatchRead(boolean enableBatchRead) {
+        this.enableBatchRead = enableBatchRead;
+    }
+
+    public boolean isEnableStreamRead() {
+        return enableStreamRead;
+    }
+
+    public void setEnableStreamRead(boolean enableStreamRead) {
+        this.enableStreamRead = enableStreamRead;
     }
 }

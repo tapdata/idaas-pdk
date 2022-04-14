@@ -78,7 +78,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                             .withDagId(dag.getId())
                             .build());
                 }
-                sourceNodeDriver.setBatchLimit(jobOptions.eventBatchSize);
+                configSourceNodeDriver(sourceNodeDriver, jobOptions);
                 break;
             case TapDAGNode.TYPE_PROCESSOR:
                 if(processorNodeDriver == null) {
@@ -102,7 +102,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                 if(sourceNodeDriver.getSourceNode() == null) {
                     sourceNodeDriver.setSourceNode(sourceAndTargetNode.getSourceNode());
                 }
-                sourceNodeDriver.setBatchLimit(jobOptions.eventBatchSize);
+                configSourceNodeDriver(sourceNodeDriver, jobOptions);
 
                 if(targetNodeDriver == null) {
                     targetNodeDriver = new TargetNodeDriver();
@@ -110,7 +110,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                 if(targetNodeDriver.getTargetNode() == null) {
                     targetNodeDriver.setTargetNode(sourceAndTargetNode.getTargetNode());
                 }
-                targetNodeDriver.setActionsBeforeStart(jobOptions.actionsBeforeStart);
+                configTargetNodeDriver(targetNodeDriver, jobOptions);
                 break;
             case TapDAGNode.TYPE_TARGET:
                 if(targetNodeDriver == null) {
@@ -122,7 +122,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                             .withDagId(dag.getId())
                             .build());
                 }
-                targetNodeDriver.setActionsBeforeStart(jobOptions.actionsBeforeStart);
+                configTargetNodeDriver(targetNodeDriver, jobOptions);
                 break;
         }
         if(childNodeIds != null) {
@@ -134,6 +134,16 @@ public class TapDAGNodeEx extends TapDAGNode {
                 }
             }
         }
+    }
+
+    private void configTargetNodeDriver(TargetNodeDriver targetNodeDriver, JobOptions jobOptions) {
+        targetNodeDriver.setActionsBeforeStart(jobOptions.actionsBeforeStart);
+    }
+
+    private void configSourceNodeDriver(SourceNodeDriver sourceNodeDriver, JobOptions jobOptions) {
+        sourceNodeDriver.setBatchLimit(jobOptions.eventBatchSize);
+        sourceNodeDriver.setEnableBatchRead(jobOptions.enableBatchRead);
+        sourceNodeDriver.setEnableStreamRead(jobOptions.enableStreamRead);
     }
 
     private void buildPath(TapDAGNodeEx parent, TapDAGNodeEx child, JobOptions jobOptions) {

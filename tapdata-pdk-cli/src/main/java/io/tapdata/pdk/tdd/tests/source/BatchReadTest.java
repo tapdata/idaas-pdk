@@ -7,6 +7,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
@@ -55,8 +56,8 @@ public class BatchReadTest extends PDKTestBase {
     void sourceTest() throws Throwable {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
             tapNodeInfo = nodeInfo;
-            sourceToTargetId = nodeInfo.getTapNodeSpecification().getId() + " ->tdd target";
-            originToSourceId = "origin-> " + nodeInfo.getTapNodeSpecification().getId();
+            sourceToTargetId = "BatchReadTest#" + nodeInfo.getTapNodeSpecification().getId() + "ToTddTarget";
+            originToSourceId = "BatchReadTest#tddSourceTo" + nodeInfo.getTapNodeSpecification().getId();
 
             TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
             // #1
@@ -197,6 +198,7 @@ public class BatchReadTest extends PDKTestBase {
                 support(BatchReadFunction.class, "BatchReadFunction is a must to read initial records, please implement it in registerCapabilities method."),
                 support(BatchCountFunction.class, "BatchCountFunction is a must for the total size of initial records, please implement it in registerCapabilities method."),
                 support(BatchOffsetFunction.class, "BatchOffsetFunction is a must for incremental engine to record offset of batch read, please implement it in registerCapabilities method."),
+                support(QueryByAdvanceFilterFunction.class, "QueryByAdvanceFilterFunction is a must for database which is schema free to sample some record to generate the field data types."),
 //                support(StreamReadFunction.class, "StreamReadFunction is a must to read incremental records, please implement it in registerCapabilities method."),
 //                support(StreamOffsetFunction.class, "StreamOffsetFunction is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method."),
                 support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
@@ -209,7 +211,10 @@ public class BatchReadTest extends PDKTestBase {
     }
 
     public void tearDown() {
-        PDKLogger.info(TAG, "tearDown");
+        super.tearDown();
+        if(originDag != null) {
+            DataFlowEngine.getInstance().stopDataFlow(originDag.getId());
+        }
 
     }
 }

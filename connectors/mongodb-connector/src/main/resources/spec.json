@@ -19,12 +19,6 @@
           "title": "Database",
           "x-decorator": "FormItem",
           "x-component": "Input"
-        },
-        "collection":{
-          "type": "string",
-          "title": "Collection",
-          "x-decorator": "FormItem",
-          "x-component": "Input"
         }
 
       }

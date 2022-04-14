@@ -45,7 +45,7 @@ public class CreateTableTest extends PDKTestBase {
 //                dataFlowEngine.start();
 
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
-                dataFlowDescriber.setId("createTableTest->" + nodeInfo.getTapNodeSpecification().getId());
+                dataFlowDescriber.setId("CreateTableTest#createTableTestTo" + nodeInfo.getTapNodeSpecification().getId());
 
                 String tableId = testTableName(dataFlowDescriber.getId());
 

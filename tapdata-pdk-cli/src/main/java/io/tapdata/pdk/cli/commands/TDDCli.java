@@ -12,8 +12,9 @@ import io.tapdata.pdk.core.utils.ReflectionUtil;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import io.tapdata.pdk.tdd.core.SupportFunction;
 import io.tapdata.pdk.tdd.tests.basic.BasicTest;
+import io.tapdata.pdk.tdd.tests.source.BatchReadTest;
+import io.tapdata.pdk.tdd.tests.source.StreamReadTest;
 import io.tapdata.pdk.tdd.tests.target.DMLTest;
-import io.tapdata.pdk.tdd.tests.source.ReadTest;
 import io.tapdata.pdk.tdd.tests.target.CreateTableTest;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.cli.MavenCli;
@@ -160,6 +161,8 @@ public class TDDCli extends CommonCli {
 
         DataMap testOptions = testBase.getTestOptions();
 
+        testBase.tearDown();
+
         String pdkId = null;
         if(testOptions != null) {
             pdkId = (String) testOptions.get("pdkId");
@@ -173,7 +176,7 @@ public class TDDCli extends CommonCli {
                     break;
                 }
             } else {
-                PDKLogger.enable(true);
+//                PDKLogger.enable(true);
                 runLevelWithNodeInfo(tapNodeInfo);
             }
         }
@@ -223,8 +226,9 @@ public class TDDCli extends CommonCli {
 
         List<Class<? extends PDKTestBase>> tests = Arrays.asList(
                 DMLTest.class,
-                ReadTest.class,
-                CreateTableTest.class
+                CreateTableTest.class,
+                BatchReadTest.class,
+                StreamReadTest.class
         );
 
 //        builder.append("\n-------------PDK connector idAndGroupAndVersion " + tapNodeInfo.getTapNodeSpecification().idAndGroup() + "-------------").append("\n");

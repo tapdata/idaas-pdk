@@ -23,6 +23,7 @@ import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.mongodb.bean.MongoDBConfig;
 import io.tapdata.pdk.apis.TapConnector;
+import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -31,6 +32,7 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import org.bson.BsonDocument;
 
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.*;
@@ -67,6 +69,8 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private BsonDocument resumeToken = null;
     private Collection<String> primaryKeys;
     private String firstPrimaryKey;
+
+    MongoChangeStreamCursor<ChangeStreamDocument<Document>> streamCursor;
 
     private void initConnection(DataMap config) throws IOException {
         mongoConfig = MongoDBConfig.load(config);
@@ -217,6 +221,11 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
         getMongoCollection(connectorContext.getTable()).drop();
+
+        if(streamCursor != null) {
+            streamCursor.close();
+            PDKLogger.info(TAG, "dropTable is called for " + connectorContext.getTable() + " streamCursor has been closed " + streamCursor);
+        }
     }
 
 //    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
@@ -312,6 +321,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
     }
+
     private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
         MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
         if (tapAdvanceFilter != null) {
@@ -524,7 +534,19 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     }
 
     private String streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
-        if(resumeToken != null) {
+        if(offsetStartTime != null) {
+            // Unix timestamp in seconds, with increment 1
+            ChangeStreamIterable<Document> changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
+            changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 1));
+            MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
+            BsonDocument theResumeToken = cursor.getResumeToken();
+
+            if(theResumeToken != null) {
+                String json =  theResumeToken.toJson();
+                cursor.close();
+                return json;
+            }
+        } else if(resumeToken != null) {
             return resumeToken.toJson();
         }
         return null;
@@ -546,7 +568,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param connectorContext //     * @param offset
      *                         //     * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> consumer) {
+    private void streamRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, StreamReadConsumer consumer) {
         while (!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
             ChangeStreamIterable<Document> changeStream;
@@ -556,9 +578,28 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 changeStream = getMongoCollection(connectorContext.getTable()).watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
             }
 
-            MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
-            while (tapEvents.size() < eventBatchSize && cursor.hasNext()) {
-                ChangeStreamDocument<Document> event = cursor.next();
+            if(streamCursor != null) {
+                streamCursor.close();
+            }
+            streamCursor = changeStream.cursor();
+            consumer.streamReadStarted();
+
+            while (!isShutDown.get()) {
+                ChangeStreamDocument<Document> event = streamCursor.tryNext();
+                if(event == null) {
+                    if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
+                    tapEvents = list();
+                    if (!streamCursor.hasNext()) {
+                        PDKLogger.warn(TAG, "streamCursor is not alive anymore, sleep 10 seconds to avoid cpu consumption. This connector should be stopped by incremental engine.");
+                        sleep(10000);
+                    }
+                    continue;
+                }
+                if(tapEvents.size() >= eventBatchSize) {
+                    if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
+                    tapEvents = list();
+                }
+
                 resumeToken = event.getResumeToken();
                 OperationType operationType = event.getOperationType();
                 Document fullDocument = event.getFullDocument();
@@ -586,7 +627,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     tapEvents.add(recordEvent);
                 }
             }
-            if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
+
         }
     }
 
@@ -620,5 +661,8 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
 //            mongoClient.close();
 //        }
         isShutDown.set(true);
+        if(streamCursor != null) {
+            streamCursor.close();
+        }
     }
 }

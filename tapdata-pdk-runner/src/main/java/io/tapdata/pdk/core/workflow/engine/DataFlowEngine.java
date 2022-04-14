@@ -56,6 +56,8 @@ public class DataFlowEngine {
                 dataFlowWorker.start();
                 return dataFlowWorker;
             }
+        } else {
+            PDKLogger.error(TAG, "DAG Id {} is running, can not startDataFlow again.", dag.getId());
         }
         return null;
     }
@@ -74,14 +76,16 @@ public class DataFlowEngine {
         }
     }
 
-    public void stopDataFlow(String dagId) {
+    public boolean stopDataFlow(String dagId) {
         Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dagId);
 
         DataFlowWorker dataFlowWorker = idDataFlowWorkerMap.remove(dagId);
         if(dataFlowWorker == null)
-            throw new CoreException(ErrorCodes.MAIN_DATAFLOW_NOT_FOUND, "DAG " + dagId + " doesn't be found");
+            return false;
+//            throw new CoreException(ErrorCodes.MAIN_DATAFLOW_NOT_FOUND, "DAG " + dagId + " doesn't be found");
 
         dataFlowWorker.stop();
+        return true;
     }
 
     /**
