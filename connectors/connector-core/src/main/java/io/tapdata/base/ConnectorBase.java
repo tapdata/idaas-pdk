@@ -203,4 +203,21 @@ public class ConnectorBase {
         tapDateTimeFormat.applyPattern(pattern);
         return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
     }
+
+    public Object convertDateTimeToDate(DateTime dateTime) {
+        if(dateTime != null) {
+            Long milliseconds;
+            Long nano = dateTime.getNano();
+            Long seconds = dateTime.getSeconds();
+            if(nano != null) {
+                milliseconds = nano / 1000 / 1000;
+            } else if(seconds != null) {
+                milliseconds = seconds * 1000;
+            } else {
+                return null;
+            }
+            return new Date(milliseconds);
+        }
+        return null;
+    }
 }

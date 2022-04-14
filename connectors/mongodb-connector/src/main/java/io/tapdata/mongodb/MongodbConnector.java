@@ -8,6 +8,7 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.model.changestream.OperationType;
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
@@ -180,35 +181,19 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             return new TapStringValue(symbol.getSymbol());
         });
 
-        codecRegistry.registerFromTapValue(TapRawValue.class, "json", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapArrayValue.class, "json", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapMapValue.class, "json", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "json", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "json", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapDateValue.class, "json", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
+        codecRegistry.registerFromTapValue(TapRawValue.class, "object", TapValue::getValue);
+        codecRegistry.registerFromTapValue(TapArrayValue.class, "array", TapValue::getValue);
+        codecRegistry.registerFromTapValue(TapMapValue.class, "object", TapValue::getValue);
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "date", tapTimeValue -> convertDateTimeToDate(tapTimeValue.getValue()));
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "date", tapDateTimeValue -> convertDateTimeToDate(tapDateTimeValue.getValue()));
+        codecRegistry.registerFromTapValue(TapDateValue.class, "date", tapDateValue -> convertDateTimeToDate(tapDateValue.getValue()));
+
+        codecRegistry.registerFromTapValue(TapStringValue.class, "string", tapValue -> {
+            Object originValue = tapValue.getOriginValue();
+            if(originValue instanceof ObjectId) {
+                return originValue;
+            }
+            return codecRegistry.getValueFromDefaultTapValueCodec(tapValue);
         });
 
         connectorFunctions.supportBatchRead(this::batchRead);
@@ -277,21 +262,10 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 }
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
-
-                List<Bson> filterAfter = new ArrayList<>();
-                List<Bson> updateAfter = new ArrayList<>();
+                Map<String, Object> before = updateRecordEvent.getBefore();
 
 
-                for (Map.Entry<String, Object> entry : after.entrySet()) {
-                    String fieldName = entry.getKey();
-                    if (fieldName.equals("_id") || nameFieldMap.get(fieldName).getPrimaryKey() != null && nameFieldMap.get(fieldName).getPrimaryKey()) {
-                        filterAfter.add(eq(entry.getKey(), entry.getValue()));
-                    } else {
-                        updateAfter.add(set(entry.getKey(), entry.getValue()));
-                    }
-                }
-
-                collection.updateOne(and(filterAfter.toArray(new Bson[0])), Updates.combine(updateAfter.toArray(new Bson[0])), options);
+                collection.updateOne(new Document(before), new Document().append("$set", after));
                 updated.incrementAndGet();
 //                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
@@ -301,13 +275,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
 
-
-                List<Bson> filterBefore = new ArrayList<>();
-                for (Map.Entry<String, Object> entry : before.entrySet()) {
-                    filterBefore.add(eq(entry.getKey(), entry.getValue()));
-                }
-
-                collection.deleteOne(and(filterBefore.toArray(new Bson[0])));
+                collection.deleteOne(new Document(before));
                 deleted.incrementAndGet();
 //                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }

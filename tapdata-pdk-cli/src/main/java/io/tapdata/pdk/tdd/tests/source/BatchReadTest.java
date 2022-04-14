@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 4, test-source should be able to read them from batchRead method and write to tdd-target.
  * 5, after 11 records write to tdd-target, fetch all the records from tdd-target, verify 11 records has been received and match the last record with the record sent from test case.
  * 6, send dropTable event and verify the table is actually dropped.
- * 
+ *
  */
 @DisplayName("Tests for source beginner test")
 public class BatchReadTest extends PDKTestBase {
