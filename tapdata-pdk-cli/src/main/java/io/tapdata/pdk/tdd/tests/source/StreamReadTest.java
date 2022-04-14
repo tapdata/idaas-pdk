@@ -36,7 +36,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 1, use DAG tdd-source -> test-source write 1 record into test-source.
- * 2, use DAG test-source -> tdd-target
+ * 2, use DAG test-source -> tdd-target only streamRead enabled.
+ * 3, after DAG test-source -> tdd-target enter stream started state.
+ * 4, use DAG tdd-source -> test-source write 10 records into test-source.
+ * 5, test-source should be able to read them from streamRead method and write to tdd-target.
+ * 6, wait 3 seconds, fetch all the records from tdd-target, verify 10 records has been received and match the last record with the record sent from test case.
+ * 7, send dropTable event and verfy the table is actually dropped.
  *
  *
  */

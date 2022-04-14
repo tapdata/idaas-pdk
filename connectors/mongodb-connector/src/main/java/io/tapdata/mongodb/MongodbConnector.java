@@ -270,7 +270,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 insertList.add(new Document(insertRecordEvent.getAfter()));
                 inserted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 if (!insertList.isEmpty()) {
                     collection.insertMany(insertList);
@@ -293,7 +293,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
 
                 collection.updateOne(and(filterAfter.toArray(new Bson[0])), Updates.combine(updateAfter.toArray(new Bson[0])), options);
                 updated.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 if (!insertList.isEmpty()) {
                     collection.insertMany(insertList);
@@ -309,7 +309,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
 
                 collection.deleteOne(and(filterBefore.toArray(new Bson[0])));
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
+//                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
         if (!insertList.isEmpty()) {

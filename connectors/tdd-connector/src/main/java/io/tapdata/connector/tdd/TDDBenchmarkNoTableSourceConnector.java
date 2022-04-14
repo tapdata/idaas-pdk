@@ -45,6 +45,29 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
         consumer.accept(list(
                 //Define first table
                 table("tdd-table")
+                        //Define a field named "id", origin field type, whether is primary key and primary key position
+                        .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(1))
+                        .add(field("tapString", "tapString").isPrimaryKey(true).primaryKeyPos(2))
+                        .add(field("tddUser", "tapString"))
+                        .add(field("tapString10", "tapString(10)"))
+                        .add(field("tapString10Fixed", "tapString(10) fixed"))
+                        .add(field("tapInt", "int"))
+                        .add(field("tapBoolean", "tapBoolean"))
+                        .add(field("tapDate", "tapDate"))
+                        .add(field("tapArrayString", "tapArray"))
+                        .add(field("tapArrayDouble", "tapArray"))
+                        .add(field("tapArrayTDDUser", "tapArray"))
+                        .add(field("tapRawTDDUser", "tapRaw"))
+                        .add(field("tapNumber", "tapNumber"))
+//                        .add(field("tapNumber8", "tapNumber(8)"))
+                        .add(field("tapNumber52", "tapNumber(5, 2)"))
+                        .add(field("tapBinary", "tapBinary"))
+                        .add(field("tapTime", "tapTime"))
+                        .add(field("tapMapStringString", "tapMap"))
+                        .add(field("tapMapStringDouble", "tapMap"))
+                        .add(field("tapMapStringTDDUser", "tapMap"))
+                        .add(field("tapDateTime", "tapDateTime"))
+                        .add(field("tapDateTimeTimeZone", "tapDateTime"))
         ));
     }
 
@@ -161,7 +184,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < batchSize; i++) {
                 Map<String, Object> map = new HashMap<>();
-                for(int m = 0; m < 100; m++) {
+                for(int m = 0; m < 10; m++) {
                     String key = String.valueOf(m);
                     map.put(key, key);
                 }
