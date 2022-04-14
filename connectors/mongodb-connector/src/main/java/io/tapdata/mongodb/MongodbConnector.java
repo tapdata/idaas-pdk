@@ -583,14 +583,26 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             }
             streamCursor = changeStream.cursor();
             consumer.streamReadStarted();
-
             while (!isShutDown.get()) {
                 ChangeStreamDocument<Document> event = streamCursor.tryNext();
                 if(event == null) {
                     if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
                     tapEvents = list();
-                    if (!streamCursor.hasNext()) {
-                        PDKLogger.warn(TAG, "streamCursor is not alive anymore, sleep 10 seconds to avoid cpu consumption. This connector should be stopped by incremental engine.");
+                    boolean cursorClosed = false;
+                    String errorMessage = "null";
+                    try {
+                        if (!streamCursor.hasNext()) {
+                            cursorClosed = true;
+                        }
+                    } catch(Throwable throwable) {
+                        throwable.printStackTrace();
+                        if(throwable.getMessage().contains("closed")) {
+                            cursorClosed = true;
+                        }
+                        errorMessage = throwable.getMessage();
+                    }
+                    if(cursorClosed) {
+                        PDKLogger.warn(TAG, "streamCursor is not alive anymore or error occurred {}, sleep 10 seconds to avoid cpu consumption. This connector should be stopped by incremental engine.", errorMessage);
                         sleep(10000);
                     }
                     continue;
