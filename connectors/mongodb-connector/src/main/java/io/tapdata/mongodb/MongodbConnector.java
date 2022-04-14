@@ -31,10 +31,8 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
-import org.bson.BsonDocument;
+import org.bson.*;
 
-import org.bson.BsonTimestamp;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.*;
 
@@ -590,25 +588,83 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     tapEvents.add(recordEvent);
                 } else if (operationType == OperationType.DELETE) {
                     DataMap before = new DataMap();
-                    ObjectId oid = event.getDocumentKey().get("_id").asObjectId().getValue();
-                    before.put("_id", oid);
-                    TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, connectorContext.getTable());
-                    tapEvents.add(recordEvent);
+                    if (event.getDocumentKey() != null) {
+                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
+                        TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, connectorContext.getTable());
+                        tapEvents.add(recordEvent);
+                    } else {
+                        PDKLogger.error(TAG, "Document key is null, failed to delete. {}", event);
+                    }
                 } else if (operationType == OperationType.UPDATE) {
                     DataMap before = new DataMap();
-                    ObjectId oid = event.getDocumentKey().get("_id").asObjectId().getValue();
-                    before.put("_id", oid);
+                    if (event.getDocumentKey() != null) {
+                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
+                        DataMap after = new DataMap();
+                        after.putAll(fullDocument);
+                        after.remove("_id");
 
-                    DataMap after = new DataMap();
-                    after.putAll(fullDocument);
-                    after.remove("_id");
-
-                    TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, connectorContext.getTable());
-                    tapEvents.add(recordEvent);
+                        TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, connectorContext.getTable());
+                        tapEvents.add(recordEvent);
+                    } else {
+                        PDKLogger.error(TAG, "Document key is null, failed to update. {}", event);
+                    }
                 }
             }
 
         }
+    }
+
+    private Object getIdValue(BsonValue id) {
+        BsonType bsonType = id.getBsonType();
+        if(bsonType == null)
+            return null;
+        switch (bsonType) {
+//            case NULL:
+//                break;
+//            case ARRAY:
+//                break;
+            case INT32:
+                return id.asInt32().getValue();
+            case INT64:
+                return id.asInt64().getValue();
+            case BINARY:
+                return id.asBinary().getData();
+            case DOUBLE:
+                return id.asDouble().getValue();
+            case STRING:
+                return id.asString().getValue();
+            case SYMBOL:
+                return id.asSymbol().getSymbol();
+            case BOOLEAN:
+                return id.asBoolean().getValue();
+//            case MAX_KEY:
+//                break;
+//            case MIN_KEY:
+//                break;
+//            case DOCUMENT:
+//                break;
+            case DATE_TIME:
+                return id.asDateTime().getValue();
+            case OBJECT_ID:
+                return id.asObjectId().getValue();
+            case TIMESTAMP:
+                return id.asTimestamp().getValue();
+//            case UNDEFINED:
+//                break;
+//            case DB_POINTER:
+//                break;
+            case DECIMAL128:
+                return id.asDecimal128().getValue();
+//            case JAVASCRIPT:
+//                break;
+//            case END_OF_DOCUMENT:
+//                break;
+//            case REGULAR_EXPRESSION:
+//                break;
+//            case JAVASCRIPT_WITH_SCOPE:
+//                break;
+        }
+        return null;
     }
 
     private MongoCollection<Document> getMongoCollection(TapTable table) {
