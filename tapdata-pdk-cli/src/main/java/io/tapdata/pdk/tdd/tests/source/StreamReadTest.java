@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -72,8 +73,8 @@ public class StreamReadTest extends PDKTestBase {
     void sourceTest() throws Throwable {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
             tapNodeInfo = nodeInfo;
-            sourceToTddTargetDagId = "StreamReadTest_" + nodeInfo.getTapNodeSpecification().getId();
-            tddSourceToSourceAsTargetDagId = "StreamReadTest_" + nodeInfo.getTapNodeSpecification().getId();
+            sourceToTddTargetDagId = "StreamReadTest_" + nodeInfo.getTapNodeSpecification().getId() + "ToTdd";
+            tddSourceToSourceAsTargetDagId = "StreamReadTest_tddTo" + nodeInfo.getTapNodeSpecification().getId();
 
             TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
             // #1
@@ -155,8 +156,18 @@ public class StreamReadTest extends PDKTestBase {
                 initConnectorFunctions();
                 checkFunctions(sourceNode.getConnectorFunctions(), BatchReadTest.testFunctions());
 
+                final long maxWaitSeconds = 30;
+                long startTime = System.currentTimeMillis();
+                final ScheduledFuture future = ExecutorsManager.getInstance().getScheduledExecutorService().scheduleAtFixedRate(() -> {
+                    if(System.currentTimeMillis() - startTime > TimeUnit.SECONDS.toMillis(maxWaitSeconds)) {
+                        $(() -> fail("Failed to enter stream started state, which need use StreamReadConsumer#streamReadStarted in streamRead method to mark when stream is started. "));
+                    } else {
+                        PDKLogger.info(TAG, "Waiting connector enter stream started state to do stream test, will timeout after {} second", maxWaitSeconds - ((System.currentTimeMillis() - startTime) / 1000));
+                    }
+                }, 5, 5, TimeUnit.SECONDS);
                 dataFlowWorker.setSourceStateListener(state -> {
                     if(state == SourceNodeDriver.STATE_STREAM_STARTED) {
+                        future.cancel(true);
                         startStreamReadTest();
                     }
                 });
@@ -178,6 +189,7 @@ public class StreamReadTest extends PDKTestBase {
                 sendPatrolEvent(dataFlowEngine, tddToSourceDag, new PatrolEvent().patrolListener((nodeId1, state1) -> {
                     if(nodeId1.equals(testSourceAsTargetNodeId) && state1 == PatrolEvent.STATE_LEAVE) {
                         ExecutorsManager.getInstance().getScheduledExecutorService().schedule(this::verifyWriteTDDTargetResult, 3, TimeUnit.SECONDS);
+                        PDKLogger.info(TAG, "Wait stream read for 3 seconds, then verify result...");
                     }
                 }));
 //                        ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> {

@@ -1,5 +1,6 @@
 package io.tapdata.mongodb;
 
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.UpdateOptions;
@@ -33,6 +34,9 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import org.bson.*;
 
+import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 import org.bson.types.*;
 
@@ -41,6 +45,8 @@ import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.singletonList;
+import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 import java.io.IOException;
 import java.util.*;
@@ -75,8 +81,9 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         mongoConfig = MongoDBConfig.load(config);
         if (mongoClient == null) {
             mongoClient = MongoClientFactory.getMongoClient(mongoConfig.getUri());
-            mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
-            mongoDatabase.listCollectionNames();
+            CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
+                    fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+            mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase()).withCodecRegistry(pojoCodecRegistry);
         }
     }
 
@@ -117,6 +124,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         initConnection(connectionContext.getConnectionConfig());
+        mongoDatabase.listCollectionNames();
         consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
         //Login test
         //TODO execute login test here

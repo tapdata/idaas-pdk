@@ -402,7 +402,7 @@ public class SourceNodeDriver extends Driver {
         if (queryByAdvanceFilterFunction != null) {
             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_QUERY_BY_ADVANCE_FILTER,
-                    () -> queryByAdvanceFilterFunction.query(sourceNode.getConnectorContext(), TapAdvanceFilter.create().limit(10), (filterResults) -> {
+                    () -> queryByAdvanceFilterFunction.query(sourceNode.getConnectorContext(), TapAdvanceFilter.create().limit(sampleSize), (filterResults) -> {
                         if (filterResults != null && filterResults.getResults() != null) {
                             PDKLogger.debug(TAG, "Batch read {} of events for sample field data types", filterResults.getResults().size());
                             fillNameFieldsFromSampleRecords(nameFieldMap, filterResults.getResults(), table.getDefaultPrimaryKeys());
