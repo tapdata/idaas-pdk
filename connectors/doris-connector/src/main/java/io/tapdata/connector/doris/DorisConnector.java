@@ -223,10 +223,10 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
             stmt.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException("Create Table " + tapTable.getName() + " Failed! \n ");
+            throw new RuntimeException("Create Table " + tapTable.getName() + " Failed! " + e.getMessage());
 
         }
-        PDKLogger.info(TAG, "createTable");
+//        PDKLogger.info(TAG, "createTable");
     }
 
 //FIXME DOIRS异步执行alter命令，无回调接口，没次对同一个table同时执行一个alter命令；不能保证某个时刻是否存在alter命令正在执行

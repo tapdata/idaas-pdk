@@ -65,8 +65,8 @@ public class BatchReadTest extends PDKTestBase {
     void sourceTest() throws Throwable {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
             tapNodeInfo = nodeInfo;
-            sourceToTargetId = "BatchReadTest#" + nodeInfo.getTapNodeSpecification().getId() + "ToTddTarget";
-            originToSourceId = "BatchReadTest#tddSourceTo" + nodeInfo.getTapNodeSpecification().getId();
+            sourceToTargetId = "BatchReadTest_" + nodeInfo.getTapNodeSpecification().getId() + "ToTddTarget";
+            originToSourceId = "BatchReadTest_tddSourceTo" + nodeInfo.getTapNodeSpecification().getId();
 
             TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
             // #1

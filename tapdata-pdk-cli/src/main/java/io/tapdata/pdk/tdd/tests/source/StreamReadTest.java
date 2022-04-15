@@ -72,8 +72,8 @@ public class StreamReadTest extends PDKTestBase {
     void sourceTest() throws Throwable {
         consumeQualifiedTapNodeInfo(nodeInfo -> {
             tapNodeInfo = nodeInfo;
-            sourceToTddTargetDagId = "StreamReadTest#" + nodeInfo.getTapNodeSpecification().getId() + "ToTddTarget";
-            tddSourceToSourceAsTargetDagId = "StreamReadTest#TddSourceTo" + nodeInfo.getTapNodeSpecification().getId();
+            sourceToTddTargetDagId = "StreamReadTest_" + nodeInfo.getTapNodeSpecification().getId();
+            tddSourceToSourceAsTargetDagId = "StreamReadTest_" + nodeInfo.getTapNodeSpecification().getId();
 
             TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
             // #1
