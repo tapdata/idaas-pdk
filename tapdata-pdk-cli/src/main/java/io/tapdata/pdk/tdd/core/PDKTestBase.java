@@ -13,12 +13,15 @@ import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.pdk.apis.entity.FilterResult;
+import io.tapdata.pdk.apis.entity.FilterResults;
+import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
 import io.tapdata.pdk.apis.functions.connector.source.BatchOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
@@ -48,6 +51,8 @@ import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PDKTestBase {
     private static final String TAG = PDKTestBase.class.getSimpleName();
@@ -99,7 +104,7 @@ public class PDKTestBase {
         }
 
         tddConnector = TapConnectorManager.getInstance().getTapConnectorByJarName(tddJarFile.getName());
-        PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> Assertions.fail(errorMessage)));
+        PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> fail(errorMessage)));
     }
 
     public String testTableName(String id) {
@@ -119,6 +124,10 @@ public class PDKTestBase {
         }
     }
 
+    public static SupportFunction supportAny(List<Class<? extends TapFunction>> functions, String errorMessage) {
+        return new SupportFunction(functions, errorMessage);
+    }
+
     public static SupportFunction support(Class<? extends TapFunction> function, String errorMessage) {
         return new SupportFunction(function, errorMessage);
     }
@@ -126,14 +135,39 @@ public class PDKTestBase {
     public void checkFunctions(ConnectorFunctions connectorFunctions, List<SupportFunction> functions) {
         for(SupportFunction supportFunction : functions) {
             try {
-                Method method = connectorFunctions.getClass().getDeclaredMethod("get" + supportFunction.getFunction().getSimpleName());
-                $(() -> Assertions.assertNotNull(method.invoke(connectorFunctions), supportFunction.getErrorMessage()));
-            } catch (NoSuchMethodException e) {
+                if(!PDKTestBase.isSupportFunction(supportFunction, connectorFunctions)) {
+                    $(() -> fail(supportFunction.getErrorMessage()));
+                }
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
                 e.printStackTrace();
-                $(() -> Assertions.fail("Check function for " + supportFunction.getFunction().getSimpleName() + " failed, method not found for " + e.getMessage()));
+                $(() -> fail("Check function for " + supportFunction.getFunction().getSimpleName() + " failed, method not found for " + e.getMessage()));
             }
         }
     }
+
+    public static boolean isSupportFunction(SupportFunction supportFunction, ConnectorFunctions connectorFunctions) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        switch (supportFunction.getType()) {
+            case SupportFunction.TYPE_ANY:
+                AtomicBoolean hasAny = new AtomicBoolean(false);
+                for(Class<? extends TapFunction> func : supportFunction.getAnyOfFunctions()) {
+                    final Method method = connectorFunctions.getClass().getDeclaredMethod("get" + func.getSimpleName());
+                    CommonUtils.ignoreAnyError(() -> {
+                        Object obj = method.invoke(connectorFunctions);
+                        if(obj != null) {
+                            hasAny.set(true);
+                        }
+                    }, TAG);
+                    if(hasAny.get())
+                        break;
+                }
+                return hasAny.get();
+            case SupportFunction.TYPE_ONE:
+                Method method = connectorFunctions.getClass().getDeclaredMethod("get" + supportFunction.getFunction().getSimpleName());
+                return method.invoke(connectorFunctions) != null;
+        }
+        return false;
+    }
+
 
     public void completed() {
         completed(false);
@@ -253,7 +287,7 @@ public class PDKTestBase {
         if (pdkId == null) {
             pdkId = CommonUtils.getProperty("pdk_test_pdk_id", null);
             if (pdkId == null)
-                Assertions.fail("Test pdkId is not specified");
+                fail("Test pdkId is not specified");
         }
         for (TapNodeInfo nodeInfo : tapNodeInfoCollection) {
             if (nodeInfo.getTapNodeSpecification().getId().equals(pdkId)) {
@@ -272,7 +306,7 @@ public class PDKTestBase {
     public void setup() {
         PDKLogger.info(TAG, "************************{} setup************************", this.getClass().getSimpleName());
         Map<String, DataMap> testConfigMap = readTestConfig(testConfigFile);
-        Assertions.assertNotNull(testConfigMap, "testConfigFile " + testConfigFile + " read to json failed");
+        assertNotNull(testConfigMap, "testConfigFile " + testConfigFile + " read to json failed");
         connectionOptions = testConfigMap.get("connection");
         nodeOptions = testConfigMap.get("node");
         testOptions = testConfigMap.get("test");
@@ -466,19 +500,42 @@ public class PDKTestBase {
     }
 
     protected void verifyUpdateOneRecord(TargetNode targetNode, DataMap before, DataMap verifyRecord) {
-        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         TapFilter filter = new TapFilter();
         filter.setMatch(before);
-        List<TapFilter> filters = Collections.singletonList(filter);
-        List<FilterResult> results = new ArrayList<>();
-        CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(before) + " for queryByFilter, then filterResults size has to be 1. Please make sure writeRecord method update record correctly and queryByFilter can query it out for verification. "));
-        FilterResult filterResult = results.get(0);
+        FilterResult filterResult = filterResults(targetNode, filter);
+        $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(before) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
 
-        $(() -> Assertions.assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
+        $(() -> assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
         for (Map.Entry<String, Object> entry : verifyRecord.entrySet()) {
-            $(() -> Assertions.assertTrue(objectIsEqual(entry.getValue(), filterResult.getResult().get(entry.getKey())), "The value of \"" + entry.getKey() + "\" should be \"" + entry.getValue() + "\",but actual it is \"" + filterResult.getResult().get(entry.getKey()) + "\", please make sure TapUpdateRecordEvent is handled well in writeRecord method"));
+            $(() -> assertTrue(objectIsEqual(entry.getValue(), filterResult.getResult().get(entry.getKey())), "The value of \"" + entry.getKey() + "\" should be \"" + entry.getValue() + "\",but actual it is \"" + filterResult.getResult().get(entry.getKey()) + "\", please make sure TapUpdateRecordEvent is handled well in writeRecord method"));
         }
+    }
+
+    private FilterResult filterResults(TargetNode targetNode, TapFilter filter) {
+        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
+        if(queryByFilterFunction != null) {
+            List<FilterResult> results = new ArrayList<>();
+            List<TapFilter> filters = Collections.singletonList(filter);
+            CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
+            if(results.size() > 0)
+                return results.get(0);
+        } else {
+            QueryByAdvanceFilterFunction queryByAdvanceFilterFunction = targetNode.getConnectorFunctions().getQueryByAdvanceFilterFunction();
+            if(queryByAdvanceFilterFunction != null) {
+                FilterResult filterResult = new FilterResult();
+                CommonUtils.handleAnyError(() -> queryByAdvanceFilterFunction.query(targetNode.getConnectorContext(), TapAdvanceFilter.create().match(filter.getMatch()), new Consumer<FilterResults>() {
+                    @Override
+                    public void accept(FilterResults filterResults) {
+                        if(filterResults != null && filterResults.getResults() != null && !filterResults.getResults().isEmpty())
+                            filterResult.setResult(filterResults.getResults().get(0));
+                        else if(filterResults.getError() != null)
+                            filterResult.setError(filterResults.getError());
+                    }
+                }));
+                return filterResult;
+            }
+        }
+        return null;
     }
 
     protected String getBatchOffset(SourceNode sourceNode) throws Throwable {
@@ -497,53 +554,44 @@ public class PDKTestBase {
     }
 
     protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {
-        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
-        List<TapFilter> filters = Collections.singletonList(filter);
 
-        List<FilterResult> results = new ArrayList<>();
-        CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1"));
-        FilterResult filterResult = results.get(0);
+        FilterResult filterResult = filterResults(targetNode, filter);
+        $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
+
         if(filterResult.getResult() == null) {
             $(() -> Assertions.assertNull(filterResult.getResult(), "Table does not exist, result should be null"));
         } else {
-            $(() -> Assertions.assertNotNull(filterResult.getError(), "Table does not exist, error should be threw"));
+            $(() -> assertNotNull(filterResult.getError(), "Table does not exist, error should be threw"));
         }
     }
 
     protected void verifyRecordNotExists(TargetNode targetNode, DataMap filterMap) {
-        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
-        List<TapFilter> filters = Collections.singletonList(filter);
 
-        List<FilterResult> results = new ArrayList<>();
-        CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1"));
-        FilterResult filterResult = results.get(0);
+        FilterResult filterResult = filterResults(targetNode, filter);
+        $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
+
         Object result = filterResult.getResult();
         if(result == null) {
             $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
         } else {
             $(() -> Assertions.assertNull(filterResult.getResult(), "Result should be null, as the record has been deleted, please make sure TapDeleteRecordEvent is handled well in writeRecord method."));
-            $(() -> Assertions.assertNotNull(filterResult.getError(), "If table not exist case, an error should be throw, otherwise not correct. "));
+            $(() -> assertNotNull(filterResult.getError(), "If table not exist case, an error should be throw, otherwise not correct. "));
         }
     }
 
     protected void verifyBatchRecordExists(SourceNode sourceNode, TargetNode targetNode, DataMap filterMap) {
-        QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
-        List<TapFilter> filters = Collections.singletonList(filter);
 
-        List<FilterResult> results = new ArrayList<>();
-        CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
-        $(() -> Assertions.assertEquals(results.size(), 1, "There is one filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " for queryByFilter, then filterResults size has to be 1. Please make sure writeRecord method write record correctly and queryByFilter can query it out for verification. "));
-        FilterResult filterResult = results.get(0);
+        FilterResult filterResult = filterResults(targetNode, filter);
+        $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
+
         $(() -> Assertions.assertNull(filterResult.getError(), "Error occurred while queryByFilter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " error " + filterResult.getError()));
-        $(() -> Assertions.assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));
+        $(() -> assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));
         Map<String, Object> result = filterResult.getResult();
 
 
@@ -551,7 +599,7 @@ public class PDKTestBase {
         sourceNode.getCodecFilterManager().transformFromTapValueMap(result);
 
         StringBuilder builder = new StringBuilder();
-        $(() -> Assertions.assertTrue(mapEquals(filterMap, result, builder), builder.toString()));
+        $(() -> assertTrue(mapEquals(filterMap, result, builder), builder.toString()));
     }
 
     public TapConnector getTestConnector() {

@@ -5,9 +5,7 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
-import io.tapdata.pdk.apis.functions.connector.source.BatchOffsetFunction;
-import io.tapdata.pdk.apis.functions.connector.source.BatchReadFunction;
+import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
 import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
@@ -33,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -154,7 +153,7 @@ public class StreamReadTest extends PDKTestBase {
             if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                 this.dataFlowWorker = dataFlowWorker;
                 initConnectorFunctions();
-                checkFunctions(sourceNode.getConnectorFunctions(), BatchReadTest.testFunctions());
+                checkFunctions(sourceNode.getConnectorFunctions(), StreamReadTest.testFunctions());
 
                 final long maxWaitSeconds = 30;
                 long startTime = System.currentTimeMillis();
@@ -255,12 +254,9 @@ public class StreamReadTest extends PDKTestBase {
 
     public static List<SupportFunction> testFunctions() {
         return Arrays.asList(
-                support(WriteRecordFunction.class, "WriteRecord is a must to verify batchRead and streamRead, please implement it in registerCapabilities method."),
-                support(BatchReadFunction.class, "BatchReadFunction is a must to read initial records, please implement it in registerCapabilities method."),
-                support(BatchCountFunction.class, "BatchCountFunction is a must for the total size of initial records, please implement it in registerCapabilities method."),
-                support(BatchOffsetFunction.class, "BatchOffsetFunction is a must for incremental engine to record offset of batch read, please implement it in registerCapabilities method."),
-//                support(StreamReadFunction.class, "StreamReadFunction is a must to read incremental records, please implement it in registerCapabilities method."),
-//                support(StreamOffsetFunction.class, "StreamOffsetFunction is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method."),
+                support(WriteRecordFunction.class, "WriteRecord is a must to verify streamRead, please implement it in registerCapabilities method."),
+                support(StreamReadFunction.class, "StreamRead is a must to read incremental records, please implement it in registerCapabilities method."),
+                support(StreamOffsetFunction.class, "StreamOffset is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method."),
                 support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
         );
     }

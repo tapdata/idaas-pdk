@@ -245,9 +245,7 @@ public class TDDCli extends CommonCli {
                 List<SupportFunction> functions = (List<SupportFunction>) ReflectionUtil.invokeStaticMethod(testClass.getName(), "testFunctions");
                 for(SupportFunction supportFunction : functions) {
                     try {
-                        Method method = connectorFunctions.getClass().getDeclaredMethod("get" + supportFunction.getFunction().getSimpleName());
-                        Object func = method.invoke(connectorFunctions);
-                        if(func == null) {
+                        if(!PDKTestBase.isSupportFunction(supportFunction, connectorFunctions)) {
                             allFound = false;
                             break;
                         }

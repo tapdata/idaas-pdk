@@ -4,12 +4,10 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.model.changestream.OperationType;
 import io.tapdata.base.ConnectorBase;
-import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
@@ -104,9 +102,14 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable {
         initConnection(connectionContext.getConnectionConfig());
         MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+        //List all the tables under the database.
+        List<TapTable> list = list();
         for (String collectionName : collectionNames) {
-            consumer.accept(list(table(collectionName).defaultPrimaryKeys(singletonList("_id"))));
+            //Mongodb is schema free. There is no way for incremental engine to know the default primary key. So need to specify the defaultPrimaryKeys.
+            TapTable table = table(collectionName).defaultPrimaryKeys(singletonList("_id"));
+            list.add(table);
         }
+        consumer.accept(list);
     }
 
     /**
@@ -124,22 +127,13 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         initConnection(connectionContext.getConnectionConfig());
-        mongoDatabase.listCollectionNames();
-        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
-        //Login test
-        //TODO execute login test here
-        consumer.accept(testItem(TestItem.ITEM_LOGIN, TestItem.RESULT_SUCCESSFULLY));
-        //Read test
-        //TODO execute read test by checking role permission
-        consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
-        //Write test
-        //TODO execute write test by checking role permission
-        consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
-
-        //When test failed
-//        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
-        //When test successfully, but some warn is reported.
-//        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
+        try {
+            mongoDatabase.listCollectionNames();
+            consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
+        } catch(Throwable throwable) {
+            throwable.printStackTrace();
+            consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
+        }
     }
 
     /**
@@ -160,10 +154,11 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
-        connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportDropTable(this::dropTable);
 
+        //Handle the special bson types, convert them to TapValue. Otherwise the unrecognized types will be converted to TapRawValue by default.
+        //Target side will not easy to handle the TapRawValue.
         codecRegistry.registerToTapValue(ObjectId.class, value -> {
             ObjectId objValue = (ObjectId) value;
             return new TapStringValue(objValue.toHexString());
@@ -176,17 +171,16 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             Code code = (Code) value;
             return new TapStringValue(code.getCode());
         });
-
         codecRegistry.registerToTapValue(Decimal128.class, value -> {
             Decimal128 decimal128 = (Decimal128) value;
             return new TapNumberValue(decimal128.doubleValue());
         });
-
         codecRegistry.registerToTapValue(Symbol.class, value -> {
             Symbol symbol = (Symbol) value;
             return new TapStringValue(symbol.getSymbol());
         });
 
+        //Because mongodb support pojo object automatically, just return value into mongodb. the originType not important because mongodb don't need to create table, can use any string as the types.
         codecRegistry.registerFromTapValue(TapRawValue.class, "object", TapValue::getValue);
         codecRegistry.registerFromTapValue(TapArrayValue.class, "array", TapValue::getValue);
         codecRegistry.registerFromTapValue(TapMapValue.class, "object", TapValue::getValue);
@@ -194,11 +188,14 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         codecRegistry.registerFromTapValue(TapDateTimeValue.class, "date", tapDateTimeValue -> convertDateTimeToDate(tapDateTimeValue.getValue()));
         codecRegistry.registerFromTapValue(TapDateValue.class, "date", tapDateValue -> convertDateTimeToDate(tapDateValue.getValue()));
 
+        //Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
+        //We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.
         codecRegistry.registerFromTapValue(TapStringValue.class, "string", tapValue -> {
             Object originValue = tapValue.getOriginValue();
             if(originValue instanceof ObjectId) {
                 return originValue;
             }
+            //If not ObjectId, use default TapValue Codec to convert.
             return codecRegistry.getValueFromDefaultTapValueCodec(tapValue);
         });
 
@@ -354,39 +351,6 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 filterResults.add(document);
             }
             consumer.accept(filterResults);
-        }
-    }
-    /**
-     * The method will mainly be used by TDD tests. To verify the record has writen correctly or not.
-     *
-     * @param connectorContext
-     * @param filters          Multple fitlers, need return multiple filter results
-     * @param listConsumer     tell incremental engine the filter results according to filters
-     */
-    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
-        Set<String> columnNames = connectorContext.getTable().getNameFieldMap().keySet();
-        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
-        if (filters != null) {
-            List<FilterResult> filterResults = new ArrayList<>();
-            for (TapFilter filter : filters) {
-                List<Bson> bsonList = new ArrayList<>();
-                for (Map.Entry<String, Object> entry : filter.getMatch().entrySet()) {
-                    bsonList.add(eq(entry.getKey(), entry.getValue()));
-                }
-                MongoCursor<Document> cursor = collection.find(and(bsonList.toArray(new Bson[0]))).iterator();
-                FilterResult filterResult = new FilterResult();
-                while (cursor.hasNext()) {
-                    Document document = cursor.next();
-                    DataMap resultMap = new DataMap();
-                    for (String columnName : columnNames) {
-                        resultMap.put(columnName, document.get(columnName));
-                    }
-                    filterResult.setResult(resultMap);
-                }
-                filterResult.filter(filter);
-                filterResults.add(filterResult);
-            }
-            listConsumer.accept(filterResults);
         }
     }
 

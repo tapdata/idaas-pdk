@@ -5,6 +5,7 @@ import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
+import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.pdk.apis.logger.PDKLogger;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 import java.util.*;
+
+import static java.util.Arrays.asList;
 
 @DisplayName("Tests for target beginner test")
 public class DMLTest extends PDKTestBase {
@@ -49,14 +52,14 @@ public class DMLTest extends PDKTestBase {
                 dataFlowDescriber.setId("DMLTest_" + nodeInfo.getTapNodeSpecification().getId());
                 String tableId = testTableName(dataFlowDescriber.getId());
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
-                dataFlowDescriber.setNodes(Arrays.asList(
+                dataFlowDescriber.setNodes(asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
                                 table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
                         new TapDAGNodeEx().id(targetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(nodeInfo.getNodeType()).version(spec.getVersion()).
                                 table(new TapTable(tableId)).connectionConfig(connectionOptions)
                 ));
-                dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList("s1", "t2")));
-                dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
+                dataFlowDescriber.setDag(Collections.singletonList(asList("s1", "t2")));
+                dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
 
                 dag = dataFlowDescriber.toDag();
                 if(dag != null){
@@ -168,9 +171,9 @@ public class DMLTest extends PDKTestBase {
     }
 
     public static List<SupportFunction> testFunctions() {
-        return Arrays.asList(
+        return asList(
                 support(WriteRecordFunction.class, "WriteRecord is a must to implement a Target, please implement it in registerCapabilities method."),
-                support(QueryByFilterFunction.class, "QueryByFilter is needed for TDD to verify the record is written correctly, please implement it in registerCapabilities method."),
+                supportAny(asList(QueryByFilterFunction.class, QueryByAdvanceFilterFunction.class), "QueryByFilter or QueryByAdvanceFilter is needed for TDD to verify the record is written correctly, please implement it in registerCapabilities method."),
                 support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
         );
     }

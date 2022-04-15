@@ -50,8 +50,10 @@ public class CommonUtils {
         try {
             runnable.run();
         } catch(CoreException coreException) {
+            coreException.printStackTrace();
             PDKLogger.error(tag, "Error code {} message {} will be ignored. ", coreException.getCode(), coreException.getMessage());
         } catch(Throwable throwable) {
+            throwable.printStackTrace();
             PDKLogger.error(tag, "Unknown error message {} will be ignored. ", throwable.getMessage());
         }
     }
