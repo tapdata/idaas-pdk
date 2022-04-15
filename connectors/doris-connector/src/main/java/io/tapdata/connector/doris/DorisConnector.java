@@ -314,26 +314,18 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 executeBatchInsert(preparedStatement);
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
-                Map<String, Object> filterAfter = new LinkedHashMap<>();
-                Map<String, Object> updateAfter = new LinkedHashMap<>();
-                for (Map.Entry<String, Object> entry : after.entrySet()) {
-                    String fieldName = entry.getKey();
-                    if (nameFieldMap.get(fieldName).getPrimaryKey() != null && nameFieldMap.get(fieldName).getPrimaryKey()) {
-                        filterAfter.put(fieldName, entry.getValue());
-                    } else {
-                        updateAfter.put(fieldName, entry.getValue());
-                    }
-                }
+                Map<String, Object> before = updateRecordEvent.getBefore();
+
                 String sql = "UPDATE " + tapTable.getName() +
-                        " SET " + DMLInstance.buildKeyAndValue(tapTable, updateAfter, ",") +
-                        " WHERE " + DMLInstance.buildKeyAndValue(tapTable, filterAfter, "AND");
+                        " SET " + DMLInstance.buildKeyAndValue(tapTable, after, ",") +
+                        " WHERE " + DMLInstance.buildKeyAndValue(tapTable, before, "AND");
                 stmt.execute(sql);
                 updated.incrementAndGet();
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 executeBatchInsert(preparedStatement);
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
-                Map<String, Object> after = deleteRecordEvent.getBefore();
-                String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + DMLInstance.buildKeyAndValue(tapTable, after, "AND");
+                Map<String, Object> before = deleteRecordEvent.getBefore();
+                String sql = "DELETE FROM " + tapTable.getName() + " WHERE " + DMLInstance.buildKeyAndValue(tapTable, before, "AND");
                 stmt.execute(sql);
                 deleted.incrementAndGet();
             }
