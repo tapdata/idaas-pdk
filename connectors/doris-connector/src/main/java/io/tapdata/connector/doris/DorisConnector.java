@@ -315,6 +315,9 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
                 Map<String, Object> before = updateRecordEvent.getBefore();
+                for(Map.Entry<String, Object> entry : before.entrySet()) {
+                    after.remove(entry.getKey(), entry.getValue());
+                }
 
                 String sql = "UPDATE " + tapTable.getName() +
                         " SET " + DMLInstance.buildKeyAndValue(tapTable, after, ",") +
