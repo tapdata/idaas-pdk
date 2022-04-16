@@ -7,6 +7,7 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.model.changestream.OperationType;
+import com.mongodb.client.result.DeleteResult;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
@@ -68,6 +69,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     MongoCollection<Document> mongoCollection;
     private MongoOffset batchOffset = null;
     private Long documentCount = null;
+    //TODO need replace, deleteEvent and insertEvent.
     private final List<Bson> pipeline = singletonList(match(in("operationType", asList("insert", "update", "delete"))));
     private BsonDocument resumeToken = null;
     private Collection<String> primaryKeys;
@@ -78,6 +80,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private void initConnection(DataMap config) throws IOException {
         mongoConfig = MongoDBConfig.load(config);
         if (mongoClient == null) {
+            //TODO watch database from MongoClientFactory.
             mongoClient = MongoClientFactory.getMongoClient(mongoConfig.getUri());
             CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                     fromProviders(PojoCodecProvider.builder().automatic(true).build()));
@@ -278,7 +281,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
 
-                collection.deleteOne(new Document(before));
+                DeleteResult deleteResult = collection.deleteOne(new Document(before));
                 deleted.incrementAndGet();
 //                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
@@ -327,6 +330,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             Integer limit = tapAdvanceFilter.getLimit();
             if(limit == null)
                 limit = 1000;
+
             Bson query;
             if(bsonList.isEmpty())
                 query = new Document();
@@ -334,6 +338,12 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 query = and(bsonList.toArray(new Bson[0]));
 
             FindIterable<Document> iterable = collection.find(query).limit(limit);
+
+            Integer skip = tapAdvanceFilter.getSkip();
+            if(skip != null) {
+                iterable.skip(skip);
+            }
+
             List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
             if(sortOnList != null) {
                 for(SortOn sortOn : sortOnList) {
@@ -416,7 +426,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         MongoCursor<Document> mongoCursor;
         MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
         initFirstPrimaryKey(connectorContext.getTable());
-
+        //TODO sort multi primary keys, close to exactly once.
         final int batchSize = 5000;
         if (offset == null) {
             mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
@@ -456,9 +466,10 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     }
 
     private Bson queryCondition(Object value) {
-        return gt(firstPrimaryKey, value);
+        return gte(firstPrimaryKey, value);
     }
 
+    //TODO support multi keys.
     private void initFirstPrimaryKey(TapTable table) {
         if(primaryKeys == null || primaryKeys.isEmpty()) {
             primaryKeys = table.primaryKeys();
@@ -570,6 +581,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 } else if (operationType == OperationType.UPDATE) {
                     DataMap before = new DataMap();
                     if (event.getDocumentKey() != null) {
+                        //TODO use BsonValue directly
                         before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
                         DataMap after = new DataMap();
                         after.putAll(fullDocument);

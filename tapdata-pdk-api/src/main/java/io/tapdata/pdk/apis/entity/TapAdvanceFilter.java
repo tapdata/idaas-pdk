@@ -10,6 +10,7 @@ import java.util.List;
  * or, and
  */
 public class TapAdvanceFilter extends TapFilter {
+    private Integer skip;
     private Integer limit;
     private List<QueryOperator> operators;
     private List<SortOn> sortOnList;
@@ -20,6 +21,11 @@ public class TapAdvanceFilter extends TapFilter {
 
     public TapAdvanceFilter limit(int limit) {
         this.limit = limit;
+        return this;
+    }
+
+    public TapAdvanceFilter skip(int skip) {
+        this.skip = skip;
         return this;
     }
 
@@ -66,5 +72,13 @@ public class TapAdvanceFilter extends TapFilter {
 
     public void setSortOnList(List<SortOn> sortOnList) {
         this.sortOnList = sortOnList;
+    }
+
+    public Integer getSkip() {
+        return skip;
+    }
+
+    public void setSkip(Integer skip) {
+        this.skip = skip;
     }
 }

@@ -300,7 +300,7 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
 
         TapTable tapTable = connectorContext.getTable();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-
+        //TODO use Doris Driver
         PreparedStatement preparedStatement = conn.prepareStatement(DorisDDLInstance.buildBatchInsertSQL(tapTable));
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             ResultSet table = conn.getMetaData().getTables(null, dorisConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});

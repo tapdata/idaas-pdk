@@ -9,11 +9,10 @@ import io.tapdata.entity.schema.TapField;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Implementation(TargetTypesGenerator.class)
+@Implementation(value = TargetTypesGenerator.class, buildNumber = 0)
 public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
     public LinkedHashMap<String, TapField> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap targetMatchingMap, TapCodecFilterManager targetCodecFilterManager) {
