@@ -105,11 +105,11 @@ public class PDKTestBase {
 
         tddConnector = TapConnectorManager.getInstance().getTapConnectorByJarName(tddJarFile.getName());
         PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> {
-            fail(errorMessage);
-//            try {
-//            } finally {
-//                tearDown();
-//            }
+            try {
+                fail(errorMessage);
+            } finally {
+                tearDown();
+            }
         }));
     }
 
