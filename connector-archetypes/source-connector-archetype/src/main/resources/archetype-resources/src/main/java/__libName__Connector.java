@@ -5,6 +5,7 @@ import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
@@ -16,6 +17,7 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.pdk.apis.entity.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -140,7 +142,6 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param dropTableEvent
      */
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
-       tableMap.remove(connectorContext.getTable().getName());
     }
 
     /**
@@ -163,7 +164,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param offsetStartTime specify the expected start time to return the offset. If null, return current offset.
      * @param connectorContext the node context in a DAG
      */
-    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
+    private String streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
         //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Incremental engine knows, otherwise the result will be unpredictable.
 //        if(offsetStartTime != null)
 //            throw new NotSupportedException();
@@ -178,7 +179,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param connectorContext the node context in a DAG
      * @return
      */
-    private Object batchOffset(TapConnectorContext connectorContext) {
+    private String batchOffset(TapConnectorContext connectorContext) {
         //TODO return batch offset in runtime
         return null;
     }
@@ -265,7 +266,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param recordSize
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to incremental engine.
 
         //Below is sample code to generate records directly.
