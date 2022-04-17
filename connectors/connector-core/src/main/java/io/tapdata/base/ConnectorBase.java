@@ -20,148 +20,148 @@ import io.tapdata.pdk.apis.utils.TypeConverter;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class ConnectorBase {
-    private TapUtils tapUtils = InstanceFactory.instance(TapUtils.class);
-    private TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
-    private JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
-    private SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
+public abstract class ConnectorBase {
+    private static final TapUtils tapUtils = InstanceFactory.instance(TapUtils.class);
+    private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
+    private static final JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
+    private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
 
-    public void interval(Runnable runnable, int seconds) {
+    public static void interval(Runnable runnable, int seconds) {
         tapUtils.interval(runnable, seconds);
     }
 
-    public Long toLong(Object value) {
+    public static Long toLong(Object value) {
         return typeConverter.toLong(value);
     }
 
-    public Integer toInteger(Object value) {
+    public static Integer toInteger(Object value) {
         return typeConverter.toInteger(value);
     }
 
-    public Short toShort(Object value) {
+    public static Short toShort(Object value) {
         return typeConverter.toShort(value);
     }
 
-    public List<String> toStringArray(Object value) {
+    public static List<String> toStringArray(Object value) {
         return typeConverter.toStringArray(value);
     }
 
-    public String toString(Object value) {
+    public static String toString(Object value) {
         return typeConverter.toString(value);
     }
 
-    public Byte toByte(Object value) {
+    public static Byte toByte(Object value) {
         return typeConverter.toByte(value);
     }
 
-    public Double toDouble(Object value) {
+    public static Double toDouble(Object value) {
         return typeConverter.toDouble(value);
     }
 
-    public Float toFloat(Object value) {
+    public static Float toFloat(Object value) {
         return typeConverter.toFloat(value);
     }
 
-    public Boolean toBoolean(Object value) {
+    public static Boolean toBoolean(Object value) {
         return typeConverter.toBoolean(value);
     }
 
-    public String toJson(Object obj) {
+    public static String toJson(Object obj) {
         return jsonParser.toJson(obj);
     }
 
-    public DataMap fromJson(String json) {
+    public static DataMap fromJson(String json) {
         return jsonParser.fromJson(json);
     }
 
-    public <T> T fromJson(String json, Class<T> clazz) {
+    public static <T> T fromJson(String json, Class<T> clazz) {
         return jsonParser.fromJson(json, clazz);
     }
 
-    public String format(String message, Object... args) {
+    public static String format(String message, Object... args) {
         return FormatUtils.format(message, args);
     }
 
-    public TapField field(String name, String originType) {
+    public static TapField field(String name, String originType) {
         return new TapField(name, originType);
     }
 
-    public TapTable table(String tableName, String id) {
+    public static TapTable table(String tableName, String id) {
         return new TapTable(tableName, id);
     }
 
-    public TapTable table(String nameAndId) {
+    public static TapTable table(String nameAndId) {
         return new TapTable(nameAndId);
     }
 
-    public TapString tapString() {
+    public static TapString tapString() {
         return new TapString();
     }
 
-    public TapNumber tapNumber() {
+    public static TapNumber tapNumber() {
         return new TapNumber();
     }
 
-    public TapRaw tapRaw() {
+    public static TapRaw tapRaw() {
         return new TapRaw();
     }
 
-    public TapArray tapArray() {
+    public static TapArray tapArray() {
         return new TapArray();
     }
 
-    public TapMap tapMap() {
+    public static TapMap tapMap() {
         return new TapMap();
     }
 
-    public TapYear tapYear() {
+    public static TapYear tapYear() {
         return new TapYear();
     }
 
-    public TapDate tapDate() {
+    public static TapDate tapDate() {
         return new TapDate();
     }
 
-    public TapBoolean tapBoolean() {
+    public static TapBoolean tapBoolean() {
         return new TapBoolean();
     }
 
-    public TapBinary tapBinary() {
+    public static TapBinary tapBinary() {
         return new TapBinary();
     }
 
-    public TapTime tapTime() {
+    public static TapTime tapTime() {
         return new TapTime();
     }
 
-    public TapDateTime tapDateTime() {
+    public static TapDateTime tapDateTime() {
         return new TapDateTime();
     }
 
-    public TestItem testItem(String item, int resultCode) {
+    public static TestItem testItem(String item, int resultCode) {
         return testItem(item, resultCode, null);
     }
-    public TestItem testItem(String item, int resultCode, String information) {
+    public static TestItem testItem(String item, int resultCode, String information) {
         return new TestItem(item, resultCode, information);
     }
 
-    public Entry entry(String key, Object value) {
+    public static Entry entry(String key, Object value) {
         return new Entry(key, value);
     }
 
-    public <T> List<T> list(T... ts) {
+    public static <T> List<T> list(T... ts) {
         return Arrays.asList(ts);
     }
 
-    public <T> List<T> list() {
+    public static <T> List<T> list() {
         return new ArrayList<T>();
     }
 
-    public Map<String, Object> map() {
+    public static Map<String, Object> map() {
         return new LinkedHashMap<>();
     }
 
-    public Map<String, Object> map(Entry... entries) {
+    public static Map<String, Object> map(Entry... entries) {
         Map<String, Object> map = new LinkedHashMap<>();
         if(entries != null) {
             for(Entry entry : entries) {
@@ -172,23 +172,23 @@ public class ConnectorBase {
         return map;
     }
 
-    public TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, TapTable tapTable) {
+    public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, TapTable tapTable) {
         return new TapInsertRecordEvent().init().after(after).table(tapTable);
     }
 
-    public TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
+    public static TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
         return new TapDeleteRecordEvent().init().before(before).table(tapTable);
     }
 
-    public TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
+    public static TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
         return new TapUpdateRecordEvent().init().before(before).after(after).table(tapTable);
     }
 
-    public WriteListResult<TapRecordEvent> writeListResult() {
-        return new WriteListResult<TapRecordEvent>();
+    public static WriteListResult<TapRecordEvent> writeListResult() {
+        return new WriteListResult<>();
     }
 
-    public void sleep(long milliseconds) {
+    public static void sleep(long milliseconds) {
         if(milliseconds < 0)
             return;
         try {
@@ -198,13 +198,13 @@ public class ConnectorBase {
         }
     }
 
-    public String formatTapDateTime(DateTime dateTime, String pattern) {
+    public static String formatTapDateTime(DateTime dateTime, String pattern) {
         if (dateTime.getTimeZone() != null) dateTime.setTimeZone(dateTime.getTimeZone());
         tapDateTimeFormat.applyPattern(pattern);
         return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
     }
 
-    public Object convertDateTimeToDate(DateTime dateTime) {
+    public static Object convertDateTimeToDate(DateTime dateTime) {
         if(dateTime != null) {
             Long milliseconds;
             Long nano = dateTime.getNano();

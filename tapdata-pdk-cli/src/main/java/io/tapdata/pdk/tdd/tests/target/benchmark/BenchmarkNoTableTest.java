@@ -55,7 +55,7 @@ public class BenchmarkNoTableTest extends PDKTestBase {
                 dataFlowDescriber.setNodes(Arrays.asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId("tdd-benchmark-notable-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
                                 table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
-                        new TapDAGNodeEx().id(targetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(nodeInfo.getNodeType()).version(spec.getVersion()).
+                        new TapDAGNodeEx().id(targetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_TARGET).version(spec.getVersion()).
                                 table(new TapTable(tableId)).connectionConfig(connectionOptions)
                 ));
                 dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList("s1", "t2")));

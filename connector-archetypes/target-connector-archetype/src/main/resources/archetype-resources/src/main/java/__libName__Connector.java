@@ -112,6 +112,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
+        connectorFunctions.supportDropTable(this::dropTable);
 
         //If database need insert record before table created, then please implement the below two methods.
 //        connectorFunctions.supportCreateTable(this::createTable);
@@ -205,6 +206,16 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
 //            }
 //            listConsumer.accept(filterResults);
 //        }
+
+    }
+
+    /**
+     * This method will be invoked when user selected drop table before insert records. Or TDD will use this method to drop the table created for test.
+     *
+     * @param connectorContext
+     * @param dropTableEvent
+     */
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
 
     }
 

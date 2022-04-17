@@ -3,7 +3,6 @@ package io.tapdata.connector.empty;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -13,10 +12,7 @@ import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import io.tapdata.pdk.apis.entity.FilterResult;
-import io.tapdata.pdk.apis.entity.TapFilter;
-import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 
@@ -32,10 +28,15 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
     private static Map<String, Map<String, Object>> primaryKeyRecordMap;
+    private static Map<String, TapTable> tableMap;
     static {
-        if(primaryKeyRecordMap == null) {
-            primaryKeyRecordMap = new ConcurrentHashMap<>();
-        }
+        primaryKeyRecordMap = new ConcurrentHashMap<>();
+        tableMap = new ConcurrentHashMap<>();
+        tableMap.put("empty-table1", table("empty-table1")
+                .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
+                .add(field("description", "TEXT").isPrimaryKey(true).partitionKeyPos(2))
+                .add(field("name", "VARCHAR"))
+                .add(field("age", "DOUBLE")));
     }
     /**
      * The method invocation life circle is below,
@@ -54,21 +55,11 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
-        consumer.accept(list(
-                //Define first table
-                table("empty-table1")
-                        //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT").isPrimaryKey(true).partitionKeyPos(2))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE")),
-                //Define second table
-                table("empty-table2")
-                        .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "TEXT"))
-                        .add(field("name", "VARCHAR"))
-                        .add(field("age", "DOUBLE"))
-        ));
+        List<TapTable> tapTables = list();
+        for(Map.Entry<String, TapTable> entry : tableMap.entrySet()) {
+            tapTables.add(entry.getValue());
+        }
+        consumer.accept(tapTables);
     }
 
     /**
@@ -125,6 +116,9 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchOffset(this::batchOffset);
         connectorFunctions.supportStreamOffset(this::streamOffset);
+        connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
+        connectorFunctions.supportWriteRecord(this::writeRecord);
+        connectorFunctions.supportDropTable(this::dropTable);
 
 //        connectorFunctions.supportWriteRecord(this::writeRecord);
 
@@ -134,6 +128,29 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
+    }
+
+    /**
+     * This method will be invoked when user selected drop table before insert records. Or TDD will use this method to drop the table created for test.
+     *
+     * @param connectorContext
+     * @param dropTableEvent
+     */
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+        tableMap.remove(connectorContext.getTable().getName());
+    }
+
+    /**
+     * This method will be invoked when Incremental Engine need sample some records for generating TapFields or preview records, etc.
+     *
+     * Need to implement Matching, GT, GTE, LT, LTE operators, sorts, limit and skip.
+     *
+     * @param connectorContext
+     * @param tapAdvanceFilter
+     * @param consumer
+     */
+    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
+
     }
 
     /**
@@ -256,13 +273,13 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, String offset, int recordSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < eventBatchSize; i++) {
                 TapInsertRecordEvent recordEvent = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),

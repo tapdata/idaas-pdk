@@ -1,5 +1,6 @@
 package io.tapdata.pdk.apis.entity;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class WriteListResult<T> {
@@ -20,6 +21,13 @@ public class WriteListResult<T> {
     }
 
     private Map<T, Throwable> errorMap;
+    public WriteListResult<T> addError(T key, Throwable value) {
+        if(errorMap == null) {
+            errorMap = new HashMap<>();
+        }
+        errorMap.put(key, value);
+        return this;
+    }
 
     public WriteListResult() {}
     public WriteListResult(long insertedCount, long modifiedCount, long removedCount) {

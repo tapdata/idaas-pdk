@@ -121,8 +121,9 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchOffset(this::batchOffset);
         connectorFunctions.supportStreamOffset(this::streamOffset);
-
+        connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportWriteRecord(this::writeRecord);
+        connectorFunctions.supportDropTable(this::dropTable);
 
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportCreateTable(this::createTable);
@@ -130,6 +131,29 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
 //        connectorFunctions.supportAlterTable(this::alterTable);
 //        connectorFunctions.supportDropTable(this::dropTable);
 //        connectorFunctions.supportClearTable(this::clearTable);
+    }
+
+    /**
+     * This method will be invoked when user selected drop table before insert records. Or TDD will use this method to drop the table created for test.
+     *
+     * @param connectorContext
+     * @param dropTableEvent
+     */
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+       tableMap.remove(connectorContext.getTable().getName());
+    }
+
+    /**
+     * This method will be invoked when Incremental Engine need sample some records for generating TapFields or preview records, etc.
+     *
+     * Need to implement Matching, GT, GTE, LT, LTE operators, sorts, limit and skip.
+     *
+     * @param connectorContext
+     * @param tapAdvanceFilter
+     * @param consumer
+     */
+    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
+
     }
 
     /**
@@ -166,6 +190,8 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      *      createTable
      *  if(needClearTable)
      *      clearTable
+     *  if(needDropTable)
+     *      dropTable
      *  writeRecord
      * -> destroy -> ended
      *
@@ -239,13 +265,13 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param recordSize
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, Object offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to incremental engine.
 
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < recordSize; i++) {
+            for (int i = 0; i < eventBatchSize; i++) {
                 TapInsertRecordEvent recordEvent = insertRecordEvent(map(
                         entry("id", counter.incrementAndGet()),
                         entry("description", "123"),

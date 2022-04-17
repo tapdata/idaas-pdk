@@ -9,6 +9,9 @@ import java.util.function.Consumer;
 public class FirstLayerMapIterator implements MapIterator {
     @Override
     public void iterate(Map<String, Object> map, Consumer<Map.Entry<String, Object>> consumer) {
+        if(map == null || consumer == null) {
+            return;
+        }
         Set<Map.Entry<String, Object>> entrySet = map.entrySet();
         for(Map.Entry<String, Object> entry : entrySet) {
             consumer.accept(entry);

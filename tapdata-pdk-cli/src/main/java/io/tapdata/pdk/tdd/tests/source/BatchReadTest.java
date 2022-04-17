@@ -75,7 +75,7 @@ public class BatchReadTest extends PDKTestBase {
             String tableId = testTableName(dataFlowDescriber.getId());
 
             dataFlowDescriber.setNodes(Arrays.asList(
-                    new TapDAGNodeEx().id(testSourceNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(nodeInfo.getNodeType()).version(spec.getVersion()).
+                    new TapDAGNodeEx().id(testSourceNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(TapDAGNode.TYPE_SOURCE/*nodeInfo.getNodeType()*/).version(spec.getVersion()).
                             table(new TapTable(tableId)).connectionConfig(connectionOptions),
                     new TapDAGNodeEx().id(targetNodeId).pdkId("tdd-target").group("io.tapdata.connector").type(TapDAGNode.TYPE_TARGET).version("1.0-SNAPSHOT").
                             table(new TapTable("tdd-table")).connectionConfig(new DataMap())
@@ -93,7 +93,7 @@ public class BatchReadTest extends PDKTestBase {
             originDataFlowDescriber.setNodes(Arrays.asList(
                     new TapDAGNodeEx().id(originNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
                             table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
-                    new TapDAGNodeEx().id(testTargetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(nodeInfo.getNodeType()).version(spec.getVersion()).
+                    new TapDAGNodeEx().id(testTargetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(TapDAGNode.TYPE_TARGET/*nodeInfo.getNodeType()*/).version(spec.getVersion()).
                             table(new TapTable(tableId)).connectionConfig(connectionOptions)
             ));
             originDataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(originNodeId, testTargetNodeId)));

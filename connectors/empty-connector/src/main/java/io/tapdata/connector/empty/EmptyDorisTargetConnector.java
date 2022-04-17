@@ -32,10 +32,11 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
     private static Map<String, Map<String, Object>> primaryKeyRecordMap;
+    private static Map<String, TapTable> tableMap;
     static {
-        if(primaryKeyRecordMap == null) {
-            primaryKeyRecordMap = new ConcurrentHashMap<>();
-        }
+        primaryKeyRecordMap = new ConcurrentHashMap<>();
+        tableMap = new ConcurrentHashMap<>();
+        tableMap.put("empty-table1", new TapTable("empty-table1"));
     }
     /**
      * The method invocation life circle is below,
@@ -54,15 +55,11 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
     public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
-        consumer.accept(list(
-                //Define first table
-                table("empty-table1")
-                        //Define a field named "id", origin field type, whether is primary key and primary key position
-                        .add(field("id", "string").isPrimaryKey(true).partitionKeyPos(1))
-                        .add(field("description", "string").isPrimaryKey(true).partitionKeyPos(2))
-                        .add(field("name", "string"))
-                        .add(field("age", "int"))
-        ));
+        List<TapTable> tapTables = list();
+        for(Map.Entry<String, TapTable> entry : tableMap.entrySet()) {
+            tapTables.add(entry.getValue());
+        }
+        consumer.accept(tapTables);
     }
 
     /**
@@ -167,11 +164,12 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
 
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
         primaryKeyRecordMap.clear();
+        tableMap.remove(connectorContext.getTable().getName());
     }
 
     private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
 //        throw new NullPointerException("aaaa");
-
+        tableMap.put(connectorContext.getTable().getName(), connectorContext.getTable());
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
