@@ -104,7 +104,13 @@ public class PDKTestBase {
         }
 
         tddConnector = TapConnectorManager.getInstance().getTapConnectorByJarName(tddJarFile.getName());
-        PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> fail(errorMessage)));
+        PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> {
+            fail(errorMessage);
+//            try {
+//            } finally {
+//                tearDown();
+//            }
+        }));
     }
 
     public String testTableName(String id) {
@@ -186,7 +192,7 @@ public class PDKTestBase {
     public void waitCompleted(long seconds) throws Throwable {
         while (!completed.get()) {
             synchronized (completed) {
-                if (completed.get()) {
+                if (!completed.get()) {
                     try {
                         completed.wait(seconds * 1000);
                         completed.set(true);

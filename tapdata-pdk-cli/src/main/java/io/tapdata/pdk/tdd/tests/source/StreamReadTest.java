@@ -212,7 +212,7 @@ public class StreamReadTest extends PDKTestBase {
             List<List<TapRecordEvent>> batchList = (List<List<TapRecordEvent>>) stringObjectMap.get("batchList");
 
             assertNotNull(primaryKeyRecordMap, "Please check your streamRead method.");
-            assertEquals(primaryKeyRecordMap.size(), 10, "10 records should be inserted, please check your batchRead method.");
+            assertEquals(primaryKeyRecordMap.size(), 10, "10 records should be inserted, please check your streamRead method.");
 
             TapRecordEvent lastEvent = null;
             for(List<TapRecordEvent> batch : batchList) {

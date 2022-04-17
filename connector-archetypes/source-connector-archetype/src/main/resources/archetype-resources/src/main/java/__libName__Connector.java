@@ -7,6 +7,7 @@ import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -304,9 +305,10 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param recordSize
      * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> consumer) {
+    private void streamRead(TapConnectorContext connectorContext, Object offset, int recordSize, StreamReadConsumer consumer) {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to incremental engine.
 
+        consumer.streamReadStarted();
         //Below is sample code to generate stream records directly
         while(!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
