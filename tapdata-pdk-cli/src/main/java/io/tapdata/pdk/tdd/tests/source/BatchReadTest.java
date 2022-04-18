@@ -104,7 +104,7 @@ public class BatchReadTest extends PDKTestBase {
                 dataFlowEngine.startDataFlow(originDag, originDataFlowDescriber.getJobOptions(), (fromState, toState, dataFlowWorker) -> {
                     if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                         dataFlowEngine.sendExternalTapEvent(originToSourceId, new PatrolEvent().patrolListener((nodeId, state) -> {
-                            PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                            PDKLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                             if (nodeId.equals(testTargetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                 for (int i = 0; i < 10; i++) {
                                     DataMap dataMap = buildInsertRecord();
@@ -145,7 +145,7 @@ public class BatchReadTest extends PDKTestBase {
                     checkFunctions(sourceNode.getConnectorFunctions(), BatchReadTest.testFunctions());
                 } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                     PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                        PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                        PDKLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                         if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
 //                            processStreamInsert();
                             PatrolEvent callbackPatrol = new PatrolEvent();

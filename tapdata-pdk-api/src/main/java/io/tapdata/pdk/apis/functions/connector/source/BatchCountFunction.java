@@ -9,5 +9,5 @@ public interface BatchCountFunction extends TapFunction {
      * @param offsetState if null, means start from very beginning, otherwise is the start point for batch count.
      *                    type can be any that comfortable for saving offset state.
      */
-    long count(TapConnectorContext nodeContext, Object offsetState) throws Throwable;
+    long count(TapConnectorContext nodeContext, String offsetState) throws Throwable;
 }

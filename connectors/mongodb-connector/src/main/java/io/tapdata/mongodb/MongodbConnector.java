@@ -8,6 +8,8 @@ import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.model.changestream.OperationType;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.InsertManyResult;
+import com.mongodb.client.result.UpdateResult;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.event.TapEvent;
@@ -88,6 +90,33 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         }
     }
 
+    private Bson queryCondition(Object value) {
+        return gte(firstPrimaryKey, value);
+    }
+
+    //TODO support multi keys.
+    private void initFirstPrimaryKey(TapTable table) {
+        if(primaryKeys == null || primaryKeys.isEmpty()) {
+            primaryKeys = table.primaryKeys();
+        }
+        if(firstPrimaryKey == null && primaryKeys != null && !primaryKeys.isEmpty()) {
+            for (String primaryKey : primaryKeys) {
+                firstPrimaryKey = primaryKey;
+                break;
+            }
+        }
+    }
+
+    private MongoCollection<Document> getMongoCollection(TapTable table) {
+        if(mongoCollection == null) {
+            synchronized (lock) {
+                if(mongoCollection == null) {
+                    mongoCollection = mongoDatabase.getCollection(table.getName());
+                }
+            }
+        }
+        return mongoCollection;
+    }
     /**
      * The method invocation life circle is below,
      * initiated -> discoverSchema -> destroy -> ended
@@ -142,10 +171,26 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     /**
      * Register connector capabilities here.
      * <p>
-     * To be as a target, please implement WriteRecordFunction and QueryByFilterFunction.
-     * If the database need create table before record insertion, then please implement CreateTableFunction and DropTableFunction,
+     * To be as a target, please implement WriteRecordFunction, QueryByFilterFunction and DropTableFunction.
+     * WriteRecordFunction is to write insert/update/delete events into database.
+     * QueryByFilterFunction will be used to verify written record is the same with the record query from database base on the same primary keys.
+     * DropTableFunction here will be used to drop the table created by tests.
+     *
+     * If the database need create table before record insertion, then please implement CreateTableFunction,
      * Incremental engine will generate the data types for each field base on incoming records for CreateTableFunction to create the table.
+     * </p>
+     *
      * <p>
+     * To be as a source, please implement BatchReadFunction, BatchCountFunction, BatchOffsetFunction, StreamReadFunction and StreamOffsetFunction, QueryByAdvanceFilterFunction.
+     * If the data is schema free which can not fill TapField for TapTable in discoverSchema method, Incremental Engine will sample some records to build TapField by QueryByAdvanceFilterFunction.
+     * QueryByFilterFunction is not necessary, once implemented QueryByAdvanceFilterFunction.
+     * BatchReadFunction is to read initial records from beginner or offset.
+     * BatchCountFunction is to count initial records from beginner or offset.
+     * BatchOffsetFunction is to return runtime offset during reading initial records, if batchRead not started yet, return null.
+     * StreamReadFunction is to start CDC to read incremental record events, insert/update/delete.
+     * StreamOffsetFunction is to return stream offset for specified timestamp or runtime stream offset.
+     * </p>
+     *
      * If defined data types in spec.json is not covered all the TapValue,
      * like TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue,
      * then please provide the custom codec for missing TapValue by using codeRegistry.
@@ -184,12 +229,13 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         });
 
         //Because mongodb support pojo object automatically, just return value into mongodb. the originType not important because mongodb don't need to create table, can use any string as the types.
-        codecRegistry.registerFromTapValue(TapRawValue.class, "object", TapValue::getValue);
-        codecRegistry.registerFromTapValue(TapArrayValue.class, "array", TapValue::getValue);
-        codecRegistry.registerFromTapValue(TapMapValue.class, "object", TapValue::getValue);
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "date", tapTimeValue -> convertDateTimeToDate(tapTimeValue.getValue()));
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "date", tapDateTimeValue -> convertDateTimeToDate(tapDateTimeValue.getValue()));
-        codecRegistry.registerFromTapValue(TapDateValue.class, "date", tapDateValue -> convertDateTimeToDate(tapDateValue.getValue()));
+        codecRegistry.registerFromTapValue(TapRawValue.class, "TapRaw", TapValue::getValue);
+        codecRegistry.registerFromTapValue(TapArrayValue.class, "TapArray", TapValue::getValue);
+        codecRegistry.registerFromTapValue(TapMapValue.class, "TapMap", TapValue::getValue);
+        //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "TapTime", tapTimeValue -> convertDateTimeToDate(tapTimeValue.getValue()));
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TapDateTime", tapDateTimeValue -> convertDateTimeToDate(tapDateTimeValue.getValue()));
+        codecRegistry.registerFromTapValue(TapDateValue.class, "TapDate", tapDateValue -> convertDateTimeToDate(tapDateValue.getValue()));
 
         //Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
         //We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.
@@ -202,6 +248,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             return codecRegistry.getValueFromDefaultTapValueCodec(tapValue);
         });
 
+        //TO be as a source, need to implement below methods.
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchOffset(this::batchOffset);
@@ -231,13 +278,13 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     /**
      * The method invocation life circle is below,
      * initiated ->
-     * if(needCreateTable)
-     * createTable
-     * if(needClearTable)
-     * clearTable
-     * if(needDropTable)
-     * dropTable
-     * writeRecord
+     *  if(needCreateTable)
+     *      createTable
+     *  if(needClearTable)
+     *      clearTable
+     *  if(needDropTable)
+     *      dropTable
+     *  writeRecord
      * -> destroy -> ended
      *
      * @param connectorContext
@@ -250,18 +297,19 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
 
-        TapTable tapTable = connectorContext.getTable();
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         List<Document> insertList = new ArrayList<>();
+        List<TapRecordEvent> insertEventList = new ArrayList<>();
         UpdateOptions options = new UpdateOptions().upsert(true);
         MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
+
+        WriteListResult<TapRecordEvent> writeListResult = writeListResult();
 
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 insertList.add(new Document(insertRecordEvent.getAfter()));
+                insertEventList.add(insertRecordEvent);
                 inserted.incrementAndGet();
-//                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 if (!insertList.isEmpty()) {
                     collection.insertMany(insertList);
@@ -271,9 +319,11 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 Map<String, Object> before = updateRecordEvent.getBefore();
 
 
-                collection.updateOne(new Document(before), new Document().append("$set", after));
-                updated.incrementAndGet();
-//                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+                UpdateResult updateResult = collection.updateOne(new Document(before), new Document().append("$set", after), options);
+                if(updateResult.getModifiedCount() > 0)
+                    updated.incrementAndGet();
+                else
+                    PDKLogger.warn("Update record by filter {} is missed. ", toJson(before));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 if (!insertList.isEmpty()) {
                     collection.insertMany(insertList);
@@ -282,15 +332,24 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 Map<String, Object> before = deleteRecordEvent.getBefore();
 
                 DeleteResult deleteResult = collection.deleteOne(new Document(before));
-                deleted.incrementAndGet();
-//                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
+                if(deleteResult.getDeletedCount() > 0)
+                    deleted.incrementAndGet();
+                else
+                    PDKLogger.warn(TAG, "Delete record by filter {} is missed. ", toJson(before));
             }
         }
         if (!insertList.isEmpty()) {
-            collection.insertMany(insertList);
+            InsertManyResult insertManyResult = collection.insertMany(insertList);
+            Map<Integer, BsonValue> insertedIds = insertManyResult.getInsertedIds();
+            Exception error = new Exception("Insert failed");
+            //Tell incremental engine which event insert failed. incremental engine will try update event.
+            for (int i = 0; i < insertList.size(); i++) {
+                if(!insertedIds.containsKey(i))
+                    writeListResult.addError(insertEventList.get(i), error);
+            }
         }
         //Need to tell incremental engine the write result
-        writeListResultConsumer.accept(writeListResult()
+        writeListResultConsumer.accept(writeListResult
                 .insertedCount(inserted.get())
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
@@ -381,7 +440,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) throws Throwable {
+    private long batchCount(TapConnectorContext connectorContext, String offset) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
         initFirstPrimaryKey(connectorContext.getTable());
 
@@ -389,19 +448,9 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         if (offset == null) {
             return collection.countDocuments();
         } else {
-            if((offset instanceof MongoOffset)) {
-                MongoOffset mongoOffset = (MongoOffset) offset;
-                return collection.countDocuments(queryCondition(mongoOffset.value()));
-            } else {
-                long count = collection.countDocuments();
-                PDKLogger.error(TAG, "Offset format is illegal {}, expect MongoOffset. Final offset will be null to do the batchCount {}", offset, count);
-                return count;
-            }
+            MongoOffset mongoOffset = fromJson(offset, MongoOffset.class);
+            return collection.countDocuments(queryCondition(mongoOffset.value()));
         }
-
-//        if (documentCount == null) documentCount = getMongoCollection(connectorContext.getTable()).countDocuments();
-//        if (Objects.equals(documentCount, batchReadOffset)) return 0L;
-//        return 10L;
     }
 
     /**
@@ -445,8 +494,6 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         Document lastDocument = null;
         List<TapEvent> tapEvents = list();
         while (mongoCursor.hasNext()) {
-//            Map<String, Object> after = new DataMap();
-//            after.putAll(lastDocument);
             lastDocument = mongoCursor.next();
             tapEvents.add(insertRecordEvent(lastDocument, connectorContext.getTable()));
 
@@ -461,24 +508,6 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         }
         if(!tapEvents.isEmpty()) {
             tapReadOffsetConsumer.accept(tapEvents);
-        }
-//        PDKLogger.info(TAG, "batchRead Count {}", counter.get());
-    }
-
-    private Bson queryCondition(Object value) {
-        return gte(firstPrimaryKey, value);
-    }
-
-    //TODO support multi keys.
-    private void initFirstPrimaryKey(TapTable table) {
-        if(primaryKeys == null || primaryKeys.isEmpty()) {
-            primaryKeys = table.primaryKeys();
-        }
-        if(firstPrimaryKey == null && primaryKeys != null && !primaryKeys.isEmpty()) {
-            for (String primaryKey : primaryKeys) {
-                firstPrimaryKey = primaryKey;
-                break;
-            }
         }
     }
 
@@ -572,7 +601,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 } else if (operationType == OperationType.DELETE) {
                     DataMap before = new DataMap();
                     if (event.getDocumentKey() != null) {
-                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
+                        before.put("_id", event.getDocumentKey().get("_id"));
                         TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, connectorContext.getTable());
                         tapEvents.add(recordEvent);
                     } else {
@@ -582,7 +611,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     DataMap before = new DataMap();
                     if (event.getDocumentKey() != null) {
                         //TODO use BsonValue directly
-                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
+                        before.put("_id", event.getDocumentKey().get("_id"));
                         DataMap after = new DataMap();
                         after.putAll(fullDocument);
                         after.remove("_id");
@@ -596,70 +625,6 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             }
 
         }
-    }
-
-    private Object getIdValue(BsonValue id) {
-        BsonType bsonType = id.getBsonType();
-        if(bsonType == null)
-            return null;
-        switch (bsonType) {
-//            case NULL:
-//                break;
-//            case ARRAY:
-//                break;
-            case INT32:
-                return id.asInt32().getValue();
-            case INT64:
-                return id.asInt64().getValue();
-            case BINARY:
-                return id.asBinary().getData();
-            case DOUBLE:
-                return id.asDouble().getValue();
-            case STRING:
-                return id.asString().getValue();
-            case SYMBOL:
-                return id.asSymbol().getSymbol();
-            case BOOLEAN:
-                return id.asBoolean().getValue();
-//            case MAX_KEY:
-//                break;
-//            case MIN_KEY:
-//                break;
-//            case DOCUMENT:
-//                break;
-            case DATE_TIME:
-                return id.asDateTime().getValue();
-            case OBJECT_ID:
-                return id.asObjectId().getValue();
-            case TIMESTAMP:
-                return id.asTimestamp().getValue();
-//            case UNDEFINED:
-//                break;
-//            case DB_POINTER:
-//                break;
-            case DECIMAL128:
-                return id.asDecimal128().getValue();
-//            case JAVASCRIPT:
-//                break;
-//            case END_OF_DOCUMENT:
-//                break;
-//            case REGULAR_EXPRESSION:
-//                break;
-//            case JAVASCRIPT_WITH_SCOPE:
-//                break;
-        }
-        return null;
-    }
-
-    private MongoCollection<Document> getMongoCollection(TapTable table) {
-        if(mongoCollection == null) {
-            synchronized (lock) {
-                if(mongoCollection == null) {
-                    mongoCollection = mongoDatabase.getCollection(table.getName());
-                }
-            }
-        }
-        return mongoCollection;
     }
 
     private String batchOffset(TapConnectorContext connectorContext) throws Throwable {

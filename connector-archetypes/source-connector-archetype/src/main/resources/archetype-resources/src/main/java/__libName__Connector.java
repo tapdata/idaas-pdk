@@ -109,10 +109,31 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
 
     /**
      * Register connector capabilities here.
+     * <p>
+     * To be as a target, please implement WriteRecordFunction, QueryByFilterFunction and DropTableFunction.
+     * WriteRecordFunction is to write insert/update/delete events into database.
+     * QueryByFilterFunction will be used to verify written record is the same with the record query from database base on the same primary keys.
+     * DropTableFunction here will be used to drop the table created by tests.
      *
-     * To be as a source, please implement at least one of batchReadFunction or streamReadFunction.
-     * To be as a target, please implement WriteRecordFunction.
-     * To be as a source and target, please implement the functions that source and target required.
+     * If the database need create table before record insertion, then please implement CreateTableFunction,
+     * Incremental engine will generate the data types for each field base on incoming records for CreateTableFunction to create the table.
+     * </p>
+     *
+     * <p>
+     * To be as a source, please implement BatchReadFunction, BatchCountFunction, BatchOffsetFunction, StreamReadFunction and StreamOffsetFunction, QueryByAdvanceFilterFunction.
+     * If the data is schema free which can not fill TapField for TapTable in discoverSchema method, Incremental Engine will sample some records to build TapField by QueryByAdvanceFilterFunction.
+     * QueryByFilterFunction is not necessary, once implemented QueryByAdvanceFilterFunction.
+     * BatchReadFunction is to read initial records from beginner or offset.
+     * BatchCountFunction is to count initial records from beginner or offset.
+     * BatchOffsetFunction is to return runtime offset during reading initial records, if batchRead not started yet, return null.
+     * StreamReadFunction is to start CDC to read incremental record events, insert/update/delete.
+     * StreamOffsetFunction is to return stream offset for specified timestamp or runtime stream offset.
+     * </p>
+     *
+     * If defined data types in spec.json is not covered all the TapValue,
+     * like TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue,
+     * then please provide the custom codec for missing TapValue by using codeRegistry.
+     * This is only needed when database need create table before insert records.
      *
      * @param connectorFunctions
      * @param codecRegistry
@@ -244,7 +265,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
+    private long batchCount(TapConnectorContext connectorContext, String offset) {
         //TODO Count the batch size.
         return 20L;
     }

@@ -67,7 +67,7 @@ public class CreateTableTest extends PDKTestBase {
                             checkFunctions(targetNode.getConnectorFunctions(), CreateTableTest.testFunctions());
                         } else if (toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                PDKLogger.info("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                                PDKLogger.debug("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     verifyTableFields();
                                     processCreateTable(dataFlowEngine, dag);

@@ -26,9 +26,4 @@ public class MongoClientFactory {
         });
     }
 
-    public static void main(String... args) {
-        MongoClient client = MongoClientFactory.getMongoClient(new ConnectionString("mongodb://localhost:27017/"));
-        MongoClient client1 = MongoClientFactory.getMongoClient(new ConnectionString("mongodb://localhost:27017/"));
-    }
-
 }

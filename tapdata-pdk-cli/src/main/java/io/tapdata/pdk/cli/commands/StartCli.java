@@ -20,11 +20,14 @@ public class StartCli extends CommonCli {
     private static final String TAG = StartCli.class.getSimpleName();
     @CommandLine.Parameters(paramLabel = "FILE", description = "one ore more data flow configuration files")
     File[] files;
-
+    @CommandLine.Option(names = { "-v", "--verbose" }, required = false, description = "Enable debug log")
+    private boolean verbose = false;
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "TapData cli help")
     private boolean helpRequested = false;
 
     public Integer execute() throws Exception {
+        if(verbose)
+            CommonUtils.setProperty("tap_verbose", "true");
         try {
             DataFlowEngine dataFlowEngine = DataFlowEngine.getInstance();
             dataFlowEngine.start();

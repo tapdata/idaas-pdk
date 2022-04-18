@@ -71,7 +71,7 @@ public class DMLTest extends PDKTestBase {
                             checkFunctions(targetNode.getConnectorFunctions(), DMLTest.testFunctions());
                         } else if(toState.equals(DataFlowWorker.STATE_INITIALIZED)){
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                                PDKLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
                                     insertOneRecord(dataFlowEngine, dag);
                                 }
@@ -97,7 +97,7 @@ public class DMLTest extends PDKTestBase {
 
     private void insertOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap insertRecord = buildInsertRecord();
-        DataMap filterMap =buildFilterMap();
+        DataMap filterMap = buildFilterMap();
         sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
 

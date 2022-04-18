@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.utils;
 import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.pdk.core.error.QuiteException;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 
 import java.util.List;
@@ -53,8 +54,10 @@ public class CommonUtils {
             coreException.printStackTrace();
             PDKLogger.error(tag, "Error code {} message {} will be ignored. ", coreException.getCode(), coreException.getMessage());
         } catch(Throwable throwable) {
-            throwable.printStackTrace();
-            PDKLogger.error(tag, "Unknown error message {} will be ignored. ", throwable.getMessage());
+            if(!(throwable instanceof QuiteException)) {
+                throwable.printStackTrace();
+                PDKLogger.error(tag, "Unknown error message {} will be ignored. ", throwable.getMessage());
+            }
         }
     }
 

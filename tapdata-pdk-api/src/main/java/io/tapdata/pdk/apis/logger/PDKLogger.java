@@ -6,14 +6,24 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class PDKLogger {
-    private static final String LEVEL_FATAL = "FATAL";
-
     private static LogListener logListener;
 
     private PDKLogger() {
     }
 
     private static boolean enable = true;
+
+    public static final int LEVEL_DEBUG = 1;
+    public static final int LEVEL_INFO = 10;
+    public static final int LEVEL_WARN = 20;
+    public static final int LEVEL_ERROR = 30;
+    public static final int LEVEL_FATAL = 40;
+    private static int level = LEVEL_INFO;
+    static {
+        String verbose = System.getProperty("tap_verbose");
+        if(verbose != null)
+            level = LEVEL_DEBUG;
+    }
 
     public static void enable(boolean enable1) {
         enable = enable1;
@@ -36,7 +46,7 @@ public class PDKLogger {
     }
 
     public static void debug(String tag, String msg, Object... params) {
-        if(!enable) return;
+        if(!enable || level > LEVEL_DEBUG) return;
 
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
@@ -46,7 +56,7 @@ public class PDKLogger {
     }
 
     public static void info(String tag, String msg, Object... params) {
-        if(!enable) return;
+        if(!enable || level > LEVEL_INFO) return;
 
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
@@ -56,7 +66,7 @@ public class PDKLogger {
     }
 
     public static void info(String tag, Long spendTime, String msg, Object... params) {
-        if(!enable) return;
+        if(!enable || level > LEVEL_INFO) return;
 
         String log = getLogMsg(tag, FormatUtils.format(msg, params), spendTime);
         if (logListener != null)
@@ -66,7 +76,7 @@ public class PDKLogger {
     }
 
     public static void infoWithData(String tag, String dataType, String data, String msg, Object... params) {
-        if(!enable) return;
+        if(!enable || level > LEVEL_INFO) return;
 
         String log = getLogMsg(tag, FormatUtils.format(msg, params), dataType, data);
         if (logListener != null)
@@ -76,7 +86,7 @@ public class PDKLogger {
     }
 
     public static void warn(String tag, String msg, Object... params) {
-        if(!enable) return;
+        if(!enable || level > LEVEL_WARN) return;
 
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
@@ -86,7 +96,7 @@ public class PDKLogger {
     }
 
     public static void error(String tag, String msg, Object... params) {
-        if(!enable) return;
+        if(!enable || level > LEVEL_ERROR) return;
 
         String log = getLogMsg(tag, FormatUtils.format(msg, params));
         if (logListener != null)
@@ -96,7 +106,7 @@ public class PDKLogger {
     }
 
     public static void fatal(String tag, String msg, Object... params) {
-        if(!enable) return;
+        if(!enable || level > LEVEL_FATAL) return;
 
         String log = getLogMsgFatal(tag, FormatUtils.format(msg, params));
         if (logListener != null)
@@ -118,7 +128,7 @@ public class PDKLogger {
 
     private static String getLogMsgFatal(String tag, String msg) {
         StringBuilder builder = new StringBuilder();
-        builder.append(LEVEL_FATAL).
+        builder.append("FATAL").
                 append(" $$time:: " + dateString()).
                 append(" $$tag:: " + tag).
                 append(" ").

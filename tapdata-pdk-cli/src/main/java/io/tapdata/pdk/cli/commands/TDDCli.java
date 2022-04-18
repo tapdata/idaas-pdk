@@ -48,6 +48,8 @@ public class TDDCli extends CommonCli {
     private String testClass;
     @CommandLine.Option(names = { "-c", "--testConfig" }, required = true, description = "Specify the test json configuration file")
     private String testConfig;
+    @CommandLine.Option(names = { "-v", "--verbose" }, required = false, description = "Enable debug log")
+    private boolean verbose = false;
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "TapData cli help")
     private boolean helpRequested = false;
     private SummaryGeneratingListener listener = new SummaryGeneratingListener();
@@ -112,6 +114,8 @@ public class TDDCli extends CommonCli {
     }
 
     public Integer execute() {
+        if(verbose)
+            CommonUtils.setProperty("tap_verbose", "true");
         try {
             testPDKJar(file, testConfig);
         } catch (Throwable throwable) {

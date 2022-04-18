@@ -114,7 +114,7 @@ public class StreamReadTest extends PDKTestBase {
                 dataFlowEngine.startDataFlow(tddToSourceDag, originDataFlowDescriber.getJobOptions(), (fromState, toState, dataFlowWorker) -> {
                     if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                         dataFlowEngine.sendExternalTapEvent(tddSourceToSourceAsTargetDagId, new PatrolEvent().patrolListener((nodeId, state) -> {
-                            PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                            PDKLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                             if (nodeId.equals(testSourceAsTargetNodeId) && state == PatrolEvent.STATE_LEAVE) {
 //                                for (int i = 0; i < 10; i++) {
 //                                    DataMap dataMap = buildInsertRecord();
@@ -176,7 +176,7 @@ public class StreamReadTest extends PDKTestBase {
 
     private void startStreamReadTest() {
         PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-            PDKLogger.info("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+            PDKLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
             if (nodeId.equals(testSourceAsTargetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 AtomicInteger cnt = new AtomicInteger();
                 for (int i = 0; i < 10; i++) {

@@ -251,7 +251,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
+    private long batchCount(TapConnectorContext connectorContext, String offset) {
         //TODO Count the batch size.
         return 20L;
     }

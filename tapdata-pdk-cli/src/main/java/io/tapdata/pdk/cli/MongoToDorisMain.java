@@ -14,6 +14,7 @@ public class MongoToDorisMain {
 //        String rootPath = "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\stories\\";
         String rootPath = "tapdata-pdk-cli/src/main/resources/stories/";
         args = new String[]{"start",
+                "-v",
 //                rootPath + "emptyToFile.json",
 //                rootPath + "emptyToAerospike.json",
 //                rootPath + "tddToAerospike.json",

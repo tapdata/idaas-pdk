@@ -156,7 +156,7 @@ public class TDDBenchmarkSourceConnector extends ConnectorBase implements TapCon
      * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, Object offset) {
+    private long batchCount(TapConnectorContext connectorContext, String offset) {
         //TODO Count the batch size.
         return 1L;
     }

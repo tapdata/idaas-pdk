@@ -30,6 +30,7 @@ import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.pdk.core.error.QuiteException;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -186,6 +187,16 @@ public class PDKTestBase {
             synchronized (completed) {
                 completed.notifyAll();
             }
+            if(withError) {
+                synchronized (this) {
+                    try {
+                        this.wait(50000);
+                    } catch (InterruptedException interruptedException) {
+                        interruptedException.printStackTrace();
+                    }
+                    throw new QuiteException("Exit on failed");
+                }
+            }
         }
     }
 
@@ -206,10 +217,15 @@ public class PDKTestBase {
                 }
             }
         }
-        if (lastThrowable != null)
-            throw lastThrowable;
-
-        tearDown();
+        try {
+            if (lastThrowable != null)
+                throw lastThrowable;
+        } finally {
+            tearDown();
+            synchronized (this) {
+                this.notifyAll();
+            }
+        }
     }
 
     public Map<String, DataMap> readTestConfig(File testConfigFile) {
