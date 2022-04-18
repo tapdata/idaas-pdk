@@ -601,7 +601,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 } else if (operationType == OperationType.DELETE) {
                     DataMap before = new DataMap();
                     if (event.getDocumentKey() != null) {
-                        before.put("_id", event.getDocumentKey().get("_id"));
+                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
                         TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, connectorContext.getTable());
                         tapEvents.add(recordEvent);
                     } else {
@@ -610,8 +610,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 } else if (operationType == OperationType.UPDATE) {
                     DataMap before = new DataMap();
                     if (event.getDocumentKey() != null) {
-                        //TODO use BsonValue directly
-                        before.put("_id", event.getDocumentKey().get("_id"));
+                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
                         DataMap after = new DataMap();
                         after.putAll(fullDocument);
                         after.remove("_id");
@@ -623,8 +622,60 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     }
                 }
             }
-
         }
+    }
+
+    private Object getIdValue(BsonValue id) {
+        BsonType bsonType = id.getBsonType();
+        if(bsonType == null)
+            return null;
+        switch (bsonType) {
+//            case NULL:
+//                break;
+//            case ARRAY:
+//                break;
+            case INT32:
+                return id.asInt32().getValue();
+            case INT64:
+                return id.asInt64().getValue();
+            case BINARY:
+                return id.asBinary().getData();
+            case DOUBLE:
+                return id.asDouble().getValue();
+            case STRING:
+                return id.asString().getValue();
+            case SYMBOL:
+                return id.asSymbol().getSymbol();
+            case BOOLEAN:
+                return id.asBoolean().getValue();
+//            case MAX_KEY:
+//                break;
+//            case MIN_KEY:
+//                break;
+//            case DOCUMENT:
+//                break;
+            case DATE_TIME:
+                return id.asDateTime().getValue();
+            case OBJECT_ID:
+                return id.asObjectId().getValue();
+            case TIMESTAMP:
+                return id.asTimestamp().getValue();
+//            case UNDEFINED:
+//                break;
+//            case DB_POINTER:
+//                break;
+            case DECIMAL128:
+                return id.asDecimal128().getValue();
+//            case JAVASCRIPT:
+//                break;
+//            case END_OF_DOCUMENT:
+//                break;
+//            case REGULAR_EXPRESSION:
+//                break;
+//            case JAVASCRIPT_WITH_SCOPE:
+//                break;
+        }
+        return null;
     }
 
     private String batchOffset(TapConnectorContext connectorContext) throws Throwable {
