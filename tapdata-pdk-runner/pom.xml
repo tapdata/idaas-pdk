@@ -18,10 +18,6 @@
     <!--<dependencyManagement>-->
     <dependencies>
         <dependency>
-            <groupId>io.tapdata</groupId>
-            <artifactId>tap-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.tapdata.pdk</groupId>
             <artifactId>tapdata-pdk-api</artifactId>
         </dependency>
