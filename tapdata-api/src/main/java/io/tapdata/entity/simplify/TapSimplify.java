@@ -1,69 +1,21 @@
-package io.tapdata.base;
+package io.tapdata.entity.simplify;
 
-import io.tapdata.entity.utils.Entry;
-import io.tapdata.entity.event.dml.*;
+import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
-import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
-import io.tapdata.entity.utils.DataMap;
-import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.entity.utils.JsonParser;
-import io.tapdata.entity.schema.value.DateTime;
-import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.entity.WriteListResult;
-import io.tapdata.entity.utils.FormatUtils;
-import io.tapdata.entity.utils.TapUtils;
-import io.tapdata.pdk.apis.utils.TypeConverter;
+import io.tapdata.entity.utils.*;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
-public abstract class ConnectorBase {
+public class TapSimplify {
     private static final TapUtils tapUtils = InstanceFactory.instance(TapUtils.class);
-    private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
     private static final JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
-    private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
 
     public static void interval(Runnable runnable, int seconds) {
         tapUtils.interval(runnable, seconds);
-    }
-
-    public static Long toLong(Object value) {
-        return typeConverter.toLong(value);
-    }
-
-    public static Integer toInteger(Object value) {
-        return typeConverter.toInteger(value);
-    }
-
-    public static Short toShort(Object value) {
-        return typeConverter.toShort(value);
-    }
-
-    public static List<String> toStringArray(Object value) {
-        return typeConverter.toStringArray(value);
-    }
-
-    public static String toString(Object value) {
-        return typeConverter.toString(value);
-    }
-
-    public static Byte toByte(Object value) {
-        return typeConverter.toByte(value);
-    }
-
-    public static Double toDouble(Object value) {
-        return typeConverter.toDouble(value);
-    }
-
-    public static Float toFloat(Object value) {
-        return typeConverter.toFloat(value);
-    }
-
-    public static Boolean toBoolean(Object value) {
-        return typeConverter.toBoolean(value);
     }
 
     public static String toJson(Object obj) {
@@ -138,13 +90,6 @@ public abstract class ConnectorBase {
         return new TapDateTime();
     }
 
-    public static TestItem testItem(String item, int resultCode) {
-        return testItem(item, resultCode, null);
-    }
-    public static TestItem testItem(String item, int resultCode, String information) {
-        return new TestItem(item, resultCode, information);
-    }
-
     public static Entry entry(String key, Object value) {
         return new Entry(key, value);
     }
@@ -184,10 +129,6 @@ public abstract class ConnectorBase {
         return new TapUpdateRecordEvent().init().before(before).after(after).table(tapTable);
     }
 
-    public static WriteListResult<TapRecordEvent> writeListResult() {
-        return new WriteListResult<>();
-    }
-
     public static void sleep(long milliseconds) {
         if(milliseconds < 0)
             return;
@@ -198,26 +139,4 @@ public abstract class ConnectorBase {
         }
     }
 
-    public static String formatTapDateTime(DateTime dateTime, String pattern) {
-        if (dateTime.getTimeZone() != null) dateTime.setTimeZone(dateTime.getTimeZone());
-        tapDateTimeFormat.applyPattern(pattern);
-        return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
-    }
-
-    public static Object convertDateTimeToDate(DateTime dateTime) {
-        if(dateTime != null) {
-            Long milliseconds;
-            Long nano = dateTime.getNano();
-            Long seconds = dateTime.getSeconds();
-            if(nano != null) {
-                milliseconds = nano / 1000 / 1000;
-            } else if(seconds != null) {
-                milliseconds = seconds * 1000;
-            } else {
-                return null;
-            }
-            return new Date(milliseconds);
-        }
-        return null;
-    }
 }

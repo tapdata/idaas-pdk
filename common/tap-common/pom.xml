@@ -1,37 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>io.tapdata.pdk</groupId>
-        <artifactId>idaas-pdk</artifactId>
-        <version>1.0-SNAPSHOT</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>tapdata-pdk-runner</artifactId>
-    <name>tapdata-pdk-runner</name>
-    <modules>
-    </modules>
+    <artifactId>tap-common</artifactId>
+    <groupId>io.tapdata</groupId>
+    <name>tap-common</name>
+    <version>1.0-SNAPSHOT</version>
 
     <properties>
         <java.version>8</java.version>
     </properties>
     <!--<dependencyManagement>-->
     <dependencies>
-        <dependency>
-            <groupId>io.tapdata</groupId>
-            <artifactId>tap-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.tapdata.pdk</groupId>
-            <artifactId>tapdata-pdk-api</artifactId>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.11.0</version>
-        </dependency>
 
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>RELEASE</version>
+            <scope>test</scope>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.reflections/reflections -->
         <dependency>
             <groupId>org.reflections</groupId>
@@ -43,11 +30,6 @@
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>1.2.79</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.9</version>
         </dependency>
     </dependencies>
     <build>
@@ -66,7 +48,18 @@
                     <target>8</target>
                 </configuration>
             </plugin>
-
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-source-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>attach-sources</id>-->
+<!--                        <goals>-->
+<!--                            <goal>jar</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
     <distributionManagement>

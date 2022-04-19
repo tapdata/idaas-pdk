@@ -1,17 +1,19 @@
 package io.tapdata.entity.schema.type;
 
+import static io.tapdata.entity.simplify.TapSimplify.tapString;
+
 public class TapString extends TapType {
     public TapString() {}
-    public TapString(Long width, Boolean fixed) {
-        this.width = width;
+    public TapString(Long bytes, Boolean fixed) {
+        this.bytes = bytes;
         this.fixed = fixed;
     }
     /**
      * 字段类型的长度最大值， VARCHAR(100), 只支持100长度的字符串
      */
-    private Long width;
-    public TapString width(Long width) {
-        this.width = width;
+    private Long bytes;
+    public TapString bytes(Long bytes) {
+        this.bytes = bytes;
         return this;
     }
     /**
@@ -23,12 +25,12 @@ public class TapString extends TapType {
         return this;
     }
 
-    public Long getWidth() {
-        return width;
+    public Long getBytes() {
+        return bytes;
     }
 
-    public void setWidth(Long width) {
-        this.width = width;
+    public void setBytes(Long bytes) {
+        this.bytes = bytes;
     }
 
     public Boolean getFixed() {
@@ -37,5 +39,10 @@ public class TapString extends TapType {
 
     public void setFixed(Boolean fixed) {
         this.fixed = fixed;
+    }
+
+    @Override
+    public TapType cloneTapType() {
+        return tapString().fixed(fixed).bytes(bytes);
     }
 }

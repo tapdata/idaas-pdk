@@ -22,6 +22,10 @@ public class TapCodecFilterManager {
         mapIterator = new FirstLayerMapIterator();
     }
 
+    public static TapCodecFilterManager create(TapCodecRegistry codecRegistry) {
+        return new TapCodecFilterManager(codecRegistry);
+    }
+
     public void transformToTapValueMap(Map<String, Object> value, Map<String, TapField> nameFieldMap) {
         if(value == null)
             return;

@@ -68,6 +68,7 @@ public class ExpressionMatchingMap<T> {
             TypeExpr<T> typeExpr = new TypeExpr<>();
             if(!typeExpr.parseExpression(key))
                 continue;
+            key = key.toLowerCase();
             typeExpr.setValue(entry.getValue());
             int prefixMatchType = typeExpr.getPrefixMatchType();
 
@@ -118,7 +119,9 @@ public class ExpressionMatchingMap<T> {
      * @return
      */
     public TypeExprResult<T> get(String key) {
-        T value = exactlyMatchMap.get(key);
+        if(key == null)
+            return null;
+        T value = exactlyMatchMap.get(key.toLowerCase());
         if(value == null) {
             Set<String> prefixList = prefixTypeExprListMap.keySet();
             for(String prefix : prefixList) {

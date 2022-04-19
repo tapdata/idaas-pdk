@@ -65,12 +65,12 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                             tapNodeSpecification.setConfigOptions(tapNodeContainer.getConfigOptions());
                             if(tapNodeContainer.getDataTypes() != null) {
                                 DefaultExpressionMatchingMap matchingMap = DefaultExpressionMatchingMap.map(tapNodeContainer.getDataTypes());
-                                matchingMap.setValueFilter(defaultMap -> {
-                                    TapMapping tapMapping = (TapMapping) defaultMap.get(TapMapping.FIELD_TYPE_MAPPING);
-                                    if(tapMapping == null) {
-                                        defaultMap.put(TapMapping.FIELD_TYPE_MAPPING, TapMapping.build(defaultMap));
-                                    }
-                                });
+//                                matchingMap.setValueFilter(defaultMap -> {
+//                                    TapMapping tapMapping = (TapMapping) defaultMap.get(TapMapping.FIELD_TYPE_MAPPING);
+//                                    if(tapMapping == null) {
+//                                        defaultMap.put(TapMapping.FIELD_TYPE_MAPPING, TapMapping.build(defaultMap));
+//                                    }
+//                                });
                                 tapNodeSpecification.setDataTypesMap(matchingMap);
                             }
                             String connectorType = findConnectorType(clazz);

@@ -115,6 +115,8 @@ public class TapNumberMapping extends TapMapping {
         }
         if(length == null)
             length = defaultBit;
+        if(length == null)
+            length = bit;
 
         String precisionStr = getParam(params, KEY_PRECISION);
         Integer precision = null;
@@ -127,6 +129,8 @@ public class TapNumberMapping extends TapMapping {
         }
         if(precision == null)
             precision = defaultPrecision;
+        if(precision == null)
+            precision = maxPrecision;
 
         String scaleStr = getParam(params, KEY_SCALE);
         Integer scale = null;
@@ -139,6 +143,8 @@ public class TapNumberMapping extends TapMapping {
         }
         if(scale == null)
             scale = defaultScale;
+        if(scale == null)
+            scale = maxScale;
 
         return new TapNumber()
                 .precision(precision)
@@ -268,5 +274,29 @@ public class TapNumberMapping extends TapMapping {
 
     public void setBit(Integer bit) {
         this.bit = bit;
+    }
+
+    public Integer getDefaultBit() {
+        return defaultBit;
+    }
+
+    public void setDefaultBit(Integer defaultBit) {
+        this.defaultBit = defaultBit;
+    }
+
+    public Integer getDefaultPrecision() {
+        return defaultPrecision;
+    }
+
+    public void setDefaultPrecision(Integer defaultPrecision) {
+        this.defaultPrecision = defaultPrecision;
+    }
+
+    public Integer getDefaultScale() {
+        return defaultScale;
+    }
+
+    public void setDefaultScale(Integer defaultScale) {
+        this.defaultScale = defaultScale;
     }
 }

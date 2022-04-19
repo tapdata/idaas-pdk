@@ -26,7 +26,9 @@ public class TapStringMapping extends TapBytesBase {
         }
         if(bytes == null)
             bytes = defaultBytes;
-        return new TapString().width(bytes).fixed(theFixed);
+        if(bytes == null)
+            bytes = this.bytes;
+        return new TapString().bytes(bytes).fixed(theFixed);
     }
 
     @Override
@@ -39,9 +41,9 @@ public class TapStringMapping extends TapBytesBase {
                 theFinalExpression = clearBrackets(theFinalExpression, fixed);
             }
 
-            if (tapString.getWidth() != null) {
+            if (tapString.getBytes() != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_BYTE, false);
-                theFinalExpression = theFinalExpression.replace("$" + KEY_BYTE, String.valueOf(tapString.getWidth()));
+                theFinalExpression = theFinalExpression.replace("$" + KEY_BYTE, String.valueOf(tapString.getBytes()));
             }
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
         }
@@ -53,7 +55,7 @@ public class TapStringMapping extends TapBytesBase {
         if (field.getTapType() instanceof TapString) {
             TapString tapString = (TapString) field.getTapType();
 
-            Long width = tapString.getWidth();
+            Long width = tapString.getBytes();
             if(width == null && bytes != null) {
                 return bytes;
             } else if(bytes != null) {

@@ -2,7 +2,6 @@ package io.tapdata.entity.mapping.type;
 
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapBinary;
-import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.type.TapType;
 
 import java.util.Map;
@@ -25,7 +24,9 @@ public class TapBinaryMapping extends TapBytesBase {
         }
         if(bytes == null)
             bytes = defaultBytes;
-        return new TapBinary().width(bytes);
+        if(bytes == null)
+            bytes = this.bytes;
+        return new TapBinary().bytes(bytes);
     }
 
     @Override
@@ -35,9 +36,9 @@ public class TapBinaryMapping extends TapBytesBase {
             TapBinary tapBinary = (TapBinary) tapType;
             theFinalExpression = typeExpression;
 
-            if (tapBinary.getWidth() != null) {
+            if (tapBinary.getBytes() != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_BYTE, false);
-                theFinalExpression = theFinalExpression.replace("$" + KEY_BYTE, String.valueOf(tapBinary.getWidth()));
+                theFinalExpression = theFinalExpression.replace("$" + KEY_BYTE, String.valueOf(tapBinary.getBytes()));
             }
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
         }
@@ -49,7 +50,7 @@ public class TapBinaryMapping extends TapBytesBase {
         if (field.getTapType() instanceof TapBinary) {
             TapBinary tapBinary = (TapBinary) field.getTapType();
 
-            Long width = tapBinary.getWidth();
+            Long width = tapBinary.getBytes();
             if(width == null && bytes != null) {
                 return bytes;
             } else if(bytes != null) {

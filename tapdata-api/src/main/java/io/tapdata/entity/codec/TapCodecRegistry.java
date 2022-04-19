@@ -18,6 +18,10 @@ public class TapCodecRegistry {
     public TapCodecRegistry() {
     }
 
+    public static TapCodecRegistry create() {
+        return new TapCodecRegistry();
+    }
+
     public <T extends TapValue<?, ?>> TapCodecRegistry registerToTapValue(Class<?> anyClass, ToTapValueCodec<T> toTapValueCodec) {
         classToTapValueCodecMap.put(anyClass, toTapValueCodec);
         return this;

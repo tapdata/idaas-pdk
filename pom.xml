@@ -9,6 +9,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
+        <module>common</module>
         <module>tapdata-pdk-cli</module>
         <module>connectors</module>
         <module>tapdata-pdk-runner</module>
@@ -16,19 +17,25 @@
         <module>connector-archetypes</module>
         <module>tapdata-api</module>
     </modules>
-    
+
 
     <properties>
         <connector.file.name>${project.artifactId}-v${project.version}</connector.file.name>
         <java.version>8</java.version>
         <tapdata.pdk.runner.verison>1.0-SNAPSHOT</tapdata.pdk.runner.verison>
         <tapdata.pdk.api.verison>1.0-SNAPSHOT</tapdata.pdk.api.verison>
+        <tap.common.verison>1.0-SNAPSHOT</tap.common.verison>
         <tapdata.pdk.connector.core.version>1.0-SNAPSHOT</tapdata.pdk.connector.core.version>
         <junit.jupiter.version>5.8.1</junit.jupiter.version>
         <junit.platform.version>1.8.1</junit.platform.version>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>tap-common</artifactId>
+                <version>${tap.common.verison}</version>
+            </dependency>
             <dependency>
                 <groupId>io.tapdata.pdk</groupId>
                 <artifactId>tapdata-pdk-api</artifactId>

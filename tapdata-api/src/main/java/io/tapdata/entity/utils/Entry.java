@@ -1,4 +1,4 @@
-package io.tapdata.base.utils;
+package io.tapdata.entity.utils;
 
 public class Entry {
     private String key;

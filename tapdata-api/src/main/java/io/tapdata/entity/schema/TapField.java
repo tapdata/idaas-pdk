@@ -175,7 +175,7 @@ public class TapField implements Serializable {
         newField.foreignKeyTable = foreignKeyTable;
         newField.isPartitionKey = isPartitionKey;
         newField.isPrimaryKey = isPrimaryKey;
-        newField.tapType = tapType; //XXX need clone?
+        newField.tapType = tapType.cloneTapType(); //XXX need clone? better clone.
         return newField;
     }
 

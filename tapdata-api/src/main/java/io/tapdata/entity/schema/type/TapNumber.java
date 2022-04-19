@@ -1,5 +1,7 @@
 package io.tapdata.entity.schema.type;
 
+import static io.tapdata.entity.simplify.TapSimplify.tapNumber;
+
 public class TapNumber extends TapType {
     /**
      * 存储位数， 字节数， 不同数据库实现不一样
@@ -105,5 +107,10 @@ public class TapNumber extends TapType {
 
     public void setZerofill(Boolean zerofill) {
         this.zerofill = zerofill;
+    }
+
+    @Override
+    public TapType cloneTapType() {
+        return tapNumber().bit(bit).precision(precision).scale(scale).unsigned(unsigned).zerofill(zerofill);
     }
 }

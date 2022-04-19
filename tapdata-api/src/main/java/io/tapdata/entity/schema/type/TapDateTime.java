@@ -1,5 +1,7 @@
 package io.tapdata.entity.schema.type;
 
+import static io.tapdata.entity.simplify.TapSimplify.tapDateTime;
+
 public class TapDateTime extends TapType {
     /**
      * 字段的时间精度
@@ -35,5 +37,10 @@ public class TapDateTime extends TapType {
 
     public void setHasTimeZone(Boolean hasTimeZone) {
         this.hasTimeZone = hasTimeZone;
+    }
+
+    @Override
+    public TapType cloneTapType() {
+        return tapDateTime().hasTimeZone(hasTimeZone).scale(scale);
     }
 }
