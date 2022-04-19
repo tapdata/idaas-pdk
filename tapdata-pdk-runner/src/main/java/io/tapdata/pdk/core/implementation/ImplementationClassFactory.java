@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.implementation;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.reflection.ClassAnnotationHandler;
@@ -116,7 +116,7 @@ public class ImplementationClassFactory {
                 try {
                     return (T) implClass.getConstructor().newInstance();
                 } catch (Throwable e) {
-                    PDKLogger.error(TAG, "Create any implementation class {} for interface {} failed, {}", implClass, interfaceClass, e.getMessage());
+                    TapLogger.error(TAG, "Create any implementation class {} for interface {} failed, {}", implClass, interfaceClass, e.getMessage());
                 }
             }
         }
@@ -132,7 +132,7 @@ public class ImplementationClassFactory {
                 try {
                     return (T) implClass.getClazz().getConstructor().newInstance();
                 } catch (Throwable e) {
-                    PDKLogger.error(TAG, "Create implementation class {} for interface {} type {} failed, {}", implClass.getClazz(), interfaceClass, type, e.getMessage());
+                    TapLogger.error(TAG, "Create implementation class {} for interface {} type {} failed, {}", implClass.getClazz(), interfaceClass, type, e.getMessage());
                 }
             }
         }

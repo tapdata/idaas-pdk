@@ -1,8 +1,7 @@
 package io.tapdata.pdk.core.workflow.engine;
 
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.pdk.apis.logger.PDKLogger;
-import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.Validator;
@@ -26,13 +25,13 @@ public class DataFlowEngine {
      * 引擎启动
      */
     public void start() {
-        PDKLogger.info(TAG, ".___________.    ___      .______    _______       ___   .___________.    ___     ");
-        PDKLogger.info(TAG, "|           |   /   \\     |   _  \\  |       \\     /   \\  |           |   /   \\    ");
-        PDKLogger.info(TAG, "`---|  |----`  /  ^  \\    |  |_)  | |  .--.  |   /  ^  \\ `---|  |----`  /  ^  \\   ");
-        PDKLogger.info(TAG, "    |  |      /  /_\\  \\   |   ___/  |  |  |  |  /  /_\\  \\    |  |      /  /_\\  \\  ");
-        PDKLogger.info(TAG, "    |  |     /  _____  \\  |  |      |  '--'  | /  _____  \\   |  |     /  _____  \\ ");
-        PDKLogger.info(TAG, "    |__|    /__/     \\__\\ | _|      |_______/ /__/     \\__\\  |__|    /__/     \\__\\");
-        PDKLogger.info(TAG, "                                                                            v{}", version);
+        TapLogger.info(TAG, ".___________.    ___      .______    _______       ___   .___________.    ___     ");
+        TapLogger.info(TAG, "|           |   /   \\     |   _  \\  |       \\     /   \\  |           |   /   \\    ");
+        TapLogger.info(TAG, "`---|  |----`  /  ^  \\    |  |_)  | |  .--.  |   /  ^  \\ `---|  |----`  /  ^  \\   ");
+        TapLogger.info(TAG, "    |  |      /  /_\\  \\   |   ___/  |  |  |  |  /  /_\\  \\    |  |      /  /_\\  \\  ");
+        TapLogger.info(TAG, "    |  |     /  _____  \\  |  |      |  '--'  | /  _____  \\   |  |     /  _____  \\ ");
+        TapLogger.info(TAG, "    |__|    /__/     \\__\\ | _|      |_______/ /__/     \\__\\  |__|    /__/     \\__\\");
+        TapLogger.info(TAG, "                                                                            v{}", version);
         //http://www.network-science.de/ascii/
         //starwars
 
@@ -57,7 +56,7 @@ public class DataFlowEngine {
                 return dataFlowWorker;
             }
         } else {
-            PDKLogger.error(TAG, "DAG Id {} is running, can not startDataFlow again.", dag.getId());
+            TapLogger.error(TAG, "DAG Id {} is running, can not startDataFlow again.", dag.getId());
         }
         return null;
     }

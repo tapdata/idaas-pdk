@@ -2,7 +2,7 @@ package io.tapdata.pdk.core.workflow.engine;
 
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.control.PatrolEvent;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
@@ -15,7 +15,6 @@ import io.tapdata.pdk.core.workflow.engine.driver.SourceNodeDriver;
 import io.tapdata.pdk.core.workflow.engine.driver.SourceStateListener;
 import io.tapdata.pdk.core.workflow.engine.driver.TargetNodeDriver;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -137,7 +136,7 @@ public class DataFlowWorker {
                     filterExternalEvent(event, nodeWorker);
                     nodeWorker.sourceNodeDriver.receivedExternalEvent(Collections.singletonList(event));//offer(Collections.singletonList(event));
                 } else {
-                    PDKLogger.warn(TAG, "External event can only send from source node, the nodeId {} is not a source node", sourceNodeId);
+                    TapLogger.warn(TAG, "External event can only send from source node, the nodeId {} is not a source node", sourceNodeId);
                 }
                 //Processor not consider at this moment.
             }

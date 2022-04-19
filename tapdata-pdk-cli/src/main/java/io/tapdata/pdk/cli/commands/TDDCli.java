@@ -3,7 +3,7 @@ package io.tapdata.pdk.cli.commands;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
@@ -31,7 +31,6 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import picocli.CommandLine;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
@@ -120,7 +119,7 @@ public class TDDCli extends CommonCli {
             testPDKJar(file, testConfig);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            PDKLogger.fatal(TAG, "Run test against file {} failed, {}", file, throwable.getMessage());
+            TapLogger.fatal(TAG, "Run test against file {} failed, {}", file, throwable.getMessage());
         }
         return 0;
     }

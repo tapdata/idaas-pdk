@@ -17,7 +17,6 @@ import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
-import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 
 import static java.util.Arrays.asList;
@@ -32,10 +31,9 @@ import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import org.bson.*;
 
-import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
@@ -44,7 +42,6 @@ import org.bson.types.*;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Filters.and;
-import static com.mongodb.client.model.Updates.set;
 import static java.util.Collections.singletonList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
@@ -262,7 +259,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
 
         if(streamCursor != null) {
             streamCursor.close();
-            PDKLogger.info(TAG, "dropTable is called for " + connectorContext.getTable() + " streamCursor has been closed " + streamCursor);
+            TapLogger.info(TAG, "dropTable is called for " + connectorContext.getTable() + " streamCursor has been closed " + streamCursor);
         }
     }
 
@@ -323,7 +320,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 if(updateResult.getModifiedCount() > 0)
                     updated.incrementAndGet();
                 else
-                    PDKLogger.warn("Update record by filter {} is missed. ", toJson(before));
+                    TapLogger.warn("Update record by filter {} is missed. ", toJson(before));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 if (!insertList.isEmpty()) {
                     collection.insertMany(insertList);
@@ -335,7 +332,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 if(deleteResult.getDeletedCount() > 0)
                     deleted.incrementAndGet();
                 else
-                    PDKLogger.warn(TAG, "Delete record by filter {} is missed. ", toJson(before));
+                    TapLogger.warn(TAG, "Delete record by filter {} is missed. ", toJson(before));
             }
         }
         if (!insertList.isEmpty()) {
@@ -487,7 +484,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                         .batchSize(batchSize).iterator();
             } else {
                 mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
-                PDKLogger.warn(TAG, "Offset format is illegal {}, no offset value has been found. Final offset will be null to do the batchRead", offset);
+                TapLogger.warn(TAG, "Offset format is illegal {}, no offset value has been found. Final offset will be null to do the batchRead", offset);
             }
         }
 
@@ -580,7 +577,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                         errorMessage = throwable.getMessage();
                     }
                     if(cursorClosed) {
-                        PDKLogger.warn(TAG, "streamCursor is not alive anymore or error occurred {}, sleep 10 seconds to avoid cpu consumption. This connector should be stopped by incremental engine.", errorMessage);
+                        TapLogger.warn(TAG, "streamCursor is not alive anymore or error occurred {}, sleep 10 seconds to avoid cpu consumption. This connector should be stopped by incremental engine.", errorMessage);
                         sleep(10000);
                     }
                     continue;
@@ -605,7 +602,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                         TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, connectorContext.getTable());
                         tapEvents.add(recordEvent);
                     } else {
-                        PDKLogger.error(TAG, "Document key is null, failed to delete. {}", event);
+                        TapLogger.error(TAG, "Document key is null, failed to delete. {}", event);
                     }
                 } else if (operationType == OperationType.UPDATE) {
                     DataMap before = new DataMap();
@@ -618,7 +615,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                         TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, connectorContext.getTable());
                         tapEvents.add(recordEvent);
                     } else {
-                        PDKLogger.error(TAG, "Document key is null, failed to update. {}", event);
+                        TapLogger.error(TAG, "Document key is null, failed to update. {}", event);
                     }
                 }
             }

@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.tapnode;
 
 import io.tapdata.pdk.apis.TapNode;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.classloader.DependencyURLClassLoader;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
@@ -81,7 +81,7 @@ public class TapNodeClassFactory {
                         }
                     }
                 } else {
-                    PDKLogger.error(TAG, "{} is associated on id {} already, maybe forget to release associateId? ", tapNodeInfo.getNodeClass(), associateId);
+                    TapLogger.error(TAG, "{} is associated on id {} already, maybe forget to release associateId? ", tapNodeInfo.getNodeClass(), associateId);
                 }
             }
         }

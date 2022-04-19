@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.monitor;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -101,7 +101,7 @@ public class PDKInvocationMonitor {
         final String invokeId = CommonUtils.processUniqueId();
         InvocationCollector collector = methodInvocationCollectorMap.computeIfAbsent(method, InvocationCollector::new);
         collector.getInvokeIdTimeMap().put(invokeId, System.currentTimeMillis());
-        PDKLogger.debug(logTag, "methodStart {} invokeId {}", method, invokeId);
+        TapLogger.debug(logTag, "methodStart {} invokeId {}", method, invokeId);
         return invokeId;
     }
 
@@ -114,9 +114,9 @@ public class PDKInvocationMonitor {
                 long takes = System.currentTimeMillis() - time;
                 collector.getTotalTakes().add(takes);
                 if(error != null) {
-                    PDKLogger.error(logTag, "methodEnd {} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
+                    TapLogger.error(logTag, "methodEnd {} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
                 } else {
-                    PDKLogger.debug(logTag, "methodEnd {} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
+                    TapLogger.debug(logTag, "methodEnd {} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
                 }
                 return takes;
             }

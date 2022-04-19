@@ -1,7 +1,7 @@
 package io.tapdata.pdk.cli.entity;
 
 import com.alibaba.fastjson.JSON;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.workflow.engine.JobOptions;
 import io.tapdata.pdk.core.workflow.engine.TapDAGNodeEx;
 import io.tapdata.pdk.core.workflow.engine.TapDAG;
@@ -57,7 +57,7 @@ public class DAGDescriber {
         if(nodes != null) {
             TapDAG dagWithWorker = new TapDAG();
             if(id == null) {
-                PDKLogger.error(TAG, "Missing dag id while generating DAG");
+                TapLogger.error(TAG, "Missing dag id while generating DAG");
                 return null;
             }
             dagWithWorker.setId(id);
@@ -70,12 +70,12 @@ public class DAGDescriber {
                 if(node == null) continue;
                 String result = node.verify();
                 if(result != null) {
-                    PDKLogger.warn(TAG, "Node verify failed, {} node json {}", result, JSON.toJSONString(node));
+                    TapLogger.warn(TAG, "Node verify failed, {} node json {}", result, JSON.toJSONString(node));
                     continue;
                 }
                 TapDAGNodeEx old = nodeMap.put(node.getId(), node);
                 if(old != null) {
-                    PDKLogger.warn(TAG, "Node id {} is duplicated, node is replaced, removed node json {}", node.getId(), JSON.toJSONString(old));
+                    TapLogger.warn(TAG, "Node id {} is duplicated, node is replaced, removed node json {}", node.getId(), JSON.toJSONString(old));
                 }
             }
 
@@ -83,7 +83,7 @@ public class DAGDescriber {
             if(this.dag != null) {
                 for(List<String> dagLine : this.dag) {
                     if(dagLine.size() != 2) {
-                        PDKLogger.warn(TAG, "DagLine is illegal {}", Arrays.toString(dagLine.toArray()));
+                        TapLogger.warn(TAG, "DagLine is illegal {}", Arrays.toString(dagLine.toArray()));
                         continue;
                     }
                     TapDAGNodeEx startNode = nodeMap.getOrDefault(dagLine.get(0), null);
@@ -91,7 +91,7 @@ public class DAGDescriber {
                     if (startNode == null || endNode == null) {
                         String startNodeId = startNode == null ? "null" : startNode.getId();
                         String endNodeId = endNode == null ? "null" : endNode.getId();
-                        PDKLogger.error(TAG, "Node in DAG is not found from {} to {}. [ {} -> {}]", dagLine.get(0), dagLine.get(1), startNodeId, endNodeId);
+                        TapLogger.error(TAG, "Node in DAG is not found from {} to {}. [ {} -> {}]", dagLine.get(0), dagLine.get(1), startNodeId, endNodeId);
 
                         return null;
                     }
@@ -122,15 +122,15 @@ public class DAGDescriber {
                         if(!headNodeIds.contains(node.getId()))
                             headNodeIds.add(node.getId());
                     } else {
-                        PDKLogger.warn(TAG, "Node in DAG don't have parent node ids or child node ids, the node {} will be ignored", node.getId());
+                        TapLogger.warn(TAG, "Node in DAG don't have parent node ids or child node ids, the node {} will be ignored", node.getId());
                         nodeMap.remove(node.getId());
                     }
                 }
             }
             if(dagWithWorker.getNodeMap().isEmpty() || dagWithWorker.getHeadNodeIds().isEmpty()) {
-                PDKLogger.error(TAG, "Generated dag don't have node map or head node ids, dag json {}", JSON.toJSONString(dagWithWorker));
+                TapLogger.error(TAG, "Generated dag don't have node map or head node ids, dag json {}", JSON.toJSONString(dagWithWorker));
             } else {
-                PDKLogger.info(TAG, "DAG tree: {}", dagWithWorker.dagString());
+                TapLogger.info(TAG, "DAG tree: {}", dagWithWorker.dagString());
                 return dagWithWorker;
             }
         }

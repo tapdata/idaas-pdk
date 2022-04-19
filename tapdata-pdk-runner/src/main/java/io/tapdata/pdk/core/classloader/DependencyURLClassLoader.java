@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.classloader;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.io.FileUtils;
 
@@ -38,27 +38,27 @@ public class DependencyURLClassLoader extends ClassLoader {
                         loader.setAccessible(true);
                         Object jarFile = loader.get(sunMiscURLClassPathJarLoader);
                         JarFile theJarFile = ((JarFile) jarFile);
-                        PDKLogger.info(TAG, "Closing jar file {}", theJarFile.getName());
+                        TapLogger.info(TAG, "Closing jar file {}", theJarFile.getName());
                         theJarFile.close();
                         CommonUtils.ignoreAnyError(() -> {
                             FileUtils.forceDelete(new File(theJarFile.getName()));
-                            PDKLogger.info(TAG, "Deleted jar file {}", theJarFile.getName());
+                            TapLogger.info(TAG, "Deleted jar file {}", theJarFile.getName());
                         }, TAG);
                     } catch (Throwable t) {
                         // if we got this far, this is probably not a JAR loader so skip it
-                        PDKLogger.error(TAG, "Closing jar file failed, error {}", t.getMessage());
+                        TapLogger.error(TAG, "Closing jar file failed, error {}", t.getMessage());
                     }
                 }
             } catch (Throwable t) {
                 // probably not a SUN VM
-                PDKLogger.error(TAG, "Closing jar file failed, error {}", t.getMessage());
+                TapLogger.error(TAG, "Closing jar file failed, error {}", t.getMessage());
             }
             try {
                 childClassLoader.close();
-                PDKLogger.info(TAG, "Closing classloader {} urls {}", childClassLoader.hashCode(), Arrays.toString(childClassLoader.getURLs()));
+                TapLogger.info(TAG, "Closing classloader {} urls {}", childClassLoader.hashCode(), Arrays.toString(childClassLoader.getURLs()));
             } catch (Throwable e) {
 //                e.printStackTrace();
-                PDKLogger.error(TAG, "Closing classloader failed, error {}", e.getMessage());
+                TapLogger.error(TAG, "Closing classloader failed, error {}", e.getMessage());
             }
         }
     }

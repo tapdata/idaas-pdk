@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.connector;
 
 import com.alibaba.fastjson.JSON;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.tapnode.TapNodeClassFactory;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
 import io.tapdata.pdk.core.utils.state.StateMachine;
@@ -75,7 +75,7 @@ public class TapConnector {
     }
 
     private void handleError(Throwable throwable, String fromState, String toState, TapConnector tapConnector, StateMachine<String, TapConnector> stateMachine) {
-        PDKLogger.error(TAG, "State machine occurred error {} from state {} to state {}", throwable.getMessage(), fromState, toState);
+        TapLogger.error(TAG, "State machine occurred error {} from state {} to state {}", throwable.getMessage(), fromState, toState);
     }
 
     private void checkUsedOrNot() {
@@ -190,7 +190,7 @@ public class TapConnector {
                 }
             });
         } else {
-            PDKLogger.error(TAG, "State is not loading, but {}, failed to execute load completed, this is a serious bug, please check it, jarFile {}, classloader {}, throwable {}", stateMachine.getCurrentState(), jarFile.getAbsolutePath(), classLoader, throwable);
+            TapLogger.error(TAG, "State is not loading, but {}, failed to execute load completed, this is a serious bug, please check it, jarFile {}, classloader {}, throwable {}", stateMachine.getCurrentState(), jarFile.getAbsolutePath(), classLoader, throwable);
         }
     }
 }

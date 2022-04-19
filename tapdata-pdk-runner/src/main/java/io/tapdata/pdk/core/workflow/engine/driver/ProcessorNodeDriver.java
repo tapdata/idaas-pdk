@@ -3,8 +3,7 @@ package io.tapdata.pdk.core.workflow.engine.driver;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.pdk.apis.functions.processor.ProcessRecordFunction;
-import io.tapdata.pdk.apis.logger.PDKLogger;
-import io.tapdata.pdk.core.api.PDKIntegration;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.api.ProcessorNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
@@ -34,10 +33,10 @@ public class ProcessorNodeDriver extends Driver implements ListHandler<List<TapE
             }
             ProcessRecordFunction processRecordFunction = processorNode.getProcessorFunctions().getProcessRecordFunction();
             if(processRecordFunction != null) {
-                PDKLogger.debug(TAG, "Process {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
+                TapLogger.debug(TAG, "Process {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.PROCESSOR_PROCESS_RECORD, () -> {
                     processRecordFunction.process(processorNode.getProcessorContext(), recordEvents, (event) -> {
-                        PDKLogger.debug(TAG, "Processed {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
+                        TapLogger.debug(TAG, "Processed {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
                         //TODO not sure how to do this for processor, do it later.
 //                        offer(recordEvents);
 //                        offer(events, (theEvents) -> PDKIntegration.filterEvents(sourceNode, theEvents));

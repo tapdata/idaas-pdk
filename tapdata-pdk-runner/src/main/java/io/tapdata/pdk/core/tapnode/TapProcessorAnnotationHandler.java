@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.tapnode;
 
 import com.alibaba.fastjson.JSON;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.apis.TapProcessor;
 import io.tapdata.pdk.apis.annotations.TapProcessorClass;
@@ -25,7 +25,7 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
     public void handle(Set<Class<?>> classes) throws CoreException {
         if(classes != null && !classes.isEmpty()) {
             newerIdGroupTapNodeInfoMap = new ConcurrentHashMap<>();
-            PDKLogger.info(TAG, "--------------TapProcessor Classes Start------------- {}", classes.size());
+            TapLogger.info(TAG, "--------------TapProcessor Classes Start------------- {}", classes.size());
             for(Class<?> clazz : classes) {
                 TapProcessorClass tapProcessorClass = clazz.getAnnotation(TapProcessorClass.class);
                 if(tapProcessorClass != null) {
@@ -43,12 +43,12 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
                             if(errorMessage == null)
                                 errorMessage = tapNodeSpecification.verify();
                             if(errorMessage != null) {
-                                PDKLogger.warn(TAG, "Tap node specification is illegal, will be ignored, path {} content {} errorMessage {}", tapProcessorClass.value(), json, errorMessage);
+                                TapLogger.warn(TAG, "Tap node specification is illegal, will be ignored, path {} content {} errorMessage {}", tapProcessorClass.value(), json, errorMessage);
                                 continue;
                             }
                             String connectorType = findConnectorType(clazz);
                             if(connectorType == null) {
-                                PDKLogger.error(TAG, "Processor class for id {} title {} only have TapProcessor annotation, but not implement TapProcessor which is must, {} will be ignored...", tapNodeSpecification.getId(), tapNodeSpecification.getName(), clazz);
+                                TapLogger.error(TAG, "Processor class for id {} title {} only have TapProcessor annotation, but not implement TapProcessor which is must, {} will be ignored...", tapNodeSpecification.getId(), tapNodeSpecification.getName(), clazz);
                                 continue;
                             }
                             TapNodeInfo tapNodeInfo = newerIdGroupTapNodeInfoMap.get(tapNodeSpecification.idAndGroup());
@@ -58,23 +58,23 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
                                 tapNodeInfo.setNodeType(connectorType);
                                 tapNodeInfo.setNodeClass(clazz);
                                 newerIdGroupTapNodeInfoMap.put(tapNodeSpecification.idAndGroup(), tapNodeInfo);
-                                PDKLogger.info(TAG, "Found new processor {} type {} version {} buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getVersion());
+                                TapLogger.info(TAG, "Found new processor {} type {} version {} buildNumber {}", tapNodeSpecification.idAndGroup(), connectorType, tapNodeSpecification.getVersion(), tapNodeSpecification.getVersion());
                             } else {
                                 TapNodeSpecification specification = tapNodeInfo.getTapNodeSpecification();
                                 tapNodeInfo.setTapNodeSpecification(specification);
                                 tapNodeInfo.setNodeType(connectorType);
                                 tapNodeInfo.setNodeClass(clazz);
-                                PDKLogger.warn(TAG, "Found newer processor {} type {}", tapNodeSpecification.idAndGroup(), connectorType);
+                                TapLogger.warn(TAG, "Found newer processor {} type {}", tapNodeSpecification.idAndGroup(), connectorType);
                             }
                         } catch(Throwable throwable) {
-                            PDKLogger.error(TAG, "Handle tap node specification failed, path {} error {}", tapProcessorClass.value(), throwable.getMessage());
+                            TapLogger.error(TAG, "Handle tap node specification failed, path {} error {}", tapProcessorClass.value(), throwable.getMessage());
                         }
                     } else {
-                        PDKLogger.error(TAG, "Resource {} doesn't be found, processor class {} will be ignored", tapProcessorClass.value(), clazz);
+                        TapLogger.error(TAG, "Resource {} doesn't be found, processor class {} will be ignored", tapProcessorClass.value(), clazz);
                     }
                 }
             }
-            PDKLogger.info(TAG, "--------------TapProcessor Classes End-------------");
+            TapLogger.info(TAG, "--------------TapProcessor Classes End-------------");
         }
     }
 

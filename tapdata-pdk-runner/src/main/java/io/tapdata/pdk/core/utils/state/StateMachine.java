@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.utils.state;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -144,11 +144,11 @@ public class StateMachine<K, T> {
         if(stateObj == null) {
             IllegalArgumentException throwable = new IllegalArgumentException(name + ": State " + state + " is not configured, reason " + reason + " for obj " + t);
             if(stateErrorOccurredExecutor != null) {
-                PDKLogger.error(TAG, "{}: go to state {}, stateObj not exist", name, state);
+                TapLogger.error(TAG, "{}: go to state {}, stateObj not exist", name, state);
                 try {
                     stateErrorOccurredExecutor.onError(throwable, currentState, state, this.t, this);
                 } catch (Throwable t1) {
-                    PDKLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {}", t1.getMessage(), state, currentState, t, reason);
+                    TapLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {}", t1.getMessage(), state, currentState, t, reason);
                 }
                 return;
             } else {
@@ -162,11 +162,11 @@ public class StateMachine<K, T> {
             if(currentStateObj == null) {
                 IllegalStateException throwable = new IllegalStateException(name + ": CurrentState is illegal " + currentState + " maybe caused by modifying state configuration during running the state machine. Force currentState to be null. obj " + t + " reason " + reason);
                 if(stateErrorOccurredExecutor != null) {
-                    PDKLogger.error(TAG, String.format("%s: go to state %s, currentStateObj not exist", name, state));
+                    TapLogger.error(TAG, String.format("%s: go to state %s, currentStateObj not exist", name, state));
                     try {
                         stateErrorOccurredExecutor.onError(throwable, currentState, state, this.t, this);
                     } catch (Throwable t1) {
-                        PDKLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {}", t1.getMessage(), state, currentState, t, reason);
+                        TapLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {}", t1.getMessage(), state, currentState, t, reason);
                     }
                     return;
                 } else {
@@ -181,11 +181,11 @@ public class StateMachine<K, T> {
             if(!gotoStates.contains(state)) {
                 IllegalStateException throwable = new IllegalStateException(name + ": Current state is " + currentState + ", can NOT go to state " + state + " obj " + t + " reason " + reason);
                 if(stateErrorOccurredExecutor != null) {
-                    PDKLogger.error(TAG, "{}: currentState {} go to state {}, not defined in nextStates: {}", name, currentState, state, gotoStates);
+                    TapLogger.error(TAG, "{}: currentState {} go to state {}, not defined in nextStates: {}", name, currentState, state, gotoStates);
                     try {
                         stateErrorOccurredExecutor.onError(throwable, currentState, state, this.t, this);
                     } catch (Throwable t1) {
-                        PDKLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {}", t1.getMessage(), state, currentState, t, reason);
+                        TapLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {}", t1.getMessage(), state, currentState, t, reason);
                     }
                     return;
                 } else {
@@ -196,14 +196,14 @@ public class StateMachine<K, T> {
 
         StateExecutor<K, T> executor = stateObj.getStateExecutor();
         K lastState = currentState;
-        PDKLogger.debug(TAG, "{}: [changeState] StateMachine currentState {} goes to {} successfully. reason {} obj {}", name, currentState, state, reason, t);
+        TapLogger.debug(TAG, "{}: [changeState] StateMachine currentState {} goes to {} successfully. reason {} obj {}", name, currentState, state, reason, t);
         currentState = state;
         if(stateBeforeExecutor != null) {
             try {
                 stateBeforeExecutor.execute(this.t, this);
             } catch(Throwable t) {
                 t.printStackTrace();
-                PDKLogger.error(TAG, "{}: State before executor from {} to {} failed, {} for stateBeforeExecutor {}", name, lastState, currentState, t.getMessage(), stateBeforeExecutor);
+                TapLogger.error(TAG, "{}: State before executor from {} to {} failed, {} for stateBeforeExecutor {}", name, lastState, currentState, t.getMessage(), stateBeforeExecutor);
             }
         }
         if(executor != null) {
@@ -217,7 +217,7 @@ public class StateMachine<K, T> {
                         leaveStateExecutor.execute(t, this);
                     } catch(Throwable t) {
                         t.printStackTrace();
-                        PDKLogger.error(TAG, "{}: Leave state from {} to {} failed, {} for leaveStateExecutor {}", name, lastState, currentState, t.getMessage(), leaveStateExecutor);
+                        TapLogger.error(TAG, "{}: Leave state from {} to {} failed, {} for leaveStateExecutor {}", name, lastState, currentState, t.getMessage(), leaveStateExecutor);
                     }
                 }
                 executor.execute(this.t, this);
@@ -228,23 +228,23 @@ public class StateMachine<K, T> {
                             stateListener.stateChanged(lastState, currentState, t);
                         } catch(Throwable t) {
                             t.printStackTrace();
-                            PDKLogger.error(TAG, "{}: State changed callback failed, {} for listener {}", name, t.getMessage(), stateListener);
+                            TapLogger.error(TAG, "{}: State changed callback failed, {} for listener {}", name, t.getMessage(), stateListener);
                         }
                     });
                 }
             } catch(Throwable t) {
                 t.printStackTrace();
                 if(stateErrorOccurredExecutor != null) {
-                    PDKLogger.error(TAG, "{}: Execute state executor failed, [{}] state {} from state {} obj {} reason {} will invoke stateErrorOccurredExecutor#onError method", name, t.getMessage(), state, lastState, t, reason);
+                    TapLogger.error(TAG, "{}: Execute state executor failed, [{}] state {} from state {} obj {} reason {} will invoke stateErrorOccurredExecutor#onError method", name, t.getMessage(), state, lastState, t, reason);
                     try {
                         stateErrorOccurredExecutor.onError(t, lastState, state, this.t, this);
                     } catch (Throwable t1) {
                         currentState = lastState;
-                        PDKLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {} will change back to last state {}", t1.getMessage(), state, lastState, t, reason, lastState);
+                        TapLogger.error(TAG, "Execute state occurred error executor failed, [{}] state {} from state {} obj {} reason {} will change back to last state {}", t1.getMessage(), state, lastState, t, reason, lastState);
                     }
                 } else {
                     currentState = lastState;
-                    PDKLogger.error(TAG, "Execute state executor failed, [{}] state {} from state {} obj {} reason {} will change back to last state {} because no stateErrorOccurredExecutor", t.getMessage(), state, lastState, t, reason, lastState);
+                    TapLogger.error(TAG, "Execute state executor failed, [{}] state {} from state {} obj {} reason {} will change back to last state {} because no stateErrorOccurredExecutor", t.getMessage(), state, lastState, t, reason, lastState);
                 }
             }
         }

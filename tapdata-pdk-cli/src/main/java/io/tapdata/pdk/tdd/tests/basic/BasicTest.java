@@ -3,8 +3,7 @@ package io.tapdata.pdk.tdd.tests.basic;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.logger.PDKLogger;
-import io.tapdata.pdk.core.tapnode.TapNodeInfo;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -98,7 +97,7 @@ public class BasicTest extends PDKTestBase {
         }
 
         if (!missingInConnection.isEmpty())
-            PDKLogger.warn(TAG, "Missing keys " + Arrays.toString(missingInConnection.toArray()) + " in connection test config json file which is defined in spec json file, \"configOptions.connection.properties\"");
+            TapLogger.warn(TAG, "Missing keys " + Arrays.toString(missingInConnection.toArray()) + " in connection test config json file which is defined in spec json file, \"configOptions.connection.properties\"");
     }
 
 }

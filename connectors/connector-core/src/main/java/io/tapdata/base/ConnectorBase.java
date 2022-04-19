@@ -13,7 +13,7 @@ import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
-import io.tapdata.pdk.apis.utils.FormatUtils;
+import io.tapdata.entity.utils.FormatUtils;
 import io.tapdata.entity.utils.TapUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
 

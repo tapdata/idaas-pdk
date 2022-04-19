@@ -14,7 +14,7 @@ import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -209,13 +209,13 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
                     inserted.incrementAndGet();
                 }
 
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
+                TapLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapUpdateRecordEvent) {
                 updated.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+                TapLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapDeleteRecordEvent) {
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
+                TapLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
         //Need to tell flow engine the write result

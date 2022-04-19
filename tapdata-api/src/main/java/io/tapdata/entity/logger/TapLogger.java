@@ -1,14 +1,14 @@
-package io.tapdata.pdk.apis.logger;
+package io.tapdata.entity.logger;
 
-import io.tapdata.pdk.apis.utils.FormatUtils;
+import io.tapdata.entity.utils.FormatUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class PDKLogger {
+public class TapLogger {
     private static LogListener logListener;
 
-    private PDKLogger() {
+    private TapLogger() {
     }
 
     private static boolean enable = true;
@@ -165,7 +165,7 @@ public class PDKLogger {
     }
 
     public static void setLogListener(LogListener logListener) {
-        PDKLogger.logListener = logListener;
+        TapLogger.logListener = logListener;
     }
 
     static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");

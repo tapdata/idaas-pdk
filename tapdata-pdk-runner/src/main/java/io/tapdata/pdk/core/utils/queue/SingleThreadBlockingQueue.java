@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.utils.queue;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
@@ -146,7 +146,7 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
 //                    handleList.clear();
                 }  catch(Throwable throwable) {
                     throwable.printStackTrace();
-                    PDKLogger.error(TAG, "{} occurred unknown error, {}", name, throwable.getMessage());
+                    TapLogger.error(TAG, "{} occurred unknown error, {}", name, throwable.getMessage());
                 }
             }
         }
@@ -185,7 +185,7 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
                         this.wait(120000);
                     } catch (InterruptedException interruptedException) {
                         interruptedException.printStackTrace();
-                        PDKLogger.error(TAG, "{} is interrupted, {}", name, interruptedException.getMessage());
+                        TapLogger.error(TAG, "{} is interrupted, {}", name, interruptedException.getMessage());
                         Thread.currentThread().interrupt();
                     }
                 }
@@ -275,10 +275,10 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
                 .withExecutorService(ExecutorsManager.getInstance().getExecutorService())
                 .withHandler(o -> {
 //                    Thread.sleep(10);
-                    PDKLogger.info(TAG, Arrays.toString(o.toArray()));
+                    TapLogger.info(TAG, Arrays.toString(o.toArray()));
                 })
                 .withErrorHandler((o, throwable) -> {
-                    PDKLogger.error(TAG, Arrays.toString(o.toArray()));
+                    TapLogger.error(TAG, Arrays.toString(o.toArray()));
                 }).start();
                 long time = System.currentTimeMillis();
         for(int i = 0; i < 4000; i++) {

@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.executor;
 
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
 import java.util.concurrent.*;
@@ -37,14 +37,14 @@ public class ExecutorsManager {
             int keepAlive = CommonUtils.getPropertyInt("pdk_thread_keepAlive", 120);
             int queueSize = CommonUtils.getPropertyInt("pdk_thread_queue_size", 100);
             ThreadPoolExecutor theExecutorService = new ThreadPoolExecutor(coreSize, maximumPoolSize, keepAlive, TimeUnit.SECONDS, new LinkedBlockingDeque<>(queueSize), new io.tapdata.pdk.core.executor.ThreadFactory("OceanusExecutorService-%d"), (r, executor) -> {
-                PDKLogger.error(TAG, "Thread is rejected, runnable {} pool {}", r, executor);
+                TapLogger.error(TAG, "Thread is rejected, runnable {} pool {}", r, executor);
             });
             theExecutorService.allowCoreThreadTimeOut(true);
             executorService = theExecutorService;
 
             int scheduledCoreSize = CommonUtils.getPropertyInt("pdk_scheduled_thread_core_size", 4);
             scheduledExecutorService = new ScheduledThreadPoolExecutor(scheduledCoreSize, new io.tapdata.pdk.core.executor.ThreadFactory("OceanusScheduledExecutorService-%d"), (r, executor) -> {
-                PDKLogger.error(TAG, "ScheduledThread is rejected, runnable {} pool {}", r, executor);
+                TapLogger.error(TAG, "ScheduledThread is rejected, runnable {} pool {}", r, executor);
             });
         }
     }

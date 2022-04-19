@@ -1,7 +1,7 @@
 package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.workflow.engine.*;
@@ -46,7 +46,7 @@ public class StartCli extends CommonCli {
                             }
                         }
                     } else {
-                        PDKLogger.info(TAG, "File {} not found or not a file", file);
+                        TapLogger.info(TAG, "File {} not found or not a file", file);
                     }
                 }
             }

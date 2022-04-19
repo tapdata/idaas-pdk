@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.utils;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.reflection.ClassAnnotationHandler;
 import org.reflections.Reflections;
 
@@ -13,7 +13,7 @@ public class AnnotationUtils {
                         classAnnotationHandler.handle(reflections.getTypesAnnotatedWith(classAnnotationHandler.watchAnnotation()));
                     } catch (Throwable throwable) {
                         throwable.printStackTrace();
-                        PDKLogger.error(tag, "Handle class annotation {} failed, {}", classAnnotationHandler.getClass().getSimpleName(), throwable.getMessage());
+                        TapLogger.error(tag, "Handle class annotation {} failed, {}", classAnnotationHandler.getClass().getSimpleName(), throwable.getMessage());
                     }
                 }
             }

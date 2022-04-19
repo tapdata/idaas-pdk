@@ -1,8 +1,5 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.parser.Feature;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.event.TapBaseEvent;
@@ -21,13 +18,11 @@ import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
-import io.tapdata.pdk.apis.entity.QueryOperator;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
-import io.tapdata.pdk.apis.logger.PDKLogger;
-import io.tapdata.pdk.apis.utils.StateListener;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
@@ -38,7 +33,6 @@ import io.tapdata.pdk.core.utils.LoggerUtils;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
@@ -89,7 +83,7 @@ public class SourceNodeDriver extends Driver {
             if(sourceStateListener != null)
                 sourceStateListener.stateChanged(STATE_STARTED);
         }, TAG);
-        PDKLogger.info(TAG, "SourceNodeDriver started, {}", LoggerUtils.sourceNodeMessage(sourceNode));
+        TapLogger.info(TAG, "SourceNodeDriver started, {}", LoggerUtils.sourceNodeMessage(sourceNode));
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 
         //Fill the discovered table back into connector context
@@ -167,7 +161,7 @@ public class SourceNodeDriver extends Driver {
                         if (events != null && !events.isEmpty()) {
                             if(events.size() > batchLimit)
                                 throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
-                            PDKLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                            TapLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
 //                            offer(events, (theEvents) -> filterEvents(theEvents));
                             offerToQueue(events);
 
@@ -182,7 +176,7 @@ public class SourceNodeDriver extends Driver {
                                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_OFFSET, () -> {
                                     String offsetState = batchOffsetFunction.batchOffset(getSourceNode().getConnectorContext());
                                     if(offsetState != null) {
-                                        PDKLogger.debug(TAG, "Batch read update offset from {} to {}", this.batchOffsetStr, offsetState);
+                                        TapLogger.debug(TAG, "Batch read update offset from {} to {}", this.batchOffsetStr, offsetState);
                                         batchOffsetStr = offsetState;
                                     }
                                 }, "Batch offset " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
@@ -197,7 +191,7 @@ public class SourceNodeDriver extends Driver {
                             if(sourceStateListener != null)
                                 sourceStateListener.stateChanged(STATE_BATCH_ENDED);
                         }, TAG);
-                        PDKLogger.debug(TAG, "Batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
+                        TapLogger.debug(TAG, "Batch read accomplished, {}", LoggerUtils.sourceNodeMessage(sourceNode));
                     }
                 }
             }
@@ -211,7 +205,7 @@ public class SourceNodeDriver extends Driver {
                         if (events != null) {
                             if(events.size() > batchLimit)
                                 throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
-                            PDKLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                            TapLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offerToQueue(events);
 
 //                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
@@ -226,11 +220,11 @@ public class SourceNodeDriver extends Driver {
                             pdkInvocationMonitor.invokePDKMethod(PDKMethod.STREAM_OFFSET, () -> {
                                 String offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), null);
                                 if (offsetState != null) {
-                                    PDKLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
+                                    TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
                                     this.streamOffsetStr = offsetState;
                                 }
                             }, "Stream read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
-                                PDKLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
+                                TapLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
                             });
                         }
                     }).stateListener((from, to) -> {
@@ -287,7 +281,7 @@ public class SourceNodeDriver extends Driver {
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         ControlFunction controlFunction = sourceNode.getConnectorFunctions().getControlFunction();
 
-        PDKLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+        TapLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
         for(ControlEvent controlEvent : events) {
             if(controlFunction != null) {
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.CONTROL, () -> {
@@ -363,7 +357,7 @@ public class SourceNodeDriver extends Driver {
                     newEvents.add(newTapEvent);
                 } catch (Throwable e) {
                     e.printStackTrace();
-                    PDKLogger.error(TAG, "New instance for {} failed, {}. TapEvent {} will be ignored", tapEvent.getClass(), e.getMessage(), tapEvent);
+                    TapLogger.error(TAG, "New instance for {} failed, {}. TapEvent {} will be ignored", tapEvent.getClass(), e.getMessage(), tapEvent);
                 }
             }
         }
@@ -385,7 +379,7 @@ public class SourceNodeDriver extends Driver {
                             entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getOriginType(), result.getParams()));
                         }
                     } else {
-                        PDKLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition. {}", entry.getValue().getOriginType(), LoggerUtils.sourceNodeMessage(sourceNode));
+                        TapLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition. {}", entry.getValue().getOriginType(), LoggerUtils.sourceNodeMessage(sourceNode));
                     }
                 }
             }
@@ -404,7 +398,7 @@ public class SourceNodeDriver extends Driver {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_QUERY_BY_ADVANCE_FILTER,
                     () -> queryByAdvanceFilterFunction.query(sourceNode.getConnectorContext(), TapAdvanceFilter.create().limit(sampleSize), (filterResults) -> {
                         if (filterResults != null && filterResults.getResults() != null) {
-                            PDKLogger.debug(TAG, "Batch read {} of events for sample field data types", filterResults.getResults().size());
+                            TapLogger.debug(TAG, "Batch read {} of events for sample field data types", filterResults.getResults().size());
                             fillNameFieldsFromSampleRecords(nameFieldMap, filterResults.getResults(), table.getDefaultPrimaryKeys());
                         }
                     }), "Batch read for sample data types " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
@@ -436,7 +430,7 @@ public class SourceNodeDriver extends Driver {
                         combinedValueMap.put(entry.getKey(), entry.getValue());
                     } else if(newCodec != null) { // newCodec != null && existingCodec != null
                         if(!newCodec.equals(existingCodec)) {
-                            PDKLogger.error(TAG, "Found conflict field {} while sampling records, existing codec is {}, new codec is {}, the new codec will be ignored.", entry.getKey(), existingCodec.getClass().getSimpleName(), newCodec.getClass().getSimpleName());
+                            TapLogger.error(TAG, "Found conflict field {} while sampling records, existing codec is {}, new codec is {}, the new codec will be ignored.", entry.getKey(), existingCodec.getClass().getSimpleName(), newCodec.getClass().getSimpleName());
                         }
                     }
                 }

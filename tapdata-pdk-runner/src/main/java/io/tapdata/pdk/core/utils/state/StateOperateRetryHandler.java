@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.utils.state;
 
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -80,7 +80,7 @@ public class StateOperateRetryHandler<K, T> {
                                     operateFailedOccurError.operate(false, retryCount, MAX_RETRY, t, tt, stateMachine);
                                 } catch (Throwable throwable) {
                                     throwable.printStackTrace();
-                                    PDKLogger.error(TAG, "operateFailedOccurError failed, " + throwable.getMessage());
+                                    TapLogger.error(TAG, "operateFailedOccurError failed, " + throwable.getMessage());
                                 }
                             }
                         }
@@ -94,7 +94,7 @@ public class StateOperateRetryHandler<K, T> {
                                     operateFailedOccurError.operate(true, retryCount, MAX_RETRY, t, tt, stateMachine);
                                 } catch (Throwable throwable) {
                                     throwable.printStackTrace();
-                                    PDKLogger.error(TAG, "operateFailedOccurError failed, " + throwable.getMessage());
+                                    TapLogger.error(TAG, "operateFailedOccurError failed, " + throwable.getMessage());
                                 }
                             }
                         }

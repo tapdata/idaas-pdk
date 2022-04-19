@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.utils;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -44,7 +44,7 @@ public class ReflectionUtil {
         }
 
         if (theClass != null) {
-            PDKLogger.debug(TAG, "Convert class from " + clazz + " to " + theClass);
+            TapLogger.debug(TAG, "Convert class from " + clazz + " to " + theClass);
             return theClass;
         }
         return clazz;

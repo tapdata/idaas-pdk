@@ -23,7 +23,7 @@ import io.tapdata.pdk.apis.functions.connector.source.BatchOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.api.*;
 import io.tapdata.pdk.core.connector.TapConnector;
@@ -95,11 +95,11 @@ public class PDKTestBase {
         for (TapNodeInfo nodeInfo : tapNodeInfoCollection) {
             TapNodeSpecification specification = nodeInfo.getTapNodeSpecification();
             String iconPath = specification.getIcon();
-            PDKLogger.info(TAG, "Found connector name {} id {} group {} version {} icon {}", specification.getName(), specification.getId(), specification.getGroup(), specification.getVersion(), specification.getIcon());
+            TapLogger.info(TAG, "Found connector name {} id {} group {} version {} icon {}", specification.getName(), specification.getId(), specification.getGroup(), specification.getVersion(), specification.getIcon());
             if (StringUtils.isNotBlank(iconPath)) {
                 InputStream is = nodeInfo.readResource(iconPath);
                 if (is == null) {
-                    PDKLogger.error(TAG, "Icon image file doesn't be found for url {} which defined in spec json file.");
+                    TapLogger.error(TAG, "Icon image file doesn't be found for url {} which defined in spec json file.");
                 }
             }
         }
@@ -211,7 +211,7 @@ public class PDKTestBase {
                             throw new TimeoutException("Waited " + seconds + " seconds and still not completed, consider timeout execution.");
                     } catch (InterruptedException interruptedException) {
                         interruptedException.printStackTrace();
-                        PDKLogger.error(TAG, "Completed wait interrupted " + interruptedException.getMessage());
+                        TapLogger.error(TAG, "Completed wait interrupted " + interruptedException.getMessage());
                         Thread.currentThread().interrupt();
                     }
                 }
@@ -326,7 +326,7 @@ public class PDKTestBase {
 
     @BeforeEach
     public void setup() {
-        PDKLogger.info(TAG, "************************{} setup************************", this.getClass().getSimpleName());
+        TapLogger.info(TAG, "************************{} setup************************", this.getClass().getSimpleName());
         Map<String, DataMap> testConfigMap = readTestConfig(testConfigFile);
         assertNotNull(testConfigMap, "testConfigFile " + testConfigFile + " read to json failed");
         connectionOptions = testConfigMap.get("connection");
@@ -338,7 +338,7 @@ public class PDKTestBase {
     public void tearDown() {
         if (dag != null) {
             if(DataFlowEngine.getInstance().stopDataFlow(dag.getId())) {
-                PDKLogger.info(TAG, "************************{} tearDown************************", this.getClass().getSimpleName());
+                TapLogger.info(TAG, "************************{} tearDown************************", this.getClass().getSimpleName());
             }
         }
     }

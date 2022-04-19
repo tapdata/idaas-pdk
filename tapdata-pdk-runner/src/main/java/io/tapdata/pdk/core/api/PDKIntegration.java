@@ -1,22 +1,11 @@
 package io.tapdata.pdk.core.api;
 
 import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
-import io.tapdata.entity.event.TapBaseEvent;
-import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
-import io.tapdata.entity.event.dml.TapInsertRecordEvent;
-import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
-import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
-import io.tapdata.entity.mapping.TypeExprResult;
-import io.tapdata.entity.mapping.type.TapMapping;
-import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.TapConnectorNode;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
-import io.tapdata.pdk.apis.logger.PDKLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.apis.TapProcessor;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -30,14 +19,8 @@ import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
-import io.tapdata.pdk.core.utils.LoggerUtils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 public class PDKIntegration {
     private static TapConnectorManager tapConnectorManager;

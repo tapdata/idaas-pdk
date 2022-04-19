@@ -4,7 +4,7 @@ import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.SourceNode;
@@ -69,9 +69,9 @@ public class BenchmarkTest extends PDKTestBase {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     Instant now = Instant.now();
-                                    PDKLogger.debug("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
-                                    PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "Millis : {}", Duration.between(startTime, now).toMillis());
-                                    PDKLogger.info("[PERFORMANCE_TEST_FINISH]", "QPS : {}", String.format("%f", (1000000.0 / Duration.between(startTime, now).toMillis()) * 1000));
+                                    TapLogger.debug("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                                    TapLogger.info("[PERFORMANCE_TEST_FINISH]", "Millis : {}", Duration.between(startTime, now).toMillis());
+                                    TapLogger.info("[PERFORMANCE_TEST_FINISH]", "QPS : {}", String.format("%f", (1000000.0 / Duration.between(startTime, now).toMillis()) * 1000));
                                     completed();
                                 }
                             });

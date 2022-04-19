@@ -3,7 +3,7 @@ package io.tapdata.pdk.cli.commands;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.ConnectionNode;
@@ -54,7 +54,7 @@ public class DiscoverSchemaCli extends CommonCli {
                 @Override
                 public void accept(List<TapTable> tables) {
                     for(TapTable table : tables) {
-                        PDKLogger.info(TAG, "Table: {}", table);
+                        TapLogger.info(TAG, "Table: {}", table);
                     }
                 }
             });

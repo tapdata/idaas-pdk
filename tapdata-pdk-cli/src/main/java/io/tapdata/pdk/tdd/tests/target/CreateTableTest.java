@@ -5,7 +5,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.target.*;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.SourceNode;
@@ -67,7 +67,7 @@ public class CreateTableTest extends PDKTestBase {
                             checkFunctions(targetNode.getConnectorFunctions(), CreateTableTest.testFunctions());
                         } else if (toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                PDKLogger.debug("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                                TapLogger.debug("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     verifyTableFields();
                                     processCreateTable(dataFlowEngine, dag);

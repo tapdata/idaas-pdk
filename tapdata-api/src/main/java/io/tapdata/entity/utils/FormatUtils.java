@@ -1,4 +1,4 @@
-package io.tapdata.pdk.apis.utils;
+package io.tapdata.entity.utils;
 
 public class FormatUtils {
     public static String format(String message, Object... params) {

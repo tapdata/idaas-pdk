@@ -2,7 +2,7 @@ package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.ConnectionNode;
@@ -47,7 +47,7 @@ public class ConnectionTestCli extends CommonCli {
                     .withPdkId(pdkId)
                     .withConnectionConfig(dataMap)
                     .build();
-            connectionNode.getConnectorNode().connectionTest(connectionNode.getConnectionContext(), testItem -> PDKLogger.info(TAG, "testItem {}", testItem));
+            connectionNode.getConnectorNode().connectionTest(connectionNode.getConnectionContext(), testItem -> TapLogger.info(TAG, "testItem {}", testItem));
 
         } catch (Throwable throwable) {
             CommonUtils.logError(TAG, "AllTables failed", throwable);

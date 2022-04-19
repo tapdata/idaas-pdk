@@ -8,7 +8,7 @@ import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
 import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.SourceNode;
@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -114,7 +113,7 @@ public class StreamReadTest extends PDKTestBase {
                 dataFlowEngine.startDataFlow(tddToSourceDag, originDataFlowDescriber.getJobOptions(), (fromState, toState, dataFlowWorker) -> {
                     if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                         dataFlowEngine.sendExternalTapEvent(tddSourceToSourceAsTargetDagId, new PatrolEvent().patrolListener((nodeId, state) -> {
-                            PDKLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                            TapLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                             if (nodeId.equals(testSourceAsTargetNodeId) && state == PatrolEvent.STATE_LEAVE) {
 //                                for (int i = 0; i < 10; i++) {
 //                                    DataMap dataMap = buildInsertRecord();
@@ -161,7 +160,7 @@ public class StreamReadTest extends PDKTestBase {
                     if(System.currentTimeMillis() - startTime > TimeUnit.SECONDS.toMillis(maxWaitSeconds)) {
                         $(() -> fail("Failed to enter stream started state, which need use StreamReadConsumer#streamReadStarted in streamRead method to mark when stream is started. "));
                     } else {
-                        PDKLogger.info(TAG, "Waiting connector enter stream started state to do stream test, will timeout after {} second", maxWaitSeconds - ((System.currentTimeMillis() - startTime) / 1000));
+                        TapLogger.info(TAG, "Waiting connector enter stream started state to do stream test, will timeout after {} second", maxWaitSeconds - ((System.currentTimeMillis() - startTime) / 1000));
                     }
                 }, 5, 5, TimeUnit.SECONDS);
                 dataFlowWorker.setSourceStateListener(state -> {
@@ -176,7 +175,7 @@ public class StreamReadTest extends PDKTestBase {
 
     private void startStreamReadTest() {
         PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-            PDKLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+            TapLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
             if (nodeId.equals(testSourceAsTargetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 AtomicInteger cnt = new AtomicInteger();
                 for (int i = 0; i < 10; i++) {
@@ -188,7 +187,7 @@ public class StreamReadTest extends PDKTestBase {
                 sendPatrolEvent(dataFlowEngine, tddToSourceDag, new PatrolEvent().patrolListener((nodeId1, state1) -> {
                     if(nodeId1.equals(testSourceAsTargetNodeId) && state1 == PatrolEvent.STATE_LEAVE) {
                         ExecutorsManager.getInstance().getScheduledExecutorService().schedule(this::verifyWriteTDDTargetResult, 3, TimeUnit.SECONDS);
-                        PDKLogger.info(TAG, "Wait stream read for 3 seconds, then verify result...");
+                        TapLogger.info(TAG, "Wait stream read for 3 seconds, then verify result...");
                     }
                 }));
 //                        ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> {

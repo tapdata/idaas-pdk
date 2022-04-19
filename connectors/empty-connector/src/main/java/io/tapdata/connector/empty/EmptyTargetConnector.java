@@ -16,7 +16,7 @@ import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -179,7 +179,7 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
                     inserted.incrementAndGet();
                 }
 
-                PDKLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
+                TapLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
 
@@ -189,7 +189,7 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
                     primaryKeyRecordMap.put(primaryKey(connectorContext, before), value);
                     updated.incrementAndGet();
                 }
-                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
+                TapLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapDeleteRecordEvent) {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
@@ -197,7 +197,7 @@ public class EmptyTargetConnector extends ConnectorBase implements TapConnector 
                     primaryKeyRecordMap.remove(primaryKey(connectorContext, before));
                 }
                 deleted.incrementAndGet();
-                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
+                TapLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
             }
         }
         //Need to tell flow engine the write result

@@ -2,7 +2,7 @@ package io.tapdata.pdk.core.classloader;
 
 import com.google.common.collect.Lists;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.AnnotationUtils;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -86,7 +86,7 @@ public class ExternalJarManager {
             loadJars(true);
             loadAtRuntime();
         } else {
-            PDKLogger.warn(TAG, "Already started");
+            TapLogger.warn(TAG, "Already started");
         }
         return this;
     }
@@ -102,7 +102,7 @@ public class ExternalJarManager {
     private void loadAtRuntime() {
         if (loadNewJarAtRuntime || updateJarWhenIdleAtRuntime) {
             int seconds = CommonUtils.getPropertyInt("pdk_load_jar_interval_seconds", 10);
-            PDKLogger.info(TAG, "Check jar files every {} seconds for loadNewJarAtRuntime {} updateJarWhenIdleAtRuntime {}", seconds, loadNewJarAtRuntime, updateJarWhenIdleAtRuntime);
+            TapLogger.info(TAG, "Check jar files every {} seconds for loadNewJarAtRuntime {} updateJarWhenIdleAtRuntime {}", seconds, loadNewJarAtRuntime, updateJarWhenIdleAtRuntime);
 
             ExecutorsManager.getInstance().getScheduledExecutorService().scheduleAtFixedRate(() -> {
                 try {
@@ -121,11 +121,11 @@ public class ExternalJarManager {
 
     private synchronized boolean loadJars(boolean firstTime) {
         if(jarAnnotationHandlersListener == null) {
-            PDKLogger.error(TAG, "Jar annotation handlers listener is not specified");
+            TapLogger.error(TAG, "Jar annotation handlers listener is not specified");
             return false;
         }
         if(jarFoundListener == null) {
-            PDKLogger.error(TAG, "Jar found listener is not specified");
+            TapLogger.error(TAG, "Jar found listener is not specified");
             return false;
         }
         Collection<File> jars = null;
@@ -136,7 +136,7 @@ public class ExternalJarManager {
 //        }
             File sourcePath = new File(path);
             if (!sourcePath.isDirectory()) {
-                PDKLogger.error(TAG, "Path {} is not a directory, external jars suppose to be in the directory", path);
+                TapLogger.error(TAG, "Path {} is not a directory, external jars suppose to be in the directory", path);
             }
             String runningPath = FilenameUtils.concat(path, "../tap-running/");
             File runningFolder = new File(runningPath);
@@ -155,7 +155,7 @@ public class ExternalJarManager {
         } else if(jarFiles != null && !jarFiles.isEmpty()) {
             jars = jarFiles;
         } else {
-            PDKLogger.error(TAG, "Load jars failed as path is null or jarFiles are null");
+            TapLogger.error(TAG, "Load jars failed as path is null or jarFiles are null");
             return false;
         }
         File finalTheRunningFolder = theRunningFolder;
@@ -174,7 +174,7 @@ public class ExternalJarManager {
                     if(!finalTheRunningFolder.exists()) {
                         FileUtils.forceMkdir(finalTheRunningFolder);
                     } else if(!finalTheRunningFolder.isDirectory()) {
-                        PDKLogger.warn(TAG, "tap-running is not a directory, will delete it, create a directory again");
+                        TapLogger.warn(TAG, "tap-running is not a directory, will delete it, create a directory again");
                         FileUtils.forceDelete(finalTheRunningFolder);
                         FileUtils.forceMkdir(finalTheRunningFolder);
                     } else {
@@ -197,17 +197,17 @@ public class ExternalJarManager {
                         )
                         .setUrls(urls)
                         .addClassLoader(dependencyURLClassLoader.getActualClassLoader()));
-                PDKLogger.info(TAG, "Analyze jar file {}", targetJarFile.getAbsolutePath());
-                PDKLogger.info(TAG, "Tapdata SDK will only scan classes under package 'io' or 'pdk', please ensure your annotated classes are following this rule. ");
+                TapLogger.info(TAG, "Analyze jar file {}", targetJarFile.getAbsolutePath());
+                TapLogger.info(TAG, "Tapdata SDK will only scan classes under package 'io' or 'pdk', please ensure your annotated classes are following this rule. ");
                 AnnotationUtils.runClassAnnotationHandlers(reflections, jarAnnotationHandlersListener.annotationHandlers(jar, firstTime), TAG);
 
 //                Set<Class<?>> connectorClasses = reflections.getTypesAnnotatedWith(OpenAPIConnector.class, true);
             } catch (MalformedURLException e) {
                 error = e;
-                PDKLogger.error(TAG, "MalformedURL {} while load jar, error {}", jar.getAbsolutePath(), e.getMessage());
+                TapLogger.error(TAG, "MalformedURL {} while load jar, error {}", jar.getAbsolutePath(), e.getMessage());
             } catch (Throwable throwable) {
                 error = throwable;
-                PDKLogger.error(TAG, "Unknown error while load jar {}, error {}", jar.getAbsolutePath(), throwable.getMessage());
+                TapLogger.error(TAG, "Unknown error while load jar {}, error {}", jar.getAbsolutePath(), throwable.getMessage());
             } finally {
                 if(!ignored) {
                     Throwable finalError = error;
@@ -236,7 +236,7 @@ public class ExternalJarManager {
                     urls.add(jar.toURI().toURL());
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
-                    PDKLogger.warn(TAG, "MalformedURL {} while load jars, error {}", path, e.getMessage());
+                    TapLogger.warn(TAG, "MalformedURL {} while load jars, error {}", path, e.getMessage());
                 }
             });
             if (!urls.isEmpty()) {

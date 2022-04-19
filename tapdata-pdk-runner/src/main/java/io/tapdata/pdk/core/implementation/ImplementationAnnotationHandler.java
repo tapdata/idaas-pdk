@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.implementation;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.reflection.ClassAnnotationHandler;
@@ -22,7 +22,7 @@ public class ImplementationAnnotationHandler extends ClassAnnotationHandler {
     public void handle(Set<Class<?>> classes) throws CoreException {
         if(classes != null) {
             newInterfaceImplementationClassMap = new ConcurrentHashMap<>();
-            PDKLogger.debug(TAG, "--------------Implementation Classes Start-------------");
+            TapLogger.debug(TAG, "--------------Implementation Classes Start-------------");
             for(Class<?> clazz : classes) {
                 Implementation implementation = clazz.getAnnotation(Implementation.class);
                 if(implementation != null) {
@@ -41,11 +41,11 @@ public class ImplementationAnnotationHandler extends ClassAnnotationHandler {
                         canNotInitialized = e.getMessage();
                     }
                     if(canNotInitialized != null) {
-                        PDKLogger.error(TAG, "Implementation {} don't have non-args public constructor for type {} buildNumber {}, will be ignored, message {}", clazz, type, buildNumber, canNotInitialized);
+                        TapLogger.error(TAG, "Implementation {} don't have non-args public constructor for type {} buildNumber {}, will be ignored, message {}", clazz, type, buildNumber, canNotInitialized);
                         continue;
                     }
                     if(!interfaceClass.isAssignableFrom(clazz)) {
-                        PDKLogger.error(TAG, "Implementation {} don't implement interface {} for type {} buildNumber {}, will be ignored", clazz, interfaceClass, type, buildNumber);
+                        TapLogger.error(TAG, "Implementation {} don't implement interface {} for type {} buildNumber {}, will be ignored", clazz, interfaceClass, type, buildNumber);
                         continue;
                     }
 
@@ -59,7 +59,7 @@ public class ImplementationAnnotationHandler extends ClassAnnotationHandler {
                         typeClassHolderMap.put(type, implClass);
                         implClasses.setTypeClassHolderMap(typeClassHolderMap);
                         newInterfaceImplementationClassMap.put(interfaceClass, implClasses);
-                        PDKLogger.debug(TAG, "(New Interface) Implementation {} buildNumber {} type {} for interface {} will be applied", clazz, buildNumber, type, interfaceClass);
+                        TapLogger.debug(TAG, "(New Interface) Implementation {} buildNumber {} type {} for interface {} will be applied", clazz, buildNumber, type, interfaceClass);
                     } else {
                         ImplClass implClass = implClasses.getTypeClassHolderMap().get(type);
                         if(implClass == null) {
@@ -67,20 +67,20 @@ public class ImplementationAnnotationHandler extends ClassAnnotationHandler {
                             implClass.setClazz(clazz);
                             implClass.setBuildNumber(buildNumber);
                             implClasses.getTypeClassHolderMap().put(type, implClass);
-                            PDKLogger.debug(TAG, "(New ClassHolder) Implementation {} buildNumber {} type {} for interface {} will be applied", clazz, buildNumber, type, interfaceClass);
+                            TapLogger.debug(TAG, "(New ClassHolder) Implementation {} buildNumber {} type {} for interface {} will be applied", clazz, buildNumber, type, interfaceClass);
                         } else {
                             if(buildNumber > implClass.getBuildNumber()) {
                                 implClass.setBuildNumber(buildNumber);
                                 implClass.setClazz(clazz);
-                                PDKLogger.debug(TAG, "Implementation {} buildNumber {} type {} for interface {} will be applied, as buildNumber is bigger than current {} implementation class {}", clazz, buildNumber, type, interfaceClass, implClass.getBuildNumber(), implClass.getClazz());
+                                TapLogger.debug(TAG, "Implementation {} buildNumber {} type {} for interface {} will be applied, as buildNumber is bigger than current {} implementation class {}", clazz, buildNumber, type, interfaceClass, implClass.getBuildNumber(), implClass.getClazz());
                             } else {
-                                PDKLogger.warn(TAG, "Implementation {} buildNumber {} type {} for interface {} will be ignored, as buildNumber is smaller(or equal) than current {} implementation class {}", clazz, buildNumber, type, interfaceClass, implClass.getBuildNumber(), implClass.getClazz());
+                                TapLogger.warn(TAG, "Implementation {} buildNumber {} type {} for interface {} will be ignored, as buildNumber is smaller(or equal) than current {} implementation class {}", clazz, buildNumber, type, interfaceClass, implClass.getBuildNumber(), implClass.getClazz());
                             }
                         }
                     }
                 }
             }
-            PDKLogger.debug(TAG, "--------------Implementation Classes End-------------");
+            TapLogger.debug(TAG, "--------------Implementation Classes End-------------");
         }
     }
 

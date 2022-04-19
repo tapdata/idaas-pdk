@@ -3,7 +3,7 @@ package io.tapdata.pdk.core.workflow.engine;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.api.SourceAndTargetNode;
@@ -153,7 +153,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                 connect(parent.sourceNodeDriver, child.processorNodeDriver, jobOptions, "Source queue " + queueName + " to processor " + child.id);
                 connect(parent.sourceNodeDriver, child.targetNodeDriver, jobOptions, "Source queue " + queueName + " to target " + child.id);
             } else {
-                PDKLogger.error(TAG, "Source build path failed, child's processorNodeDriver or targetNodeDriver not found, nodeId {} type {} pdkId {} pdkGroup {} pdkVersion {}", child.id, child.type, child.pdkId, child.group, child.version);
+                TapLogger.error(TAG, "Source build path failed, child's processorNodeDriver or targetNodeDriver not found, nodeId {} type {} pdkId {} pdkGroup {} pdkVersion {}", child.id, child.type, child.pdkId, child.group, child.version);
             }
         }
         if(parent.processorNodeDriver != null) {
@@ -161,7 +161,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                 connect(parent.processorNodeDriver, child.processorNodeDriver, jobOptions, "Processor queue " + queueName + " to processor " + child.id);
                 connect(parent.processorNodeDriver, child.targetNodeDriver, jobOptions, "Processor queue " + queueName + " to target " + child.id);
             } else {
-                PDKLogger.error(TAG, "Processor build path failed, child's processorNodeDriver or targetNodeDriver not found, nodeId {} type {} pdkId {} pdkGroup {} pdkVersion {}", child.id, child.type, child.pdkId, child.group, child.version);
+                TapLogger.error(TAG, "Processor build path failed, child's processorNodeDriver or targetNodeDriver not found, nodeId {} type {} pdkId {} pdkGroup {} pdkVersion {}", child.id, child.type, child.pdkId, child.group, child.version);
             }
         }
     }

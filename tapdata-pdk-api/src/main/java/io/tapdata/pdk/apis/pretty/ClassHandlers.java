@@ -1,7 +1,5 @@
 package io.tapdata.pdk.apis.pretty;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.utils;
 
-import io.tapdata.pdk.apis.logger.PDKLogger;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.error.CoreException;
 import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.error.QuiteException;
@@ -33,7 +33,7 @@ public class CommonUtils {
         try {
             runnable.run();
         } catch(Throwable throwable) {
-            PDKLogger.error(tag, "AutoRetryAsync error {}, execute message {}, retry times {}, periodSeconds {}. ", throwable.getMessage(), message, times, periodSeconds);
+            TapLogger.error(tag, "AutoRetryAsync error {}, execute message {}, retry times {}, periodSeconds {}. ", throwable.getMessage(), message, times, periodSeconds);
             if(times > 0) {
                 ExecutorsManager.getInstance().getScheduledExecutorService().schedule(() -> {
                     autoRetryAsync(runnable, tag, message, times - 1, periodSeconds);
@@ -52,11 +52,11 @@ public class CommonUtils {
             runnable.run();
         } catch(CoreException coreException) {
             coreException.printStackTrace();
-            PDKLogger.error(tag, "Error code {} message {} will be ignored. ", coreException.getCode(), coreException.getMessage());
+            TapLogger.error(tag, "Error code {} message {} will be ignored. ", coreException.getCode(), coreException.getMessage());
         } catch(Throwable throwable) {
             if(!(throwable instanceof QuiteException)) {
                 throwable.printStackTrace();
-                PDKLogger.error(tag, "Unknown error message {} will be ignored. ", throwable.getMessage());
+                TapLogger.error(tag, "Unknown error message {} will be ignored. ", throwable.getMessage());
             }
         }
     }
@@ -86,7 +86,7 @@ public class CommonUtils {
     }
 
     public static void logError(String logTag, String prefix, Throwable throwable) {
-        PDKLogger.error(logTag, errorMessage(prefix, throwable));
+        TapLogger.error(logTag, errorMessage(prefix, throwable));
     }
 
     public static String errorMessage(String prefix, Throwable throwable) {
