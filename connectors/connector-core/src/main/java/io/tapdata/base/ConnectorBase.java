@@ -1,5 +1,6 @@
 package io.tapdata.base;
 
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.Entry;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -9,25 +10,21 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.entity.utils.FormatUtils;
-import io.tapdata.entity.utils.TapUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public abstract class ConnectorBase {
-    private static final TapUtils tapUtils = InstanceFactory.instance(TapUtils.class);
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
-    private static final JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
     private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
 
     public static void interval(Runnable runnable, int seconds) {
-        tapUtils.interval(runnable, seconds);
+        TapSimplify.interval(runnable, seconds);
     }
 
     public static Long toLong(Object value) {
@@ -67,15 +64,15 @@ public abstract class ConnectorBase {
     }
 
     public static String toJson(Object obj) {
-        return jsonParser.toJson(obj);
+        return TapSimplify.toJson(obj);
     }
 
     public static DataMap fromJson(String json) {
-        return jsonParser.fromJson(json);
+        return TapSimplify.fromJson(json);
     }
 
     public static <T> T fromJson(String json, Class<T> clazz) {
-        return jsonParser.fromJson(json, clazz);
+        return TapSimplify.fromJson(json, clazz);
     }
 
     public static String format(String message, Object... args) {
@@ -83,59 +80,59 @@ public abstract class ConnectorBase {
     }
 
     public static TapField field(String name, String originType) {
-        return new TapField(name, originType);
+        return TapSimplify.field(name, originType);
     }
 
     public static TapTable table(String tableName, String id) {
-        return new TapTable(tableName, id);
+        return TapSimplify.table(tableName, id);
     }
 
     public static TapTable table(String nameAndId) {
-        return new TapTable(nameAndId);
+        return TapSimplify.table(nameAndId);
     }
 
     public static TapString tapString() {
-        return new TapString();
+        return TapSimplify.tapString();
     }
 
     public static TapNumber tapNumber() {
-        return new TapNumber();
+        return TapSimplify.tapNumber();
     }
 
     public static TapRaw tapRaw() {
-        return new TapRaw();
+        return TapSimplify.tapRaw();
     }
 
     public static TapArray tapArray() {
-        return new TapArray();
+        return TapSimplify.tapArray();
     }
 
     public static TapMap tapMap() {
-        return new TapMap();
+        return TapSimplify.tapMap();
     }
 
     public static TapYear tapYear() {
-        return new TapYear();
+        return TapSimplify.tapYear();
     }
 
     public static TapDate tapDate() {
-        return new TapDate();
+        return TapSimplify.tapDate();
     }
 
     public static TapBoolean tapBoolean() {
-        return new TapBoolean();
+        return TapSimplify.tapBoolean();
     }
 
     public static TapBinary tapBinary() {
-        return new TapBinary();
+        return TapSimplify.tapBinary();
     }
 
     public static TapTime tapTime() {
-        return new TapTime();
+        return TapSimplify.tapTime();
     }
 
     public static TapDateTime tapDateTime() {
-        return new TapDateTime();
+        return TapSimplify.tapDateTime();
     }
 
     public static TestItem testItem(String item, int resultCode) {
@@ -146,42 +143,35 @@ public abstract class ConnectorBase {
     }
 
     public static Entry entry(String key, Object value) {
-        return new Entry(key, value);
+        return TapSimplify.entry(key, value);
     }
 
     public static <T> List<T> list(T... ts) {
-        return Arrays.asList(ts);
+        return TapSimplify.list(ts);
     }
 
     public static <T> List<T> list() {
-        return new ArrayList<T>();
+        return TapSimplify.list();
     }
 
     public static Map<String, Object> map() {
-        return new LinkedHashMap<>();
+        return TapSimplify.map();
     }
 
     public static Map<String, Object> map(Entry... entries) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        if(entries != null) {
-            for(Entry entry : entries) {
-                if(entry.getKey() != null && entry.getValue() != null)
-                    map.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return map;
+        return TapSimplify.map(entries);
     }
 
     public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, TapTable tapTable) {
-        return new TapInsertRecordEvent().init().after(after).table(tapTable);
+        return TapSimplify.insertRecordEvent(after, tapTable);
     }
 
     public static TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
-        return new TapDeleteRecordEvent().init().before(before).table(tapTable);
+        return TapSimplify.deleteDMLEvent(before, tapTable);
     }
 
     public static TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
-        return new TapUpdateRecordEvent().init().before(before).after(after).table(tapTable);
+        return TapSimplify.updateDMLEvent(before, after, tapTable);
     }
 
     public static WriteListResult<TapRecordEvent> writeListResult() {
@@ -189,13 +179,7 @@ public abstract class ConnectorBase {
     }
 
     public static void sleep(long milliseconds) {
-        if(milliseconds < 0)
-            return;
-        try {
-            Thread.sleep(milliseconds);
-        } catch (InterruptedException interruptedException) {
-            interruptedException.printStackTrace();
-        }
+        TapSimplify.sleep(milliseconds);
     }
 
     public static String formatTapDateTime(DateTime dateTime, String pattern) {
