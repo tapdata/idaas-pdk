@@ -214,6 +214,16 @@ public class TapNumberMapping extends TapMapping {
                     return -1L; //if bit didn't match, it is not acceptable
                 }
             }
+
+            if(tapNumber.getUnsigned() != null && tapNumber.getUnsigned() && unsigned != null) {
+                //number is unsigned, current mapping support unsigned, closer.
+                score += 10;
+            }
+
+            if(tapNumber.getZerofill() != null && tapNumber.getZerofill() && zerofill != null) {
+                //number is zerofill, current mapping support zerofill, closer.
+                score += 1;
+            }
             return score;
         }
 

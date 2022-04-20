@@ -78,6 +78,7 @@ class TargetTypesGeneratorTest {
                 "    \"bigint\":{\"bit\":64, \"to\":\"TapNumber\"},\n" +
                 "    \"largeint\":{\"bit\":128, \"to\":\"TapNumber\"},\n" +
                 "    \"float\":{\"bit\":32, \"to\":\"TapNumber\"},\n" +
+                "    \"myint[($bit)][unsigned]\":{\"bit\":32, \"unsigned\":\"unsigned\", \"to\":\"TapNumber\"},\n" +
                 "    \"double\":{\"bit\":64, \"to\":\"TapNumber\"},\n" +
                 "    \"decimal[($precision,$scale)]\":{\"precision\": [1, 27], \"defaultPrecision\": 10, \"scale\": [0, 9], \"defaultScale\": 0, \"to\": \"TapNumber\"},\n" +
                 "    \"date\":{\"byte\":3, \"range\":[\"0000-01-01\", \"9999-12-31\"], \"to\":\"TapDate\"},\n" +
@@ -96,12 +97,18 @@ class TargetTypesGeneratorTest {
                 .add(field("bigint unsigned", "bigint unsigned"))
                 .add(field("bigint(32) unsigned", "bigint(32) unsigned"))
                 .add(field("char(300)", "char(300)"))
-                .add(field("longtext", "longtext"))
+                .add(field("longtext", "longtext")) // exceed the max of target types
                 .add(field("double(32)", "double(32)"))
+                .add(field("mediumtext", "mediumtext"))
+                .add(field("bit(8)", "bit(8)")) //no binary in target types
+                .add(field("timestamp", "timestamp"))
+                .add(field("mediumint unsigned", "mediumint unsigned"))
+
         ;
         tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
         assertNotNull(sourceTable.getNameFieldMap().get("tinytext").getTapType());
         assertNotNull(sourceTable.getNameFieldMap().get("char(300)").getTapType());
+        assertNotNull(sourceTable.getNameFieldMap().get("bit(8)").getTapType());
 
         Map<String, TapField> targetFieldMap = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
 
