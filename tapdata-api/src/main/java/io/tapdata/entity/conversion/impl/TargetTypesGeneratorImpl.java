@@ -53,10 +53,18 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         return finalResult.data(targetFieldMap);
     }
 
+    static class HitTapMapping {
+        String hitExpression;
+        TapMapping tapMapping;
+        long score = Long.MIN_VALUE;
+    }
+
     TapResult<String> calculateBestTypeMapping(TapField field, DefaultExpressionMatchingMap matchingMap) {
-        AtomicReference<String> hitExpression = new AtomicReference<>();
-        AtomicReference<TapMapping> tapMappingReference = new AtomicReference<>();
-        AtomicLong bestScore = new AtomicLong(-1);
+        HitTapMapping bestTapMapping = new HitTapMapping();
+        HitTapMapping bestNotHitTapMapping = new HitTapMapping();
+//        AtomicReference<String> hitExpression = new AtomicReference<>();
+//        AtomicReference<TapMapping> tapMappingReference = new AtomicReference<>();
+//        AtomicLong bestScore = new AtomicLong(-1);
         matchingMap.iterate(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
             if(tapMapping != null) {
@@ -65,19 +73,34 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
 
                 long score = tapMapping.matchingScore(field);
-                if(score >= 0 && score > bestScore.get()) {
-                    bestScore.set(score);
-                    hitExpression.set(expressionValueEntry.getKey());
-                    tapMappingReference.set(tapMapping);
+                if(score >= 0) {
+                    if(score > bestTapMapping.score) {
+                        bestTapMapping.score = score;
+                        bestTapMapping.hitExpression = expressionValueEntry.getKey();
+                        bestTapMapping.tapMapping = tapMapping;
+                    }
+                } else {
+                    if(score > bestNotHitTapMapping.score) {
+                        bestNotHitTapMapping.score = score;
+                        bestNotHitTapMapping.hitExpression = expressionValueEntry.getKey();
+                        bestNotHitTapMapping.tapMapping = tapMapping;
+                    }
                 }
                 return false;
             }
             return false;
         });
-        String expression = hitExpression.get();
-        TapMapping tapMapping = tapMappingReference.get();
-        if(expression != null && tapMapping != null) {
-            return tapMapping.fromTapType(expression, field.getTapType());
+        if(bestTapMapping.tapMapping != null) {
+            if(bestTapMapping.hitExpression != null) {
+                return bestTapMapping.tapMapping.fromTapType(bestTapMapping.hitExpression, field.getTapType());
+            }
+        }
+        if(bestNotHitTapMapping.tapMapping != null) {
+            if(bestNotHitTapMapping.hitExpression != null) {
+                TapResult<String> tapResult = bestNotHitTapMapping.tapMapping.fromTapType(bestNotHitTapMapping.hitExpression, field.getTapType());
+                tapResult.addItem(new ResultItem("BEST_IN_UNMATCHED", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Select best in unmatched TapMapping, " + bestNotHitTapMapping.hitExpression));
+                return tapResult;
+            }
         }
         return null;
     }

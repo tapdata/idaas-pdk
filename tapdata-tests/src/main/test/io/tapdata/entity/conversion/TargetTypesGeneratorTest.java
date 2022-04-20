@@ -182,7 +182,7 @@ class TargetTypesGeneratorTest {
 //                .add(field("bigint unsigned", "bigint unsigned"))
                 .add(field("int(32) unsigned", "int(32) unsigned"))
 //                .add(field("char(300)", "char(300)"))
-//                .add(field("longtext", "longtext")) // exceed the max of target types
+                .add(field("longtext", "longtext")) // exceed the max of target types
 //                .add(field("double(32)", "double(32)"))
 //                .add(field("mediumtext", "mediumtext"))
 //                .add(field("bit(8)", "bit(8)")) //no binary in target types
@@ -211,6 +211,11 @@ class TargetTypesGeneratorTest {
         TapField decimal273 = nameFieldMap.get("decimal(27, -3)");
         assertEquals("decimal(27,0)", decimal273.getOriginType());
         assertEquals(-3, ((TapNumber)decimal273.getTapType()).getScale());
+
+        //longtext is larger than string, string is the only choice. 
+        TapField longtext = nameFieldMap.get("longtext");
+        assertEquals("string", longtext.getOriginType());
+        assertEquals(4294967296L, ((TapString)longtext.getTapType()).getBytes());
     }
 
 }

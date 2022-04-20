@@ -35,6 +35,6 @@ public class TapTimeMapping extends TapDateBase {
         if (field.getTapType() instanceof TapTime) {
             return 0L;
         }
-        return -1L;
+        return Long.MIN_VALUE;
     }
 }

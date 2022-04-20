@@ -8,15 +8,16 @@ import io.tapdata.entity.schema.type.TapType;
 
 import java.util.Map;
 
-public class TapStringMapping extends TapBytesBase {
+import static io.tapdata.entity.simplify.TapSimplify.tapString;
 
+public class TapStringMapping extends TapBytesBase {
     @Override
     public TapType toTapType(String originType, Map<String, String> params) {
         Boolean theFixed = null;
         if (fixed != null && originType.contains(fixed)) {
             theFixed = true;
         }
-        return new TapString().bytes(getToTapTypeBytes(params)).fixed(theFixed);
+        return tapString().bytes(getToTapTypeBytes(params)).fixed(theFixed);
     }
 
     @Override
@@ -60,16 +61,15 @@ public class TapStringMapping extends TapBytesBase {
             if(width == null && theBytes != null) {
                 return theBytes;
             } else if(theBytes != null) {
-                width = getFromTapTypeBytes(width);
+//                width = getFromTapTypeBytes(width);
                 if(width <= theBytes) {
                     return (Long.MAX_VALUE - (theBytes - width));
                 } else {
-                    return -1L; // unacceptable
+                    return theBytes - width; // unacceptable
                 }
             }
-
             return 0L;
         }
-        return -1L;
+        return Long.MIN_VALUE;
     }
 }

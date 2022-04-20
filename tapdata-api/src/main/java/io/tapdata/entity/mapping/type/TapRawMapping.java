@@ -35,6 +35,6 @@ public class TapRawMapping extends TapMapping {
         if (field.getTapType() instanceof TapRaw) {
             return 0L;
         }
-        return -1L;
+        return Long.MIN_VALUE;
     }
 }

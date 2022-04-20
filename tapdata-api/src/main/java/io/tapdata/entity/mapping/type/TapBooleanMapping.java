@@ -35,6 +35,6 @@ public class TapBooleanMapping extends TapMapping {
         if (field.getTapType() instanceof TapBoolean) {
             return 0L;
         }
-        return -1L;
+        return Long.MIN_VALUE;
     }
 }

@@ -247,7 +247,10 @@ public class TapNumberMapping extends TapMapping {
                 if(minPrecision <= precision && precision <= maxPrecision) {
                     score += 1000L - (maxPrecision - precision); // The closest to maxPrecision the better.
                 } else {
-                    return -1; //if precision didn't match, it is not acceptable
+                    if(precision > maxPrecision) {
+                        return (maxPrecision - precision);
+                    }
+                    return Long.MIN_VALUE; //if precision didn't match, it is not acceptable
                 }
                 if(minScale <= scale && scale <= maxScale) {
                     score += 500;
@@ -262,7 +265,10 @@ public class TapNumberMapping extends TapMapping {
                 if(0 < bit && bit <= theBit) {
                     score = 1000L - (theBit - bit); //The closest to max bit, the better
                 } else {
-                    return -1L; //if bit didn't match, it is not acceptable
+//                    if(bit > theBit) {
+//                        return theBit - bit;
+//                    }
+                    return Long.MIN_VALUE; //if bit didn't match, it is not acceptable
                 }
             }
 
@@ -278,7 +284,7 @@ public class TapNumberMapping extends TapMapping {
             return score;
         }
 
-        return -1L;
+        return Long.MIN_VALUE;
     }
 
     public Integer getMinPrecision() {

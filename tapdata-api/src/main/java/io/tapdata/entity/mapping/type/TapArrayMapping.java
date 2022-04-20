@@ -30,6 +30,6 @@ public class TapArrayMapping extends TapSizeBase {
         if (field.getTapType() instanceof TapArray) {
             return 0L;
         }
-        return -1L;
+        return Long.MIN_VALUE;
     }
 }

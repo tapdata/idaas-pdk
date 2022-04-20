@@ -56,16 +56,16 @@ public class TapBinaryMapping extends TapBytesBase {
             if(width == null && theBytes != null) {
                 return theBytes;
             } else if(theBytes != null) {
-                width = getFromTapTypeBytes(width);
+//                width = getFromTapTypeBytes(width);
                 if(width <= theBytes) {
                     return (Long.MAX_VALUE - (theBytes - width));
                 } else {
-                    return -1L; // unacceptable
+                    return theBytes - width; // unacceptable
                 }
             }
 
             return 0L;
         }
-        return -1L;
+        return Long.MIN_VALUE;
     }
 }
