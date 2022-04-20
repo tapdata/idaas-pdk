@@ -1,5 +1,7 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.result.ResultItem;
+import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
@@ -20,9 +22,11 @@ public class TapNumberMapping extends TapMapping {
     public static final String KEY_ZEROFILL = "zerofill";
     public static final String KEY_BIT = "bit";
     public static final String KEY_BIT_DEFAULT = "bitDefault";
+    public static final String KEY_BIT_RATIO = "bitRatio";
 
     private Integer bit;
     private Integer defaultBit;
+    private int bitRatio = 1;
 
     private Integer minPrecision;
     private Integer maxPrecision;
@@ -35,6 +39,12 @@ public class TapNumberMapping extends TapMapping {
     private String unsigned;
     private String zerofill;
 
+    protected Integer getFromTapTypeBytes(Integer bit) {
+        if(bitRatio == 1)
+            return bit;
+        // 14 / 8 = 2, 14 / 7 = 2
+        return (bit / bitRatio + ((bit % bitRatio) > 0 ? 1 : 0));
+    }
 
     @Override
     public void from(Map<String, Object> info) {
@@ -45,6 +55,10 @@ public class TapNumberMapping extends TapMapping {
         Object defaultLengthObj = getObject(info, KEY_BIT_DEFAULT);
         if(defaultLengthObj instanceof Number) {
             defaultBit = ((Number) defaultLengthObj).intValue();
+        }
+        Object ratioObj = info.get(KEY_BIT_RATIO);
+        if(ratioObj instanceof Number) {
+            bitRatio = ((Number) ratioObj).intValue();
         }
 
         Object precisionObj = getObject(info, KEY_PRECISION);
@@ -117,10 +131,13 @@ public class TapNumberMapping extends TapMapping {
             length = defaultBit;
         if(length == null)
             length = bit;
+        if(length != null)
+            length = length * bitRatio;
 
         String precisionStr = getParam(params, KEY_PRECISION);
         Integer precision = null;
         if (precisionStr != null) {
+            precisionStr = precisionStr.trim();
             try {
                 precision = Integer.parseInt(precisionStr);
             } catch (Throwable throwable) {
@@ -135,6 +152,7 @@ public class TapNumberMapping extends TapMapping {
         String scaleStr = getParam(params, KEY_SCALE);
         Integer scale = null;
         if (scaleStr != null) {
+            scaleStr = scaleStr.trim();
             try {
                 scale = Integer.parseInt(scaleStr);
             } catch (Throwable throwable) {
@@ -155,8 +173,9 @@ public class TapNumberMapping extends TapMapping {
     }
 
     @Override
-    public String fromTapType(String typeExpression, TapType tapType) {
+    public TapResult<String> fromTapType(String typeExpression, TapType tapType) {
         String theFinalExpression = null;
+        TapResult<String> tapResult = new TapResult<>();
         if (tapType instanceof TapNumber) {
             TapNumber tapNumber = (TapNumber) tapType;
             theFinalExpression = typeExpression;
@@ -169,19 +188,50 @@ public class TapNumberMapping extends TapMapping {
 
             if (tapNumber.getBit() != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_BIT, false);
-                theFinalExpression = theFinalExpression.replace("$" + KEY_BIT, String.valueOf(tapNumber.getBit()));
+                int bit = getFromTapTypeBytes(tapNumber.getBit());
+                if(this.bit != null && bit > this.bit) {
+                    tapResult.addItem(new ResultItem("TapNumberMapping BIT", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Bit " + bit + " from source exceeded the maximum of target bit " + this.bit + ", bit before ratio " + tapNumber.getBit() + ", expression " + typeExpression));
+                    bit = this.bit;
+                }
+                theFinalExpression = theFinalExpression.replace("$" + KEY_BIT, String.valueOf(bit));
             }
-            if (tapNumber.getPrecision() != null) {
+            Integer precision = tapNumber.getPrecision();
+            if (precision != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_PRECISION, false);
-                theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(tapNumber.getPrecision()));
+
+                if(this.maxPrecision != null && this.minPrecision != null) {
+                    if(minPrecision > precision) {
+                        tapResult.addItem(new ResultItem("TapNumberMapping MIN_PRECISION", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Precision " + precision + " from source exceeded the minimum of target precision " + this.minPrecision + ", expression " + typeExpression));
+                        precision = minPrecision;
+                    } else if(maxPrecision < precision) {
+                        tapResult.addItem(new ResultItem("TapNumberMapping MAX_PRECISION", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Precision " + precision + " from source exceeded the maximum of target precision " + this.maxPrecision + ", expression " + typeExpression));
+                        precision = maxPrecision;
+                    }
+                }
+                theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(precision));
             }
-            if (tapNumber.getScale() != null) {
+            Integer scale = tapNumber.getScale();
+            if (scale != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
-                theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(tapNumber.getScale()));
+
+                if(minScale != null && maxScale != null) {
+                    if(minScale > scale) {
+                        tapResult.addItem(new ResultItem("TapNumberMapping MIN_SCALE", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Scale " + scale + " from source exceeded the minimum of target scale " + this.minScale + ", expression " + typeExpression));
+                        scale = minScale;
+                    } else if(maxScale < scale) {
+                        tapResult.addItem(new ResultItem("TapNumberMapping MAX_SCALE", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Scale " + scale + " from source exceeded the maxiumu of target scale " + this.maxScale + ", expression " + typeExpression));
+                        scale = maxScale;
+                    }
+                }
+                theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(scale));
             }
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
         }
-        return theFinalExpression;
+        if(tapResult.getResultItems() != null && !tapResult.getResultItems().isEmpty())
+            tapResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);
+        else
+            tapResult.result(TapResult.RESULT_SUCCESSFULLY);
+        return tapResult.data(theFinalExpression);
     }
 
     @Override
@@ -208,8 +258,9 @@ public class TapNumberMapping extends TapMapping {
 
             Integer bit = tapNumber.getBit();
             if(bit != null && this.bit != null) {
-                if(bit <= this.bit) {
-                    score = 1000L - (this.bit - bit); //The closest to max bit, the better
+                int theBit = this.bit * bitRatio;
+                if(0 < bit && bit <= theBit) {
+                    score = 1000L - (theBit - bit); //The closest to max bit, the better
                 } else {
                     return -1L; //if bit didn't match, it is not acceptable
                 }

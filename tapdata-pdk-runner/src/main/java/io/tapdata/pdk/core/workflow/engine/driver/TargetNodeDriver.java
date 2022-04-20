@@ -11,6 +11,8 @@ import io.tapdata.entity.event.ddl.table.*;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.result.ResultItem;
+import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.ClassFactory;
@@ -232,9 +234,24 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         TargetTypesGenerator targetTypesGenerator = ClassFactory.create(TargetTypesGenerator.class);
         LinkedHashMap<String, TapField> nameFieldMap = null;
         if (targetTypesGenerator != null) {
-            nameFieldMap = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
+            TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
+            if(tapResult.isSuccessfully()) {
+                nameFieldMap = tapResult.getData();
+                targetTable.setNameFieldMap(nameFieldMap);
+
+                List<ResultItem> resultItems = tapResult.getResultItems();
+                if(resultItems != null && !resultItems.isEmpty()) {
+                    for(ResultItem resultItem : resultItems) {
+                        TapLogger.warn(TAG, resultItem.getItem() + ": " + resultItem.getInformation());
+                    }
+                }
+            } else {
+                TapLogger.error(TAG, "TargetTypesGenerator convert failed, {} {}", tapResult.getResultItems(), LoggerUtils.targetNodeMessage(targetNode));
+            }
+        } else {
+            TapLogger.error(TAG, "TargetTypesGenerator is not initialized, {}", LoggerUtils.targetNodeMessage(targetNode));
         }
-        targetTable.setNameFieldMap(nameFieldMap);
+
     }
 
 //    private void replaceTableFromDiscovered() {

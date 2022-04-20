@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapDateTime;
 import io.tapdata.entity.schema.type.TapType;
@@ -23,9 +24,9 @@ public class TapDateTimeMapping extends TapDateBase {
     }
 
     @Override
-    public String fromTapType(String typeExpression, TapType tapType) {
+    public TapResult<String> fromTapType(String typeExpression, TapType tapType) {
         if (tapType instanceof TapDateTime) {
-            return removeBracketVariables(typeExpression, 0);
+            return TapResult.successfully(removeBracketVariables(typeExpression, 0));
         }
         return null;
     }

@@ -1,5 +1,7 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.result.ResultItem;
+import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapBinary;
 import io.tapdata.entity.schema.type.TapType;
@@ -13,36 +15,33 @@ public class TapBinaryMapping extends TapBytesBase {
 
     @Override
     public TapType toTapType(String originType, Map<String, String> params) {
-        String byteStr = getParam(params, KEY_BYTE);
-        Long bytes = null;
-        if(byteStr != null) {
-            try {
-                bytes = Long.parseLong(byteStr);
-            } catch(Throwable throwable) {
-                throwable.printStackTrace();
-            }
-        }
-        if(bytes == null)
-            bytes = defaultBytes;
-        if(bytes == null)
-            bytes = this.bytes;
-        return new TapBinary().bytes(bytes);
+        return new TapBinary().bytes(getToTapTypeBytes(params));
     }
 
     @Override
-    public String fromTapType(String typeExpression, TapType tapType) {
+    public TapResult<String> fromTapType(String typeExpression, TapType tapType) {
         String theFinalExpression = null;
         if (tapType instanceof TapBinary) {
+            TapResult<String> tapResult = new TapResult<>();
+            tapResult.result(TapResult.RESULT_SUCCESSFULLY);
             TapBinary tapBinary = (TapBinary) tapType;
             theFinalExpression = typeExpression;
 
-            if (tapBinary.getBytes() != null) {
+            Long bytes = tapBinary.getBytes();
+            if (bytes != null) {
+                bytes = getFromTapTypeBytes(bytes);
+                if(this.bytes != null && bytes > this.bytes) {
+                    tapResult.addItem(new ResultItem("TapBinaryMapping BYTES", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Bytes " + bytes + " from source exceeded the maximum of target bytes " + this.bytes + ", bytes before ratio " + tapBinary.getBytes() + ", expression {}" + typeExpression));
+                    bytes = this.bytes;
+                    tapResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);
+                }
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_BYTE, false);
-                theFinalExpression = theFinalExpression.replace("$" + KEY_BYTE, String.valueOf(tapBinary.getBytes()));
+                theFinalExpression = theFinalExpression.replace("$" + KEY_BYTE, String.valueOf(bytes));
             }
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
+            return tapResult.data(theFinalExpression);
         }
-        return theFinalExpression;
+        return null;
     }
 
     @Override
@@ -50,12 +49,16 @@ public class TapBinaryMapping extends TapBytesBase {
         if (field.getTapType() instanceof TapBinary) {
             TapBinary tapBinary = (TapBinary) field.getTapType();
 
+            Long theBytes = bytes;
+            if(theBytes != null)
+                theBytes = theBytes * byteRatio;
             Long width = tapBinary.getBytes();
-            if(width == null && bytes != null) {
-                return bytes;
-            } else if(bytes != null) {
-                if(width <= bytes) {
-                    return (Long.MAX_VALUE - (bytes - width));
+            if(width == null && theBytes != null) {
+                return theBytes;
+            } else if(theBytes != null) {
+                width = getFromTapTypeBytes(width);
+                if(width <= theBytes) {
+                    return (Long.MAX_VALUE - (theBytes - width));
                 } else {
                     return -1L; // unacceptable
                 }

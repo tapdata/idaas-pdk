@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
@@ -90,7 +91,7 @@ public abstract class TapMapping {
 
     public abstract TapType toTapType(String originType, Map<String, String> params);
 
-    public abstract String fromTapType(String typeExpression, TapType tapType);
+    public abstract TapResult<String> fromTapType(String typeExpression, TapType tapType);
 
     protected String removeBracketVariables(String typeExpression, int startPos) {
         int pos = typeExpression.indexOf("[", startPos);
