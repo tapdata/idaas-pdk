@@ -90,6 +90,14 @@ The "to" means the data type expression will be converted to the specified TapTy
 * TapDateTime
 * TapYear
 
+Common fields
+```text
+{
+  "queryOnly" : true, //Optional. The type is only for query, will not be used for table creation. 
+  "priority" : 1 //Optional. If source type matches multiple target types which is the same score (bit or bytes), then the target type will be selected when the priority is the smallest. 
+}
+```
+
 Some TapType have extra fields
 * TapNumber
 ```text
@@ -148,21 +156,18 @@ for example
 ```text
 {
     "range" : ["1000-01-01", "9999-12-31"], //Date range in format YYYY-MM-DD
-    "gmt" : 0, //gmt
 }
 ```
 * TapDateTime
 ```text
 {
     "range" : ["1000-01-01 00:00:00", "9999-12-31 23:59:59"], //Date time range in format YYYY-MM-DD hh:mm:ss
-    "gmt" : 0, //gmt
 }
 ```
 * TapTime
 ```text
 {
     "range" : ["-838:59:59","838:59:59"], //Time range in format hh:mm:ss
-    "gmt" : 0, //gmt
 }
 ```
 
