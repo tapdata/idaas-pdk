@@ -25,10 +25,17 @@ public class DorisDMLInstance {
         return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
     }
 
+    private String formatTapDateTime(Date date, String pattern) {
+        tapDateTimeFormat.applyPattern(pattern);
+        return tapDateTimeFormat.format(date);
+    }
+
     public Object getFieldOriginValue(TapField tapField, Object tapValue) {
         Object result = tapValue;
         if (tapValue instanceof DateTime) {
             result = formatTapDateTime((DateTime) tapValue, "yyyy-MM-dd HH:mm:ss");
+        } else if(tapValue instanceof Date) {
+            result = formatTapDateTime((Date) tapValue, "yyyy-MM-dd HH:mm:ss");
         }
         return result;
     }

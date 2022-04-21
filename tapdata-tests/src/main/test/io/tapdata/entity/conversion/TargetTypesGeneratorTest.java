@@ -176,19 +176,19 @@ class TargetTypesGeneratorTest {
 
         TapTable sourceTable = table("test");
         sourceTable
+                .add(field("int(32) unsigned", "int(32) unsigned"))
+                .add(field("longtext", "longtext")) // exceed the max of target types
+                .add(field("varchar(10)", "varchar(10)"))
+                .add(field("decimal(27, -3)", "decimal(27, -3)"))
 //                .add(field("tinytext", "tinytext"))
 //                .add(field("datetime", "datetime"))
 //                .add(field("bigint", "bigint"))
 //                .add(field("bigint unsigned", "bigint unsigned"))
-                .add(field("int(32) unsigned", "int(32) unsigned"))
 //                .add(field("char(300)", "char(300)"))
-                .add(field("longtext", "longtext")) // exceed the max of target types
 //                .add(field("double(32)", "double(32)"))
 //                .add(field("mediumtext", "mediumtext"))
 //                .add(field("bit(8)", "bit(8)")) //no binary in target types
 //                .add(field("binary(200)", "binary(200)"))
-                .add(field("varchar(10)", "varchar(10)"))
-                .add(field("decimal(27, -3)", "decimal(27, -3)"))
 //                .add(field("timestamp", "timestamp"))
 //                .add(field("mediumint unsigned", "mediumint unsigned"))
 
@@ -198,10 +198,11 @@ class TargetTypesGeneratorTest {
 //        assertNotNull(sourceTable.getNameFieldMap().get("char(300)").getTapType());
 //        assertNotNull(sourceTable.getNameFieldMap().get("bit(8)").getTapType());
 
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
         //源端一个byte等于3个byte， 目标端一个byte等于2个byte的case， 适用于解决byte有时是byte， 有时是char的问题
         //Source: "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"byteRatio\": 3, \"fixed\": false, \"to\": \"TapString\"},\n" +
         //Target: "    \"char[($byte)]\":{\"byte\":255, \"byteRatio\": 2, \"to\": \"TapString\", \"defaultByte\": 1},\n" +
-        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
         LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
         TapField varchar10Field = nameFieldMap.get("varchar(10)");
         assertEquals("char(15)", varchar10Field.getOriginType());
