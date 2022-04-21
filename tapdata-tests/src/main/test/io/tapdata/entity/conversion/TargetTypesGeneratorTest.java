@@ -230,4 +230,30 @@ class TargetTypesGeneratorTest {
         assertEquals(4294967296L, ((TapString)longtext.getTapType()).getBytes());
     }
 
+    @Test
+    void convertPriorityTest() {
+        String sourceTypeExpression = "{\n" +
+                "    \"int[($bit)][unsigned][zerofill]\": {\"bit\": 32, \"unsigned\": \"unsigned\", \"zerofill\": \"zerofill\", \"to\": \"TapNumber\"},\n" +
+                "}";
+        String targetTypeExpression = "{\n" +
+                "    \"myint[($bit)][unsigned]\":{\"bit\":32, \"unsigned\":\"unsigned\", \"to\":\"TapNumber\"},\n" +
+                "    \"tinyint\":{\"bit\":32, \"priority\":1, \"to\":\"TapNumber\"},\n" +
+                "    \"smallint\":{\"bit\":32, \"priority\":3, \"to\":\"TapNumber\"},\n" +
+                "    \"int\":{\"bit\":32, \"priority\":2, \"to\":\"TapNumber\"},\n" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("int(32)", "int(32)"))
+
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+        TapField int32unsignedField = nameFieldMap.get("int(32)");
+        assertEquals("tinyint", int32unsignedField.getOriginType());
+    }
+
 }

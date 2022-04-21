@@ -13,9 +13,12 @@ public abstract class TapMapping {
 
     private String to;
     private Boolean queryOnly;
+    private Integer priority = Integer.MAX_VALUE;
     private static final Map<String, Class<?>> classCacheMap = new ConcurrentHashMap<>();
 
-    public TapMapping() {}
+    public TapMapping() {
+
+    }
 
     protected String getParam(Map<String, String> params, String key) {
         if(params != null)
@@ -44,8 +47,20 @@ public abstract class TapMapping {
         return TapMapping.build(((Map<String, Object>)info));
     }
     public static TapMapping build(Map<String, Object> info) {
-        String to = (String) info.get("to");
-        Boolean queryOnly = (Boolean) info.get("queryOnly");
+        String to = null;
+        Object toObj = info.get("to");
+        if(toObj instanceof String)
+            to = (String) toObj;
+        Boolean queryOnly = null;
+        Object queryOnlyObj = info.get("queryOnly");
+        if(queryOnlyObj instanceof Boolean)
+            queryOnly = (Boolean) queryOnlyObj;
+
+        Integer priority = null;
+        Object priorityObj = info.get("priority");
+        if(priorityObj instanceof Integer)
+            priority = (Integer) priorityObj;
+
         if(to == null)
             return null;
 
@@ -72,6 +87,8 @@ public abstract class TapMapping {
         try {
             TapMapping tapMapping = (TapMapping) mappingClass.getConstructor().newInstance();
             tapMapping.to = to;
+            if(priority != null)
+                tapMapping.priority = priority;
             tapMapping.queryOnly = queryOnly;
             tapMapping.from(info);
             return tapMapping;
@@ -139,6 +156,14 @@ public abstract class TapMapping {
 
     public void setQueryOnly(Boolean queryOnly) {
         this.queryOnly = queryOnly;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
     /**
