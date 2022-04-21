@@ -98,6 +98,7 @@ Some TapType have extra fields
   
     "bit": 64, //max bit
     "defaultBit" : 10, //default bit
+    "bitRatio" : 1, //1 is default. Some databases, bit means bit, but some bit means byte, then "bitRatio" should be 8. 
     
     "precision" : [1, 30], //precision range, [min, max]
     "precisionDefault" : 10, //default precision
@@ -124,6 +125,7 @@ for example
 {
     "byte" : "16m", //Max length of string, support string with suffix "k", "m", "g", "t", "p", also number
     "defaultByte" : "1m", //Max length of string, support string with suffix "k", "m", "g", "t", "p", also number
+    "byteRatio" : 1, // 1 is default. Some databases, byte means byte, but some byte means char, like utf8 1 char mean 3 bytes, then "bitRatio" should be 3. 
     "fixed" : "fixed" //Alias of fixed
 }
 ```

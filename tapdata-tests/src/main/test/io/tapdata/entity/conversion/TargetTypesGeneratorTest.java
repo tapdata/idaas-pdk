@@ -40,7 +40,7 @@ class TargetTypesGeneratorTest {
         codecRegistry = TapCodecRegistry.create();
         targetCodecFilterManager = TapCodecFilterManager.create(codecRegistry);
     }
-
+    /*
     @Test
     void convert() {
         String sourceTypeExpression = "{\n" +
@@ -119,7 +119,7 @@ class TargetTypesGeneratorTest {
         TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
         LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
 
-    }
+    }*/
 
     @Test
     void convertTest() {
