@@ -65,6 +65,7 @@ public class TapDefaultCodecs {
         classToTapValueCodecMap.put(String.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_STRING_VALUE));
 
         classToTapValueCodecMap.put(Date.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_DATE_TIME_VALUE));
+        classToTapValueCodecMap.put(DateTime.class, InstanceFactory.instance(ToTapValueCodec.class, TAP_DATE_TIME_VALUE));
 
         classFromTapValueCodecMap.put(TapArrayValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_ARRAY_VALUE));
         classFromTapValueCodecMap.put(TapBinaryValue.class, InstanceFactory.instance(FromTapValueCodec.class, TAP_BINARY_VALUE));

@@ -1,5 +1,6 @@
 package io.tapdata.pdk.tdd.tests;
 
+import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 
@@ -8,10 +9,9 @@ import java.util.*;
 
 public class test {
     public static void main(String... args) {
-        int a = 127;
-        System.out.println("" + (a % 10));
-
-        System.out.println("" + (a / 10 + ((a % 10) > 0 ? 1 : 0)));
+        TimeZone zone = TimeZone.getDefault();
+        String zoneStr = JSON.toJSONString(zone);
+        TimeZone newZone = JSON.parseObject(zoneStr, TimeZone.class);
     }
 
 

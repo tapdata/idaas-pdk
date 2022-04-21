@@ -16,6 +16,7 @@ public class FromTapDateCodec implements FromTapValueCodec<TapDateValue> {
             return null;
         //TODO need more code
         DateTime dateTime = tapValue.getValue();
-        return convertDateTimeToDate(dateTime);
+        return dateTime;
+//        return convertDateTimeToDate(dateTime);
     }
 }
