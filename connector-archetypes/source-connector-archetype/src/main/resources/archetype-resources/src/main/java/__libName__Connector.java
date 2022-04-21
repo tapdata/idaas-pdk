@@ -285,7 +285,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      *
      * @param connectorContext
      * @param offset
-     * @param recordSize
+     * @param eventBatchSize
      * @param tapReadOffsetConsumer
      */
     private void batchRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
