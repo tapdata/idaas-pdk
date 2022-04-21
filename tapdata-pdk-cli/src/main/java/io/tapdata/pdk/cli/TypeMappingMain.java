@@ -2,6 +2,7 @@ package io.tapdata.pdk.cli;
 
 import io.tapdata.entity.mapping.*;
 import io.tapdata.entity.mapping.type.TapMapping;
+import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
@@ -88,7 +89,7 @@ public class TypeMappingMain {
         TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
         TapType tapType = tapMapping.toTapType("decimal(56, 2) theUnsigned theZerofill", result.getParams());
 
-        String originType = tapMapping.fromTapType("decimal($precision, $scale)[theUnsigned][theZerofill]", tapType);
+        TapResult<String> result1 = tapMapping.fromTapType("decimal($precision, $scale)[theUnsigned][theZerofill]", tapType);
 
         matchingMap.iterate(entry -> {
             System.out.println("key " + entry.getKey() + " value " + entry.getValue());

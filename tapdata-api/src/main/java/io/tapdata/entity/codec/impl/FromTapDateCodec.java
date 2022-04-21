@@ -3,7 +3,10 @@ package io.tapdata.entity.codec.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapDefaultCodecs;
+import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.schema.value.TapDateValue;
+
+import static io.tapdata.entity.simplify.TapSimplify.convertDateTimeToDate;
 
 @Implementation(value = FromTapValueCodec.class, type = TapDefaultCodecs.TAP_DATE_VALUE, buildNumber = 0)
 public class FromTapDateCodec implements FromTapValueCodec<TapDateValue> {
@@ -12,6 +15,7 @@ public class FromTapDateCodec implements FromTapValueCodec<TapDateValue> {
         if(tapValue == null)
             return null;
         //TODO need more code
-        return tapValue.getValue();
+        DateTime dateTime = tapValue.getValue();
+        return convertDateTimeToDate(dateTime);
     }
 }

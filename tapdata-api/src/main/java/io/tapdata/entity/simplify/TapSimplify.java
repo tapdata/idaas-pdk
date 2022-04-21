@@ -6,6 +6,7 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
+import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.utils.*;
 
 import java.util.*;
@@ -139,4 +140,20 @@ public class TapSimplify {
         }
     }
 
+    public static Object convertDateTimeToDate(DateTime dateTime) {
+        if(dateTime != null) {
+            Long milliseconds;
+            Long nano = dateTime.getNano();
+            Long seconds = dateTime.getSeconds();
+            if(nano != null) {
+                milliseconds = nano / 1000 / 1000;
+            } else if(seconds != null) {
+                milliseconds = seconds * 1000;
+            } else {
+                return null;
+            }
+            return new Date(milliseconds);
+        }
+        return null;
+    }
 }

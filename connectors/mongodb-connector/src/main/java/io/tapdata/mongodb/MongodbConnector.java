@@ -226,13 +226,13 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         });
 
         //Because mongodb support pojo object automatically, just return value into mongodb. the originType not important because mongodb don't need to create table, can use any string as the types.
-        codecRegistry.registerFromTapValue(TapRawValue.class, "TapRaw", TapValue::getValue);
-        codecRegistry.registerFromTapValue(TapArrayValue.class, "TapArray", TapValue::getValue);
-        codecRegistry.registerFromTapValue(TapMapValue.class, "TapMap", TapValue::getValue);
+//        codecRegistry.registerFromTapValue(TapRawValue.class, "TapRaw", TapValue::getValue);
+//        codecRegistry.registerFromTapValue(TapArrayValue.class, "TapArray", TapValue::getValue);
+//        codecRegistry.registerFromTapValue(TapMapValue.class, "TapMap", TapValue::getValue);
         //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "TapTime", tapTimeValue -> convertDateTimeToDate(tapTimeValue.getValue()));
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TapDateTime", tapDateTimeValue -> convertDateTimeToDate(tapDateTimeValue.getValue()));
-        codecRegistry.registerFromTapValue(TapDateValue.class, "TapDate", tapDateValue -> convertDateTimeToDate(tapDateValue.getValue()));
+//        codecRegistry.registerFromTapValue(TapTimeValue.class, "TapTime", tapTimeValue -> convertDateTimeToDate(tapTimeValue.getValue()));
+//        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TapDateTime", tapDateTimeValue -> convertDateTimeToDate(tapDateTimeValue.getValue()));
+//        codecRegistry.registerFromTapValue(TapDateValue.class, "TapDate", tapDateValue -> convertDateTimeToDate(tapDateValue.getValue()));
 
         //Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
         //We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.

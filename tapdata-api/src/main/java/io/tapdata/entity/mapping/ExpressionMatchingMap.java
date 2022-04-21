@@ -91,6 +91,10 @@ public class ExpressionMatchingMap<T> {
         }
     }
 
+    public boolean isEmpty() {
+        return exactlyMatchMap.isEmpty() && prefixTypeExprListMap.isEmpty();
+    }
+
     public void iterate(TapIterator<Map.Entry<String, T>> iterator) {
         if(exactlyMatchMap != null) {
             for(Map.Entry<String, T> entry : exactlyMatchMap.entrySet()) {
