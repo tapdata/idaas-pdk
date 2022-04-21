@@ -3,6 +3,7 @@ package io.tapdata.entity.conversion.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
+import io.tapdata.entity.conversion.UnsupportedTypeFallbackHandler;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.type.TapMapping;
@@ -10,6 +11,7 @@ import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapString;
+import io.tapdata.entity.utils.InstanceFactory;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,11 +48,16 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                     //handle by default
                     if(cachedLargestStringMapping == null) {
                         cachedTapString = new TapString();
-                        cachedLargestStringMapping = findLargestStringMapping(targetMatchingMap, cachedTapString);
+                        cachedLargestStringMapping = findLargestStringType(targetMatchingMap, cachedTapString);
                     }
                     originType = cachedLargestStringMapping;
                     if(originType != null) {
-                        field.setTapType(cachedTapString);
+                        UnsupportedTypeFallbackHandler unsupportedTypeFallbackHandler = InstanceFactory.instance(UnsupportedTypeFallbackHandler.class);
+                        if(unsupportedTypeFallbackHandler != null) {
+                            unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, cachedLargestStringMapping, cachedTapString);
+                        }
+
+//                        field.setTapType(cachedTapString);
                     }
                 }
             }
@@ -63,7 +70,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         return finalResult.data(targetFieldMap);
     }
 
-    private String findLargestStringMapping(DefaultExpressionMatchingMap targetMatchingMap, TapString tapString) {
+    private String findLargestStringType(DefaultExpressionMatchingMap targetMatchingMap, TapString tapString) {
         if(targetMatchingMap == null || targetMatchingMap.isEmpty())
             return null;
         HitTapMapping hitTapMapping = new HitTapMapping();
@@ -97,6 +104,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 TapLogger.warn(TAG, "findLargestStringMapping " + resultItem.getItem() + ": " + resultItem.getInformation());
             }
         }
+
         return result.getData();
     }
 

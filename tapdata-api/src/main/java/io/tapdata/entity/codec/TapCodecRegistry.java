@@ -31,6 +31,10 @@ public class TapCodecRegistry {
         classToTapValueCodecMap.remove(anyClass);
     }
 
+    public <T extends TapValue<?, ?>> boolean isRegisteredFromTapValue(Class<T> tapValueClass) {
+        return tapTypeOriginTypeMap.containsKey(tapValueClass);
+    }
+
     public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, String originType, FromTapValueCodec<T> fromTapValueCodec) {
         Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
         if(types != null && types.length == 2 && types[1] instanceof Class) {

@@ -1,5 +1,8 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.schema.value.TapStringValue;
+import io.tapdata.entity.schema.value.TapValue;
+
 import static io.tapdata.entity.simplify.TapSimplify.tapString;
 
 public class TapString extends TapType {
@@ -44,5 +47,10 @@ public class TapString extends TapType {
     @Override
     public TapType cloneTapType() {
         return tapString().fixed(fixed).bytes(bytes);
+    }
+
+    @Override
+    public Class<? extends TapValue<?, ?>> getTapValueClass() {
+        return TapStringValue.class;
     }
 }

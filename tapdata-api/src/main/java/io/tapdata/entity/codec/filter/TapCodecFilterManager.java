@@ -88,4 +88,8 @@ public class TapCodecFilterManager {
     public void setMapIterator(MapIterator mapIterator) {
         this.mapIterator = mapIterator;
     }
+
+    public TapCodecRegistry getCodecRegistry() {
+        return codecRegistry;
+    }
 }

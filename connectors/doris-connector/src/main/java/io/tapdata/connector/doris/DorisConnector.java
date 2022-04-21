@@ -141,40 +141,40 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportDropTable(this::dropTable);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
 
-        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
-            if (tapMapValue != null && tapMapValue.getValue() != null)
-                return toJson(tapMapValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapArrayValue.class, "text", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
-            return "null";
-        });
-        codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
-            if (tapValue != null) {
-                Boolean value = tapValue.getValue();
-                if (value != null && value) {
-                    return 1;
-                }
-            }
-            return 0;
-        });
+//        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+//            if (tapRawValue != null && tapRawValue.getValue() != null)
+//                return toJson(tapRawValue.getValue());
+//            return "null";
+//        });
+//        codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
+//            if (tapMapValue != null && tapMapValue.getValue() != null)
+//                return toJson(tapMapValue.getValue());
+//            return "null";
+//        });
+//        codecRegistry.registerFromTapValue(TapArrayValue.class, "text", tapValue -> {
+//            if (tapValue != null && tapValue.getValue() != null)
+//                return toJson(tapValue.getValue());
+//            return "null";
+//        });
+//        codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
+//            if (tapValue != null) {
+//                Boolean value = tapValue.getValue();
+//                if (value != null && value) {
+//                    return 1;
+//                }
+//            }
+//            return 0;
+//        });
         codecRegistry.registerFromTapValue(TapBinaryValue.class, "text", tapValue -> {
             if (tapValue != null && tapValue.getValue() != null)
                 return toJson(tapValue.getValue());
             return "null";
         });
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "datetime", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
-            return "null";
-        });
+//        codecRegistry.registerFromTapValue(TapTimeValue.class, "datetime", tapValue -> {
+//            if (tapValue != null && tapValue.getValue() != null)
+//                return toJson(tapValue.getValue());
+//            return "null";
+//        });
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {

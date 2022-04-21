@@ -1,5 +1,8 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.schema.value.TapTimeValue;
+import io.tapdata.entity.schema.value.TapValue;
+
 import static io.tapdata.entity.simplify.TapSimplify.tapTime;
 
 public class TapTime extends TapType {
@@ -23,5 +26,10 @@ public class TapTime extends TapType {
     @Override
     public TapType cloneTapType() {
         return tapTime().scale(scale);
+    }
+
+    @Override
+    public Class<? extends TapValue<?, ?>> getTapValueClass() {
+        return TapTimeValue.class;
     }
 }
