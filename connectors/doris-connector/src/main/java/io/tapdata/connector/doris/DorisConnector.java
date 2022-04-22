@@ -170,11 +170,11 @@ public class DorisConnector extends ConnectorBase implements TapConnector {
                 return toJson(tapValue.getValue());
             return "null";
         });
-//        codecRegistry.registerFromTapValue(TapTimeValue.class, "datetime", tapValue -> {
-//            if (tapValue != null && tapValue.getValue() != null)
-//                return toJson(tapValue.getValue());
-//            return "null";
-//        });
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "datetime", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null)
+                return toJson(tapValue.getValue());
+            return "null";
+        });
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
