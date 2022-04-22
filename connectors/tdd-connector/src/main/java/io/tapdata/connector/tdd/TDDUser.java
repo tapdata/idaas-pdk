@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class TDDUser {
-    private String id;
+    private String userId;
     private String name;
     private String description;
     private int age;
@@ -16,15 +16,15 @@ public class TDDUser {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TDDUser that = (TDDUser) o;
-        return Objects.equals(id, that.id) &&
+        return Objects.equals(userId, that.userId) &&
                 Objects.equals(name, that.name) &&
                 Objects.equals(description, that.description) &&
                 age == that.age &&
                 gender == that.gender;
     }
     public TDDUser() {}
-    public TDDUser(String id, String name, String description, int age, int gender) {
-        this.id = id;
+    public TDDUser(String userId, String name, String description, int age, int gender) {
+        this.userId = userId;
         this.name = name;
         this.description = description;
         this.age = age;
@@ -33,12 +33,12 @@ public class TDDUser {
 
     private List<String> loginAccounts;
 
-    public String getId() {
-        return id;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getName() {
