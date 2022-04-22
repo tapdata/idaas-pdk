@@ -49,7 +49,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
 
@@ -83,7 +83,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @return
      */
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         //Assume below tests are successfully, below tests are recommended, but not required.
         //Connection test
         //TODO execute connection test here
@@ -163,7 +163,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param connectorContext
      * @param dropTableEvent
      */
-    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
     }
 
     /**
@@ -175,7 +175,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param tapAdvanceFilter
      * @param consumer
      */
-    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
+    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) throws Throwable {
 
     }
 
@@ -201,7 +201,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param connectorContext the node context in a DAG
      * @return
      */
-    private String batchOffset(TapConnectorContext connectorContext) {
+    private String batchOffset(TapConnectorContext connectorContext) throws Throwable {
         //TODO return batch offset in runtime
         return null;
     }
@@ -222,7 +222,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
         //TODO write records into database
 
         //Below is sample code to print received events which suppose to write to database.
@@ -265,7 +265,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, String offset) {
+    private long batchCount(TapConnectorContext connectorContext, String offset) throws Throwable {
         //TODO Count the batch size.
         return 20L;
     }
@@ -288,7 +288,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param eventBatchSize
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) throws Throwable {
         //TODO batch read all records from database, use consumer#accept to send to incremental engine.
 
         //Below is sample code to generate records directly.
@@ -326,7 +326,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param recordSize
      * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, Object offset, int recordSize, StreamReadConsumer consumer) {
+    private void streamRead(TapConnectorContext connectorContext, Object offset, int recordSize, StreamReadConsumer consumer) throws Throwable {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to incremental engine.
 
         consumer.streamReadStarted();

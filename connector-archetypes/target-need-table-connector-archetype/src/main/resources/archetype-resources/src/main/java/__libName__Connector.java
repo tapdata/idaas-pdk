@@ -48,7 +48,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
 
@@ -82,7 +82,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @return
      */
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         //Assume below tests are successfully, below tests are recommended, but not required.
         //Connection test
         //TODO execute connection test here
@@ -210,7 +210,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
         //TODO write records into database
 
         //Below is sample code to print received events which suppose to write to database.
@@ -246,7 +246,7 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
      * @param filters Multple fitlers, need return multiple filter results
      * @param listConsumer tell incremental engine the filter results according to filters
      */
-    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer){
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) throws Throwable {
         //Filter is exactly match.
         //If query by the filter, no value is in database, please still create a FitlerResult with null value in it. So that incremental engine can understand the filter has no value.
 
@@ -276,12 +276,12 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
         return builder.toString();
     }
 
-    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
+    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
         TapTable table = connectorContext.getTable();
         //TODO implement drop table
     }
 
-    private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
+    private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) throws Throwable {
         //TODO implement create table.
         TapTable table = connectorContext.getTable();
         LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();

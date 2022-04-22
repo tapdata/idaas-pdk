@@ -33,34 +33,42 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
         for(Map.Entry<String, TapField> entry : sourceFields.entrySet()) {
             TapField field = entry.getValue();
-            TapResult<String> result = calculateBestTypeMapping(field, targetMatchingMap);
-            if(result != null) {
-                List<ResultItem> resultItems = result.getResultItems();
-                if(resultItems != null) {
-                    for(ResultItem resultItem : resultItems) {
-                        resultItem.setItem(resultItem.getItem() + "@" + field.getName());
-                        finalResult.addItem(resultItem);
+
+            String originType = null;
+            //User custom codec
+            if(field.getTapType() != null) {
+                originType = targetCodecFilterManager.getOriginTypeByTapType(field.getTapType().getClass());
+            }
+
+            if(originType == null) {
+                //Find best codec
+                TapResult<String> result = calculateBestTypeMapping(field, targetMatchingMap);
+                if(result != null) {
+                    originType = result.getData();
+                    List<ResultItem> resultItems = result.getResultItems();
+                    if(resultItems != null) {
+                        for(ResultItem resultItem : resultItems) {
+                            resultItem.setItem(resultItem.getItem() + "@" + field.getName());
+                            finalResult.addItem(resultItem);
+                        }
                     }
                 }
             }
-            String originType = result != null ? result.getData() : null;
-            if((result == null || !result.isSuccessfully()) && field.getTapType() != null) {
-                originType = targetCodecFilterManager.getOriginTypeByTapType(field.getTapType().getClass());
-                if(originType == null) {
-                    //handle by default
-                    if(cachedLargestStringMapping == null) {
-                        cachedTapString = new TapString();
-                        cachedLargestStringMapping = findLargestStringType(targetMatchingMap, cachedTapString);
+
+            if(originType == null) {
+                //handle by default
+                if(cachedLargestStringMapping == null) {
+                    cachedTapString = new TapString();
+                    cachedLargestStringMapping = findLargestStringType(targetMatchingMap, cachedTapString);
+                }
+                originType = cachedLargestStringMapping;
+                if(originType != null) {
+                    UnsupportedTypeFallbackHandler unsupportedTypeFallbackHandler = InstanceFactory.instance(UnsupportedTypeFallbackHandler.class);
+                    if(unsupportedTypeFallbackHandler != null) {
+                        unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, cachedLargestStringMapping, cachedTapString);
                     }
-                    originType = cachedLargestStringMapping;
-                    if(originType != null) {
-                        UnsupportedTypeFallbackHandler unsupportedTypeFallbackHandler = InstanceFactory.instance(UnsupportedTypeFallbackHandler.class);
-                        if(unsupportedTypeFallbackHandler != null) {
-                            unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, cachedLargestStringMapping, cachedTapString);
-                        }
 
 //                        field.setTapType(cachedTapString);
-                    }
                 }
             }
 
@@ -75,7 +83,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
     private String findLargestStringType(DefaultExpressionMatchingMap targetMatchingMap, TapString tapString) {
         if(targetMatchingMap == null || targetMatchingMap.isEmpty())
             return null;
-        HitTapMapping hitTapMapping = new HitTapMapping(null, null, 1);
+        HitTapMappingContainer hitTapMapping = new HitTapMappingContainer();
         TapField field = new TapField().tapType(tapString).originType("LargestString");
         targetMatchingMap.iterate(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
@@ -86,20 +94,22 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 if(tapMapping.getTo().equals("TapString")) {
                     long score = tapMapping.matchingScore(field);
                     if(score >= 0) {
-                        if(score > hitTapMapping.score) {
-                            hitTapMapping.score = score;
-                            hitTapMapping.hitExpression = expressionValueEntry.getKey();
-                            hitTapMapping.tapMapping = tapMapping;
-                        }
+                        hitTapMapping.input(expressionValueEntry.getKey(), tapMapping, score);
+//                        if(score > hitTapMapping.score) {
+//                            hitTapMapping.score = score;
+//                            hitTapMapping.hitExpression = expressionValueEntry.getKey();
+//                            hitTapMapping.tapMapping = tapMapping;
+//                        }
                     }
                 }
                 return false;
             }
             return false;
         });
-        if(hitTapMapping.tapMapping == null)
+        HitTapMapping bestOne = hitTapMapping.getBestOne();
+        if(bestOne == null)
             return null;
-        TapResult<String> result = hitTapMapping.tapMapping.fromTapType(hitTapMapping.hitExpression, field.getTapType());
+        TapResult<String> result = bestOne.tapMapping.fromTapType(bestOne.hitExpression, field.getTapType());
         List<ResultItem> resultItems = result.getResultItems();
         if(resultItems != null && !resultItems.isEmpty()) {
             for(ResultItem resultItem : resultItems) {

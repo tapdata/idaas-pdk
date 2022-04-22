@@ -83,9 +83,16 @@ public class DorisDMLInstance {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         for (Map.Entry<String, Object> entry : record.entrySet()) {
             String fieldName = entry.getKey();
-            builder.append(fieldName).append("=").append("'").
-                    append(getFieldOriginValue(nameFieldMap.get(fieldName), entry.getValue())).
-                    append("' ").append(splitSymbol).append(" ");
+            builder.append(fieldName).append("=");
+            if(!(entry.getValue() instanceof Number))
+                builder.append("'");
+
+            builder.append(getFieldOriginValue(nameFieldMap.get(fieldName), entry.getValue()));
+
+            if(!(entry.getValue() instanceof Number))
+                builder.append("'");
+
+            builder.append(splitSymbol).append(" ");
         }
         builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
         return builder.toString();
