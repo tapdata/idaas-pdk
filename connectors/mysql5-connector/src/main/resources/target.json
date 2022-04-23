@@ -1,0 +1,11 @@
+{
+  "jdbcDriver": "com.mysql.jdbc.Driver",
+  "databaseUrlPattern": "jdbc:mysql://%s:%d/%s",
+  "extParam": "?serverTimezone=UTC",
+  "host": "81.71.122.50",
+  "port": "6521",
+  "database": "guus",
+  "user": "root",
+  "password": "supercoolGJ0628@cpic",
+  "insertBatchSize": 100
+}

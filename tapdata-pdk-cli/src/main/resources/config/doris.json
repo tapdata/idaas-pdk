@@ -4,7 +4,11 @@
     "port": "9030",
     "database": "example_db",
     "user": "root",
-    "password": ""
+    "password": "",
+    "extParams": "?rewriteBatchedStatements=true"
+  },
+  "test": {
+    "pdkId": "doris"
   },
   "node": {
   }

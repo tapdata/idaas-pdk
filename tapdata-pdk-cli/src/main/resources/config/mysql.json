@@ -1,0 +1,15 @@
+{
+  "connection": {
+    "host": "81.71.122.50",
+    "port": "6521",
+    "database": "guus",
+    "extParams": "",
+    "user": "root",
+    "password": "supercoolGJ0628@cpic"
+  },
+  "test": {
+    "pdkId": "mysql8"
+  },
+  "node": {
+  }
+}

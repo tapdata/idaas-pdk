@@ -16,9 +16,11 @@
         <module>file-connector</module>
         <module>tdd-connector</module>
         <module>aerospike-connector</module>
+        <module>mongodb-connector</module>
+        <module>mysql8-connector</module>
+        <module>mysql5-connector</module>
         <module>doris-connector</module>
-      <module>mongodb-connector</module>
-  </modules>
+    </modules>
 
     <build>
         <plugins>

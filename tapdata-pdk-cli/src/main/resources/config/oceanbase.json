@@ -1,0 +1,15 @@
+{
+  "connection": {
+    "host": "192.168.1.189",
+    "port": "2881",
+    "database": "coolgj",
+    "extParams": "",
+    "user": "root",
+    "password": "rootPWD123"
+  },
+  "test": {
+    "pdkId": "oceanbase"
+  },
+  "node": {
+  }
+}

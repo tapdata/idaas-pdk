@@ -1,24 +1,19 @@
 package io.tapdata.connector.doris.bean;
 
-import io.tapdata.entity.schema.TapField;
+import io.tapdata.base.bean.CommonColumn;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class DorisColumn {
-    // ref https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html
+public class DorisColumn extends CommonColumn {
+
     private String tableCatalog;
     private String tableSchema;
     private String tableName;
-    private String columnName;
-    private String dataType;
     private String typeName;
     private String columnSize;
     private String decimalDigits;
     private String numPrecisionRadix;
-    private String nullable;
-    private String remarks;
-    private String columnDefaultValue;
     private String charOctetLength;
     private String ordinalPosition;
     private String sourceDataType;
@@ -47,17 +42,6 @@ public class DorisColumn {
 
         this.sourceDataType = resultSet.getString("SOURCE_DATA_TYPE");
         this.isAutoincrement = resultSet.getString("IS_AUTOINCREMENT");
-    }
-
-
-    private Boolean isNullable() {
-        return "1".equals(this.nullable);
-    }
-
-
-    public TapField getTapField() {
-        return new TapField(this.columnName, this.dataType).nullable(this.isNullable()).
-                defaultValue(columnDefaultValue).comment(this.remarks);
     }
 
 }

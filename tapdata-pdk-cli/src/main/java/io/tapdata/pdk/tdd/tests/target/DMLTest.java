@@ -2,13 +2,13 @@ package io.tapdata.pdk.tdd.tests.target;
 
 
 import io.tapdata.entity.event.control.PatrolEvent;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.connector.target.DropTableFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
-import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.SourceNode;
@@ -16,7 +16,11 @@ import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
-import io.tapdata.pdk.core.workflow.engine.*;
+import io.tapdata.pdk.core.workflow.engine.DataFlowEngine;
+import io.tapdata.pdk.core.workflow.engine.DataFlowWorker;
+import io.tapdata.pdk.core.workflow.engine.JobOptions;
+import io.tapdata.pdk.core.workflow.engine.TapDAG;
+import io.tapdata.pdk.core.workflow.engine.TapDAGNodeEx;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import io.tapdata.pdk.tdd.core.SupportFunction;
 import org.junit.jupiter.api.Assertions;
@@ -24,7 +28,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -40,6 +46,7 @@ public class DMLTest extends PDKTestBase {
     String sourceNodeId = "s1";
 
     TapNodeInfo tapNodeInfo;
+
     @Test
     @DisplayName("Test method handleDML")
     void targetTest() throws Throwable {
@@ -62,17 +69,17 @@ public class DMLTest extends PDKTestBase {
                 dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
 
                 dag = dataFlowDescriber.toDag();
-                if(dag != null){
+                if (dag != null) {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
-                        if(toState.equals(DataFlowWorker.STATE_INITIALIZING)){
+                        if (toState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
 
                             checkFunctions(targetNode.getConnectorFunctions(), DMLTest.testFunctions());
-                        } else if(toState.equals(DataFlowWorker.STATE_INITIALIZED)){
+                        } else if (toState.equals(DataFlowWorker.STATE_INITIALIZED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
                                 TapLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
-                                if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
+                                if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     insertOneRecord(dataFlowEngine, dag);
                                 }
                             });
@@ -83,7 +90,7 @@ public class DMLTest extends PDKTestBase {
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 CommonUtils.logError(TAG, "Start failed", throwable);
-                if(throwable instanceof AssertionFailedError){
+                if (throwable instanceof AssertionFailedError) {
                     $(() -> {
                         throw ((AssertionFailedError) throwable);
                     });
@@ -99,7 +106,7 @@ public class DMLTest extends PDKTestBase {
         DataMap insertRecord = buildInsertRecord();
         DataMap filterMap = buildFilterMap();
         sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
-            if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
 
                 prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
                     List<TapTable> allTables = new ArrayList<>();
@@ -111,16 +118,15 @@ public class DMLTest extends PDKTestBase {
                     }
                     TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
                     boolean found = false;
-                    for(TapTable table : allTables) {
-                        if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                    for (TapTable table : allTables) {
+                        if (table.getName() != null && table.getName().equalsIgnoreCase(targetTable.getName())) {
                             found = true;
                             break;
                         }
                     }
                     connectionNode.getConnectorNode().destroy();
-                    if(!found)
+                    if (!found)
                         $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable.getName()));
-
                     verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
                     updateOneRecord(dataFlowEngine, dag);
                 });
@@ -133,7 +139,7 @@ public class DMLTest extends PDKTestBase {
         DataMap updateMap = buildUpdateMap();
         DataMap filterMap = buildFilterMap();
         sendUpdateRecordEvent(dataFlowEngine, dag, filterMap, updateMap, new PatrolEvent().patrolListener((nodeId, state) -> {
-            if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 verifyUpdateOneRecord(targetNode, filterMap, updateMap);
                 deleteOneRecord(dataFlowEngine, dag);
             }
@@ -143,7 +149,7 @@ public class DMLTest extends PDKTestBase {
     private void deleteOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap filterMap = buildFilterMap();
         sendDeleteRecordEvent(dataFlowEngine, dag, filterMap, new PatrolEvent().patrolListener((nodeId, state) -> {
-            if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
+            if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 verifyRecordNotExists(targetNode, filterMap);
                 sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
@@ -156,8 +162,8 @@ public class DMLTest extends PDKTestBase {
                                 Assertions.fail(throwable);
                             }
                             TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
-                            for(TapTable table : allTables) {
-                                if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                            for (TapTable table : allTables) {
+                                if (table.getName() != null && table.getName().equals(targetTable.getName())) {
                                     $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                 }
                             }
