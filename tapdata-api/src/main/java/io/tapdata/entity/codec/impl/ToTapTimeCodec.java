@@ -19,7 +19,7 @@ public class ToTapTimeCodec implements ToTapValueCodec<TapTimeValue> {
         } else if(value instanceof Date) {
             Date date = (Date) value;
             dateTime = new DateTime();
-            dateTime.setNano(date.getTime() * 1000 * 1000);
+            dateTime.setNano((int) ((date.getTime() % 1000) * 1000 * 1000));
             dateTime.setSeconds(date.getTime() / 1000);
         }
 
