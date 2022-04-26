@@ -17,8 +17,9 @@
         <module>tdd-connector</module>
         <module>aerospike-connector</module>
         <module>doris-connector</module>
-      <module>mongodb-connector</module>
-  </modules>
+        <module>mongodb-connector</module>
+        <module>mysql</module>
+    </modules>
 
     <build>
         <plugins>
