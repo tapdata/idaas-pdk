@@ -13,10 +13,12 @@ public class DateTime {
      *
      * 毫秒， 微秒， 纳秒， 1000
      */
-    private Long nano;
+    //nano int
+    private Integer nano;
     /**
      * 时区 GMT+8
      */
+    //ZoneId
     private TimeZone timeZone;
 
     public DateTime() {
@@ -47,11 +49,11 @@ public class DateTime {
         this.seconds = seconds;
     }
 
-    public Long getNano() {
+    public Integer getNano() {
         return nano;
     }
 
-    public void setNano(Long nano) {
+    public void setNano(Integer nano) {
         this.nano = nano;
     }
 

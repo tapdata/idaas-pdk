@@ -143,12 +143,13 @@ public class TapSimplify {
     public static Object convertDateTimeToDate(DateTime dateTime) {
         if(dateTime != null) {
             Long milliseconds;
-            Long nano = dateTime.getNano();
+            Integer nano = dateTime.getNano();
             Long seconds = dateTime.getSeconds();
-            if(nano != null) {
-                milliseconds = nano / 1000 / 1000;
-            } else if(seconds != null) {
+            if(seconds != null) {
                 milliseconds = seconds * 1000;
+                if(nano != null) {
+                    milliseconds += milliseconds + (nano / 1000 / 1000);
+                }
             } else {
                 return null;
             }
