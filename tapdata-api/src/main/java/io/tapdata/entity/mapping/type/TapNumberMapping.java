@@ -108,13 +108,13 @@ public class TapNumberMapping extends TapMapping {
     }
 
     @Override
-    public TapType toTapType(String originType, Map<String, String> params) {
+    public TapType toTapType(String dataType, Map<String, String> params) {
         Boolean theUnsigned = null;
-        if (unsigned != null && originType.contains(unsigned)) {
+        if (unsigned != null && dataType.contains(unsigned)) {
             theUnsigned = true;
         }
         Boolean theZerofill = null;
-        if (zerofill != null && originType.contains(zerofill)) {
+        if (zerofill != null && dataType.contains(zerofill)) {
             theZerofill = true;
         }
 

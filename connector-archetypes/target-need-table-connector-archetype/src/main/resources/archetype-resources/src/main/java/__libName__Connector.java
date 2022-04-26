@@ -287,9 +287,9 @@ public class ${libName}Connector extends ConnectorBase implements TapConnector {
         LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
         for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
             TapField field = entry.getValue();
-            String originType = field.getOriginType();
-            //originType is the data types defined in spec.json
-            //TODO use the generated originType to create table.
+            String dataType = field.getDataType();
+            //dataType is the data types defined in spec.json
+            //TODO use the generated dataType to create table.
         }
     }
 

@@ -11,11 +11,11 @@ import io.tapdata.entity.schema.value.TapValue;
 @Implementation(value = UnsupportedTypeFallbackHandler.class, buildNumber = 0)
 public class UnsupportedTypeBackHandlerImpl implements UnsupportedTypeFallbackHandler {
     @Override
-    public void handle(TapCodecRegistry codecRegistry, TapField unsupportedField, String originType, TapType toTapType) {
+    public void handle(TapCodecRegistry codecRegistry, TapField unsupportedField, String dataType, TapType toTapType) {
         if(codecRegistry != null) {
             TapType unsupportedTapType = unsupportedField.getTapType();
             if(unsupportedTapType != null && !codecRegistry.isRegisteredFromTapValue(unsupportedTapType.getTapValueClass())) {
-                codecRegistry.registerFromTapValue(unsupportedTapType.getTapValueClass(), originType, tapValue -> {
+                codecRegistry.registerFromTapValue(unsupportedTapType.getTapValueClass(), dataType, tapValue -> {
                     Object value = tapValue.getValue();
                     return value.toString();
                 });

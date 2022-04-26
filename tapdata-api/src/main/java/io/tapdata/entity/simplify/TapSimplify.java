@@ -35,8 +35,8 @@ public class TapSimplify {
         return FormatUtils.format(message, args);
     }
 
-    public static TapField field(String name, String originType) {
-        return new TapField(name, originType);
+    public static TapField field(String name, String type) {
+        return new TapField(name, type);
     }
 
     public static TapTable table(String tableName, String id) {

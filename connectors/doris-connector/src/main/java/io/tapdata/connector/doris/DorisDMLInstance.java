@@ -47,7 +47,7 @@ public class DorisDMLInstance {
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = insertRecord.get(columnName);
-            if (tapField.getOriginType() == null) continue;
+            if (tapField.getDataType() == null) continue;
             if (tapValue == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
                     preparedStatement.setObject(pos, tapField.getDefaultValue());
@@ -67,7 +67,7 @@ public class DorisDMLInstance {
         int fieldCount = 0;
         for (Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
             TapField tapField = nameFieldMap.get(entry.getKey());
-            if (tapField.getOriginType() == null) continue;
+            if (tapField.getDataType() == null) continue;
             fieldCount += 1;
         }
         StringBuilder stringBuilder = new StringBuilder();
@@ -105,7 +105,7 @@ public class DorisDMLInstance {
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = record.get(columnName);
-            if (tapField.getOriginType() == null) continue;
+            if (tapField.getDataType() == null) continue;
             if (tapValue == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
                     builder.append("\'").append(tapField.getDefaultValue()).append("'").append(',');

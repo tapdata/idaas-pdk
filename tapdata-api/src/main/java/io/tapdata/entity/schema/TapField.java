@@ -8,14 +8,14 @@ import java.io.Serializable;
 public class TapField implements Serializable {
     public TapField() {}
 
-    public TapField(String name, String originType) {
+    public TapField(String name, String dataType) {
         this.name = name;
-        this.originType = originType;
+        this.dataType = dataType;
     }
 
-    private String originType;
-    public TapField originType(String originType) {
-        this.originType = originType;
+    private String dataType;
+    public TapField dataType(String dataType) {
+        this.dataType = dataType;
         return this;
     }
     /**
@@ -161,7 +161,7 @@ public class TapField implements Serializable {
         TapField newField = new TapField();
         newField.nullable = nullable;
         newField.name = name;
-        newField.originType = originType;
+        newField.dataType = dataType;
         newField.partitionKeyPos = partitionKeyPos;
         newField.pos = pos;
         newField.primaryKeyPos = primaryKeyPos;
@@ -314,11 +314,11 @@ public class TapField implements Serializable {
         isPartitionKey = partitionKey;
     }
 
-    public String getOriginType() {
-        return originType;
+    public String getDataType() {
+        return dataType;
     }
 
-    public void setOriginType(String originType) {
-        this.originType = originType;
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
     }
 }

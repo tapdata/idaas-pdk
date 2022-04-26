@@ -3,7 +3,6 @@ package io.tapdata.entity.codec.filter;
 import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.codec.filter.impl.AllLayerMapIterator;
 import io.tapdata.entity.codec.filter.impl.FirstLayerMapIterator;
 import io.tapdata.entity.error.UnknownCodecException;
 import io.tapdata.entity.schema.TapField;
@@ -37,17 +36,17 @@ public class TapCodecFilterManager {
 //                if(valueCodec == null)
 //                    throw new UnknownCodecException("toTapValueMap codec not found for value class " + theValue.getClass());
                 if(valueCodec != null) {
-                    String originType = null;
+                    String dataType = null;
                     TapType typeFromSchema = null;
                     if(nameFieldMap != null) {
                         TapField field = nameFieldMap.get(fieldName);
                         if(field != null) {
-                            originType = field.getOriginType();
+                            dataType = field.getDataType();
                             typeFromSchema = field.getTapType();
                         }
                     }
                     TapValue tapValue = valueCodec.toTapValue(theValue);
-                    tapValue.setOriginType(originType);
+                    tapValue.setOriginType(dataType);
                     tapValue.setTapType(typeFromSchema);
                     tapValue.setOriginValue(theValue);
                     entry.setValue(tapValue);
@@ -74,7 +73,7 @@ public class TapCodecFilterManager {
     }
 
     public String getOriginTypeByTapType(Class<? extends TapType> tapTypeClass) {
-        return codecRegistry.getOriginTypeByTapType(tapTypeClass);
+        return codecRegistry.getDataTypeByTapType(tapTypeClass);
     }
 
     public ToTapValueCodec<?> getToTapValueCodec(Object value) {

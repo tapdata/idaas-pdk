@@ -115,14 +115,14 @@ public class TapUtilsImpl implements TapUtils {
         DataMap dataMap = new DataMap();
 
         TapTable table1 = new TapTable()
-                .add(new TapField().name("f").originType("aaa"))
-                .add(new TapField().name("a").originType("aa"));
+                .add(new TapField().name("f").dataType("aaa"))
+                .add(new TapField().name("a").dataType("aa"));
         dataMap.put("aaa", 1);
 //        defaultMap.put("table", table1);
         node.setConnectionConfig(dataMap);
         TapTable table = new TapTable()
-                .add(new TapField().name("f").originType("aaa"))
-                .add(new TapField().name("a").originType("aa"));
+                .add(new TapField().name("f").dataType("aaa"))
+                .add(new TapField().name("a").dataType("aa"));
         node.setTable(table);
         TapInsertRecordEvent insertRecordEvent = new TapInsertRecordEvent();
         insertRecordEvent.setAfter(new HashMap<String, Object>(){{

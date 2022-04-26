@@ -18,15 +18,15 @@ public class TableFieldTypesGeneratorImpl implements TableFieldTypesGenerator {
     @Override
     public void autoFill(LinkedHashMap<String, TapField> nameFieldMap, DefaultExpressionMatchingMap expressionMatchingMap) {
         for(Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
-            if(entry.getValue().getOriginType() != null) {
-                TypeExprResult<DataMap> result = expressionMatchingMap.get(entry.getValue().getOriginType());
+            if(entry.getValue().getDataType() != null) {
+                TypeExprResult<DataMap> result = expressionMatchingMap.get(entry.getValue().getDataType());
                 if(result != null) {
                     TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
                     if(tapMapping != null) {
-                        entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getOriginType(), result.getParams()));
+                        entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getDataType(), result.getParams()));
                     }
                 } else {
-                    TapLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition.", entry.getValue().getOriginType());
+                    TapLogger.error(TAG, "Field dataType {} didn't match corresponding TapMapping, please check your dataTypes json definition.", entry.getValue().getDataType());
                 }
             }
         }

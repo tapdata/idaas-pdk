@@ -12,9 +12,9 @@ import static io.tapdata.entity.simplify.TapSimplify.tapString;
 
 public class TapStringMapping extends TapBytesBase {
     @Override
-    public TapType toTapType(String originType, Map<String, String> params) {
+    public TapType toTapType(String dataType, Map<String, String> params) {
         Boolean theFixed = null;
-        if (fixed != null && originType.contains(fixed)) {
+        if (fixed != null && dataType.contains(fixed)) {
             theFixed = true;
         }
         return tapString().bytes(getToTapTypeBytes(params)).fixed(theFixed);

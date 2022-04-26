@@ -99,17 +99,17 @@ public class CreateTableTest extends PDKTestBase {
         LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
         $(() -> Assertions.assertNotNull(nameFieldMap, "Table name fields is null, please check whether you provide \"dataTypes\" in spec json file or define from TapValue codec in registerCapabilities method"));
 
-        boolean missingOriginType = false;
-        StringBuilder builder = new StringBuilder("Missing originType for fields, \n");
+        boolean missingDataType = false;
+        StringBuilder builder = new StringBuilder("Missing dataType for fields, \n");
         for (Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
-            if (entry.getValue().getOriginType() == null) {
-                missingOriginType = true;
+            if (entry.getValue().getDataType() == null) {
+                missingDataType = true;
                 builder.append("\t").append("Field \"").append(entry.getKey()).append("\" missing originType for TapType \"").append(entry.getValue().getTapType().getClass().getSimpleName()).append("\"\n");
             }
         }
         builder.append("You may register your codec for unsupported TapValue in registerCapabilities. For example, codecRegistry.registerFromTapValue(TapRawValue.class, \"TEXT\"), this is register unsupported TapRawValue to supported TEXT and please provide the conversion method. ");
-        boolean finalMissingOriginType = missingOriginType;
-        $(() -> Assertions.assertFalse(finalMissingOriginType, builder.toString()));
+        boolean finalMissingDataType = missingDataType;
+        $(() -> Assertions.assertFalse(finalMissingDataType, builder.toString()));
     }
 
     private void processCreateTable(DataFlowEngine dataFlowEngine, TapDAG dag) {

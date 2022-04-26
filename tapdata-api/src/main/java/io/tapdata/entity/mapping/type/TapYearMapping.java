@@ -33,7 +33,7 @@ public class TapYearMapping extends TapMapping {
     }
 
     @Override
-    public TapType toTapType(String originType, Map<String, String> params) {
+    public TapType toTapType(String dataType, Map<String, String> params) {
         return new TapYear();
     }
 

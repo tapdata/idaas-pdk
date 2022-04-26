@@ -29,9 +29,9 @@ public class DorisDDLInstance {
         StringBuilder builder = new StringBuilder();
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
-            if (tapField.getOriginType() == null) continue;
+            if (tapField.getDataType() == null) continue;
             builder.append(tapField.getName()).append(' ');
-            builder.append(tapField.getOriginType()).append(' ');
+            builder.append(tapField.getDataType()).append(' ');
             if (tapField.getNullable() != null && !tapField.getNullable()) {
                 builder.append("NOT NULL").append(' ');
             } else {
@@ -51,7 +51,7 @@ public class DorisDDLInstance {
         int fieldCount = 0;
         for (Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
             TapField tapField = nameFieldMap.get(entry.getKey());
-            if (tapField.getOriginType() == null) continue;
+            if (tapField.getDataType() == null) continue;
             fieldCount += 1;
         }
         StringBuilder stringBuilder = new StringBuilder();

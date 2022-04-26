@@ -10,7 +10,6 @@ import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
-import io.tapdata.entity.schema.type.TapMap;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.utils.InstanceFactory;
 
@@ -72,7 +71,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
             }
 
-            targetFieldMap.put(field.getName(), field.clone().originType(originType));
+            targetFieldMap.put(field.getName(), field.clone().dataType(originType));
         }
         if(finalResult.getResultItems() != null && !finalResult.getResultItems().isEmpty()) {
             finalResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);
@@ -84,7 +83,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         if(targetMatchingMap == null || targetMatchingMap.isEmpty())
             return null;
         HitTapMappingContainer hitTapMapping = new HitTapMappingContainer();
-        TapField field = new TapField().tapType(tapString).originType("LargestString");
+        TapField field = new TapField().tapType(tapString).dataType("LargestString");
         targetMatchingMap.iterate(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
             if(tapMapping != null && tapMapping.getTo() != null) {

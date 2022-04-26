@@ -230,7 +230,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 
     private void configTable(TapTable sourceTable) {
         TapTable targetTable = targetNode.getConnectorContext().getTable();
-        //Convert source table to target target by calculate the originType of target database.
+        //Convert source table to target target by calculate the dataType of target database.
         TargetTypesGenerator targetTypesGenerator = ClassFactory.create(TargetTypesGenerator.class);
         LinkedHashMap<String, TapField> nameFieldMap = null;
         if (targetTypesGenerator != null) {

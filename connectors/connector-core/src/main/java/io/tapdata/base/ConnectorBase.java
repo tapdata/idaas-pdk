@@ -79,8 +79,8 @@ public abstract class ConnectorBase {
         return FormatUtils.format(message, args);
     }
 
-    public static TapField field(String name, String originType) {
-        return TapSimplify.field(name, originType);
+    public static TapField field(String name, String dataType) {
+        return TapSimplify.field(name, dataType);
     }
 
     public static TapTable table(String tableName, String id) {
