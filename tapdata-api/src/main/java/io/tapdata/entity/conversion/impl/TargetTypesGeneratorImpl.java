@@ -33,17 +33,17 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         for(Map.Entry<String, TapField> entry : sourceFields.entrySet()) {
             TapField field = entry.getValue();
 
-            String originType = null;
+            String dataType = null;
             //User custom codec
             if(field.getTapType() != null) {
-                originType = targetCodecFilterManager.getOriginTypeByTapType(field.getTapType().getClass());
+                dataType = targetCodecFilterManager.getDataTypeByTapType(field.getTapType().getClass());
             }
 
-            if(originType == null) {
+            if(dataType == null) {
                 //Find best codec
                 TapResult<String> result = calculateBestTypeMapping(field, targetMatchingMap);
                 if(result != null) {
-                    originType = result.getData();
+                    dataType = result.getData();
                     List<ResultItem> resultItems = result.getResultItems();
                     if(resultItems != null) {
                         for(ResultItem resultItem : resultItems) {
@@ -54,14 +54,14 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
             }
 
-            if(originType == null) {
+            if(dataType == null) {
                 //handle by default
                 if(cachedLargestStringMapping == null) {
                     cachedTapString = new TapString();
                     cachedLargestStringMapping = findLargestStringType(targetMatchingMap, cachedTapString);
                 }
-                originType = cachedLargestStringMapping;
-                if(originType != null) {
+                dataType = cachedLargestStringMapping;
+                if(dataType != null) {
                     UnsupportedTypeFallbackHandler unsupportedTypeFallbackHandler = InstanceFactory.instance(UnsupportedTypeFallbackHandler.class);
                     if(unsupportedTypeFallbackHandler != null) {
                         unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, cachedLargestStringMapping, cachedTapString);
@@ -71,7 +71,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
             }
 
-            targetFieldMap.put(field.getName(), field.clone().dataType(originType));
+            targetFieldMap.put(field.getName(), field.clone().dataType(dataType));
         }
         if(finalResult.getResultItems() != null && !finalResult.getResultItems().isEmpty()) {
             finalResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);

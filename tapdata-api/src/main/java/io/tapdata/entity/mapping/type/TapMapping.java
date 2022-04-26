@@ -106,7 +106,7 @@ public abstract class TapMapping {
         this.to = to;
     }
 
-    public abstract TapType toTapType(String originType, Map<String, String> params);
+    public abstract TapType toTapType(String dataType, Map<String, String> params);
 
     public abstract TapResult<String> fromTapType(String typeExpression, TapType tapType);
 

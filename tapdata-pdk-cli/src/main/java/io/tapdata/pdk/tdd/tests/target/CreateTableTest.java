@@ -104,7 +104,7 @@ public class CreateTableTest extends PDKTestBase {
         for (Map.Entry<String, TapField> entry : nameFieldMap.entrySet()) {
             if (entry.getValue().getDataType() == null) {
                 missingDataType = true;
-                builder.append("\t").append("Field \"").append(entry.getKey()).append("\" missing originType for TapType \"").append(entry.getValue().getTapType().getClass().getSimpleName()).append("\"\n");
+                builder.append("\t").append("Field \"").append(entry.getKey()).append("\" missing dataType for TapType \"").append(entry.getValue().getTapType().getClass().getSimpleName()).append("\"\n");
             }
         }
         builder.append("You may register your codec for unsupported TapValue in registerCapabilities. For example, codecRegistry.registerFromTapValue(TapRawValue.class, \"TEXT\"), this is register unsupported TapRawValue to supported TEXT and please provide the conversion method. ");
