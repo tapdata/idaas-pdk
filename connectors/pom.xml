@@ -18,7 +18,8 @@
         <module>aerospike-connector</module>
         <module>doris-connector</module>
       <module>mongodb-connector</module>
-  </modules>
+        <module>postgres-connector</module>
+    </modules>
 
     <build>
         <plugins>
