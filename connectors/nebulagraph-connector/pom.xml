@@ -7,10 +7,10 @@
     <artifactId>connectors</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
-  <groupId>io.tapdata.connector.mysql5</groupId>
-  <artifactId>mysql5-connector</artifactId>
+  <groupId>io.tapdata.connector.nebulagraph</groupId>
+  <artifactId>nebulagraph-connector</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>mysql5-connector</name>
+  <name>nebulagraph-connector</name>
   <modules>
 
   </modules>
@@ -41,14 +41,9 @@
     </dependency>
 
     <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>5.1.46</version>
-    </dependency>
-    <dependency>
-      <groupId>gbase</groupId>
-      <artifactId>gbase-connector-java</artifactId>
-      <version>8.3.81.53-build54.4.7-bin</version>
+      <groupId>com.vesoft</groupId>
+      <artifactId>client</artifactId>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

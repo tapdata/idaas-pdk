@@ -15,7 +15,7 @@ public class TDDDorisMain1 {
 //                "test", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\aerospike.json",
 //                "test", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\doris.json",
 //                "test", "-c", "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/config/doris.json",
-                "test", "-c", "tapdata-pdk-cli/src/main/resources/config/mysql.json",
+                "test", "-c", "tapdata-pdk-cli/src/main/resources/config/gbase8a.json",
 //                "-t", "io.tapdata.pdk.tdd.tests.target.CreateTableTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.target.DMLTest",
 //                "B:\\code\\tapdata\\idaas-pdk\\connectors\\aerospike-connector\\target\\aerospike-connector-v1.0-SNAPSHOT.jar",
@@ -24,7 +24,7 @@ public class TDDDorisMain1 {
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/file-connector-v1.0-SNAPSHOT.jar",
 
 //                "connectors/doris-connector",
-                "dist/mysql8-connector-v1.0-SNAPSHOT.jar"
+                "dist/mysql5-connector-v1.0-SNAPSHOT.jar"
         };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);

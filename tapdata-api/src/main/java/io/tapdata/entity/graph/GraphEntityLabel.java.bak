@@ -1,0 +1,27 @@
+package io.tapdata.entity.graph;
+
+/**
+ * class to describe entity label of graph
+ *
+ * @author Jarad
+ * @date 2022/4/28
+ */
+public class GraphEntityLabel extends GraphResource {
+
+    public GraphEntityLabel(String idAndName) {
+        this(idAndName, idAndName);
+    }
+
+    public GraphEntityLabel(String id, String name) {
+        super(id, name);
+    }
+
+    public static GraphEntityLabel create(String idAndName) {
+        return new GraphEntityLabel(idAndName);
+    }
+
+    public static GraphEntityLabel create(String id, String name) {
+        return new GraphEntityLabel(id, name);
+    }
+
+}

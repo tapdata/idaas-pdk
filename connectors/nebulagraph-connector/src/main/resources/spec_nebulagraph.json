@@ -1,0 +1,66 @@
+{
+  "properties": {
+    "name": "NebulaGraph",
+    "icon": "icons/icon.png",
+    "id": "nebulagraph"
+  },
+  "configOptions": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "title": "Host",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "port": {
+          "type": "string",
+          "title": "Port",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "database": {
+          "type": "string",
+          "title": "Database",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "extParams": {
+          "type": "string",
+          "title": "ExtendParams",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "user": {
+          "type": "string",
+          "title": "User",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "password": {
+          "type": "string",
+          "title": "Password",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        }
+      }
+    }
+  },
+  "dataTypes": {
+    "int": {"bit": 64, "priority": 1, "to": "TapNumber"},
+    "int64": {"bit": 64, "priority": 2, "to": "TapNumber"},
+    "int32": {"bit": 32, "priority": 2, "to": "TapNumber"},
+    "int16": {"bit": 16, "priority": 2, "to": "TapNumber"},
+    "int8": {"bit": 8, "priority": 1, "to": "TapNumber"},
+    "float": {"bit": 32, "priority": 2, "to": "TapNumber"},
+    "double": {"bit": 64, "priority": 1, "to": "TapNumber"},
+    "date": {"range": ["-32768-01-01", "32767-12-31"], "priority": 1, "to": "TapDate"},
+    "time": {"range": ["00:00:00.000000", "23:59:59.999999"], "priority": 1, "to": "TapTime"},
+    "datetime": {"range": ["-32768-01-01 00:00:00.000000", "32767-12-31 23:59:59.999999"], "priority": 1, "to": "TapDateTime"},
+    "timestamp": {"range": ["1970-01-01 00:00:01", "2262-04-11 23:47:16"], "priority": 2, "to": "TapDateTime"},
+    "fixed_string[($byte)]": {"byte": 255, "defaultByte": 1, "bitRatio": 3, "priority": 2, "to": "TapString"},
+    "string": {"byte": "4g", "bitRatio": 3, "priority": 1, "to": "TapString"},
+    "bool": {"bit": 1, "priority": 1, "to": "TapBoolean"}
+  }
+}

@@ -19,7 +19,8 @@
         <module>mongodb-connector</module>
         <module>mysql8-connector</module>
         <module>mysql5-connector</module>
-        <module>doris-connector</module>
+        <module>nebulagraph-connector</module>
+        <module>informix-connector</module>
     </modules>
 
     <build>

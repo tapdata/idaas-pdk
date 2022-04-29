@@ -1,0 +1,27 @@
+package io.tapdata.entity.graph;
+
+/**
+ * class to describe relation type of graph
+ *
+ * @author Jarad
+ * @date 2022/4/28
+ */
+public class GraphRelationType extends GraphResource {
+
+    public GraphRelationType(String idAndName) {
+        this(idAndName, idAndName);
+    }
+
+    public GraphRelationType(String id, String name) {
+        super(id, name);
+    }
+
+    public static GraphRelationType create(String idAndName) {
+        return new GraphRelationType(idAndName);
+    }
+
+    public static GraphRelationType create(String id, String name) {
+        return new GraphRelationType(id, name);
+    }
+
+}

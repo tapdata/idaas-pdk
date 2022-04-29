@@ -1,0 +1,15 @@
+{
+  "connection": {
+    "host": "192.168.1.189",
+    "port": "9088",
+    "database": "testdb",
+    "extParams": "GBASEDBTSERVER=gbase01;DB_LOCALE=zh_CN.utf8;CLIENT_LOCALE=zh_CN.utf8;IFX_LOCK_MODE_WAIT=30;",
+    "user": "gbasedbt",
+    "password": "GBase123"
+  },
+  "test": {
+    "pdkId": "gbase8s"
+  },
+  "node": {
+  }
+}

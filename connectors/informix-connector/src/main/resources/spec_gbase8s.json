@@ -1,0 +1,193 @@
+{
+  "properties": {
+    "name": "GBase-8s",
+    "icon": "icons/icon.png",
+    "id": "gbase8s"
+  },
+  "configOptions": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "title": "Host",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "port": {
+          "type": "string",
+          "title": "Port",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "database": {
+          "type": "string",
+          "title": "Database",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "extParams": {
+          "type": "string",
+          "title": "ExtendParams",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "user": {
+          "type": "string",
+          "title": "User",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "password": {
+          "type": "string",
+          "title": "Password",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        }
+      }
+    }
+  },
+  "dataTypes": {
+    "smallint": {
+      "bit": 16,
+      "priority": 3,
+      "to": "TapNumber"
+    },
+    "int": {
+      "bit": 32,
+      "priority": 1,
+      "to": "TapNumber"
+    },
+    "integer": {
+      "bit": 32,
+      "priority": 3,
+      "to": "TapNumber"
+    },
+    "int8": {
+      "bit": 8,
+      "priority": 3,
+      "to": "TapNumber"
+    },
+    "bigint": {
+      "bit": 64,
+      "priority": 3,
+      "to": "TapNumber"
+    },
+    "float[($precision)]": {
+      "bit": 32,
+      "precision": [1,16],
+      "defaultPrecision": 2,
+      "priority": 3,
+      "to": "TapNumber"
+    },
+    "double precision": {
+      "bit": 4,
+      "priority": 3,
+      "to": "TapNumber"
+    },
+    "decimal[($precision,$scale)]": {
+      "bit": 80,
+      "precision": [1,32],
+      "defaultPrecision": 10,
+      "scale": [0,32],
+      "defaultScale": 0,
+      "priority": 1,
+      "to": "TapNumber"
+    },
+    "date": {
+      "range": [
+        "0001-01-01",
+        "9999-12-31"
+      ],
+      "priority": 1,
+      "to": "TapDate"
+    },
+    "interval($rangeType)": {
+      "range": [
+        "-99:59:59",
+        "99:59:59"
+      ],
+      "priority": 3,
+      "queryOnly": true,
+      "to": "TapTime"
+    },
+    "datetime($rangeType)": {
+      "range": [
+        "1000-01-01 00:00:00.00000",
+        "9999-12-31 23:59:59.99999"
+      ],
+      "priority": 1,
+      "to": "TapDateTime"
+    },
+    "timestamp[($fsp)]": {
+      "range": [
+        "1000-01-01 00:00:00",
+        "9999-12-31 23:59:59"
+      ],
+      "fsp": [0,6],
+      "defualtFsp":19,
+      "priority": 3,
+      "to": "TapDateTime"
+    },
+    "char[($byte)]": {
+      "byte": 255,
+      "defaultByte": 1,
+      "bitRatio": 1,
+      "priority": 2,
+      "to": "TapString"
+    },
+    "varchar($byte)": {
+      "byte": "32k",
+      "bitRatio": 1,
+      "priority": 1,
+      "to": "TapString"
+    },
+    "blob": {
+      "byte": "64k",
+      "priority": 2,
+      "to": "TapBinary"
+    },
+    "text": {
+      "byte": "64k",
+      "priority": 2,
+      "to": "TapString"
+    },
+    "mediumblob": {
+      "byte": "16m",
+      "priority": 3,
+      "to": "TapBinary"
+    },
+    "mediumtext": {
+      "byte": "16m",
+      "priority": 3,
+      "to": "TapString"
+    },
+    "longblob": {
+      "byte": "4g",
+      "priority": 2,
+      "to": "TapBinary"
+    },
+    "longtext": {
+      "byte": "4g",
+      "priority": 2,
+      "to": "TapString"
+    },
+    "bit[($byte)]": {
+      "byte": 64,
+      "defaultByte": 1,
+      "priority": 3,
+      "to": "TapBinary"
+    },
+    "binary([$byte])": {
+      "byte": 255,
+      "defaultByte":1,
+      "priority": 1,
+      "to": "TapBinary"
+    },
+    "json": {
+      "byte": "64k",
+      "priority": 3,
+      "to": "TapString"
+    }
+  }
+}
