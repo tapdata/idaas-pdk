@@ -64,7 +64,7 @@ public class SqlBuilder {
         return "INSERT INTO " + tapTable.getName() + " VALUES (" + stringBuilder + ")";
     }
 
-    public void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
+    public static void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
         preparedStatement.clearParameters();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         int pos = 1;
@@ -87,7 +87,7 @@ public class SqlBuilder {
         preparedStatement.addBatch();
     }
 
-    public String buildKeyAndValue(Map<String, Object> record, String splitSymbol) {
+    public static String buildKeyAndValue(Map<String, Object> record, String splitSymbol) {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<String, Object> entry : record.entrySet()) {
             String fieldName = entry.getKey();
@@ -128,20 +128,20 @@ public class SqlBuilder {
         return builder.toString();
     }
 
-    private final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
+    private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
 
-    private String formatTapDateTime(DateTime dateTime, String pattern) {
+    private static String formatTapDateTime(DateTime dateTime, String pattern) {
         if (dateTime.getTimeZone() != null) dateTime.setTimeZone(dateTime.getTimeZone());
         tapDateTimeFormat.applyPattern(pattern);
         return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
     }
 
-    private String formatTapDateTime(Date date, String pattern) {
+    private static String formatTapDateTime(Date date, String pattern) {
         tapDateTimeFormat.applyPattern(pattern);
         return tapDateTimeFormat.format(date);
     }
 
-    private Object getFieldOriginValue(Object tapValue) {
+    private static Object getFieldOriginValue(Object tapValue) {
         Object result = tapValue;
         if (tapValue instanceof DateTime) {
             result = formatTapDateTime((DateTime) tapValue, "yyyy-MM-dd HH:mm:ss");

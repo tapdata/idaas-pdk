@@ -18,8 +18,8 @@ public class PostgresConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String jdbcDriver = "com.mysql.cj.jdbc.Driver"; // mysql>8.0
-    private String databaseUrlPattern = "jdbc:mysql://%s:%d/%s%s"; // last %s reserved for extend params
+    private String jdbcDriver = "org.postgresql.Driver";
+    private String databaseUrlPattern = "jdbc:postgresql://%s:%d/%s%s"; // last %s reserved for extend params
     private String extParams;
     private String host;
     private int port;
