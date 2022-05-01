@@ -104,11 +104,11 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         }
     }
 
-    private MongoCollection<Document> getMongoCollection(TapTable table) {
+    private MongoCollection<Document> getMongoCollection(String table) {
         if(mongoCollection == null) {
             synchronized (lock) {
                 if(mongoCollection == null) {
-                    mongoCollection = mongoDatabase.getCollection(table.getName());
+                    mongoCollection = mongoDatabase.getCollection(table);
                 }
             }
         }
@@ -251,11 +251,11 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
 
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
-        getMongoCollection(connectorContext.getTable()).drop();
+        getMongoCollection(dropTableEvent.getTableId()).drop();
 
         if(streamCursor != null) {
             streamCursor.close();
-            TapLogger.info(TAG, "dropTable is called for " + connectorContext.getTable() + " streamCursor has been closed " + streamCursor);
+            TapLogger.info(TAG, "dropTable is called for " + connectorContext.getTables() + " streamCursor has been closed " + streamCursor);
         }
     }
 
@@ -290,22 +290,24 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
 
-        List<Document> insertList = new ArrayList<>();
-        List<TapRecordEvent> insertEventList = new ArrayList<>();
+        Map<String, List<Document>> insertMap = new HashMap<>();
+        Map<String, List<TapRecordEvent>> insertEventMap = new HashMap<>();
         UpdateOptions options = new UpdateOptions().upsert(true);
-        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
 
         WriteListResult<TapRecordEvent> writeListResult = writeListResult();
 
         for (TapRecordEvent recordEvent : tapRecordEvents) {
+            MongoCollection<Document> collection = getMongoCollection(recordEvent.getTableId());
+
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-                insertList.add(new Document(insertRecordEvent.getAfter()));
-                insertEventList.add(insertRecordEvent);
+                insertMap.computeIfAbsent(insertRecordEvent.getTableId(), s -> new ArrayList<>()).add(new Document(insertRecordEvent.getAfter()));
+//                insertMap.put(insertRecordEvent.getTableName(), new Document(insertRecordEvent.getAfter()));
+                insertEventMap.computeIfAbsent(insertRecordEvent.getTableId(), s -> new ArrayList<>()).add(insertRecordEvent);
                 inserted.incrementAndGet();
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
-                if (!insertList.isEmpty()) {
-                    collection.insertMany(insertList);
+                if (!insertMap.isEmpty()) {
+                    insertMany(insertMap, insertEventMap, writeListResult);
                 }
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
@@ -318,8 +320,8 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 else
                     TapLogger.warn("Update record by filter {} is missed. ", toJson(before));
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
-                if (!insertList.isEmpty()) {
-                    collection.insertMany(insertList);
+                if (!insertMap.isEmpty()) {
+                    insertMany(insertMap, insertEventMap, writeListResult);
                 }
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
@@ -331,15 +333,8 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     TapLogger.warn(TAG, "Delete record by filter {} is missed. ", toJson(before));
             }
         }
-        if (!insertList.isEmpty()) {
-            InsertManyResult insertManyResult = collection.insertMany(insertList);
-            Map<Integer, BsonValue> insertedIds = insertManyResult.getInsertedIds();
-            Exception error = new Exception("Insert failed");
-            //Tell incremental engine which event insert failed. incremental engine will try update event.
-            for (int i = 0; i < insertList.size(); i++) {
-                if(!insertedIds.containsKey(i))
-                    writeListResult.addError(insertEventList.get(i), error);
-            }
+        if (!insertMap.isEmpty()) {
+            insertMany(insertMap, insertEventMap, writeListResult);
         }
         //Need to tell incremental engine the write result
         writeListResultConsumer.accept(writeListResult
@@ -348,72 +343,85 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                 .removedCount(deleted.get()));
     }
 
-    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
-        MongoCollection<Document> collection = getMongoCollection(connectorContext.getTable());
-        if (tapAdvanceFilter != null) {
-            FilterResults filterResults = new FilterResults();
-            List<Bson> bsonList = new ArrayList<>();
-            DataMap match = tapAdvanceFilter.getMatch();
-            if(match != null) {
-                for (Map.Entry<String, Object> entry : match.entrySet()) {
-                    bsonList.add(eq(entry.getKey(), entry.getValue()));
-                }
+    private void insertMany(Map<String, List<Document>> insertMap, Map<String, List<TapRecordEvent>> insertEventMap, WriteListResult<TapRecordEvent> writeListResult) {
+        for(Map.Entry<String, List<Document>> entry : insertMap.entrySet()) {
+            List<TapRecordEvent> insertEventList = insertEventMap.get(entry.getKey());
+            InsertManyResult insertManyResult = getMongoCollection(entry.getKey()).insertMany(entry.getValue());
+            Map<Integer, BsonValue> insertedIds = insertManyResult.getInsertedIds();
+            Exception error = new Exception("Insert failed");
+            //Tell incremental engine which event insert failed. incremental engine will try update event.
+            for (int i = 0; i < insertMap.size(); i++) {
+                if(!insertedIds.containsKey(i))
+                    writeListResult.addError(insertEventList.get(i), error);
             }
-            List<QueryOperator> ops = tapAdvanceFilter.getOperators();
-            if(ops != null) {
-                for(QueryOperator op : ops) {
-                    switch (op.getOperator()) {
-                        case QueryOperator.GT:
-                            bsonList.add(gt(op.getKey(), op.getValue()));
-                            break;
-                        case QueryOperator.GTE:
-                            bsonList.add(gte(op.getKey(), op.getValue()));
-                            break;
-                        case QueryOperator.LT:
-                            bsonList.add(lt(op.getKey(), op.getValue()));
-                            break;
-                        case QueryOperator.LTE:
-                            bsonList.add(lte(op.getKey(), op.getValue()));
-                            break;
-                    }
-                }
-            }
-
-            Integer limit = tapAdvanceFilter.getLimit();
-            if(limit == null)
-                limit = 1000;
-
-            Bson query;
-            if(bsonList.isEmpty())
-                query = new Document();
-            else
-                query = and(bsonList.toArray(new Bson[0]));
-
-            FindIterable<Document> iterable = collection.find(query).limit(limit);
-
-            Integer skip = tapAdvanceFilter.getSkip();
-            if(skip != null) {
-                iterable.skip(skip);
-            }
-
-            List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
-            if(sortOnList != null) {
-                for(SortOn sortOn : sortOnList) {
-                    switch (sortOn.getSort()) {
-                        case SortOn.ASCENDING:
-                            iterable.sort(Sorts.ascending(sortOn.getKey()));
-                            break;
-                        case SortOn.DESCENDING:
-                            iterable.sort(Sorts.descending(sortOn.getKey()));
-                            break;
-                    }
-                }
-            }
-            for (Document document : iterable) {
-                filterResults.add(document);
-            }
-            consumer.accept(filterResults);
         }
+
+    }
+
+    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
+        MongoCollection<Document> collection = getMongoCollection(tapAdvanceFilter.getTableName());
+        FilterResults filterResults = new FilterResults();
+        List<Bson> bsonList = new ArrayList<>();
+        DataMap match = tapAdvanceFilter.getMatch();
+        if(match != null) {
+            for (Map.Entry<String, Object> entry : match.entrySet()) {
+                bsonList.add(eq(entry.getKey(), entry.getValue()));
+            }
+        }
+        List<QueryOperator> ops = tapAdvanceFilter.getOperators();
+        if(ops != null) {
+            for(QueryOperator op : ops) {
+                switch (op.getOperator()) {
+                    case QueryOperator.GT:
+                        bsonList.add(gt(op.getKey(), op.getValue()));
+                        break;
+                    case QueryOperator.GTE:
+                        bsonList.add(gte(op.getKey(), op.getValue()));
+                        break;
+                    case QueryOperator.LT:
+                        bsonList.add(lt(op.getKey(), op.getValue()));
+                        break;
+                    case QueryOperator.LTE:
+                        bsonList.add(lte(op.getKey(), op.getValue()));
+                        break;
+                }
+            }
+        }
+
+        Integer limit = tapAdvanceFilter.getLimit();
+        if(limit == null)
+            limit = 1000;
+
+        Bson query;
+        if(bsonList.isEmpty())
+            query = new Document();
+        else
+            query = and(bsonList.toArray(new Bson[0]));
+
+        FindIterable<Document> iterable = collection.find(query).limit(limit);
+
+        Integer skip = tapAdvanceFilter.getSkip();
+        if(skip != null) {
+            iterable.skip(skip);
+        }
+
+        List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
+        if(sortOnList != null) {
+            for(SortOn sortOn : sortOnList) {
+                switch (sortOn.getSort()) {
+                    case SortOn.ASCENDING:
+                        iterable.sort(Sorts.ascending(sortOn.getKey()));
+                        break;
+                    case SortOn.DESCENDING:
+                        iterable.sort(Sorts.descending(sortOn.getKey()));
+                        break;
+                }
+            }
+        }
+        for (Document document : iterable) {
+            filterResults.add(document);
+        }
+        consumer.accept(filterResults);
     }
 
     /**

@@ -11,11 +11,11 @@ public class LoggerUtils {
     }
 
     public static String sourceNodeMessage(SourceNode sourceNode) {
-        return "Source table " + sourceNode.getConnectorContext().getTable().getName() + " " + nodePrefix(sourceNode.getDagId(), sourceNode.getAssociateId(), sourceNode.getTapNodeInfo().getTapNodeSpecification().idAndGroup(), sourceNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
+        return "Source " + nodePrefix(sourceNode.getDagId(), sourceNode.getAssociateId(), sourceNode.getTapNodeInfo().getTapNodeSpecification().idAndGroup(), sourceNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
     }
 
     public static String targetNodeMessage(TargetNode targetNode) {
-        return "Target table " + targetNode.getConnectorContext().getTable().getName() + " " + nodePrefix(targetNode.getDagId(), targetNode.getAssociateId(), targetNode.getTapNodeInfo().getTapNodeSpecification().idAndGroup(), targetNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
+        return "Target " + nodePrefix(targetNode.getDagId(), targetNode.getAssociateId(), targetNode.getTapNodeInfo().getTapNodeSpecification().idAndGroup(), targetNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
     }
 
     public static String processorNodeMessage(ProcessorNode processorNode) {

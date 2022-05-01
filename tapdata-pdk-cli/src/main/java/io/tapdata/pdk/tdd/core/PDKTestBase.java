@@ -617,8 +617,8 @@ public class PDKTestBase {
         Map<String, Object> result = filterResult.getResult();
 
 
-        targetNode.getCodecFilterManager().transformToTapValueMap(result, sourceNode.getConnectorContext().getTable().getNameFieldMap());
-        targetNode.getCodecFilterManager().transformFromTapValueMap(result);
+        targetNode.getCodecsFilterManager().transformToTapValueMap(result, sourceNode.getConnectorContext().getTable().getNameFieldMap());
+        targetNode.getCodecsFilterManager().transformFromTapValueMap(result);
 
         StringBuilder builder = new StringBuilder();
         $(() -> assertTrue(mapEquals(buildInsertRecord(), result, builder), builder.toString()));

@@ -44,6 +44,22 @@ public class TapTable extends TapItem<TapField> {
      */
     private String charset;
 
+    protected String pdkId;
+    public TapTable pdkId(String pdkId) {
+        this.pdkId = pdkId;
+        return this;
+    }
+    protected String pdkGroup;
+    public TapTable pdkGroup(String pdkGroup) {
+        this.pdkGroup = pdkGroup;
+        return this;
+    }
+    protected String pdkVersion;
+    public TapTable pdkVersion(String pdkVersion) {
+        this.pdkVersion = pdkVersion;
+        return this;
+    }
+
     public String toString() {
         return "TapTable id " + id +
                 " name " + name +
@@ -168,5 +184,29 @@ public class TapTable extends TapItem<TapField> {
 
     public void setDefaultPrimaryKeys(List<String> defaultPrimaryKeys) {
         this.defaultPrimaryKeys = defaultPrimaryKeys;
+    }
+
+    public String getPdkId() {
+        return pdkId;
+    }
+
+    public void setPdkId(String pdkId) {
+        this.pdkId = pdkId;
+    }
+
+    public String getPdkGroup() {
+        return pdkGroup;
+    }
+
+    public void setPdkGroup(String pdkGroup) {
+        this.pdkGroup = pdkGroup;
+    }
+
+    public String getPdkVersion() {
+        return pdkVersion;
+    }
+
+    public void setPdkVersion(String pdkVersion) {
+        this.pdkVersion = pdkVersion;
     }
 }

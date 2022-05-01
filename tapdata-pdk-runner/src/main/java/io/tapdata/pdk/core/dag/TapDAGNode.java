@@ -1,10 +1,11 @@
 package io.tapdata.pdk.core.dag;
 
-import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class TapDAGNode {
     protected DataMap nodeConfig;
@@ -18,13 +19,18 @@ public class TapDAGNode {
     public static final String TYPE_PROCESSOR = TapNodeInfo.NODE_TYPE_PROCESSOR;
     public static final String TYPE_SOURCE_TARGET = TapNodeInfo.NODE_TYPE_SOURCE_TARGET;
     protected String type;
-    protected TapTable table;
+    /**
+     * ["*"] means all tables in source; accept any table from source in target.
+     */
+    protected List<String> tables;
+    protected String table;
+    protected List<Map<String, Object>> tasks;
     protected List<String> parentNodeIds;
     protected List<String> childNodeIds;
 
     @Override
     public String toString() {
-        return type + " " + id + ": " + (table != null ? table.getName() + " on " : "") + pdkId + "@" + group + "-v" + version;
+        return type + " " + id + ": " + (tables != null ? Arrays.toString(tables.toArray()) + " on " : table + " on ") + pdkId + "@" + group + "-v" + version;
     }
 
     public String verify() {
@@ -38,18 +44,32 @@ public class TapDAGNode {
             return "missing type";
         if(version == null)
             return "missing version";
-        if(!type.equals(TYPE_PROCESSOR) && table == null)
-            return "missing table";
-        if(!type.equals(TYPE_PROCESSOR) && table.getName() == null)
-            return "missing table name";
+        if(!type.equals(TYPE_PROCESSOR) && ((tables == null || tables.isEmpty()) || table == null))
+            return "missing tables or table";
         return null;
     }
 
-    public TapTable getTable() {
+    public List<Map<String, Object>> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(List<Map<String, Object>> tasks) {
+        this.tasks = tasks;
+    }
+
+    public List<String> getTables() {
+        return tables;
+    }
+
+    public void setTables(List<String> tables) {
+        this.tables = tables;
+    }
+
+    public String getTable() {
         return table;
     }
 
-    public void setTable(TapTable table) {
+    public void setTable(String table) {
         this.table = table;
     }
 

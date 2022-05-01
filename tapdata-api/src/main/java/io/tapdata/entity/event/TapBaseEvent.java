@@ -1,9 +1,7 @@
 package io.tapdata.entity.event;
 
-import io.tapdata.entity.schema.TapTable;
-
 public abstract class TapBaseEvent extends TapEvent {
-    protected TapTable table;
+    protected String tableId;
     /**
      * The reference time read from source, maybe some difference as sources are different
      * Used for CDC in most cases.
@@ -25,7 +23,7 @@ public abstract class TapBaseEvent extends TapEvent {
 //            baseEvent.pdkId = pdkId;
 //            baseEvent.pdkGroup = pdkGroup;
 //            baseEvent.pdkVersion = pdkVersion;
-            baseEvent.table = table;
+            baseEvent.tableId = tableId;
         }
     }
 
@@ -61,11 +59,11 @@ public abstract class TapBaseEvent extends TapEvent {
 //        this.pdkVersion = pdkVersion;
 //    }
 
-    public TapTable getTable() {
-        return table;
+    public String getTableId() {
+        return tableId;
     }
 
-    public void setTable(TapTable table) {
-        this.table = table;
+    public void setTableId(String tableId) {
+        this.tableId = tableId;
     }
 }

@@ -2,36 +2,26 @@ package io.tapdata.pdk.core.api;
 
 import io.tapdata.entity.codec.TapCodecRegistry;
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
-import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.pdk.apis.pretty.ClassHandlers;
-import io.tapdata.pdk.core.utils.CommonUtils;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 
 public class ConnectorNode extends Node {
     private static final String TAG = ConnectorNode.class.getSimpleName();
     TapConnector connector;
-    TapCodecRegistry codecRegistry;
+    TapCodecRegistry codecsRegistry;
     TapConnectorContext connectorContext;
 
     ConnectorFunctions connectorFunctions;
-    TapCodecFilterManager codecFilterManager;
+    TapCodecFilterManager codecsFilterManager;
 
 //    Queue<TapEvent> externalEvents;
 
-    public void init(TapConnector tapNode, TapCodecRegistry codecRegistry, ConnectorFunctions connectorFunctions) {
+    public void init(TapConnector tapNode, TapCodecRegistry codecsRegistry, ConnectorFunctions connectorFunctions) {
         connector = tapNode;
-        this.codecRegistry = codecRegistry;
+        this.codecsRegistry = codecsRegistry;
         this.connectorFunctions = connectorFunctions;
-        codecFilterManager = new TapCodecFilterManager(this.codecRegistry);
+        codecsFilterManager = new TapCodecFilterManager(this.codecsRegistry);
 //        externalEvents = new ConcurrentLinkedQueue<>();
     }
 
@@ -78,12 +68,12 @@ public class ConnectorNode extends Node {
 //        }
 //    }
 
-    public TapCodecRegistry getCodecRegistry() {
-        return codecRegistry;
+    public TapCodecRegistry getCodecsRegistry() {
+        return codecsRegistry;
     }
 
     public void registerCapabilities() {
-        connector.registerCapabilities(connectorFunctions, codecRegistry);
+        connector.registerCapabilities(connectorFunctions, codecsRegistry);
     }
 
     public TapConnectorContext getConnectorContext() {
@@ -98,7 +88,7 @@ public class ConnectorNode extends Node {
         return connectorFunctions;
     }
 
-    public TapCodecFilterManager getCodecFilterManager() {
-        return codecFilterManager;
+    public TapCodecFilterManager getCodecsFilterManager() {
+        return codecsFilterManager;
     }
 }

@@ -21,6 +21,7 @@ import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
 
 import java.text.MessageFormat;
+import java.util.List;
 
 public class PDKIntegration {
     private static TapConnectorManager tapConnectorManager;
@@ -181,7 +182,6 @@ public class PDKIntegration {
     }
 
     public abstract static class ConnectorBuilder<T extends Node> {
-        protected TapTable table;
         protected DataMap nodeConfig;
         protected String dagId;
         protected String associateId;
@@ -199,8 +199,6 @@ public class PDKIntegration {
                 return "missing group";
             if(version == null)
                 return "missing version";
-            if(table == null)
-                return "missing table";
             if(dagId == null)
                 return "missing dagId";
             return null;
@@ -242,17 +240,12 @@ public class PDKIntegration {
             this.version = node.getVersion();
             this.connectionConfig = node.getConnectionConfig();
             this.associateId = node.getId();
-            this.table = node.getTable();
             this.nodeConfig = node.getNodeConfig();
             return this;
         }
 
         public ConnectorBuilder<T> withDagId(String dagId) {
             this.dagId = dagId;
-            return this;
-        }
-        public ConnectorBuilder<T> withTable(TapTable tapTable) {
-            this.table = tapTable;
             return this;
         }
 
@@ -296,7 +289,7 @@ public class PDKIntegration {
             sourceNode.dagId = dagId;
             sourceNode.associateId = associateId;
             sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            sourceNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
+            sourceNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
                     sourceNode::registerCapabilities,
@@ -316,7 +309,7 @@ public class PDKIntegration {
             targetNode.associateId = associateId;
             targetNode.init((TapConnector) nodeInstance.getTapNode());
             targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            targetNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
+            targetNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
                     targetNode::registerCapabilities,
@@ -352,7 +345,7 @@ public class PDKIntegration {
             if(nodeInstance == null)
                 throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("SourceAndTarget not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
 
-            TapConnectorContext nodeContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), table, connectionConfig, nodeConfig);
+            TapConnectorContext nodeContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
 
             ConnectorFunctions connectorFunctions = new ConnectorFunctions();
             TapCodecRegistry codecRegistry = new TapCodecRegistry();

@@ -247,14 +247,14 @@ public class TDDBenchmarkTargetConnector extends ConnectorBase implements TapCon
                 .removedCount(deleted.get()));
     }
 
-    private String primaryKey(TapConnectorContext connectorContext, Map<String, Object> value) {
-        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+    private String primaryKey(Map<String, Object> value) {
         StringBuilder builder = new StringBuilder();
-        for(String primaryKey : primaryKeys) {
-            builder.append(value.get(primaryKey));
+        for(Map.Entry<String, Object> entry : value.entrySet()) {
+            builder.append(entry.getValue());
         }
         return builder.toString();
     }
+
 
     /**
      * The method invocation life circle is below,

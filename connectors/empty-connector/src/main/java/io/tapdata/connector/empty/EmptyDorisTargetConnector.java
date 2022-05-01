@@ -164,19 +164,19 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
 
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
         primaryKeyRecordMap.clear();
-        tableMap.remove(connectorContext.getTable().getName());
+        tableMap.remove(dropTableEvent.getTableId());
     }
 
     private void createTable(TapConnectorContext connectorContext, TapCreateTableEvent createTableEvent) {
 //        throw new NullPointerException("aaaa");
-        tableMap.put(connectorContext.getTable().getName(), connectorContext.getTable());
+        tableMap.put(createTableEvent.getTableId(), createTableEvent.getTable());
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
         if(filters != null) {
             List<FilterResult> filterResults = new ArrayList<>();
             for(TapFilter filter : filters) {
-                Map<String, Object> value = primaryKeyRecordMap.get(primaryKey(connectorContext, filter.getMatch()));
+                Map<String, Object> value = primaryKeyRecordMap.get(primaryKey(filter.getMatch()));
                 FilterResult filterResult = new FilterResult().result(value).filter(filter);
                 filterResults.add(filterResult);
             }
@@ -210,7 +210,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> value = insertRecordEvent.getAfter();
                 if(value != null) {
-                    primaryKeyRecordMap.put(primaryKey(connectorContext, value), value);
+                    primaryKeyRecordMap.put(primaryKey(value), value);
                     inserted.incrementAndGet();
                 }
 
@@ -221,7 +221,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
                 Map<String, Object> value = updateRecordEvent.getAfter();
                 Map<String, Object> before = updateRecordEvent.getBefore();
                 if(value != null && before != null) {
-                    primaryKeyRecordMap.put(primaryKey(connectorContext, before), value);
+                    primaryKeyRecordMap.put(primaryKey(before), value);
                     updated.incrementAndGet();
                 }
 //                PDKLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
@@ -229,7 +229,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
                 if(before != null) {
-                    primaryKeyRecordMap.remove(primaryKey(connectorContext, before));
+                    primaryKeyRecordMap.remove(primaryKey(before));
                 }
                 deleted.incrementAndGet();
 //                PDKLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
@@ -242,11 +242,10 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
                 .removedCount(deleted.get()));
     }
 
-    private String primaryKey(TapConnectorContext connectorContext, Map<String, Object> value) {
-        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+    private String primaryKey(Map<String, Object> value) {
         StringBuilder builder = new StringBuilder();
-        for(String primaryKey : primaryKeys) {
-            builder.append(value.get(primaryKey));
+        for(Map.Entry<String, Object> entry : value.entrySet()) {
+            builder.append(entry.getValue());
         }
         return builder.toString();
     }

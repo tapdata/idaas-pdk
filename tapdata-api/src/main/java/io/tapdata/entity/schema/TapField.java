@@ -5,7 +5,7 @@ import io.tapdata.entity.schema.type.TapType;
 
 import java.io.Serializable;
 
-public class TapField implements Serializable {
+public class TapField extends TapItem<TapField> implements Serializable {
     public TapField() {}
 
     public TapField(String name, String dataType) {

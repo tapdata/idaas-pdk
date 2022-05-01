@@ -180,20 +180,25 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
     private void batchRead(TapConnectorContext connectorContext, String offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate records directly.
-        for (int j = 0; j < 1000; j++) {
-            List<TapEvent> tapEvents = list();
-            for (int i = 0; i < batchSize; i++) {
-                Map<String, Object> map = new HashMap<>();
-                for(int m = 0; m < 10; m++) {
-                    String key = String.valueOf(m);
-                    map.put(key, key);
-                }
-                TapInsertRecordEvent recordEvent = insertRecordEvent(map, connectorContext.getTable());
-                counter.incrementAndGet();
-                tapEvents.add(recordEvent);
-            }
+        List<String> tables = connectorContext.getTables();
+        if(tables != null) {
+            for(String table : tables) {
+                for (int j = 0; j < 1000; j++) {
+                    List<TapEvent> tapEvents = list();
+                    for (int i = 0; i < batchSize; i++) {
+                        Map<String, Object> map = new HashMap<>();
+                        for(int m = 0; m < 10; m++) {
+                            String key = String.valueOf(m);
+                            map.put(key, key);
+                        }
+                        TapInsertRecordEvent recordEvent = insertRecordEvent(map, table);
+                        counter.incrementAndGet();
+                        tapEvents.add(recordEvent);
+                    }
 
-            tapReadOffsetConsumer.accept(tapEvents);
+                    tapReadOffsetConsumer.accept(tapEvents);
+                }
+            }
         }
         counter.set(counter.get() + 1000);
     }

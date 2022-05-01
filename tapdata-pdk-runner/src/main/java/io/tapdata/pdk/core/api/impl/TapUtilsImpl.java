@@ -114,7 +114,7 @@ public class TapUtilsImpl implements TapUtils {
         node.setChildNodeIds(Arrays.asList("1", "3"));
         DataMap dataMap = new DataMap();
 
-        TapTable table1 = new TapTable()
+        TapTable table1 = new TapTable("t1")
                 .add(new TapField().name("f").dataType("aaa"))
                 .add(new TapField().name("a").dataType("aa"));
         dataMap.put("aaa", 1);
@@ -123,7 +123,7 @@ public class TapUtilsImpl implements TapUtils {
         TapTable table = new TapTable()
                 .add(new TapField().name("f").dataType("aaa"))
                 .add(new TapField().name("a").dataType("aa"));
-        node.setTable(table);
+//        node.setTable(table);
         TapInsertRecordEvent insertRecordEvent = new TapInsertRecordEvent();
         insertRecordEvent.setAfter(new HashMap<String, Object>(){{
             put("aa", "bb");
@@ -135,7 +135,7 @@ public class TapUtilsImpl implements TapUtils {
             put("bbb", 1);
         }});
 //        insertRecordEvent.setPdkId("aaaa");
-        insertRecordEvent.setTable(table);
+        insertRecordEvent.setTableId(table.getId());
 
 //        TapInsertRecordEvent clone = (TapInsertRecordEvent) new TapUtilsImpl().clone(insertRecordEvent);
 //        TapInsertRecordEvent insertRecordEvent1 = JSON.parseObject(JSON.toJSONString(insertRecordEvent), TapInsertRecordEvent.class);

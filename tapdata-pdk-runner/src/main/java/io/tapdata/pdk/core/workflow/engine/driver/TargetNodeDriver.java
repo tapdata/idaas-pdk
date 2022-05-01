@@ -60,7 +60,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         CreateTableFunction createTableFunction = targetNode.getConnectorFunctions().getCreateTableFunction();
         if(createTableFunction != null) {
-            TapLogger.debug(TAG, "Create table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Create table {} before start. {}", createTableEvent.getTable(), LoggerUtils.targetNodeMessage(targetNode));
 
 
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CREATE_TABLE, () -> {
@@ -73,7 +73,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         AlterTableFunction alterTableFunction = targetNode.getConnectorFunctions().getAlterTableFunction();
         if(alterTableFunction != null) {
-            TapLogger.debug(TAG, "Alter table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Alter table {} before start. {}", alterTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_ALTER_TABLE, () -> {
                 alterTableFunction.alterTable(getTargetNode().getConnectorContext(), alterTableEvent);
             }, "Alter table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
@@ -84,7 +84,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         ClearTableFunction clearTableFunction = targetNode.getConnectorFunctions().getClearTableFunction();
         if(clearTableFunction != null) {
-            TapLogger.debug(TAG, "Clear table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Clear table {} before start. {}", clearTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CLEAR_TABLE, () -> {
                 clearTableFunction.clearTable(getTargetNode().getConnectorContext(), clearTableEvent);
             }, "Clear table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
@@ -95,11 +95,11 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         DropTableFunction dropTableFunction = targetNode.getConnectorFunctions().getDropTableFunction();
         if(dropTableFunction != null) {
-            TapLogger.debug(TAG, "Drop table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Drop table {} before start. {}", dropTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DROP_TABLE, () -> {
                 dropTableFunction.dropTable(getTargetNode().getConnectorContext(), dropTableEvent);
                 //clear the index and fields
-                TapTable table = targetNode.getConnectorContext().getTable();
+//                TapTable table = targetNode.getConnectorContext().getTable();
 //                if(table != null) {
 //                    table.setIndexList(null);
 //                    table.setNameFieldMap(null);
@@ -130,7 +130,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 //            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
             for (TapEvent event : events) {
                 if(!firstNonControlReceived.get() && event instanceof TapBaseEvent) {
-                    TapTable table = ((TapBaseEvent) event).getTable();
+                    TapTable table = ((TapBaseEvent) event).getTableId();
                     firstNonControlReceived.set(true);
                     handleActionsBeforeStart(table);
 
@@ -204,17 +204,17 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
             for(String action : actionsBeforeStart) {
                 switch (action) {
                     case JobOptions.ACTION_DROP_TABLE:
-                        final TapDropTableEvent dropTableEvent = newTableEvent(TapDropTableEvent.class);
+                        final TapDropTableEvent dropTableEvent = newTableEvent(TapDropTableEvent.class, table.getId());
                         if(dropTableEvent != null)
                             classHandlers.handle(dropTableEvent);
                         break;
                     case JobOptions.ACTION_CLEAR_TABLE:
-                        final TapClearTableEvent clearTableEvent = newTableEvent(TapClearTableEvent.class);
+                        final TapClearTableEvent clearTableEvent = newTableEvent(TapClearTableEvent.class, table.getId());
                         if(clearTableEvent != null)
                             classHandlers.handle(clearTableEvent);
                         break;
                     case JobOptions.ACTION_CREATE_TABLE:
-                        final TapCreateTableEvent createTableEvent = newTableEvent(TapCreateTableEvent.class);
+                        final TapCreateTableEvent createTableEvent = newTableEvent(TapCreateTableEvent.class, table.getId());
                         if(createTableEvent != null)
                             classHandlers.handle(createTableEvent);
                         break;
@@ -234,7 +234,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         TargetTypesGenerator targetTypesGenerator = ClassFactory.create(TargetTypesGenerator.class);
         LinkedHashMap<String, TapField> nameFieldMap = null;
         if (targetTypesGenerator != null) {
-            TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
+            TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecsFilterManager());
             if(tapResult.isSuccessfully()) {
                 nameFieldMap = tapResult.getData();
                 targetTable.setNameFieldMap(nameFieldMap);
@@ -316,10 +316,10 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         events.clear();
     }
 
-    private <T extends TapTableEvent> T newTableEvent(Class<T> tableEventClass) {
+    private <T extends TapTableEvent> T newTableEvent(Class<T> tableEventClass, String tableId) {
         try {
             T t = tableEventClass.getConstructor().newInstance();
-            t.setTable(targetNode.getConnectorContext().getTable());
+            t.setTableId(tableId);
             t.setTime(System.currentTimeMillis());
 //            t.setPdkId(targetNode.getTapNodeInfo().getTapNodeSpecification().getId());
 //            t.setPdkGroup(targetNode.getTapNodeInfo().getTapNodeSpecification().getGroup());
@@ -367,20 +367,20 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     }
 
     private TapDeleteRecordEvent filterDeleteEvent(TapDeleteRecordEvent deleteDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(deleteDMLEvent.getBefore());
         return deleteDMLEvent;
     }
 
     private TapUpdateRecordEvent filterUpdateEvent(TapUpdateRecordEvent updateDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(updateDMLEvent.getAfter());
         codecFilterManager.transformFromTapValueMap(updateDMLEvent.getBefore());
         return updateDMLEvent;
     }
 
     private TapInsertRecordEvent filterInsertEvent(TapInsertRecordEvent insertDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(insertDMLEvent.getAfter());
         return insertDMLEvent;
     }

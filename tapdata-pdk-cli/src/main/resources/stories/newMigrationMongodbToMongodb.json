@@ -6,7 +6,14 @@
         "uri": "mongodb://localhost:27017/",
         "database": "sample_training"
       },
-      "tables": ["test"],
+      "tables": ["t1", "t2", "t3", "t4"],
+      "tasks": [
+        {
+          "type": "changeAllTableNames",
+          "prefix": "prefix_",
+          "suffix": "_suffix"
+        }
+      ],
       "id": "s1",
       "pdkId": "mongodb",
       "group": "io.tapdata",
@@ -14,22 +21,17 @@
       "version": "1.0-SNAPSHOT"
     },
     {
-      "pdkId": "ChangedTableName",
-      "type": "Processor",
-      "version": "1.0"
-    },
-    {
       "connectionConfig": {
-        "host": "192.168.1.183",
-        "port": "9030",
-        "database": "example_db",
-        "user": "root",
-        "password": ""
+        "uri": "mongodb://localhost:27017/",
+        "database": "sample_training1"
       },
-      "tables": ["emptyTable2"],
+      "nodeConfig": {
+
+      },
+      "tables": ["*"],
       "id": "t2",
-      "pdkId": "doris",
-      "group": "io.tapdata.connector.doris",
+      "pdkId": "mongodb",
+      "group": "io.tapdata",
       "type": "Target",
       "version": "1.0-SNAPSHOT"
     }

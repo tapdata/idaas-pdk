@@ -16,6 +16,8 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.cache.CacheFactory;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.functions.connector.source.*;
@@ -73,6 +75,8 @@ public class SourceNodeDriver extends Driver {
     public static final int STATE_STREAM_STARTED = 30;
     public static final int STATE_STREAM_ENDED = 40;
     public static final int STATE_ENDED = 100;
+    private Map<String, TapTable> tableMap = new HashMap<>();
+    private KVMap<TapTable> tableKVMap;
     public void start() {
         start(null);
     }
@@ -85,18 +89,25 @@ public class SourceNodeDriver extends Driver {
         TapLogger.info(TAG, "SourceNodeDriver started, {}", LoggerUtils.sourceNodeMessage(sourceNode));
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 
+        tableKVMap = InstanceFactory.instance(CacheFactory.class).getOrCreateKVMap(sourceNode.getDagId());
+        tableKVMap.clear();
         //Fill the discovered table back into connector context
         //The table user input has to be one in the discovered tables. Otherwise we need create table logic which currently we don't have.
+
         pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
-            sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), (tables) -> {
+            sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), null, (tables) -> {
                 if(tables == null) return;
                 for(TapTable table : tables) {
                     if(table == null) continue;
-                    TapTable targetTable = sourceNode.getConnectorContext().getTable();
-                    if(targetTable != null && targetTable.getName() != null && targetTable.getName().equals(table.getName())) {
-                        analyzeTableFields(table);
-                        break;
-                    }
+                    List<String> targetTables = sourceNode.getConnectorContext().getTables();
+                    if(targetTables != null)
+                        for(String targetTable : targetTables) {
+                            if(targetTable != null && targetTable.equals(table.getId())) {
+                                analyzeTableFields(table);
+                                tableMap.put(table.getId(), table);
+                                break;
+                            }
+                        }
                 }
             });
         }, "Discover schema " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
@@ -264,9 +275,9 @@ public class SourceNodeDriver extends Driver {
         for (TapEvent event : events) {
             if(event instanceof ControlEvent) {
                 controlEvents.add((ControlEvent) event);
-            } else if(event instanceof TapBaseEvent) {
-                ((TapBaseEvent) event).setTable(sourceNode.getConnectorContext().getTable());
-            }
+            }/* else if(event instanceof TapBaseEvent) {
+                ((TapBaseEvent) event).setTableName(sourceNode.getConnectorContext().getTable());
+            }*/
         }
 
         handleControlEvent(controlEvents);
@@ -308,13 +319,14 @@ public class SourceNodeDriver extends Driver {
     }
 
     public List<TapEvent> filterEvents(List<TapEvent> events, boolean needClone) {
-        LinkedHashMap<String, TapField> nameFieldMap = sourceNode.getConnectorContext().getTable().getNameFieldMap();
-        TapCodecFilterManager codecFilterManager = sourceNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
         List<TapEvent> newEvents = new ArrayList<>();
         for(TapEvent tapEvent : events) {
+            LinkedHashMap<String, TapField> nameFieldMap = null;
             if(tapEvent instanceof TapBaseEvent) {
-                ((TapBaseEvent) tapEvent).setTable(sourceNode.getConnectorContext().getTable());
+                nameFieldMap = tableMap.get(((TapBaseEvent) tapEvent).getTableId()).getNameFieldMap();
             }
+
             if(tapEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertDMLEvent = (TapInsertRecordEvent) tapEvent;
                 TapInsertRecordEvent newInsertDMLEvent = null;
@@ -364,7 +376,7 @@ public class SourceNodeDriver extends Driver {
     }
 
     public void analyzeTableFields(TapTable table) {
-        sourceNode.getConnectorContext().setTable(table);
+//        sourceNode.getConnectorContext().setTable(table);
 
         LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
         if(nameFieldMap != null) {
@@ -406,7 +418,7 @@ public class SourceNodeDriver extends Driver {
     }
 
     private void fillNameFieldsFromSampleRecords(LinkedHashMap<String, TapField> nameFieldMap, List<Map<String, Object>> mapList, List<String> defaultPrimaryKeys) {
-        TapCodecFilterManager codecFilterManager = sourceNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
         Map<String, ToTapValueCodec<?>> combinedMap = new LinkedHashMap<>();
         Map<String, Object> combinedValueMap = new HashMap<>();
         //Sample records

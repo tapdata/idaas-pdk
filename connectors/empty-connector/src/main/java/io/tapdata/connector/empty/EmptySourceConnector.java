@@ -137,7 +137,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      * @param dropTableEvent
      */
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
-        tableMap.remove(connectorContext.getTable().getName());
+        tableMap.remove(dropTableEvent.getTableId());
     }
 
     /**
@@ -205,7 +205,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> value = insertRecordEvent.getAfter();
                 if(value != null) {
-                    primaryKeyRecordMap.put(primaryKey(connectorContext, value), value);
+                    primaryKeyRecordMap.put(primaryKey(value), value);
                     inserted.incrementAndGet();
                 }
 
@@ -224,12 +224,10 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
                 .modifiedCount(updated.get())
                 .removedCount(deleted.get()));
     }
-
-    private String primaryKey(TapConnectorContext connectorContext, Map<String, Object> value) {
-        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+    private String primaryKey(Map<String, Object> value) {
         StringBuilder builder = new StringBuilder();
-        for(String primaryKey : primaryKeys) {
-            builder.append(value.get(primaryKey));
+        for(Map.Entry<String, Object> entry : value.entrySet()) {
+            builder.append(entry.getValue());
         }
         return builder.toString();
     }
@@ -275,7 +273,9 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
      */
     private void batchRead(TapConnectorContext connectorContext, String offset, int eventBatchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
-
+        if(connectorContext.getTables() == null || connectorContext.getTables().isEmpty())
+            return;
+        String firstTable = connectorContext.getTables().get(0);
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1; j++) {
             List<TapEvent> tapEvents = list();
@@ -285,7 +285,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
                         entry("description", "123"),
                         entry("name", "123"),
                         entry("age", 12)
-                ), connectorContext.getTable());
+                ), firstTable);
                 tapEvents.add(recordEvent);
             }
             tapReadOffsetConsumer.accept(tapEvents);
@@ -313,6 +313,9 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
     private void streamRead(TapConnectorContext connectorContext, Object offset, int recordSize, Consumer<List<TapEvent>> consumer) {
         //TODO using CDC APi or log to read stream records from database, use consumer#accept to send to flow engine.
 
+        if(connectorContext.getTables() == null || connectorContext.getTables().isEmpty())
+            return;
+        String firstTable = connectorContext.getTables().get(0);
         //Below is sample code to generate stream records directly
         while(!isShutDown.get()) {
             List<TapEvent> tapEvents = list();
@@ -322,7 +325,7 @@ public class EmptySourceConnector extends ConnectorBase implements TapConnector 
                         entry("description", "123"),
                         entry("name", "123"),
                         entry("age", 12)
-                ), connectorContext.getTable());
+                ), firstTable);
                 tapEvents.add(event);
             }
 
