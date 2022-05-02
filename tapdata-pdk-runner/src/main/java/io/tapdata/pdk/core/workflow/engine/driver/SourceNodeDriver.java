@@ -20,6 +20,7 @@ import io.tapdata.entity.utils.cache.CacheFactory;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
+import io.tapdata.pdk.apis.functions.connector.common.InitFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
@@ -75,8 +76,8 @@ public class SourceNodeDriver extends Driver {
     public static final int STATE_STREAM_STARTED = 30;
     public static final int STATE_STREAM_ENDED = 40;
     public static final int STATE_ENDED = 100;
-    private Map<String, TapTable> tableMap = new HashMap<>();
     private KVMap<TapTable> tableKVMap;
+    private List<String> finalTargetTables = new ArrayList<>();
     public void start() {
         start(null);
     }
@@ -90,33 +91,63 @@ public class SourceNodeDriver extends Driver {
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 
         tableKVMap = InstanceFactory.instance(CacheFactory.class).getOrCreateKVMap(sourceNode.getDagId());
-        tableKVMap.clear();
+
+        InitFunction initFunction = sourceNode.getConnectorFunctions().getInitFunction();
+        if (initFunction != null) {
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
+                initFunction.init(sourceNode.getConnectorContext(), tableKVMap);
+            }, "Init " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+        }
+
+        //Init tasks
+        List<Map<String, Object>> tasks = sourceNode.getTasks();
+        if(tasks != null) {
+
+        }
+
         //Fill the discovered table back into connector context
         //The table user input has to be one in the discovered tables. Otherwise we need create table logic which currently we don't have.
+        List<String> targetTables = null;
+        String nodeTable = sourceNode.getConnectorContext().getTable();
+        List<String> nodeTables = sourceNode.getConnectorContext().getTables();
+        if(nodeTables != null) {
+            targetTables = new ArrayList<>(nodeTables);
+        }
+        if(nodeTable != null) {
+            if(targetTables == null)
+                targetTables = new ArrayList<>(Collections.singletonList(nodeTable));
+            else
+                targetTables.add(nodeTable);
+        }
 
+        List<String> finalTargetTables = targetTables;
         pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
-            sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), null, (tables) -> {
-                if(tables == null) return;
-                for(TapTable table : tables) {
+            sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), finalTargetTables, (tableList) -> {
+                if(tableList == null) return;
+                List<String> checkTableList = new ArrayList<>();
+                if(finalTargetTables != null) {
+                    checkTableList.addAll(finalTargetTables);
+                }
+                for(TapTable table : tableList) {
                     if(table == null) continue;
-                    List<String> targetTables = sourceNode.getConnectorContext().getTables();
-                    if(targetTables != null)
-                        for(String targetTable : targetTables) {
-                            if(targetTable != null && targetTable.equals(table.getId())) {
-                                analyzeTableFields(table);
-                                tableMap.put(table.getId(), table);
-                                break;
-                            }
-                        }
+                    analyzeTableFields(table);
+                    checkTableList.remove(table.getId());
+                    tableKVMap.put(table.getId() + "@" + sourceNode.getAssociateId(), table);
+                    finalTargetTables.add(table.getId());
+                }
+                if(!checkTableList.isEmpty()) {
+                    throw new CoreException(ErrorCodes.SOURCE_TABLE_NOT_DISCOVERED, "Missing table(s) " + Arrays.toString(checkTableList.toArray()) + " after invoked discoverSchema method.");
                 }
             });
         }, "Discover schema " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+
+        //send TapForerunnerEvent
 
 
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
         if (enableBatchRead && batchCountFunction != null) {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_COUNT, () -> {
-                batchCount = batchCountFunction.count(sourceNode.getConnectorContext(), null);
+                batchCount = batchCountFunction.count(sourceNode.getConnectorContext(), finalTargetTables, null);
             }, "Batch count " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
         }
 
@@ -167,7 +198,7 @@ public class SourceNodeDriver extends Driver {
                     sourceStateListener.stateChanged(STATE_BATCH_STARTED);
             }, TAG);
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
-                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), batchOffsetStr, batchLimit, (events) -> {
+                    () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), finalTargetTables, batchOffsetStr, batchLimit, (events) -> {
                         if (events != null && !events.isEmpty()) {
                             if(events.size() > batchLimit)
                                 throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
@@ -211,18 +242,12 @@ public class SourceNodeDriver extends Driver {
         if (enableStreamRead && streamReadFunction != null) {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
                 while(!shutDown.get()) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), streamOffsetStr, batchLimit, StreamReadConsumer.create((events) -> {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, streamOffsetStr, batchLimit, StreamReadConsumer.create((events) -> {
                         if (events != null) {
                             if(events.size() > batchLimit)
                                 throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
                             TapLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offerToQueue(events);
-
-//                            List<TapEvent> externalEvents = sourceNode.pullAllExternalEventsInList(this::filterExternalEvent);
-//                            if(externalEvents != null) {
-//                                PDKLogger.debug(TAG, "Stream read external {} of events, {}", externalEvents.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-//                                offer(externalEvents);
-//                            }
                         }
 
                         StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
@@ -293,6 +318,10 @@ public class SourceNodeDriver extends Driver {
 
         TapLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
         for(ControlEvent controlEvent : events) {
+            if(controlEvent instanceof PatrolEvent) {
+                handlePatrolEvent((PatrolEvent) controlEvent, PatrolEvent.STATE_ENTER);
+            }
+
             if(controlFunction != null) {
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.CONTROL, () -> {
                     controlFunction.control(sourceNode.getConnectorContext(), controlEvent);
@@ -300,12 +329,15 @@ public class SourceNodeDriver extends Driver {
             }
 
             if(controlEvent instanceof PatrolEvent) {
-                PatrolEvent patrolEvent = (PatrolEvent) controlEvent;
-                if(patrolEvent.applyState(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE)) {
-                    if(patrolEvent.getPatrolListener() != null) {
-                        CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(sourceNode.getAssociateId(), PatrolEvent.STATE_LEAVE), TAG);
-                    }
-                }
+                handlePatrolEvent((PatrolEvent) controlEvent, PatrolEvent.STATE_LEAVE);
+            }
+        }
+    }
+
+    private void handlePatrolEvent(PatrolEvent patrolEvent, int patrolState) {
+        if(patrolEvent.applyState(sourceNode.getAssociateId(), patrolState)) {
+            if(patrolEvent.getPatrolListener() != null) {
+                CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(sourceNode.getAssociateId(), patrolState), TAG);
             }
         }
     }
@@ -324,7 +356,12 @@ public class SourceNodeDriver extends Driver {
         for(TapEvent tapEvent : events) {
             LinkedHashMap<String, TapField> nameFieldMap = null;
             if(tapEvent instanceof TapBaseEvent) {
-                nameFieldMap = tableMap.get(((TapBaseEvent) tapEvent).getTableId()).getNameFieldMap();
+                TapBaseEvent tapBaseEvent = (TapBaseEvent) tapEvent;
+                TapTable table = tableKVMap.get(tapBaseEvent.getTableId());
+                if(table == null)
+                    throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE_SENDING_EVENT, "Unknown table " + ((TapBaseEvent) tapEvent).getTableId() + " when send event " + tapEvent);
+                nameFieldMap = table.getNameFieldMap();
+                tapBaseEvent.setAssociateId(sourceNode.getAssociateId());
             }
 
             if(tapEvent instanceof TapInsertRecordEvent) {

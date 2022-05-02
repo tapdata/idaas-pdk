@@ -16,10 +16,15 @@ import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.ClassFactory;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.cache.CacheFactory;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.pretty.ClassHandlers;
 import io.tapdata.pdk.core.api.TargetNode;
+import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -43,7 +48,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     private AtomicBoolean started = new AtomicBoolean(false);
 
     private AtomicBoolean firstNonControlReceived = new AtomicBoolean(false);
-
+    private KVMap<TapTable> tableKVMap;
     private ClassHandlers classHandlers = new ClassHandlers();
     public TargetNodeDriver() {
         classHandlers.register(TapCreateTableEvent.class, this::handleCreateTableEvent);
@@ -130,8 +135,13 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 //            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
             for (TapEvent event : events) {
                 if(!firstNonControlReceived.get() && event instanceof TapBaseEvent) {
-                    TapTable table = ((TapBaseEvent) event).getTableId();
                     firstNonControlReceived.set(true);
+                    //
+                    tableKVMap = InstanceFactory.instance(CacheFactory.class).getOrCreateKVMap(targetNode.getDagId());
+                    TapTable table = tableKVMap.get(((TapBaseEvent) event).tableMapKey());
+                    if(table == null)
+                        throw new CoreException(ErrorCodes.TARGET_TABLE_NOT_FOUND_IN_TAPEVENT, "Table " + ((TapBaseEvent) event).getTableId() + " doesn't be found in TapEvent " + event);
+
                     handleActionsBeforeStart(table);
 
                     tableInitialCheck(table);
@@ -281,8 +291,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         WriteRecordFunction insertRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
         if(insertRecordFunction != null) {
             TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DML, () -> {
-                insertRecordFunction.writeDML(targetNode.getConnectorContext(), recordEvents, (event) -> {
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_WRITE_RECORD, () -> {
+                insertRecordFunction.writeRecord(targetNode.getConnectorContext(), recordEvents, (event) -> {
                     TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
                 });
             }, "insert " + LoggerUtils.targetNodeMessage(targetNode), TAG);

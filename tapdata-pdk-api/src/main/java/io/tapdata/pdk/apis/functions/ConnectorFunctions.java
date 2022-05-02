@@ -1,5 +1,6 @@
 package io.tapdata.pdk.apis.functions;
 
+import io.tapdata.pdk.apis.functions.connector.common.InitFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 
@@ -18,6 +19,7 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private ClearTableFunction clearTableFunction;
     private DropTableFunction dropTableFunction;
     private ControlFunction controlFunction;
+    private InitFunction initFunction;
     /**
      * Flow engine may get current batch offset at any time.
      * To continue batch read for the batch offset when job resumed from pause or stopped accidentally.
@@ -30,7 +32,11 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return this;
     }
 
-    public ConnectorFunctions supportControlFunction(ControlFunction function) {
+    public ConnectorFunctions supportInit(InitFunction function) {
+        initFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportControl(ControlFunction function) {
         controlFunction = function;
         return this;
     }
@@ -163,5 +169,9 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public ControlFunction getControlFunction() {
         return controlFunction;
+    }
+
+    public InitFunction getInitFunction() {
+        return initFunction;
     }
 }

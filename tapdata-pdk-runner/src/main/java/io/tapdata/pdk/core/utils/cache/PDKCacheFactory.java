@@ -4,6 +4,7 @@ import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.utils.ClassFactory;
 import io.tapdata.entity.utils.cache.CacheFactory;
 import io.tapdata.entity.utils.cache.KVMap;
+import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +22,16 @@ public class PDKCacheFactory implements CacheFactory {
                 map.init(key);
             return ClassFactory.create(KVMap.class);
         });
+    }
+
+    @Override
+    public <T> KVReadOnlyMap<T> createKVReadOnlyMap(String mapKey) {
+        KVMap<T> kvMap = getOrCreateKVMap(mapKey);
+        if(kvMap != null) {
+            //Don't want to return kvMap instance as KVReadOnlyMap, because kvMap can be easily forced type conversion. use kvMap reference in KVReadOnlyMap is a better solution.
+            return key -> kvMap.get(key);
+        }
+        return null;
     }
 
     @Override

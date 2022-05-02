@@ -133,7 +133,6 @@ public class DataFlowWorker {
             if(nodeWorker != null) {
                 if(nodeWorker.sourceNodeDriver != null) {
 //                    nodeWorker.sourceNodeDriver.getSourceNode().offerExternalEvent(event);
-                    filterExternalEvent(event, nodeWorker);
                     nodeWorker.sourceNodeDriver.receivedExternalEvent(Collections.singletonList(event));//offer(Collections.singletonList(event));
                 } else {
                     TapLogger.warn(TAG, "External event can only send from source node, the nodeId {} is not a source node", sourceNodeId);
@@ -145,20 +144,7 @@ public class DataFlowWorker {
             for(String theNodeId : headNodeIds) {
                 TapDAGNodeEx nodeWorker = dag.getNodeMap().get(theNodeId);
                 if(nodeWorker.sourceNodeDriver != null) {
-                    filterExternalEvent(event, nodeWorker);
                     nodeWorker.sourceNodeDriver.receivedExternalEvent(Collections.singletonList(event));//offer(Collections.singletonList(event));
-                }
-            }
-        }
-    }
-
-    private void filterExternalEvent(TapEvent event, TapDAGNodeEx nodeWorker) {
-        if(event instanceof PatrolEvent) {
-            PatrolEvent patrolEvent = (PatrolEvent) event;
-            String associateId = nodeWorker.sourceNodeDriver.getSourceNode().getAssociateId();
-            if(patrolEvent.applyState(associateId, PatrolEvent.STATE_ENTER)) {
-                if(patrolEvent.getPatrolListener() != null) {
-                    CommonUtils.ignoreAnyError(() -> patrolEvent.getPatrolListener().patrol(associateId, PatrolEvent.STATE_ENTER), TAG);
                 }
             }
         }
@@ -168,7 +154,7 @@ public class DataFlowWorker {
         List<String> headNodeIds = dag.getHeadNodeIds();
         checkAllNodesInDAG(dag);
 
-        //Setup all nodes, build path for nodes. s
+        //Setup all nodes, build path for nodes.
         for(String nodeId : headNodeIds) {
             TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
             nodeWorker.setup(dag, jobOptions);

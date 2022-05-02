@@ -1,6 +1,7 @@
 package io.tapdata.entity.event;
 
 public abstract class TapBaseEvent extends TapEvent {
+    protected String associateId;
     protected String tableId;
     /**
      * The reference time read from source, maybe some difference as sources are different
@@ -24,6 +25,7 @@ public abstract class TapBaseEvent extends TapEvent {
 //            baseEvent.pdkGroup = pdkGroup;
 //            baseEvent.pdkVersion = pdkVersion;
             baseEvent.tableId = tableId;
+            baseEvent.associateId = associateId;
         }
     }
 
@@ -65,5 +67,17 @@ public abstract class TapBaseEvent extends TapEvent {
 
     public void setTableId(String tableId) {
         this.tableId = tableId;
+    }
+
+    public String getAssociateId() {
+        return associateId;
+    }
+
+    public void setAssociateId(String associateId) {
+        this.associateId = associateId;
+    }
+
+    public String tableMapKey() {
+        return tableId + "@" + associateId;
     }
 }

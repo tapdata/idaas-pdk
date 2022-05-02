@@ -125,7 +125,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportAlterTable(this::alterTable);
         connectorFunctions.supportDropTable(this::dropTable);
         connectorFunctions.supportClearTable(this::clearTable);
-        connectorFunctions.supportControlFunction(this::control);
+        connectorFunctions.supportControl(this::control);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
             if (tapRawValue != null && tapRawValue.getValue() != null)

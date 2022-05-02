@@ -96,7 +96,7 @@ public class TapSimplify {
     }
 
     public static <T> List<T> list(T... ts) {
-        return Arrays.asList(ts);
+        return new ArrayList<>(Arrays.asList(ts));
     }
 
     public static <T> List<T> list() {

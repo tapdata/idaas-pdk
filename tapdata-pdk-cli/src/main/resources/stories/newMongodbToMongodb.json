@@ -12,8 +12,7 @@
       "table": "test",
       "tasks": [
         {
-          "type": "changeTableName",
-          "toNodeIds": ["t2"],
+          "type": "ChangeTableName",
           "tables": [
             {
               "from": "test",

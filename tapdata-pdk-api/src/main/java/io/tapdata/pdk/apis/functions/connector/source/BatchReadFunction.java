@@ -18,7 +18,7 @@ public interface BatchReadFunction extends TapFunction {
      * @param eventBatchSize the batch size for the max record list size when consumer#accept a batch
      * @param consumer accept the record and offsetState for the record.
      */
-    void batchRead(TapConnectorContext connectorContext, TapTableList tableList, String offsetState, int eventBatchSize, Consumer<List<TapEvent>> consumer) throws Throwable;
+    void batchRead(TapConnectorContext connectorContext, List<String> tableList, String offsetState, int eventBatchSize, Consumer<List<TapEvent>> consumer) throws Throwable;
 }
 
 
