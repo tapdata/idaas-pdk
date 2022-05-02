@@ -7,6 +7,7 @@ import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.control.ControlEvent;
 import io.tapdata.entity.event.control.PatrolEvent;
+import io.tapdata.entity.event.control.TapForerunnerEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
@@ -32,6 +33,7 @@ import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
+import io.tapdata.pdk.core.workflow.engine.driver.task.TaskManager;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -101,8 +103,9 @@ public class SourceNodeDriver extends Driver {
 
         //Init tasks
         List<Map<String, Object>> tasks = sourceNode.getTasks();
-        if(tasks != null) {
-
+        if(tasks != null && !tasks.isEmpty()) {
+            taskManager = new TaskManager();
+            taskManager.init(tasks);
         }
 
         //Fill the discovered table back into connector context
@@ -120,6 +123,7 @@ public class SourceNodeDriver extends Driver {
                 targetTables.add(nodeTable);
         }
 
+        List<TapEvent> forerunnerEvents = new ArrayList<>();
         List<String> finalTargetTables = targetTables;
         pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
             sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), finalTargetTables, (tableList) -> {
@@ -132,6 +136,12 @@ public class SourceNodeDriver extends Driver {
                     if(table == null) continue;
                     analyzeTableFields(table);
                     checkTableList.remove(table.getId());
+
+                    if(taskManager != null) {
+                        taskManager.filterTable(table, TAG);
+                    }
+                    forerunnerEvents.add(new TapForerunnerEvent().table(table).sampleRecords(null/* sample records here*/));
+
                     tableKVMap.put(table.getId() + "@" + sourceNode.getAssociateId(), table);
                     finalTargetTables.add(table.getId());
                 }
@@ -142,7 +152,7 @@ public class SourceNodeDriver extends Driver {
         }, "Discover schema " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
 
         //send TapForerunnerEvent
-
+        receivedExternalEvent(forerunnerEvents);
 
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
         if (enableBatchRead && batchCountFunction != null) {

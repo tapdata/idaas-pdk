@@ -6,6 +6,7 @@ import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.control.ControlEvent;
 import io.tapdata.entity.event.control.PatrolEvent;
+import io.tapdata.entity.event.control.TapForerunnerEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.event.ddl.table.*;
 import io.tapdata.entity.event.dml.*;
@@ -31,12 +32,15 @@ import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 import io.tapdata.pdk.core.utils.queue.ListHandler;
 import io.tapdata.pdk.core.workflow.engine.JobOptions;
+import io.tapdata.pdk.core.workflow.engine.driver.task.TaskManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.tapdata.entity.simplify.TapSimplify.table;
 
 public class TargetNodeDriver extends Driver implements ListHandler<List<TapEvent>> {
     private static final String TAG = TargetNodeDriver.class.getSimpleName();
@@ -134,18 +138,6 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         for(List<TapEvent> events : list) {
 //            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
             for (TapEvent event : events) {
-                if(!firstNonControlReceived.get() && event instanceof TapBaseEvent) {
-                    firstNonControlReceived.set(true);
-                    //
-                    tableKVMap = InstanceFactory.instance(CacheFactory.class).getOrCreateKVMap(targetNode.getDagId());
-                    TapTable table = tableKVMap.get(((TapBaseEvent) event).tableMapKey());
-                    if(table == null)
-                        throw new CoreException(ErrorCodes.TARGET_TABLE_NOT_FOUND_IN_TAPEVENT, "Table " + ((TapBaseEvent) event).getTableId() + " doesn't be found in TapEvent " + event);
-
-                    handleActionsBeforeStart(table);
-
-                    tableInitialCheck(table);
-                }
                 if(event instanceof TapDDLEvent) {
                     //force to handle DML before handle DDL.
                     handleRecordEvents(recordEvents);
@@ -239,7 +231,9 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     }
 
     private void configTable(TapTable sourceTable) {
-        TapTable targetTable = targetNode.getConnectorContext().getTable();
+        String nodeTable = targetNode.getConnectorContext().getTable();
+        List<String> nodeTables = targetNode.getConnectorContext().getTables();
+//        TapTable targetTable = table(sourceTable.getName(), sourceTable.getId());
         //Convert source table to target target by calculate the dataType of target database.
         TargetTypesGenerator targetTypesGenerator = ClassFactory.create(TargetTypesGenerator.class);
         LinkedHashMap<String, TapField> nameFieldMap = null;
@@ -322,8 +316,34 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                     }
                 }
             }
+            if(controlEvent instanceof TapForerunnerEvent) {
+                TapForerunnerEvent forerunnerEvent = (TapForerunnerEvent) controlEvent;
+                handleForerunnerEvent(forerunnerEvent);
+            }
         }
         events.clear();
+    }
+
+    private void handleForerunnerEvent(TapForerunnerEvent forerunnerEvent) {
+        if(!firstNonControlReceived.get()) {
+            firstNonControlReceived.set(true);
+            if(targetNode.getTasks() != null) {
+                taskManager = new TaskManager();
+                taskManager.init(targetNode.getTasks());
+            }
+            //
+            tableKVMap = InstanceFactory.instance(CacheFactory.class).getOrCreateKVMap(targetNode.getAssociateId());
+
+            String nodeTable = targetNode.getConnectorContext().getTable();
+            List<String> nodeTables = targetNode.getConnectorContext().getTables();
+        }
+        TapTable table = forerunnerEvent.getTable();//tableKVMap.get(((TapBaseEvent) event).tableMapKey());
+        if(table == null)
+            throw new CoreException(ErrorCodes.TARGET_TABLE_NOT_FOUND_IN_TAPEVENT, "Table doesn't be found in TapEvent " + forerunnerEvent);
+
+        handleActionsBeforeStart(table);
+
+        tableInitialCheck(table);
     }
 
     private <T extends TapTableEvent> T newTableEvent(Class<T> tableEventClass, String tableId) {

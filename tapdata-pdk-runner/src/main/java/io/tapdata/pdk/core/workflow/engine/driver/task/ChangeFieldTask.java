@@ -11,21 +11,27 @@ import java.util.concurrent.ConcurrentHashMap;
  *     "type" : "ChangeTableName",
  *     "tables" : [
  *      {
- *          "from" : "test",
- *          "to" : "newTestName"
+ *          "tableId" : "test",
+ *          "fields": [
+ *              {
+ *                  "from": "afield",
+ *                  "to": {
+ *                      "name": "bField",
+ *                      "tapType": {
+ *
+ *                      }
+ *                  },
+ *
+ *              }
+ *          ]
  *      }
- *     ],
- *     "prefix" : "Tap_",
- *     "suffix" : "_end",
- *     "case": "lower", //lower, upper. force upper case or lower case.
+ *     ]
  * }
  */
-public class ChangeTableNameTask extends Task implements Task.TableFilter {
+public class ChangeFieldTask extends Task implements Task.TableFilter {
     private final Map<String, String> nameChangeToMap = new ConcurrentHashMap<>();
     private String prefix;
     private String suffix;
-    private String letterCase;
-
     @Override
     protected void from(Map<String, Object> info) {
         Object tablesObj = info.get("tables");
@@ -50,13 +56,7 @@ public class ChangeTableNameTask extends Task implements Task.TableFilter {
         if(suffixObj instanceof String) {
             suffix = (String) suffixObj;
         }
-        Object caseObj = info.get("case");
-        if(caseObj instanceof String) {
-            letterCase = (String) caseObj;
-            if(!letterCase.equalsIgnoreCase("upper") && !letterCase.equalsIgnoreCase("lower")) {
-                letterCase = null;
-            }
-        }
+
         if(!nameChangeToMap.isEmpty()) {
             supportTableFilter(this);
         }
@@ -82,20 +82,6 @@ public class ChangeTableNameTask extends Task implements Task.TableFilter {
                 table.setName(table.getName() + suffix);
             }
             table.setId(table.getId() + suffix);
-        }
-
-        if(letterCase != null) {
-            if(letterCase.equalsIgnoreCase("upper")) {
-                if(table.getName().equals(table.getId())) {
-                    table.setName(table.getName().toUpperCase());
-                }
-                table.setId(table.getId().toUpperCase());
-            } else if(letterCase.equalsIgnoreCase("lower")) {
-                if(table.getName().equals(table.getId())) {
-                    table.setName(table.getName().toLowerCase());
-                }
-                table.setId(table.getId().toLowerCase());
-            }
         }
     }
 }

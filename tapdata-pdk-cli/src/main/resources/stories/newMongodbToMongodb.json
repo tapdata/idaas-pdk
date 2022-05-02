@@ -88,7 +88,7 @@
       "table": "emptyTable2",
       "tasks": [
         {
-          "type": "changeTableName",
+          "type": "ChangeTableName",
           "fromNodeIds": ["s1"],
           "tables": [
             {

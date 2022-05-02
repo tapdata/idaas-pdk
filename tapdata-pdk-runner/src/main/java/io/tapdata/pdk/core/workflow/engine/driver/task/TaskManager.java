@@ -1,5 +1,8 @@
 package io.tapdata.pdk.core.workflow.engine.driver.task;
 
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.pdk.core.utils.CommonUtils;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -16,6 +19,12 @@ public class TaskManager {
                 if(tableFilter != null && !tableFilters.contains(tableFilter))
                     tableFilters.add(tableFilter);
             }
+        }
+    }
+
+    public void filterTable(TapTable table, String tag) {
+        for(Task.TableFilter filter : tableFilters) {
+            CommonUtils.ignoreAnyError(() -> filter.table(table), tag);
         }
     }
 }
