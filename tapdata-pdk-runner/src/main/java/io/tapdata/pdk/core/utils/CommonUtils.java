@@ -158,7 +158,7 @@ public class CommonUtils {
         return valueInt;
     }
 
-    public static long getLongProperty(String key, long defaultValue) {
+    public static long getPropertyLong(String key, long defaultValue) {
         String value = System.getProperty(key);
         if(value == null)
             value = System.getenv(key);

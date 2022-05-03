@@ -92,7 +92,7 @@ public class SourceNodeDriver extends Driver {
         TapLogger.info(TAG, "SourceNodeDriver started, {}", LoggerUtils.sourceNodeMessage(sourceNode));
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 
-        tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId());
+        tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId(), TapTable.class);
 
         InitFunction initFunction = sourceNode.getConnectorFunctions().getInitFunction();
         if (initFunction != null) {

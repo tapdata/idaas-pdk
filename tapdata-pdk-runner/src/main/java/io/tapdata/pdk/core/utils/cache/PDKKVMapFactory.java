@@ -14,21 +14,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PDKKVMapFactory implements KVMapFactory {
     private final Map<String, KVMap<?>> kvMapMap = new ConcurrentHashMap<>();
     @Override
-    public <T> KVMap<T> getCacheMap(String mapKey) {
+    public <T> KVMap<T> getCacheMap(String mapKey, Class<T> valueClass) {
         return (KVMap<T>) kvMapMap.computeIfAbsent(mapKey, key -> {
             KVMap<T> map = ClassFactory.create(KVMap.class, "ehcache");
             if(map != null)
-                map.init(key);
+                map.init(key, valueClass);
             return ClassFactory.create(KVMap.class);
         });
     }
 
     @Override
-    public <T> KVMap<T> getPersistentMap(String mapKey) {
+    public <T> KVMap<T> getPersistentMap(String mapKey, Class<T> valueClass) {
         return (KVMap<T>) kvMapMap.computeIfAbsent(mapKey, key -> {
             KVMap<T> map = ClassFactory.create(KVMap.class, "mongodb");
             if(map != null)
-                map.init(key);
+                map.init(key, valueClass);
             return ClassFactory.create(KVMap.class);
         });
     }
