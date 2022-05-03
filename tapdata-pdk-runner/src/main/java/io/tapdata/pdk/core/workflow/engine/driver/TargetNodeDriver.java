@@ -239,7 +239,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 
     private TapTable configTable(TapTable sourceTable) {
         //Create target table
-        String nodeTable = targetNode.getConnectorContext().getTable();
+        String nodeTable = targetNode.getTable();
         TapTable targetTable;
         if(nodeTable != null) {
             targetTable = table(nodeTable);
@@ -359,7 +359,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                 }, "Init " + LoggerUtils.targetNodeMessage(targetNode), TAG);
             }
 
-            String nodeTable = targetNode.getConnectorContext().getTable();
+            String nodeTable = targetNode.getTable();
             if(nodeTable != null) {
 //                pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
 //                    targetNode.getConnector().discoverSchema(targetNode.getConnectorContext(), Collections.singletonList(nodeTable), (tableList) -> {
@@ -467,5 +467,10 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 
     public void setActionsBeforeStart(List<String> actionsBeforeStart) {
         this.actionsBeforeStart = actionsBeforeStart;
+    }
+
+    @Override
+    public void destroy() {
+        InstanceFactory.instance(KVMapFactory.class).reset(targetNode.getAssociateId());
     }
 }

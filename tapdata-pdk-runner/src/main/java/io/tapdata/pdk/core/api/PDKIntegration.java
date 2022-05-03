@@ -313,10 +313,10 @@ public class PDKIntegration {
             sourceNode.dagId = dagId;
             sourceNode.associateId = associateId;
             sourceNode.tasks = tasks;
+            sourceNode.table = table;
+            sourceNode.tables = tables;
             sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             sourceNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
-            sourceNode.connectorContext.setTable(table);
-            sourceNode.connectorContext.setTables(tables);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
                     sourceNode::registerCapabilities,
@@ -335,11 +335,11 @@ public class PDKIntegration {
             targetNode.dagId = dagId;
             targetNode.associateId = associateId;
             targetNode.tasks = tasks;
+            targetNode.table = table;
+            targetNode.tables = tables;
             targetNode.init((TapConnector) nodeInstance.getTapNode());
             targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             targetNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
-            targetNode.connectorContext.setTable(table);
-            targetNode.connectorContext.setTables(tables);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
                     targetNode::registerCapabilities,
@@ -376,8 +376,6 @@ public class PDKIntegration {
                 throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("SourceAndTarget not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
 
             TapConnectorContext nodeContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
-            nodeContext.setTable(table);
-            nodeContext.setTables(tables);
 
             ConnectorFunctions connectorFunctions = new ConnectorFunctions();
             TapCodecRegistry codecRegistry = new TapCodecRegistry();
@@ -389,6 +387,8 @@ public class PDKIntegration {
             sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             sourceNode.connectorContext = nodeContext;
             sourceNode.tasks = tasks;
+            sourceNode.table = table;
+            sourceNode.tables = tables;
 
             TargetNode targetNode = new TargetNode();
             targetNode.dagId = dagId;
@@ -397,6 +397,8 @@ public class PDKIntegration {
             targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             targetNode.connectorContext = nodeContext;
             targetNode.tasks = tasks;
+            targetNode.table = table;
+            targetNode.tables = tables;
 
             //Source and Target are the same object, will only invoke the method once, no matter source or target, the method is the same.
 

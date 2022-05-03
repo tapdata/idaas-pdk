@@ -8,7 +8,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private BatchReadFunction batchReadFunction;
     private StreamReadFunction streamReadFunction;
     private BatchCountFunction batchCountFunction;
-    private BatchOffsetFunction batchOffsetFunction;
     private StreamOffsetFunction streamOffsetFunction;
     private WriteRecordFunction writeRecordFunction;
     private QueryByFilterFunction queryByFilterFunction;
@@ -20,17 +19,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private DropTableFunction dropTableFunction;
     private ControlFunction controlFunction;
     private InitFunction initFunction;
-    /**
-     * Flow engine may get current batch offset at any time.
-     * To continue batch read for the batch offset when job resumed from pause or stopped accidentally.
-     *
-     * @param function
-     * @return
-     */
-    public ConnectorFunctions supportBatchOffset(BatchOffsetFunction function) {
-        batchOffsetFunction = function;
-        return this;
-    }
 
     public ConnectorFunctions supportInit(InitFunction function) {
         initFunction = function;
@@ -133,10 +121,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public BatchCountFunction getBatchCountFunction() {
         return batchCountFunction;
-    }
-
-    public BatchOffsetFunction getBatchOffsetFunction() {
-        return batchOffsetFunction;
     }
 
     public StreamOffsetFunction getStreamOffsetFunction() {

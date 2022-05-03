@@ -6,6 +6,8 @@ import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
+import java.util.List;
+
 public class ConnectorNode extends Node {
     private static final String TAG = ConnectorNode.class.getSimpleName();
     TapConnector connector;
@@ -14,7 +16,8 @@ public class ConnectorNode extends Node {
 
     ConnectorFunctions connectorFunctions;
     TapCodecFilterManager codecsFilterManager;
-
+    String table;
+    List<String> tables;
 //    Queue<TapEvent> externalEvents;
 
     public void init(TapConnector tapNode, TapCodecRegistry codecsRegistry, ConnectorFunctions connectorFunctions) {
@@ -90,5 +93,13 @@ public class ConnectorNode extends Node {
 
     public TapCodecFilterManager getCodecsFilterManager() {
         return codecsFilterManager;
+    }
+
+    public String getTable() {
+        return table;
+    }
+
+    public List<String> getTables() {
+        return tables;
     }
 }

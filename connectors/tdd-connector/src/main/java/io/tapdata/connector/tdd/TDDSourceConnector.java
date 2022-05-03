@@ -16,6 +16,7 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @TapConnectorClass("sourceSpec.json")
@@ -38,7 +39,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
         //TODO originType最好使用标准列类型来表达， 避免混淆
@@ -155,7 +156,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, String offset) {
+    private long batchCount(TapConnectorContext connectorContext, TapTable table, String offset) {
         //TODO Count the batch size.
         return 1L;
     }
@@ -174,50 +175,46 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
+     * @param tables
      * @param offset
      * @param tapReadOffsetConsumer
      */
     private Date date = new Date();
-    private void batchRead(TapConnectorContext connectorContext, String offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, TapTable table, String offsetState, int batchSize, BiConsumer<List<TapEvent>, String> eventsOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate records directly.
-        List<String> tables = connectorContext.getTables();
-        if(tables != null) {
-            for(String table : tables) {
-                for (int j = 0; j < 1; j++) {
-                    List<TapEvent> tapEvents = list();
-                    for (int i = 0; i < 1; i++) {
-                        TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                                entry("id", "id_1"),
-                                entry("tapString", "123"),
-                                entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
-                                entry("tapString10", "1234567890"),
-                                entry("tapString10Fixed", "1"),
-                                entry("tapInt", 123123),
-                                entry("tapBoolean", true),
-                                entry("tapDate", date),
-                                entry("tapArrayString", list("1", "2", "3")),
-                                entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
-                                entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
-                                entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
-                                entry("tapNumber", 123.0),
+        for (int j = 0; j < 1; j++) {
+            List<TapEvent> tapEvents = list();
+            for (int i = 0; i < 1; i++) {
+                TapInsertRecordEvent recordEvent = insertRecordEvent(map(
+                        entry("id", "id_1"),
+                        entry("tapString", "123"),
+                        entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
+                        entry("tapString10", "1234567890"),
+                        entry("tapString10Fixed", "1"),
+                        entry("tapInt", 123123),
+                        entry("tapBoolean", true),
+                        entry("tapDate", date),
+                        entry("tapArrayString", list("1", "2", "3")),
+                        entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
+                        entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),
+                        entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
+                        entry("tapNumber", 123.0),
 //                        entry("tapNumber(8)", 1111),
-                                entry("tapNumber52", 343.22),
-                                entry("tapBinary", new byte[]{123, 21, 3, 2}),
-                                entry("tapTime", date),
-                                entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
-                                entry("tapMapStringDouble", map(entry("a", 1.0), entry("b", 2.0))),
-                                entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
-                                entry("tapDateTime", date),
-                                entry("tapDateTimeTimeZone", date)
-                        ), table);
-                        tapEvents.add(recordEvent);
-                    }
-
-                    tapReadOffsetConsumer.accept(tapEvents);
-                }
+                        entry("tapNumber52", 343.22),
+                        entry("tapBinary", new byte[]{123, 21, 3, 2}),
+                        entry("tapTime", date),
+                        entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
+                        entry("tapMapStringDouble", map(entry("a", 1.0), entry("b", 2.0))),
+                        entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
+                        entry("tapDateTime", date),
+                        entry("tapDateTimeTimeZone", date)
+                ), table.getId());
+                tapEvents.add(recordEvent);
             }
+
+            eventsOffsetConsumer.accept(tapEvents, null);
         }
         counter.set(counter.get() + 1000);
     }

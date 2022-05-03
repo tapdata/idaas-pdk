@@ -4,6 +4,8 @@ import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
@@ -35,6 +37,8 @@ public class CreateTableTest extends PDKTestBase {
     String targetNodeId = "t2";
     String sourceNodeId = "s1";
 
+    String targetTableId;
+
     @Test
     @DisplayName("Test method createTable")
     void createTableTest() throws Throwable {
@@ -46,14 +50,14 @@ public class CreateTableTest extends PDKTestBase {
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
                 dataFlowDescriber.setId("CreateTableTest_" + nodeInfo.getTapNodeSpecification().getId());
 
-                String tableId = testTableName(dataFlowDescriber.getId());
+                targetTableId = testTableName(dataFlowDescriber.getId());
 
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
-                                table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
+                                table("tdd-table").connectionConfig(new DataMap()),
                         new TapDAGNodeEx().id(targetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_TARGET).version(spec.getVersion()).
-                                table(new TapTable(tableId)).connectionConfig(connectionOptions)
+                                table(targetTableId).connectionConfig(connectionOptions)
                 ));
                 dataFlowDescriber.setDag(Collections.singletonList(asList(sourceNodeId, targetNodeId)));
                 dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
@@ -65,9 +69,9 @@ public class CreateTableTest extends PDKTestBase {
                         if (fromState.equals(DataFlowWorker.STATE_INITIALIZING)) {
                             initConnectorFunctions();
                             checkFunctions(targetNode.getConnectorFunctions(), CreateTableTest.testFunctions());
-                        } else if (toState.equals(DataFlowWorker.STATE_RECORDS_SENT)) {
+                        } else if (toState.equals(DataFlowWorker.STATE_TABLE_PREPARED)) {
                             PatrolEvent patrolEvent = new PatrolEvent().patrolListener((nodeId, state) -> {
-                                TapLogger.debug("PATROL STATE_RECORDS_SENT", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
+                                TapLogger.debug("PATROL STATE_TABLE_PREPARED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
                                 if (nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                                     verifyTableFields();
                                     processCreateTable(dataFlowEngine, dag);
@@ -95,7 +99,8 @@ public class CreateTableTest extends PDKTestBase {
     }
 
     private void verifyTableFields() {
-        TapTable table = targetNode.getConnectorContext().getTable();
+        TapTable table = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetTableId);
+//        TapTable table = targetNode.getConnectorContext().getTable();
         LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
         $(() -> Assertions.assertNotNull(nameFieldMap, "Table name fields is null, please check whether you provide \"dataTypes\" in spec json file or define from TapValue codec in registerCapabilities method"));
 

@@ -207,7 +207,6 @@ public class BatchReadTest extends PDKTestBase {
                 support(WriteRecordFunction.class, "WriteRecord is a must to verify batchRead and streamRead, please implement it in registerCapabilities method."),
                 support(BatchReadFunction.class, "BatchReadFunction is a must to read initial records, please implement it in registerCapabilities method."),
                 support(BatchCountFunction.class, "BatchCountFunction is a must for the total size of initial records, please implement it in registerCapabilities method."),
-                support(BatchOffsetFunction.class, "BatchOffsetFunction is a must for incremental engine to record offset of batch read, please implement it in registerCapabilities method."),
                 support(QueryByAdvanceFilterFunction.class, "QueryByAdvanceFilterFunction is a must for database which is schema free to sample some record to generate the field data types."),
                 support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
         );

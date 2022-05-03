@@ -10,31 +10,12 @@ import java.util.List;
 
 
 public class TapConnectorContext extends TapConnectionContext {
-    protected String table;
-    protected List<String> tables;
     protected DataMap nodeConfig;
 
     public TapConnectorContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig) {
         super(specification, connectionConfig);
         this.nodeConfig = nodeConfig;
     }
-
-    public String getTable() {
-        return table;
-    }
-
-    public void setTable(String table) {
-        this.table = table;
-    }
-
-    public List<String> getTables() {
-        return tables;
-    }
-
-    public void setTables(List<String> tables) {
-        this.tables = tables;
-    }
-
     public DataMap getNodeConfig() {
         return nodeConfig;
     }

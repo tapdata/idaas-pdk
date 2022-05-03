@@ -8,10 +8,12 @@ import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
+import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.FilterResults;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
@@ -19,7 +21,6 @@ import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
-import io.tapdata.pdk.apis.functions.connector.source.BatchOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
@@ -560,19 +561,14 @@ public class PDKTestBase {
         return null;
     }
 
-    protected String getBatchOffset(SourceNode sourceNode) throws Throwable {
-        BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
-        return batchOffsetFunction.batchOffset(sourceNode.getConnectorContext());
-    }
-
-    protected String getStreamOffset(SourceNode sourceNode, Long offsetStartTime) throws Throwable {
+    protected String getStreamOffset(SourceNode sourceNode, List<String> tableList, Long offsetStartTime) throws Throwable {
         StreamOffsetFunction queryByFilterFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
-        return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), offsetStartTime);
+        return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime);
     }
 
-    protected long getBatchCount(SourceNode sourceNode, String offset) throws Throwable {
+    protected long getBatchCount(SourceNode sourceNode, TapTable table, String offset) throws Throwable {
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
-        return batchCountFunction.count(sourceNode.getConnectorContext(), offset);
+        return batchCountFunction.count(sourceNode.getConnectorContext(), table, offset);
     }
 
     protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {
@@ -616,8 +612,8 @@ public class PDKTestBase {
         $(() -> assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));
         Map<String, Object> result = filterResult.getResult();
 
-
-        targetNode.getCodecsFilterManager().transformToTapValueMap(result, sourceNode.getConnectorContext().getTable().getNameFieldMap());
+        TapTable sourceTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId(), TapTable.class).get(sourceNode.getTable());
+        targetNode.getCodecsFilterManager().transformToTapValueMap(result, sourceTable.getNameFieldMap());
         targetNode.getCodecsFilterManager().transformFromTapValueMap(result);
 
         StringBuilder builder = new StringBuilder();

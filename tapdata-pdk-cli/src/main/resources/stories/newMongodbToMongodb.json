@@ -9,6 +9,11 @@
       "nodeConfig": {
 
       },
+      "sourceOptions": {
+        "batchRead": true,
+        "streamRead": true,
+        "eventBatchSize": 1000
+      },
       "table": "test",
       "tasks": [
         {
@@ -84,6 +89,11 @@
       },
       "nodeConfig": {
 
+      },
+      "targetOptions": {
+        "actionsBeforeStart": ["dropTable", "createTable"],
+        "writeMode": "insertOnly|updateOnly|upsert",
+        "updateFields": ["key1", "key2"]
       },
       "table": "emptyTable2",
       "tasks": [
