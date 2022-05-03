@@ -44,7 +44,7 @@ public class TapDAGNode {
             return "missing type";
         if(version == null)
             return "missing version";
-        if(!type.equals(TYPE_PROCESSOR) && ((tables == null || tables.isEmpty()) || table == null))
+        if(!type.equals(TYPE_PROCESSOR) && ((tables == null || tables.isEmpty()) && table == null))
             return "missing tables or table";
         return null;
     }

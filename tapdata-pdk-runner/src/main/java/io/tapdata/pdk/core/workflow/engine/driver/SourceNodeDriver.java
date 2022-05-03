@@ -10,6 +10,7 @@ import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.control.TapForerunnerEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.schema.TapField;
@@ -52,7 +53,7 @@ public class SourceNodeDriver extends Driver {
     private boolean enableBatchRead = true;
     private boolean enableStreamRead = true;
     private int batchLimit = 1000;
-    private Long batchCount;
+    private long batchCount;
     private boolean batchCompleted = false;
     private final Object streamLock = new int[0];
     private final AtomicBoolean firstBatchRecordsOffered = new AtomicBoolean(false);
@@ -397,13 +398,8 @@ public class SourceNodeDriver extends Driver {
         TapCodecFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
         List<TapEvent> newEvents = new ArrayList<>();
         for(TapEvent tapEvent : events) {
-            LinkedHashMap<String, TapField> nameFieldMap = null;
             if(tapEvent instanceof TapBaseEvent) {
                 TapBaseEvent tapBaseEvent = (TapBaseEvent) tapEvent;
-                TapTable table = tableKVMap.get(tapBaseEvent.getTableId());
-                if(table == null)
-                    throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + ((TapBaseEvent) tapEvent).getTableId() + " when send event " + tapEvent);
-                nameFieldMap = table.getNameFieldMap();
                 tapBaseEvent.setAssociateId(sourceNode.getAssociateId());
             }
 
@@ -416,7 +412,7 @@ public class SourceNodeDriver extends Driver {
                 } else {
                     newInsertDMLEvent = insertDMLEvent;
                 }
-                codecFilterManager.transformToTapValueMap(newInsertDMLEvent.getAfter(), nameFieldMap);
+                codecFilterManager.transformToTapValueMap(newInsertDMLEvent.getAfter(), getNameFieldMap(insertDMLEvent));
                 newEvents.add(newInsertDMLEvent);
             } else if(tapEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateDMLEvent = (TapUpdateRecordEvent) tapEvent;
@@ -427,6 +423,7 @@ public class SourceNodeDriver extends Driver {
                 } else {
                     newUpdateDMLEvent = updateDMLEvent;
                 }
+                Map<String, TapField> nameFieldMap = getNameFieldMap(updateDMLEvent);
                 codecFilterManager.transformToTapValueMap(newUpdateDMLEvent.getAfter(), nameFieldMap);
                 codecFilterManager.transformToTapValueMap(newUpdateDMLEvent.getBefore(), nameFieldMap);
                 newEvents.add(newUpdateDMLEvent);
@@ -439,7 +436,7 @@ public class SourceNodeDriver extends Driver {
                 } else {
                     newDeleteDMLEvent = deleteDMLEvent;
                 }
-                codecFilterManager.transformToTapValueMap(newDeleteDMLEvent.getBefore(), nameFieldMap);
+                codecFilterManager.transformToTapValueMap(newDeleteDMLEvent.getBefore(), getNameFieldMap(deleteDMLEvent));
                 newEvents.add(newDeleteDMLEvent);
             } else {
                 try {
@@ -453,6 +450,13 @@ public class SourceNodeDriver extends Driver {
             }
         }
         return newEvents;
+    }
+
+    private Map<String, TapField> getNameFieldMap(TapRecordEvent recordEvent) {
+        TapTable table = tableKVMap.get(recordEvent.getTableId());
+        if(table == null)
+            throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + recordEvent.getTableId() + " when send event " + recordEvent);
+        return table.getNameFieldMap();
     }
 
     public void analyzeTableFields(TapTable table) {
@@ -479,7 +483,7 @@ public class SourceNodeDriver extends Driver {
         if (queryByAdvanceFilterFunction != null) {
             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_QUERY_BY_ADVANCE_FILTER,
-                    () -> queryByAdvanceFilterFunction.query(sourceNode.getConnectorContext(), TapAdvanceFilter.create().limit(sampleSize), (filterResults) -> {
+                    () -> queryByAdvanceFilterFunction.query(sourceNode.getConnectorContext(), TapAdvanceFilter.create().limit(sampleSize).tableId(table.getId()), (filterResults) -> {
                         if (filterResults != null && filterResults.getResults() != null) {
                             TapLogger.debug(TAG, "Batch read {} of events for sample field data types", filterResults.getResults().size());
                             fillNameFieldsFromSampleRecords(nameFieldMap, filterResults.getResults(), table.getDefaultPrimaryKeys());

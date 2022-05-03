@@ -205,7 +205,7 @@ public class PDKIntegration {
                 return "missing version";
             if(dagId == null)
                 return "missing dagId";
-            if((tables == null || tables.isEmpty()) || table == null)
+            if((tables == null || tables.isEmpty()) && table == null)
                 return "missing tables or table";
             return null;
         }

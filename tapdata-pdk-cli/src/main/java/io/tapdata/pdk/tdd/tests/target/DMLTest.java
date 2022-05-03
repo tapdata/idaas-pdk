@@ -38,6 +38,8 @@ public class DMLTest extends PDKTestBase {
     DataFlowWorker dataFlowWorker;
     String targetNodeId = "t2";
     String sourceNodeId = "s1";
+    String sourceTableId = "tdd-table";
+    String targetTableId;
 
     TapNodeInfo tapNodeInfo;
     @Test
@@ -50,13 +52,13 @@ public class DMLTest extends PDKTestBase {
 
                 DAGDescriber dataFlowDescriber = new DAGDescriber();
                 dataFlowDescriber.setId("DMLTest_" + nodeInfo.getTapNodeSpecification().getId());
-                String tableId = testTableName(dataFlowDescriber.getId());
+                targetTableId = testTableName(dataFlowDescriber.getId());
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
-                                table("tdd-table").connectionConfig(new DataMap()),
+                                table(sourceTableId).connectionConfig(new DataMap()),
                         new TapDAGNodeEx().id(targetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_TARGET).version(spec.getVersion()).
-                                table(tableId).connectionConfig(connectionOptions)
+                                table(targetTableId).connectionConfig(connectionOptions)
                 ));
                 dataFlowDescriber.setDag(Collections.singletonList(asList("s1", "t2")));
                 dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
@@ -66,7 +68,7 @@ public class DMLTest extends PDKTestBase {
                     JobOptions jobOptions = dataFlowDescriber.getJobOptions();
                     dataFlowWorker = dataFlowEngine.startDataFlow(dag, jobOptions, (fromState, toState, dataFlowWorker) -> {
                         if(toState.equals(DataFlowWorker.STATE_INITIALIZING)){
-                            initConnectorFunctions(nodeInfo, tableId, dataFlowDescriber.getId());
+                            initConnectorFunctions(nodeInfo, targetTableId, dataFlowDescriber.getId());
 
                             checkFunctions(targetNode.getConnectorFunctions(), DMLTest.testFunctions());
                         } else if(toState.equals(DataFlowWorker.STATE_INITIALIZED)){
@@ -92,13 +94,13 @@ public class DMLTest extends PDKTestBase {
                 }
             }
         });
-        waitCompleted(50);
+        waitCompleted(500000000);
     }
 
     private void insertOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap insertRecord = buildInsertRecord();
         DataMap filterMap = buildFilterMap();
-        sendInsertRecordEvent(dataFlowEngine, dag, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
+        sendInsertRecordEvent(dataFlowEngine, dag, sourceTableId, insertRecord, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
 
                 prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
@@ -134,7 +136,7 @@ public class DMLTest extends PDKTestBase {
     private void updateOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap updateMap = buildUpdateMap();
         DataMap filterMap = buildFilterMap();
-        sendUpdateRecordEvent(dataFlowEngine, dag, filterMap, updateMap, new PatrolEvent().patrolListener((nodeId, state) -> {
+        sendUpdateRecordEvent(dataFlowEngine, dag, sourceTableId, filterMap, updateMap, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
                 verifyUpdateOneRecord(targetNode, filterMap, updateMap);
                 deleteOneRecord(dataFlowEngine, dag);
@@ -144,10 +146,10 @@ public class DMLTest extends PDKTestBase {
 
     private void deleteOneRecord(DataFlowEngine dataFlowEngine, TapDAG dag) {
         DataMap filterMap = buildFilterMap();
-        sendDeleteRecordEvent(dataFlowEngine, dag, filterMap, new PatrolEvent().patrolListener((nodeId, state) -> {
+        sendDeleteRecordEvent(dataFlowEngine, dag, sourceTableId, filterMap, new PatrolEvent().patrolListener((nodeId, state) -> {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 verifyRecordNotExists(targetNode, filterMap);
-                sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
+                sendDropTableEvent(dataFlowEngine, dag, targetTableId, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                         prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
                             String targetTable = dag.getNodeMap().get(targetNodeId).getTable();

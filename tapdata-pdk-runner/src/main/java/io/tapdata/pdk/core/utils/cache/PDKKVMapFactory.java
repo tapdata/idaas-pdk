@@ -19,7 +19,7 @@ public class PDKKVMapFactory implements KVMapFactory {
             KVMap<T> map = ClassFactory.create(KVMap.class, "ehcache");
             if(map != null)
                 map.init(key, valueClass);
-            return ClassFactory.create(KVMap.class);
+            return map;
         });
     }
 
@@ -29,7 +29,7 @@ public class PDKKVMapFactory implements KVMapFactory {
             KVMap<T> map = ClassFactory.create(KVMap.class, "mongodb");
             if(map != null)
                 map.init(key, valueClass);
-            return ClassFactory.create(KVMap.class);
+            return map;
         });
     }
 
