@@ -54,9 +54,9 @@ public class DMLTest extends PDKTestBase {
                 TapNodeSpecification spec = nodeInfo.getTapNodeSpecification();
                 dataFlowDescriber.setNodes(asList(
                         new TapDAGNodeEx().id(sourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
-                                table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
+                                table("tdd-table").connectionConfig(new DataMap()),
                         new TapDAGNodeEx().id(targetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_TARGET).version(spec.getVersion()).
-                                table(new TapTable(tableId)).connectionConfig(connectionOptions)
+                                table(tableId).connectionConfig(connectionOptions)
                 ));
                 dataFlowDescriber.setDag(Collections.singletonList(asList("s1", "t2")));
                 dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
@@ -102,24 +102,26 @@ public class DMLTest extends PDKTestBase {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
 
                 prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                    String targetTable = dag.getNodeMap().get(targetNodeId).getTable();
+
                     List<TapTable> allTables = new ArrayList<>();
                     try {
-                        connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                        connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
                     } catch (Throwable throwable) {
                         throwable.printStackTrace();
                         Assertions.fail(throwable);
                     }
-                    TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
+
                     boolean found = false;
                     for(TapTable table : allTables) {
-                        if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                        if(table.getId() != null && table.getId().equals(targetTable)) {
                             found = true;
                             break;
                         }
                     }
                     connectionNode.getConnectorNode().destroy();
                     if(!found)
-                        $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable.getName()));
+                        $(() -> Assertions.fail("Target table " + targetTable + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable));
 
                     verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
                     updateOneRecord(dataFlowEngine, dag);
@@ -148,17 +150,17 @@ public class DMLTest extends PDKTestBase {
                 sendDropTableEvent(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                         prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                            String targetTable = dag.getNodeMap().get(targetNodeId).getTable();
                             List<TapTable> allTables = new ArrayList<>();
                             try {
-                                connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                                connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
                             } catch (Throwable throwable) {
                                 throwable.printStackTrace();
                                 Assertions.fail(throwable);
                             }
-                            TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
                             for(TapTable table : allTables) {
-                                if(table.getName() != null && table.getName().equals(targetTable.getName())) {
-                                    $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                                if(table.getId() != null && table.getId().equals(targetTable)) {
+                                    $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                 }
                             }
                             connectionNode.getConnectorNode().destroy();

@@ -82,9 +82,9 @@ public class StreamReadTest extends PDKTestBase {
 
             dataFlowDescriber.setNodes(Arrays.asList(
                     new TapDAGNodeEx().id(testSourceNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_SOURCE).version(spec.getVersion()).
-                            table(new TapTable(tableId)).connectionConfig(connectionOptions),
+                            table(tableId).connectionConfig(connectionOptions),
                     new TapDAGNodeEx().id(tddTargetNodeId).pdkId("tdd-target").group("io.tapdata.connector").type(TapDAGNode.TYPE_TARGET).version("1.0-SNAPSHOT").
-                            table(new TapTable("tdd-table")).connectionConfig(new DataMap())
+                            table("tdd-table").connectionConfig(new DataMap())
             ));
             dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(testSourceNodeId, tddTargetNodeId)));
             dataFlowDescriber.setJobOptions(new JobOptions()
@@ -99,9 +99,9 @@ public class StreamReadTest extends PDKTestBase {
 
             originDataFlowDescriber.setNodes(Arrays.asList(
                     new TapDAGNodeEx().id(tddSourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
-                            table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
+                            table("tdd-table").connectionConfig(new DataMap()),
                     new TapDAGNodeEx().id(testSourceAsTargetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_TARGET).version(spec.getVersion()).
-                            table(new TapTable(tableId)).connectionConfig(connectionOptions)
+                            table(tableId).connectionConfig(connectionOptions)
             ));
             originDataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(tddSourceNodeId, testSourceAsTargetNodeId)));
             originDataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
@@ -229,17 +229,19 @@ public class StreamReadTest extends PDKTestBase {
             sendDropTableEvent(dataFlowEngine, tddToSourceDag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                 if (innerNodeId.equals(testSourceAsTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                     prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                        String targetTable = tddToSourceDag.getNodeMap().get(testSourceAsTargetNodeId).getTable();
+
                         List<TapTable> allTables = new ArrayList<>();
                         try {
-                            connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                            connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
                         } catch (Throwable throwable) {
                             throwable.printStackTrace();
                             Assertions.fail(throwable);
                         }
-                        TapTable targetTable = tddToSourceDag.getNodeMap().get(testSourceAsTargetNodeId).getTable();
+
                         for(TapTable table : allTables) {
-                            if(table.getName() != null && table.getName().equals(targetTable.getName())) {
-                                $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                            if(table.getId() != null && table.getId().equals(targetTable)) {
+                                $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                             }
                         }
                         connectionNode.getConnectorNode().destroy();

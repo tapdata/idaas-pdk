@@ -76,9 +76,9 @@ public class BatchReadTest extends PDKTestBase {
 
             dataFlowDescriber.setNodes(Arrays.asList(
                     new TapDAGNodeEx().id(testSourceNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(TapDAGNode.TYPE_SOURCE/*nodeInfo.getNodeType()*/).version(spec.getVersion()).
-                            table(new TapTable(tableId)).connectionConfig(connectionOptions),
+                            table(tableId).connectionConfig(connectionOptions),
                     new TapDAGNodeEx().id(targetNodeId).pdkId("tdd-target").group("io.tapdata.connector").type(TapDAGNode.TYPE_TARGET).version("1.0-SNAPSHOT").
-                            table(new TapTable("tdd-table")).connectionConfig(new DataMap())
+                            table("tdd-table").connectionConfig(new DataMap())
             ));
             dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(testSourceNodeId, targetNodeId)));
             dataFlowDescriber.setJobOptions(new JobOptions()
@@ -92,9 +92,9 @@ public class BatchReadTest extends PDKTestBase {
 
             originDataFlowDescriber.setNodes(Arrays.asList(
                     new TapDAGNodeEx().id(originNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
-                            table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
+                            table("tdd-table").connectionConfig(new DataMap()),
                     new TapDAGNodeEx().id(testTargetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(TapDAGNode.TYPE_TARGET/*nodeInfo.getNodeType()*/).version(spec.getVersion()).
-                            table(new TapTable(tableId)).connectionConfig(connectionOptions)
+                            table(tableId).connectionConfig(connectionOptions)
             ));
             originDataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(originNodeId, testTargetNodeId)));
             originDataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
@@ -172,17 +172,18 @@ public class BatchReadTest extends PDKTestBase {
                                 sendDropTableEvent(dataFlowEngine, originDag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                                     if (innerNodeId.equals(testTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                                         prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                                            String targetTable = originDag.getNodeMap().get(testTargetNodeId).getTable();
                                             List<TapTable> allTables = new ArrayList<>();
                                             try {
-                                                connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                                                connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
                                             } catch (Throwable throwable) {
                                                 throwable.printStackTrace();
                                                 Assertions.fail(throwable);
                                             }
-                                            TapTable targetTable = originDag.getNodeMap().get(testTargetNodeId).getTable();
+
                                             for(TapTable table : allTables) {
-                                                if(table.getName() != null && table.getName().equals(targetTable.getName())) {
-                                                    $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                                                if(table.getName() != null && table.getId().equals(targetTable)) {
+                                                    $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                                 }
                                             }
                                             connectionNode.getConnectorNode().destroy();

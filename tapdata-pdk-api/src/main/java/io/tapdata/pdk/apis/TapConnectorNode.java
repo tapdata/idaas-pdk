@@ -19,9 +19,10 @@ public interface TapConnectorNode extends TapNode  {
      *
      * @param connectionContext
      * @param tables
+     * @param tableSize
      * @param consumer
      */
-    void discoverSchema(TapConnectionContext connectionContext, List<String> tables, Consumer<List<TapTable>> consumer) throws Throwable;
+    void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable;
 
     /**
      * Test connection

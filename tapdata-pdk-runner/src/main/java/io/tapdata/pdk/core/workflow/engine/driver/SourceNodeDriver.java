@@ -17,7 +17,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.entity.utils.cache.CacheFactory;
+import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
@@ -92,7 +92,7 @@ public class SourceNodeDriver extends Driver {
         TapLogger.info(TAG, "SourceNodeDriver started, {}", LoggerUtils.sourceNodeMessage(sourceNode));
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 
-        tableKVMap = InstanceFactory.instance(CacheFactory.class).getOrCreateKVMap(sourceNode.getDagId());
+        tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId());
 
         InitFunction initFunction = sourceNode.getConnectorFunctions().getInitFunction();
         if (initFunction != null) {
@@ -113,8 +113,10 @@ public class SourceNodeDriver extends Driver {
         List<String> targetTables = null;
         String nodeTable = sourceNode.getConnectorContext().getTable();
         List<String> nodeTables = sourceNode.getConnectorContext().getTables();
-        if(nodeTables != null) {
-            targetTables = new ArrayList<>(nodeTables);
+        if(nodeTables != null && !nodeTables.isEmpty()) {
+            if(!nodeTables.get(0).equals("*")) {
+                targetTables = new ArrayList<>(nodeTables);
+            }
         }
         if(nodeTable != null) {
             if(targetTables == null)
@@ -123,14 +125,16 @@ public class SourceNodeDriver extends Driver {
                 targetTables.add(nodeTable);
         }
 
-        List<TapEvent> forerunnerEvents = new ArrayList<>();
-        List<String> finalTargetTables = targetTables;
+        List<String> theFinalTargetTables = targetTables;
         pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
-            sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), finalTargetTables, (tableList) -> {
+            sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), theFinalTargetTables, 10, (tableList) -> {
                 if(tableList == null) return;
+                List<TapEvent> forerunnerEvents = new ArrayList<>();
+                TapForerunnerEvent lastOne = null;
+
                 List<String> checkTableList = new ArrayList<>();
-                if(finalTargetTables != null) {
-                    checkTableList.addAll(finalTargetTables);
+                if(theFinalTargetTables != null) {
+                    checkTableList.addAll(theFinalTargetTables);
                 }
                 for(TapTable table : tableList) {
                     if(table == null) continue;
@@ -140,19 +144,31 @@ public class SourceNodeDriver extends Driver {
                     if(taskManager != null) {
                         taskManager.filterTable(table, TAG);
                     }
-                    forerunnerEvents.add(new TapForerunnerEvent().table(table).sampleRecords(null/* sample records here*/));
+                    lastOne = new TapForerunnerEvent().table(table).sampleRecords(null/* sample records here*/);
+                    forerunnerEvents.add(lastOne);
 
-                    tableKVMap.put(table.getId() + "@" + sourceNode.getAssociateId(), table);
+                    tableKVMap.put(table.getId(), table);
                     finalTargetTables.add(table.getId());
                 }
                 if(!checkTableList.isEmpty()) {
                     throw new CoreException(ErrorCodes.SOURCE_TABLE_NOT_DISCOVERED, "Missing table(s) " + Arrays.toString(checkTableList.toArray()) + " after invoked discoverSchema method.");
                 }
+                if(!forerunnerEvents.isEmpty()) {
+//                    lastOne.patrolListener(new PatrolListener() {
+//                        @Override
+//                        public void patrol(String nodeId, int state) {
+//
+//                        }
+//                    });
+                    //TODO shall wait forerunnerEvents complete in target node to start read other tables, to avoid OOM for large tables.
+                    receivedExternalEvent(forerunnerEvents);
+                }
+
             });
         }, "Discover schema " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
 
         //send TapForerunnerEvent
-        receivedExternalEvent(forerunnerEvents);
+
 
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
         if (enableBatchRead && batchCountFunction != null) {

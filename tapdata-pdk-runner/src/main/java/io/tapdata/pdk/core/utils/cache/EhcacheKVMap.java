@@ -20,10 +20,11 @@ import java.nio.ByteBuffer;
 
 import static io.tapdata.entity.simplify.TapSimplify.table;
 
-@Implementation(value = KVMap.class, buildNumber = 0)
+@Implementation(value = KVMap.class, buildNumber = 0, type = "ehcache")
 public class EhcacheKVMap<T> implements KVMap<T> {
     private PersistentCacheManager persistentCacheManager;
     private Cache<String, T> cache;
+    private Class<T> tClass;
     @Override
     public void init(String mapKey) {
         Class<?> theClass = null;
