@@ -48,7 +48,7 @@
     <dependency>
       <groupId>gbase</groupId>
       <artifactId>gbase-connector-java</artifactId>
-      <version>8.3.81.53-build54.4.7-bin</version>
+      <version>8.3.81.53-build55.5.5-bin</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
