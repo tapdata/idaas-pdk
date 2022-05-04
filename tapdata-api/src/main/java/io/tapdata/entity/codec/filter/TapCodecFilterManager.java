@@ -76,6 +76,10 @@ public class TapCodecFilterManager {
         return codecRegistry.getDataTypeByTapType(tapTypeClass);
     }
 
+    public Map<Class<?>, String> getTapTypeDataTypeMap() {
+        return codecRegistry.getTapTypeDataTypeMap();
+    }
+
     public ToTapValueCodec<?> getToTapValueCodec(Object value) {
         return this.codecRegistry.getToTapValueCodec(value.getClass());
     }

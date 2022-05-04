@@ -34,13 +34,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             TapField field = entry.getValue();
 
             String dataType = null;
-            //User custom codec
-            if(field.getTapType() != null) {
-                dataType = targetCodecFilterManager.getDataTypeByTapType(field.getTapType().getClass());
-            }
-
+            //Find best codec
             if(dataType == null) {
-                //Find best codec
                 TapResult<String> result = calculateBestTypeMapping(field, targetMatchingMap);
                 if(result != null) {
                     dataType = result.getData();
@@ -54,8 +49,13 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
             }
 
+            //User custom codec
+            if(dataType == null && field.getTapType() != null) {
+                dataType = targetCodecFilterManager.getDataTypeByTapType(field.getTapType().getClass());
+            }
+
+            //handle by default, find largest string type as default
             if(dataType == null) {
-                //handle by default
                 if(cachedLargestStringMapping == null) {
                     cachedTapString = new TapString();
                     cachedLargestStringMapping = findLargestStringType(targetMatchingMap, cachedTapString);
@@ -63,11 +63,9 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 dataType = cachedLargestStringMapping;
                 if(dataType != null) {
                     UnsupportedTypeFallbackHandler unsupportedTypeFallbackHandler = InstanceFactory.instance(UnsupportedTypeFallbackHandler.class);
-                    if(unsupportedTypeFallbackHandler != null) {
+                    if(unsupportedTypeFallbackHandler != null && targetCodecFilterManager.getCodecRegistry() != null) {
                         unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, cachedLargestStringMapping, cachedTapString);
                     }
-
-//                        field.setTapType(cachedTapString);
                 }
             }
 

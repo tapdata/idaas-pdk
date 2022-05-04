@@ -251,7 +251,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
 
         //Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
         //We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.
-        codecRegistry.registerFromTapValue(TapStringValue.class, "string", tapValue -> {
+        codecRegistry.registerFromTapValue(TapStringValue.class, tapValue -> {
             Object originValue = tapValue.getOriginValue();
             if(originValue instanceof ObjectId) {
                 return originValue;

@@ -35,13 +35,19 @@ public class TapCodecRegistry {
         return tapTypeDataTypeMap.containsKey(tapValueClass);
     }
 
+    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, FromTapValueCodec<T> fromTapValueCodec) {
+        return registerFromTapValue(tapValueClass, null, fromTapValueCodec);
+    }
     public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, String dataType, FromTapValueCodec<T> fromTapValueCodec) {
-        Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
-        if(types != null && types.length == 2 && types[1] instanceof Class) {
-            Class<?> theTapTypeClass = (Class<?>) types[1];
-            tapTypeDataTypeMap.put(theTapTypeClass, dataType);
+        if(dataType != null) {
+            Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
+            if(types != null && types.length == 2 && types[1] instanceof Class) {
+                Class<?> theTapTypeClass = (Class<?>) types[1];
+                tapTypeDataTypeMap.put(theTapTypeClass, dataType);
+            }
         }
-        classFromTapValueCodecMap.put(tapValueClass, fromTapValueCodec);
+        if(fromTapValueCodec != null)
+            classFromTapValueCodecMap.put(tapValueClass, fromTapValueCodec);
         return this;
     }
 
@@ -86,7 +92,19 @@ public class TapCodecRegistry {
     public String getDataTypeByTapType(Class<? extends TapType> tapTypeClass) {
         return tapTypeDataTypeMap.get(tapTypeClass);
     }
-//    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
+
+    public Map<Class<?>, String> getTapTypeDataTypeMap() {
+        return tapTypeDataTypeMap;
+    }
+
+    public void setTapTypeDataTypeMap(Map<Class<?>, String> tapTypeDataTypeMap) {
+        if(tapTypeDataTypeMap != null) {
+            this.tapTypeDataTypeMap.clear();
+            this.tapTypeDataTypeMap.putAll(tapTypeDataTypeMap);
+        }
+    }
+
+    //    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
 //        ToTapValueCodec<?> codec = fieldToTapValueCodecMap.get(fieldName);
 //        return codec;
 //    }

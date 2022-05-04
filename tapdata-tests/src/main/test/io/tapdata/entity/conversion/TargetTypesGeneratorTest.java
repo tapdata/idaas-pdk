@@ -252,4 +252,51 @@ class TargetTypesGeneratorTest {
         assertEquals("tinyint", int32unsignedField.getDataType());
     }
 
+
+    @Test
+    void numberTest() {
+        String sourceTypeExpression = "{\n" +
+                "    \"int[($bit)][unsigned][zerofill]\": {\"bit\": 32, \"bitRatio\": 3, \"unsigned\": \"unsigned\", \"zerofill\": \"zerofill\", \"to\": \"TapNumber\"},\n" +
+                "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"byteRatio\": 3, \"fixed\": false, \"to\": \"TapString\"},\n" +
+                "    \"decimal($precision,$scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"to\": \"TapNumber\"},\n" +
+
+                "    \"tinyint[($bit)][unsigned][zerofill]\": {\"bit\": 1, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"smallint[($bit)][unsigned][zerofill]\": {\"bit\": 4, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"mediumint[($bit)][unsigned][zerofill]\": {\"bit\": 8, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"bigint($bit)[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"bigint[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"float[($bit)][unsigned][zerofill]\": {\"bit\": 16, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"double[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "}";
+        String targetTypeExpression = "{" +
+                "\"tinyint\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ 0, 255]},\n" +
+                "\"tinyint unsigned\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ -128, 127],\"unsigned\": \"unsigned\"},\n" +
+                "\"smallint\": {\"to\": \"TapNumber\",\"bit\": 16,\"value\": [ -32768, 32767],\"precision\": 5},\n" +
+                "\"smallint unsigned\": {\"to\": \"TapNumber\",\"bit\": 16,\"precision\": 5,\"value\": [ 0, 65535],\"unsigned\": \"unsigned\"},\n" +
+                "\"mediumint\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607]},\n" +
+                "\"mediumint unsigned\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 8,\"value\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
+                "\"int\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647]},\n" +
+                "\"int unsigned\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ 0, 4294967295]},\n" +
+                "\"bigint\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807]},\n" +
+                "\"bigint unsigned\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709551615]},\n" +
+                "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10,\"defaultScale\": 0,\"unsigned\": \"unsigned\"},\n" +
+                "\"float($precision,$scale)[unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 30],\"scale\": [ 0, 30],\"value\": [ \"-3.402823466E+38\", \"3.402823466E+38\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
+                "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
+                "\"double\": {\"to\": \"TapNumber\",\"precision\": [ 1, 11],\"scale\": [ 0, 11],\"fixed\": false},\n" +
+                "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false}" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("int(32)", "int(32)"))
+
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+        TapField int32unsignedField = nameFieldMap.get("int(32)");
+        assertEquals("tinyint", int32unsignedField.getDataType());
+    }
 }
