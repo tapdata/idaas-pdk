@@ -27,7 +27,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             return null;
         TapResult<LinkedHashMap<String, TapField>> finalResult = TapResult.successfully();
         LinkedHashMap<String, TapField> targetFieldMap = new LinkedHashMap<>();
-        String cachedLargestStringMapping = null;
+        TapField largestStringMappingField = null;
         TapString cachedTapString = null;
 
         for(Map.Entry<String, TapField> entry : sourceFields.entrySet()) {
@@ -56,20 +56,19 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
             //handle by default, find largest string type as default
             if(dataType == null) {
-                if(cachedLargestStringMapping == null) {
+                if(largestStringMappingField == null) {
                     cachedTapString = new TapString();
-                    cachedLargestStringMapping = findLargestStringType(targetMatchingMap, cachedTapString);
+                    largestStringMappingField = findLargestStringType(field, targetMatchingMap, cachedTapString);
                 }
-                dataType = cachedLargestStringMapping;
-                if(dataType != null) {
+                if(largestStringMappingField != null) {
                     UnsupportedTypeFallbackHandler unsupportedTypeFallbackHandler = InstanceFactory.instance(UnsupportedTypeFallbackHandler.class);
                     if(unsupportedTypeFallbackHandler != null && targetCodecFilterManager.getCodecRegistry() != null) {
-                        unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, cachedLargestStringMapping, cachedTapString);
+                        unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, largestStringMappingField.getDataType(), cachedTapString);
                     }
                 }
             }
 
-            targetFieldMap.put(field.getName(), field.clone().dataType(dataType));
+            targetFieldMap.put(field.getName(), largestStringMappingField);
         }
         if(finalResult.getResultItems() != null && !finalResult.getResultItems().isEmpty()) {
             finalResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);
@@ -77,18 +76,19 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         return finalResult.data(targetFieldMap);
     }
 
-    private String findLargestStringType(DefaultExpressionMatchingMap targetMatchingMap, TapString tapString) {
+    private TapField findLargestStringType(TapField originField, DefaultExpressionMatchingMap targetMatchingMap, TapString tapString) {
         if(targetMatchingMap == null || targetMatchingMap.isEmpty())
             return null;
         HitTapMappingContainer hitTapMapping = new HitTapMappingContainer();
-        TapField field = new TapField().tapType(tapString).dataType("LargestString");
+        TapField field = originField.clone();//new TapField().tapType(tapString).dataType("LargestString");
+        field.tapType(tapString);
         targetMatchingMap.iterate(expressionValueEntry -> {
             TapMapping tapMapping = (TapMapping) expressionValueEntry.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
             if(tapMapping != null && tapMapping.getTo() != null) {
                 if(tapMapping.getQueryOnly() != null && tapMapping.getQueryOnly()) {
                     return false;
                 }
-                if(tapMapping.getTo().equals("TapString")) {
+                if(tapMapping.getTo().equals(tapString.getClass().getSimpleName())) {
                     long score = tapMapping.matchingScore(field);
                     if(score >= 0) {
                         hitTapMapping.input(expressionValueEntry.getKey(), tapMapping, score);
@@ -113,8 +113,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 TapLogger.warn(TAG, "findLargestStringMapping " + resultItem.getItem() + ": " + resultItem.getInformation());
             }
         }
-
-        return result.getData();
+        field.setDataType(result.getData());
+        return field;
     }
 
     static class HitTapMapping {

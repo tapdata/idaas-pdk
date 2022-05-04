@@ -5,5 +5,5 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 
 public interface UnsupportedTypeFallbackHandler {
-    void handle(TapCodecRegistry codecRegistry, TapField unsupportedField, String dataType, TapType toTapType);
+    void handle(TapCodecRegistry codecsRegistry, TapField unsupportedField, String dataType, TapType toTapType);
 }

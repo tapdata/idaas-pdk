@@ -72,6 +72,9 @@ public class TapNumberMapping extends TapMapping {
                     maxPrecision = ((Number) list.get(1)).intValue();
                 }
             }
+        } else if(precisionObj instanceof Number) {
+            minPrecision = 1;
+            maxPrecision = ((Number) precisionObj).intValue();
         }
         Object defaultPrecisionObj = getObject(info, KEY_PRECISION_DEFAULT);
         if(defaultPrecisionObj instanceof Number) {
@@ -89,6 +92,9 @@ public class TapNumberMapping extends TapMapping {
                     maxScale = ((Number) list.get(1)).intValue();
                 }
             }
+        } else if(scaleObj instanceof Number) {
+            minScale = 0;
+            maxScale = ((Number) scaleObj).intValue();
         }
 
         Object defaultScaleObj = getObject(info, KEY_SCALE_DEFAULT);

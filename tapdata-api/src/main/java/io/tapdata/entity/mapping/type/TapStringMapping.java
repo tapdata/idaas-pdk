@@ -54,6 +54,10 @@ public class TapStringMapping extends TapBytesBase {
         if (field.getTapType() instanceof TapString) {
             TapString tapString = (TapString) field.getTapType();
 
+            //field is primary key, but this type is not able to be primary type.
+            if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
+                return Long.MIN_VALUE;
+            }
             Long theBytes = bytes;
             if(theBytes != null)
                 theBytes = theBytes * byteRatio;
