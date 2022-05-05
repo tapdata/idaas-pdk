@@ -16,6 +16,8 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.entity.utils.FormatUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -190,5 +192,15 @@ public abstract class ConnectorBase {
 
     public static Object convertDateTimeToDate(DateTime dateTime) {
         return TapSimplify.convertDateTimeToDate(dateTime);
+    }
+
+    public static String getStackString(Throwable throwable) {
+        StringWriter sw = new StringWriter();
+        try (
+                PrintWriter pw = new PrintWriter(sw)
+        ) {
+            throwable.printStackTrace(pw);
+            return sw.toString();
+        }
     }
 }

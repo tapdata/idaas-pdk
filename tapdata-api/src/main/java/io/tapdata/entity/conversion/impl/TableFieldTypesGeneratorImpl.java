@@ -31,4 +31,18 @@ public class TableFieldTypesGeneratorImpl implements TableFieldTypesGenerator {
             }
         }
     }
+
+    @Override
+    public void autoFill(TapField tapField, DefaultExpressionMatchingMap expressionMatchingMap) {
+        if(null == tapField) return;
+        TypeExprResult<DataMap> result = expressionMatchingMap.get(tapField.getOriginType());
+        if(result != null) {
+            TapMapping tapMapping = (TapMapping) result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+            if(tapMapping != null) {
+                tapField.setTapType(tapMapping.toTapType(tapField.getOriginType(), result.getParams()));
+            }
+        } else {
+            TapLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition.", tapField.getOriginType());
+        }
+    }
 }
