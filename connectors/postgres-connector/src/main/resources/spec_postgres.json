@@ -42,6 +42,11 @@
     }
   },
   "dataTypes": {
+    "bool": {
+      "bit": 8,
+      "unsigned" : "",
+      "to": "TapNumber"
+    },
     "boolean": {
       "bit": 8,
       "unsigned" : "",
