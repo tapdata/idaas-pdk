@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 @TapConnectorClass("targetDorisSpec.json")
-public class TDDBenchmarkTargetConnector extends ConnectorBase implements TapConnector {
+public class TDDBenchmarkTargetConnector extends ConnectorBase {
     public static final String TAG = TDDBenchmarkTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);

@@ -19,6 +19,16 @@ public class TapSimplify {
         tapUtils.interval(runnable, seconds);
     }
 
+
+    public static String toJsonWithClass(Object obj) {
+        return jsonParser.toJsonWithClass(obj);
+    }
+
+    public static Object fromJsonWithClass(String json) {
+        return jsonParser.fromJsonWithClass(json);
+    }
+
+
     public static String toJson(Object obj) {
         return jsonParser.toJson(obj);
     }

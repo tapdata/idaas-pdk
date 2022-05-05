@@ -566,7 +566,7 @@ public class PDKTestBase {
         return null;
     }
 
-    protected String getStreamOffset(SourceNode sourceNode, List<String> tableList, Long offsetStartTime) throws Throwable {
+    protected Object getStreamOffset(SourceNode sourceNode, List<String> tableList, Long offsetStartTime) throws Throwable {
         StreamOffsetFunction queryByFilterFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
         return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime);
     }

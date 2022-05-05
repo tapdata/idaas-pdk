@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 @TapConnectorClass("targetSpec.json")
-public class TDDTargetConnector extends ConnectorBase implements TapConnector {
+public class TDDTargetConnector extends ConnectorBase {
     public static final String TAG = TDDTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
