@@ -1,6 +1,5 @@
 package io.tapdata.pdk.apis.functions;
 
-import io.tapdata.pdk.apis.functions.connector.common.InitFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 
@@ -12,18 +11,12 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private WriteRecordFunction writeRecordFunction;
     private QueryByFilterFunction queryByFilterFunction;
     private QueryByAdvanceFilterFunction queryByAdvanceFilterFunction;
-    private TransactionFunction transactionFunction;
     private CreateTableFunction createTableFunction;
     private AlterTableFunction alterTableFunction;
     private ClearTableFunction clearTableFunction;
     private DropTableFunction dropTableFunction;
     private ControlFunction controlFunction;
-    private InitFunction initFunction;
 
-    public ConnectorFunctions supportInit(InitFunction function) {
-        initFunction = function;
-        return this;
-    }
     public ConnectorFunctions supportControl(ControlFunction function) {
         controlFunction = function;
         return this;
@@ -131,10 +124,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return queryByFilterFunction;
     }
 
-    public TransactionFunction getTransactionFunction() {
-        return transactionFunction;
-    }
-
     public CreateTableFunction getCreateTableFunction() {
         return createTableFunction;
     }
@@ -153,9 +142,5 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public ControlFunction getControlFunction() {
         return controlFunction;
-    }
-
-    public InitFunction getInitFunction() {
-        return initFunction;
     }
 }

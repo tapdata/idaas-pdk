@@ -11,6 +11,8 @@ import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.pdk.apis.TapConnector;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.entity.utils.FormatUtils;
@@ -18,8 +20,9 @@ import io.tapdata.pdk.apis.utils.TypeConverter;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class ConnectorBase {
+public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
     private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
 
@@ -191,4 +194,28 @@ public abstract class ConnectorBase {
     public static Object convertDateTimeToDate(DateTime dateTime) {
         return TapSimplify.convertDateTimeToDate(dateTime);
     }
+
+    private final AtomicBoolean isAlive = new AtomicBoolean(false);
+
+    public boolean isAlive() {
+        return isAlive.get() && !Thread.currentThread().isInterrupted();
+    }
+
+    @Override
+    public final void init(TapConnectorContext connectorContext) throws Throwable {
+        if(isAlive.compareAndSet(false, true)) {
+            onStart(connectorContext);
+        }
+    }
+
+    public abstract void onStart(TapConnectorContext connectorContext) throws Throwable;
+    public abstract void onDestroy() throws Throwable;
+
+    @Override
+    public final void destroy() throws Throwable {
+        if(isAlive.compareAndSet(true, false)) {
+            onDestroy();
+        }
+    }
+
 }

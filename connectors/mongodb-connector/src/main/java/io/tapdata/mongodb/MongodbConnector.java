@@ -215,7 +215,6 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
-        connectorFunctions.supportInit(this::init);
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportDropTable(this::dropTable);
@@ -266,7 +265,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportStreamOffset(this::streamOffset);
     }
 
-    private void init(TapConnectorContext connectorContext) throws Throwable {
+    public void onStart(TapConnectorContext connectorContext) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
     }
 
@@ -735,7 +734,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
 //        if (mongoClient != null) {
 //            mongoClient.close();
 //        }

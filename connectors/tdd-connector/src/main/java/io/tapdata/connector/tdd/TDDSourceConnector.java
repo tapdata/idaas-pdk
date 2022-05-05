@@ -218,6 +218,11 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
         counter.set(counter.get() + 1000);
     }
 
+    @Override
+    public void onStart(TapConnectorContext connectorContext) throws Throwable {
+
+    }
+
     /**
      * The method invocation life circle is below,
      * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
@@ -227,7 +232,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
         //TODO release resources
         isShutDown.set(true);
     }

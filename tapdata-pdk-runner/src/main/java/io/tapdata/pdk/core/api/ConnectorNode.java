@@ -79,6 +79,9 @@ public class ConnectorNode extends Node {
         connector.registerCapabilities(connectorFunctions, codecsRegistry);
     }
 
+    public void connectorInit() throws Throwable {
+        connector.init(connectorContext);
+    }
     public TapConnectorContext getConnectorContext() {
         return connectorContext;
     }

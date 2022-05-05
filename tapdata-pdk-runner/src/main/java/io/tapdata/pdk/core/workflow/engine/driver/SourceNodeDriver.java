@@ -22,7 +22,6 @@ import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
-import io.tapdata.pdk.apis.functions.connector.common.InitFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
@@ -98,12 +97,9 @@ public class SourceNodeDriver extends Driver {
         KVMapFactory mapFactory = InstanceFactory.instance(KVMapFactory.class);
         tableKVMap = mapFactory.getCacheMap(sourceNode.getAssociateId(), TapTable.class);
 
-        InitFunction initFunction = sourceNode.getConnectorFunctions().getInitFunction();
-        if (initFunction != null) {
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
-                initFunction.init(sourceNode.getConnectorContext());
-            }, "Init " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
-        }
+        pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
+            sourceNode.connectorInit();
+        }, "Init " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
 
         //Init tasks
         List<Map<String, Object>> tasks = sourceNode.getTasks();
