@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 @TapConnectorClass("targetDorisSpec.json")
-public class EmptyDorisTargetConnector extends ConnectorBase implements TapConnector {
+public class EmptyDorisTargetConnector extends ConnectorBase {
     public static final String TAG = EmptyDorisTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
@@ -52,7 +52,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
         List<TapTable> tapTables = list();
@@ -250,6 +250,12 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
         return builder.toString();
     }
 
+    @Override
+    public void onStart(TapConnectorContext connectorContext) throws Throwable {
+
+    }
+
+
     /**
      * The method invocation life circle is below,
      * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
@@ -259,7 +265,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase implements TapConne
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
         //TODO release resources
         isShutDown.set(true);
     }

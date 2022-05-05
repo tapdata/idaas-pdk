@@ -22,6 +22,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.tapdata.entity.simplify.TapSimplify.fromJsonWithClass;
+import static io.tapdata.entity.simplify.TapSimplify.toJsonWithClass;
+
 public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
     private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();

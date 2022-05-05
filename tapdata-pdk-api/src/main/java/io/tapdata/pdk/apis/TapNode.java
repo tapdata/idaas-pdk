@@ -12,4 +12,5 @@ public interface TapNode {
     void destroy() throws Throwable;
 
     void init(TapConnectorContext connectorContext) throws Throwable;
+
 }
