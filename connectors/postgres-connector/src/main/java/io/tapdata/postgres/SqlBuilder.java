@@ -6,7 +6,6 @@ import io.tapdata.entity.schema.value.DateTime;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,8 +29,7 @@ public class SqlBuilder {
         StringBuilder builder = new StringBuilder();
         nameFieldMap.keySet().forEach(columnName -> {
             TapField tapField = nameFieldMap.get(columnName);
-            if (tapField.getOriginType() == null)
-                return;
+            if (tapField.getOriginType() == null) return;
             builder.append(tapField.getName()).append(' ').append(tapField.getOriginType()).append(' ');
             if (tapField.getNullable() != null && !tapField.getNullable()) {
                 builder.append("NOT NULL").append(' ');
@@ -71,8 +69,7 @@ public class SqlBuilder {
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = insertRecord.get(columnName);
-            if (tapField.getOriginType() == null)
-                continue;
+            if (tapField.getOriginType() == null) continue;
             if (tapValue == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
                     preparedStatement.setObject(pos, tapField.getDefaultValue());
@@ -92,13 +89,11 @@ public class SqlBuilder {
         for (Map.Entry<String, Object> entry : record.entrySet()) {
             String fieldName = entry.getKey();
             builder.append(fieldName).append("=");
-            if (!(entry.getValue() instanceof Number))
-                builder.append("'");
+            if (!(entry.getValue() instanceof Number)) builder.append("'");
 
             builder.append(getFieldOriginValue(entry.getValue()));
 
-            if (!(entry.getValue() instanceof Number))
-                builder.append("'");
+            if (!(entry.getValue() instanceof Number)) builder.append("'");
 
             builder.append(splitSymbol).append(" ");
         }
@@ -112,8 +107,7 @@ public class SqlBuilder {
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = record.get(columnName);
-            if (tapField.getOriginType() == null)
-                continue;
+            if (tapField.getOriginType() == null) continue;
             if (tapValue == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
                     builder.append("'").append(tapField.getDefaultValue()).append("'").append(',');
@@ -128,25 +122,13 @@ public class SqlBuilder {
         return builder.toString();
     }
 
-    private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
-
-    private static String formatTapDateTime(DateTime dateTime, String pattern) {
-        if (dateTime.getTimeZone() != null) dateTime.setTimeZone(dateTime.getTimeZone());
-        tapDateTimeFormat.applyPattern(pattern);
-        return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
-    }
-
-    private static String formatTapDateTime(Date date, String pattern) {
-        tapDateTimeFormat.applyPattern(pattern);
-        return tapDateTimeFormat.format(date);
-    }
-
     private static Object getFieldOriginValue(Object tapValue) {
         Object result = tapValue;
         if (tapValue instanceof DateTime) {
-            result = formatTapDateTime((DateTime) tapValue, "yyyy-MM-dd HH:mm:ss");
+            DateTime dateTime = (DateTime) tapValue;
+            return new java.sql.Date(dateTime.getSeconds() * 1000L + dateTime.getNano() / 1000000L);
         } else if (tapValue instanceof Date) {
-            result = formatTapDateTime((Date) tapValue, "yyyy-MM-dd HH:mm:ss");
+            return new java.sql.Date(((Date) tapValue).getTime());
         }
         return result;
     }

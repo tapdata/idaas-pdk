@@ -24,6 +24,7 @@ public class PostgresConfig implements Serializable {
     private String host;
     private int port;
     private String database;
+    private String schema;
     private String user;
     private String password;
     private int insertBatchSize = 1000;
@@ -100,6 +101,14 @@ public class PostgresConfig implements Serializable {
 
     public void setDatabase(String database) {
         this.database = database;
+    }
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
     }
 
     public String getUser() {

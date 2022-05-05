@@ -9,6 +9,7 @@ import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapArrayValue;
@@ -84,11 +85,11 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
         List<TapTable> tapTableList = new LinkedList<>();
         DatabaseMetaData databaseMetaData = conn.getMetaData();
-        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getDatabase(), null, new String[]{"TABLE"});
+        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{"TABLE"});
         while (tableResult.next()) {
             String tableName = tableResult.getString("TABLE_NAME");
             TapTable table = table(tableName);
-            ResultSet columnsResult = databaseMetaData.getColumns(conn.getCatalog(), postgresConfig.getDatabase(), tableName, null);
+            ResultSet columnsResult = databaseMetaData.getColumns(conn.getCatalog(), postgresConfig.getSchema(), tableName, null);
             while (columnsResult.next()) {
                 TapField tapField = new PostgresColumn(columnsResult).getTapField();
                 table.add(tapField);
@@ -132,15 +133,6 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
                 return toJson(tapValue.getValue());
             return "null";
         });
-        codecRegistry.registerFromTapValue(TapBooleanValue.class, "boolean", tapValue -> {
-            if (tapValue != null) {
-                Boolean value = tapValue.getValue();
-                if (value != null && value) {
-                    return 1;
-                }
-            }
-            return 0;
-        });
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
@@ -179,7 +171,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         Collection<String> primaryKeys = tapTable.primaryKeys();
         String sql = "CREATE TABLE " + tapTable.getName() +
                 "(" + SqlBuilder.buildColumnDefinition(tapTable) + "," +
-                " UNIQUE KEY (" + StringKit.combineStringWithComma(primaryKeys) + " ) )";
+                " UNIQUE (" + StringKit.combineStringWithComma(primaryKeys) + " ) )";
 
         try {
             stmt = conn.createStatement();
@@ -187,9 +179,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Create Table " + tapTable.getName() + " Failed! " + e.getMessage());
-
         }
-//        PDKLogger.info(TAG, "createTable");
     }
 
 //FIXME DOIRS异步执行alter命令，无回调接口，没次对同一个table同时执行一个alter命令；不能保证某个时刻是否存在alter命令正在执行
@@ -263,10 +253,9 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
         TapTable tapTable = connectorContext.getTable();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        //TODO use Doris Driver
         PreparedStatement preparedStatement = conn.prepareStatement(SqlBuilder.buildPrepareInsertSQL(tapTable));
         for (TapRecordEvent recordEvent : tapRecordEvents) {
-            ResultSet table = conn.getMetaData().getTables(null, postgresConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});
+            ResultSet table = conn.getMetaData().getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), tapTable.getName().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
             if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;

@@ -112,7 +112,7 @@ public class DMLTest extends PDKTestBase {
                     TapTable targetTable = dag.getNodeMap().get(targetNodeId).getTable();
                     boolean found = false;
                     for(TapTable table : allTables) {
-                        if(table.getName() != null && table.getName().equals(targetTable.getName())) {
+                        if(table.getName() != null && table.getName().equals(targetTable.getName().toLowerCase())) {
                             found = true;
                             break;
                         }

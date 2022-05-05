@@ -26,6 +26,18 @@
           "x-decorator": "FormItem",
           "x-component": "Input"
         },
+        "schema": {
+          "type": "string",
+          "title": "Schema",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "extParams": {
+          "type": "string",
+          "title": "ExtendParams",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
         "user": {
           "type": "string",
           "title": "User",
@@ -94,7 +106,7 @@
     },
     "text": {
       "byte": "4g",
-      "priority": 1,
+      "priority": 2,
       "to": "TapString"
     },
     "bytea": {
@@ -120,21 +132,31 @@
       "priority": 1,
       "to": "TapBoolean"
     },
-
     "date": {
-      "byte": 3,
       "range": [
-        "0000-01-01",
+        "0001-01-01",
         "9999-12-31"
       ],
+      "priority": 1,
       "to": "TapDate"
     },
-    "datetime": {
-      "byte": 8,
+    "interval($rangeType)": {
       "range": [
-        "0000-01-01 00:00:00",
+        "-99:59:59",
+        "99:59:59"
+      ],
+      "priority": 3,
+      "queryOnly": true,
+      "to": "TapTime"
+    },
+    "timestamp[($fsp)]": {
+      "range": [
+        "1000-01-01 00:00:00",
         "9999-12-31 23:59:59"
       ],
+      "fsp": [0,6],
+      "defualtFsp":19,
+      "priority": 3,
       "to": "TapDateTime"
     }
   }
