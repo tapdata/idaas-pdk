@@ -235,7 +235,6 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
         if (null == tapRecordEvents || tapRecordEvents.isEmpty()) return;
         TapTable tapTable = connectorContext.getTableMap().get(tapRecordEvents.stream().findFirst().orElseGet(TapRecordEvent::new).getTableId());
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         PreparedStatement preparedStatement = conn.prepareStatement(SqlBuilder.buildPrepareInsertSQL(tapTable));
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             ResultSet table = conn.getMetaData().getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), tapTable.getName().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
