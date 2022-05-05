@@ -13,7 +13,7 @@ public class TapMapMapping extends TapSizeBase {
 
 
     @Override
-    public TapType toTapType(String originType, Map<String, String> params) {
+    public TapType toTapType(String dataType, Map<String, String> params) {
         return new TapMap();
     }
 

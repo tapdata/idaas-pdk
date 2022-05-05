@@ -6,15 +6,17 @@
         "uri": "mongodb://localhost:27017/",
         "database": "sample_training"
       },
-      "table": {
-        "name": "test",
-        "id": "test"
-      },
+      "tables": ["test"],
       "id": "s1",
       "pdkId": "mongodb",
       "group": "io.tapdata",
       "type": "Source",
       "version": "1.0-SNAPSHOT"
+    },
+    {
+      "pdkId": "ChangedTableName",
+      "type": "Processor",
+      "version": "1.0"
     },
     {
       "connectionConfig": {
@@ -24,10 +26,7 @@
         "user": "root",
         "password": ""
       },
-      "table": {
-        "name": "emptyTable2",
-        "id": "emptyTable2"
-      },
+      "tables": ["emptyTable2"],
       "id": "t2",
       "pdkId": "doris",
       "group": "io.tapdata.connector.doris",

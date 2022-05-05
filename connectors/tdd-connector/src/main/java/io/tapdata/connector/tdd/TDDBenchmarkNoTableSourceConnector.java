@@ -16,6 +16,7 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @TapConnectorClass("sourceBenchmarkNoTableSpec.json")
@@ -38,7 +39,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
         //TODO originType最好使用标准列类型来表达， 避免混淆
@@ -152,10 +153,9 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
-     * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, String offset) {
+    private long batchCount(TapConnectorContext connectorContext, TapTable table) {
         //TODO Count the batch size.
         return 1L;
     }
@@ -174,26 +174,27 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
-     * @param offset
-     * @param tapReadOffsetConsumer
+     * @param table
+     * @param offsetState
+     * @param eventsOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, String offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, TapTable table, String offsetState, int eventBatchSize, BiConsumer<List<TapEvent>, String> eventsOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1000; j++) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < batchSize; i++) {
+            for (int i = 0; i < eventBatchSize; i++) {
                 Map<String, Object> map = new HashMap<>();
                 for(int m = 0; m < 10; m++) {
                     String key = String.valueOf(m);
                     map.put(key, key);
                 }
-                TapInsertRecordEvent recordEvent = insertRecordEvent(map, connectorContext.getTable());
+                TapInsertRecordEvent recordEvent = insertRecordEvent(map, table.getId());
                 counter.incrementAndGet();
                 tapEvents.add(recordEvent);
             }
 
-            tapReadOffsetConsumer.accept(tapEvents);
+            eventsOffsetConsumer.accept(tapEvents, null);
         }
         counter.set(counter.get() + 1000);
     }

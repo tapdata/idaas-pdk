@@ -16,6 +16,7 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @TapConnectorClass("sourceSpec.json")
@@ -38,7 +39,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
         //TODO originType最好使用标准列类型来表达， 避免混淆
@@ -152,10 +153,9 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
-     * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, String offset) {
+    private long batchCount(TapConnectorContext connectorContext, TapTable table) {
         //TODO Count the batch size.
         return 1L;
     }
@@ -174,11 +174,12 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
+     * @param tables
      * @param offset
      * @param tapReadOffsetConsumer
      */
     private Date date = new Date();
-    private void batchRead(TapConnectorContext connectorContext, String offset, int batchSize, Consumer<List<TapEvent>> tapReadOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, TapTable table, String offsetState, int batchSize, BiConsumer<List<TapEvent>, String> eventsOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate records directly.
@@ -208,11 +209,11 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
                         entry("tapMapStringTDDUser", map(entry("a", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)))),
                         entry("tapDateTime", date),
                         entry("tapDateTimeTimeZone", date)
-                ), connectorContext.getTable());
+                ), table.getId());
                 tapEvents.add(recordEvent);
             }
 
-            tapReadOffsetConsumer.accept(tapEvents);
+            eventsOffsetConsumer.accept(tapEvents, null);
         }
         counter.set(counter.get() + 1000);
     }

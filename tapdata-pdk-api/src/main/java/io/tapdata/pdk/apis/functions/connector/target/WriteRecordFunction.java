@@ -17,6 +17,6 @@ public interface WriteRecordFunction extends TapFunction {
      * @param recordEvents
      * @param consumer
      */
-    void writeDML(TapConnectorContext connectorContext, List<TapRecordEvent> recordEvents, Consumer<WriteListResult<TapRecordEvent>> consumer) throws Throwable;
+    void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> recordEvents, Consumer<WriteListResult<TapRecordEvent>> consumer) throws Throwable;
 
 }

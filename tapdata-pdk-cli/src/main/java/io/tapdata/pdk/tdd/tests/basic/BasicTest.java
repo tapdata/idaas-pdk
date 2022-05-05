@@ -54,7 +54,7 @@ public class BasicTest extends PDKTestBase {
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 List<TapTable> allTables = new ArrayList<>();
                 try {
-                    connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                    connectionNode.discoverSchema(null, 10, tables -> allTables.addAll(tables));
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
                     Assertions.fail(throwable);

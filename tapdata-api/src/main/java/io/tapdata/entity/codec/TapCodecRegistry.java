@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TapCodecRegistry {
     private final Map<Class<?>, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<? extends TapValue<?, ?>>, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
-    private final Map<Class<?>, String> tapTypeOriginTypeMap = new ConcurrentHashMap<>();
+    private final Map<Class<?>, String> tapTypeDataTypeMap = new ConcurrentHashMap<>();
 
 //    private final Map<String, ToTapValueCodec<?>> fieldToTapValueCodecMap = new ConcurrentHashMap<>();
 
@@ -32,16 +32,22 @@ public class TapCodecRegistry {
     }
 
     public <T extends TapValue<?, ?>> boolean isRegisteredFromTapValue(Class<T> tapValueClass) {
-        return tapTypeOriginTypeMap.containsKey(tapValueClass);
+        return tapTypeDataTypeMap.containsKey(tapValueClass);
     }
 
-    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, String originType, FromTapValueCodec<T> fromTapValueCodec) {
-        Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
-        if(types != null && types.length == 2 && types[1] instanceof Class) {
-            Class<?> theTapTypeClass = (Class<?>) types[1];
-            tapTypeOriginTypeMap.put(theTapTypeClass, originType);
+    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, FromTapValueCodec<T> fromTapValueCodec) {
+        return registerFromTapValue(tapValueClass, null, fromTapValueCodec);
+    }
+    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, String dataType, FromTapValueCodec<T> fromTapValueCodec) {
+        if(dataType != null) {
+            Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
+            if(types != null && types.length == 2 && types[1] instanceof Class) {
+                Class<?> theTapTypeClass = (Class<?>) types[1];
+                tapTypeDataTypeMap.put(theTapTypeClass, dataType);
+            }
         }
-        classFromTapValueCodecMap.put(tapValueClass, fromTapValueCodec);
+        if(fromTapValueCodec != null)
+            classFromTapValueCodecMap.put(tapValueClass, fromTapValueCodec);
         return this;
     }
 
@@ -83,10 +89,22 @@ public class TapCodecRegistry {
         return null;
     }
 
-    public String getOriginTypeByTapType(Class<? extends TapType> tapTypeClass) {
-        return tapTypeOriginTypeMap.get(tapTypeClass);
+    public String getDataTypeByTapType(Class<? extends TapType> tapTypeClass) {
+        return tapTypeDataTypeMap.get(tapTypeClass);
     }
-//    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
+
+    public Map<Class<?>, String> getTapTypeDataTypeMap() {
+        return tapTypeDataTypeMap;
+    }
+
+    public void setTapTypeDataTypeMap(Map<Class<?>, String> tapTypeDataTypeMap) {
+        if(tapTypeDataTypeMap != null) {
+            this.tapTypeDataTypeMap.clear();
+            this.tapTypeDataTypeMap.putAll(tapTypeDataTypeMap);
+        }
+    }
+
+    //    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
 //        ToTapValueCodec<?> codec = fieldToTapValueCodecMap.get(fieldName);
 //        return codec;
 //    }

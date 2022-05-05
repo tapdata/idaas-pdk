@@ -37,3 +37,4 @@ src/main/resources/gitignore/*
 
 dist/
 
+cacheData/

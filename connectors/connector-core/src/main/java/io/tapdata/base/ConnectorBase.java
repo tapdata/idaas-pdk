@@ -81,8 +81,8 @@ public abstract class ConnectorBase {
         return FormatUtils.format(message, args);
     }
 
-    public static TapField field(String name, String originType) {
-        return TapSimplify.field(name, originType);
+    public static TapField field(String name, String dataType) {
+        return TapSimplify.field(name, dataType);
     }
 
     public static TapTable table(String tableName, String id) {
@@ -164,16 +164,16 @@ public abstract class ConnectorBase {
         return TapSimplify.map(entries);
     }
 
-    public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, TapTable tapTable) {
-        return TapSimplify.insertRecordEvent(after, tapTable);
+    public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, String table) {
+        return TapSimplify.insertRecordEvent(after, table);
     }
 
-    public static TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
-        return TapSimplify.deleteDMLEvent(before, tapTable);
+    public static TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, String table) {
+        return TapSimplify.deleteDMLEvent(before, table);
     }
 
-    public static TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
-        return TapSimplify.updateDMLEvent(before, after, tapTable);
+    public static TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, String table) {
+        return TapSimplify.updateDMLEvent(before, after, table);
     }
 
     public static WriteListResult<TapRecordEvent> writeListResult() {

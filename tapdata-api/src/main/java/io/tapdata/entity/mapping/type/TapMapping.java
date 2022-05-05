@@ -11,9 +11,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class TapMapping {
     public static final String FIELD_TYPE_MAPPING = "_tapMapping";
 
-    private String to;
-    private Boolean queryOnly;
-    private Integer priority = Integer.MAX_VALUE;
+    protected String to;
+    protected Boolean queryOnly;
+    protected Integer priority = Integer.MAX_VALUE;
+    protected Boolean pkEnablement = true;
     private static final Map<String, Class<?>> classCacheMap = new ConcurrentHashMap<>();
 
     public TapMapping() {
@@ -56,6 +57,11 @@ public abstract class TapMapping {
         if(queryOnlyObj instanceof Boolean)
             queryOnly = (Boolean) queryOnlyObj;
 
+        Boolean pkEnablement = null;
+        Object pkEnablementObj = info.get("pkEnablement");
+        if(pkEnablementObj instanceof Boolean)
+            pkEnablement = (Boolean) pkEnablementObj;
+
         Integer priority = null;
         Object priorityObj = info.get("priority");
         if(priorityObj instanceof Integer)
@@ -89,6 +95,8 @@ public abstract class TapMapping {
             tapMapping.to = to;
             if(priority != null)
                 tapMapping.priority = priority;
+            if(pkEnablement != null)
+                tapMapping.pkEnablement = pkEnablement;
             tapMapping.queryOnly = queryOnly;
             tapMapping.from(info);
             return tapMapping;
@@ -106,7 +114,7 @@ public abstract class TapMapping {
         this.to = to;
     }
 
-    public abstract TapType toTapType(String originType, Map<String, String> params);
+    public abstract TapType toTapType(String dataType, Map<String, String> params);
 
     public abstract TapResult<String> fromTapType(String typeExpression, TapType tapType);
 
@@ -164,6 +172,14 @@ public abstract class TapMapping {
 
     public void setPriority(Integer priority) {
         this.priority = priority;
+    }
+
+    public Boolean getPkEnablement() {
+        return pkEnablement;
+    }
+
+    public void setPkEnablement(Boolean pkEnablement) {
+        this.pkEnablement = pkEnablement;
     }
 
     /**

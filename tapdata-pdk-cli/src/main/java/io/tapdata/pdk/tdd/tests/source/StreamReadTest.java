@@ -66,6 +66,9 @@ public class StreamReadTest extends PDKTestBase {
     int eventBatchSize = 5;
 
     TapNodeInfo tapNodeInfo;
+
+    String tddTableId = "tdd-table";
+    String testTableId;
     @Test
     @DisplayName("Test method handleRead")
     void sourceTest() throws Throwable {
@@ -78,13 +81,13 @@ public class StreamReadTest extends PDKTestBase {
             // #1
             dataFlowDescriber = new DAGDescriber();
             dataFlowDescriber.setId(sourceToTddTargetDagId);
-            String tableId = testTableName(dataFlowDescriber.getId());
+            testTableId = testTableName(dataFlowDescriber.getId());
 
             dataFlowDescriber.setNodes(Arrays.asList(
                     new TapDAGNodeEx().id(testSourceNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_SOURCE).version(spec.getVersion()).
-                            table(new TapTable(tableId)).connectionConfig(connectionOptions),
+                            table(testTableId).connectionConfig(connectionOptions),
                     new TapDAGNodeEx().id(tddTargetNodeId).pdkId("tdd-target").group("io.tapdata.connector").type(TapDAGNode.TYPE_TARGET).version("1.0-SNAPSHOT").
-                            table(new TapTable("tdd-table")).connectionConfig(new DataMap())
+                            table(tddTableId).connectionConfig(new DataMap())
             ));
             dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(testSourceNodeId, tddTargetNodeId)));
             dataFlowDescriber.setJobOptions(new JobOptions()
@@ -99,9 +102,9 @@ public class StreamReadTest extends PDKTestBase {
 
             originDataFlowDescriber.setNodes(Arrays.asList(
                     new TapDAGNodeEx().id(tddSourceNodeId).pdkId("tdd-source").group("io.tapdata.connector").type(TapDAGNode.TYPE_SOURCE).version("1.0-SNAPSHOT").
-                            table(new TapTable("tdd-table")).connectionConfig(new DataMap()),
+                            table(tddTableId).connectionConfig(new DataMap()),
                     new TapDAGNodeEx().id(testSourceAsTargetNodeId).pdkId(spec.getId()).group(spec.getGroup()).type(/*nodeInfo.getNodeType()*/TapDAGNode.TYPE_TARGET).version(spec.getVersion()).
-                            table(new TapTable(tableId)).connectionConfig(connectionOptions)
+                            table(testTableId).connectionConfig(connectionOptions)
             ));
             originDataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(tddSourceNodeId, testSourceAsTargetNodeId)));
             originDataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
@@ -182,7 +185,7 @@ public class StreamReadTest extends PDKTestBase {
                     DataMap dataMap = buildInsertRecord();
                     dataMap.put("id", "id_" + i);
                     lastRecordToEqual = dataMap;
-                    sendInsertRecordEvent(dataFlowEngine, tddToSourceDag, dataMap, null);
+                    sendInsertRecordEvent(dataFlowEngine, tddToSourceDag, tddTableId, dataMap, null);
                 }
                 sendPatrolEvent(dataFlowEngine, tddToSourceDag, new PatrolEvent().patrolListener((nodeId1, state1) -> {
                     if(nodeId1.equals(testSourceAsTargetNodeId) && state1 == PatrolEvent.STATE_LEAVE) {
@@ -226,20 +229,22 @@ public class StreamReadTest extends PDKTestBase {
             assertTrue(mapEquals(lastRecordToEqual, insertRecordEvent.getAfter(), builder), "Last record is not match " + builder.toString());
 
             //in originDag, mongodb connector is the target, the dropTableEvent can be handled as a target.
-            sendDropTableEvent(dataFlowEngine, tddToSourceDag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
+            sendDropTableEvent(dataFlowEngine, tddToSourceDag, testTableId, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                 if (innerNodeId.equals(testSourceAsTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                     prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                        String targetTable = tddToSourceDag.getNodeMap().get(testSourceAsTargetNodeId).getTable();
+
                         List<TapTable> allTables = new ArrayList<>();
                         try {
-                            connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                            connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
                         } catch (Throwable throwable) {
                             throwable.printStackTrace();
                             Assertions.fail(throwable);
                         }
-                        TapTable targetTable = tddToSourceDag.getNodeMap().get(testSourceAsTargetNodeId).getTable();
+
                         for(TapTable table : allTables) {
-                            if(table.getName() != null && table.getName().equals(targetTable.getName())) {
-                                $(() -> Assertions.fail("Target table " + targetTable.getName() + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                            if(table.getId() != null && table.getId().equals(targetTable)) {
+                                $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                             }
                         }
                         connectionNode.getConnectorNode().destroy();

@@ -37,8 +37,8 @@ public class TapSimplify {
         return FormatUtils.format(message, args);
     }
 
-    public static TapField field(String name, String originType) {
-        return new TapField(name, originType);
+    public static TapField field(String name, String type) {
+        return new TapField(name, type);
     }
 
     public static TapTable table(String tableName, String id) {
@@ -98,7 +98,7 @@ public class TapSimplify {
     }
 
     public static <T> List<T> list(T... ts) {
-        return Arrays.asList(ts);
+        return new ArrayList<>(Arrays.asList(ts));
     }
 
     public static <T> List<T> list() {
@@ -120,16 +120,16 @@ public class TapSimplify {
         return map;
     }
 
-    public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, TapTable tapTable) {
-        return new TapInsertRecordEvent().init().after(after).table(tapTable);
+    public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, String table) {
+        return new TapInsertRecordEvent().init().after(after).table(table);
     }
 
-    public static TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, TapTable tapTable) {
-        return new TapDeleteRecordEvent().init().before(before).table(tapTable);
+    public static TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, String table) {
+        return new TapDeleteRecordEvent().init().before(before).table(table);
     }
 
-    public static TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, TapTable tapTable) {
-        return new TapUpdateRecordEvent().init().before(before).after(after).table(tapTable);
+    public static TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, String table) {
+        return new TapUpdateRecordEvent().init().before(before).after(after).table(table);
     }
 
     public static void sleep(long milliseconds) {

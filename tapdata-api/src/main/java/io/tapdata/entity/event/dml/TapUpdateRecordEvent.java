@@ -2,7 +2,6 @@ package io.tapdata.entity.event.dml;
 
 
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.TapUtils;
 
@@ -20,8 +19,8 @@ public class TapUpdateRecordEvent extends TapRecordEvent {
         return this;
     }
 
-    public TapUpdateRecordEvent table(TapTable table) {
-        this.table = table;
+    public TapUpdateRecordEvent table(String table) {
+        this.tableId = table;
         return this;
     }
     public TapUpdateRecordEvent init() {

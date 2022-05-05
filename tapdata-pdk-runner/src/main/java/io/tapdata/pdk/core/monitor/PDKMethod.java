@@ -11,6 +11,7 @@ public enum PDKMethod {
     CONNECTION_TEST,
     DESTROY,
     CONTROL,
+    INIT,
     BATCH_OFFSET,
     STREAM_OFFSET,
     SOURCE_CONNECTION_TEST(TimeUnit.SECONDS.toMillis(10)),
@@ -25,7 +26,7 @@ public enum PDKMethod {
 
     TARGET_INSERT(TimeUnit.SECONDS.toMillis(10)),
 
-    TARGET_DML(TimeUnit.SECONDS.toMillis(10)),
+    TARGET_WRITE_RECORD(TimeUnit.SECONDS.toMillis(10)),
 
     PROCESSOR_PROCESS_RECORD(TimeUnit.SECONDS.toMillis(10)),
     TARGET_DROP_TABLE,

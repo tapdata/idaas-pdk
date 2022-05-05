@@ -19,6 +19,11 @@ public class TapAdvanceFilter extends TapFilter {
         return new TapAdvanceFilter();
     }
 
+    public TapAdvanceFilter tableId(String tableId) {
+        this.tableId = tableId;
+        return this;
+    }
+
     public TapAdvanceFilter limit(int limit) {
         this.limit = limit;
         return this;
@@ -81,4 +86,5 @@ public class TapAdvanceFilter extends TapFilter {
     public void setSkip(Integer skip) {
         this.skip = skip;
     }
+
 }
