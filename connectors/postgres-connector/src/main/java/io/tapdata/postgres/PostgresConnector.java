@@ -9,11 +9,9 @@ import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
-import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapArrayValue;
-import io.tapdata.entity.schema.value.TapBooleanValue;
 import io.tapdata.entity.schema.value.TapMapValue;
 import io.tapdata.entity.schema.value.TapRawValue;
 import io.tapdata.entity.utils.DataMap;
@@ -29,19 +27,8 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.postgres.bean.PostgresColumn;
 import io.tapdata.postgres.bean.PostgresConfig;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.sql.*;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -80,7 +67,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
     }
 
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
         initConnection(connectionContext.getConnectionConfig());
 
         List<TapTable> tapTableList = new LinkedList<>();
@@ -119,26 +106,24 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null)
-                return toJson(tapRawValue.getValue());
+            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
             return "null";
         });
         codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
-            if (tapMapValue != null && tapMapValue.getValue() != null)
-                return toJson(tapMapValue.getValue());
+            if (tapMapValue != null && tapMapValue.getValue() != null) return toJson(tapMapValue.getValue());
             return "null";
         });
         codecRegistry.registerFromTapValue(TapArrayValue.class, "text", tapValue -> {
-            if (tapValue != null && tapValue.getValue() != null)
-                return toJson(tapValue.getValue());
+            if (tapValue != null && tapValue.getValue() != null) return toJson(tapValue.getValue());
             return "null";
         });
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
         initConnection(connectorContext.getConnectionConfig());
-        TapTable tapTable = connectorContext.getTable();
-        Set<String> columnNames = connectorContext.getTable().getNameFieldMap().keySet();
+        if (null == filters || filters.isEmpty()) return;
+        TapTable tapTable = connectorContext.getTableMap().get(filters.stream().findFirst().orElseGet(TapFilter::new).getTableId());
+        Set<String> columnNames = tapTable.getNameFieldMap().keySet();
         List<FilterResult> filterResults = new LinkedList<>();
         for (TapFilter filter : filters) {
             String sql = "SELECT * FROM " + tapTable.getName() + " WHERE " + SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND");
@@ -167,11 +152,9 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
-        TapTable tapTable = tapConnectorContext.getTable();
+        TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
         Collection<String> primaryKeys = tapTable.primaryKeys();
-        String sql = "CREATE TABLE " + tapTable.getName() +
-                "(" + SqlBuilder.buildColumnDefinition(tapTable) + "," +
-                " UNIQUE (" + StringKit.combineStringWithComma(primaryKeys) + " ) )";
+        String sql = "CREATE TABLE " + tapTable.getName() + "(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " UNIQUE (" + StringKit.combineStringWithComma(primaryKeys) + " ) )";
 
         try {
             stmt = conn.createStatement();
@@ -215,7 +198,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
     private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
-        TapTable tapTable = tapClearTableEvent.getTable();
+        TapTable tapTable = tapConnectorContext.getTableMap().get(tapClearTableEvent.getTableId());
         try {
             ResultSet table = conn.getMetaData().getTables(null, postgresConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});
             if (table.first()) {
@@ -229,7 +212,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
     private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
-        TapTable tapTable = tapConnectorContext.getTable();
+        TapTable tapTable = tapConnectorContext.getTableMap().get(tapDropTableEvent.getTableId());
         try {
             ResultSet table = conn.getMetaData().getTables(null, postgresConfig.getDatabase(), tapTable.getName(), new String[]{});
             if (table.first()) {
@@ -250,8 +233,8 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
 
-
-        TapTable tapTable = connectorContext.getTable();
+        if (null == tapRecordEvents || tapRecordEvents.isEmpty()) return;
+        TapTable tapTable = connectorContext.getTableMap().get(tapRecordEvents.stream().findFirst().orElseGet(TapRecordEvent::new).getTableId());
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         PreparedStatement preparedStatement = conn.prepareStatement(SqlBuilder.buildPrepareInsertSQL(tapTable));
         for (TapRecordEvent recordEvent : tapRecordEvents) {
@@ -271,9 +254,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
                     after.remove(entry.getKey(), entry.getValue());
                 }
 
-                String sql = "UPDATE " + tapTable.getName() +
-                        " SET " + SqlBuilder.buildKeyAndValue(after, ",") +
-                        " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
+                String sql = "UPDATE " + tapTable.getName() + " SET " + SqlBuilder.buildKeyAndValue(after, ",") + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
                 stmt.execute(sql);
                 updated.incrementAndGet();
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
@@ -288,10 +269,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         executeBatchInsert(preparedStatement);
         //Need to tell flow engine the write result
         preparedStatement.close();
-        writeListResultConsumer.accept(writeListResult()
-                .insertedCount(inserted.get())
-                .modifiedCount(updated.get())
-                .removedCount(deleted.get()));
+        writeListResultConsumer.accept(writeListResult().insertedCount(inserted.get()).modifiedCount(updated.get()).removedCount(deleted.get()));
     }
 
     private void executeBatchInsert(PreparedStatement preparedStatement) {
@@ -306,7 +284,12 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
     }
 
     @Override
-    public void destroy() {
+    public void onStart(TapConnectorContext connectorContext) throws Throwable {
+        initConnection(connectorContext.getConnectionConfig());
+    }
+
+    @Override
+    public void onDestroy() {
         try {
             if (stmt != null && !stmt.isClosed()) {
                 stmt.close();

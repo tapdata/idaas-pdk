@@ -29,8 +29,8 @@ public class SqlBuilder {
         StringBuilder builder = new StringBuilder();
         nameFieldMap.keySet().forEach(columnName -> {
             TapField tapField = nameFieldMap.get(columnName);
-            if (tapField.getOriginType() == null) return;
-            builder.append(tapField.getName()).append(' ').append(tapField.getOriginType()).append(' ');
+            if (tapField.getDataType() == null) return;
+            builder.append(tapField.getName()).append(' ').append(tapField.getDataType()).append(' ');
             if (tapField.getNullable() != null && !tapField.getNullable()) {
                 builder.append("NOT NULL").append(' ');
             } else {
@@ -54,7 +54,7 @@ public class SqlBuilder {
     public static String buildPrepareInsertSQL(TapTable tapTable) {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         StringBuilder stringBuilder = new StringBuilder();
-        long fieldCount = nameFieldMap.keySet().stream().filter(v -> null != nameFieldMap.get(v).getOriginType()).count();
+        long fieldCount = nameFieldMap.keySet().stream().filter(v -> null != nameFieldMap.get(v).getDataType()).count();
         for (int i = 0; i < fieldCount; i++) {
             stringBuilder.append("?, ");
         }
@@ -69,7 +69,7 @@ public class SqlBuilder {
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = insertRecord.get(columnName);
-            if (tapField.getOriginType() == null) continue;
+            if (tapField.getDataType() == null) continue;
             if (tapValue == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
                     preparedStatement.setObject(pos, tapField.getDefaultValue());
@@ -107,7 +107,7 @@ public class SqlBuilder {
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = record.get(columnName);
-            if (tapField.getOriginType() == null) continue;
+            if (tapField.getDataType() == null) continue;
             if (tapValue == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
                     builder.append("'").append(tapField.getDefaultValue()).append("'").append(',');
