@@ -72,6 +72,9 @@ public class TapNumberMapping extends TapMapping {
                     maxPrecision = ((Number) list.get(1)).intValue();
                 }
             }
+        } else if(precisionObj instanceof Number) {
+            minPrecision = 1;
+            maxPrecision = ((Number) precisionObj).intValue();
         }
         Object defaultPrecisionObj = getObject(info, KEY_PRECISION_DEFAULT);
         if(defaultPrecisionObj instanceof Number) {
@@ -89,6 +92,9 @@ public class TapNumberMapping extends TapMapping {
                     maxScale = ((Number) list.get(1)).intValue();
                 }
             }
+        } else if(scaleObj instanceof Number) {
+            minScale = 0;
+            maxScale = ((Number) scaleObj).intValue();
         }
 
         Object defaultScaleObj = getObject(info, KEY_SCALE_DEFAULT);
@@ -108,13 +114,13 @@ public class TapNumberMapping extends TapMapping {
     }
 
     @Override
-    public TapType toTapType(String originType, Map<String, String> params) {
+    public TapType toTapType(String dataType, Map<String, String> params) {
         Boolean theUnsigned = null;
-        if (unsigned != null && originType.contains(unsigned)) {
+        if (unsigned != null && dataType.contains(unsigned)) {
             theUnsigned = true;
         }
         Boolean theZerofill = null;
-        if (zerofill != null && originType.contains(zerofill)) {
+        if (zerofill != null && dataType.contains(zerofill)) {
             theZerofill = true;
         }
 

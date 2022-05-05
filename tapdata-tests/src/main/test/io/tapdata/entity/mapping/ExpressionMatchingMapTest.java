@@ -150,8 +150,8 @@ class ExpressionMatchingMapTest {
                     assertEquals(tapNumber.getScale(), 20);
                 });
     }
-    private <T extends TapMapping, R extends TapType> void validateTapMapping(DefaultExpressionMatchingMap matchingMap, String originType, Class<T> tapMappingClass, Class<R> tapTypeClass, Consumer<TypeExprResult<DataMap>> paramValidator, Consumer<T> tapMappingValidator, Consumer<R> tapTypeValidator) {
-        TypeExprResult<DataMap> exprResult = matchingMap.get(originType);
+    private <T extends TapMapping, R extends TapType> void validateTapMapping(DefaultExpressionMatchingMap matchingMap, String dataType, Class<T> tapMappingClass, Class<R> tapTypeClass, Consumer<TypeExprResult<DataMap>> paramValidator, Consumer<T> tapMappingValidator, Consumer<R> tapTypeValidator) {
+        TypeExprResult<DataMap> exprResult = matchingMap.get(dataType);
         if(paramValidator != null)
             paramValidator.accept(exprResult);
 
@@ -163,7 +163,7 @@ class ExpressionMatchingMapTest {
             if(tapMappingValidator != null)
                 tapMappingValidator.accept(tapMapping);
             if(tapTypeValidator != null)
-                tapTypeValidator.accept((R) tapMapping.toTapType(originType, exprResult.getParams()));
+                tapTypeValidator.accept((R) tapMapping.toTapType(dataType, exprResult.getParams()));
         }
     }
 }

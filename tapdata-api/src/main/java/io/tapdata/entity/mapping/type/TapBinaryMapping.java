@@ -14,7 +14,7 @@ import java.util.Map;
 public class TapBinaryMapping extends TapBytesBase {
 
     @Override
-    public TapType toTapType(String originType, Map<String, String> params) {
+    public TapType toTapType(String dataType, Map<String, String> params) {
         return new TapBinary().bytes(getToTapTypeBytes(params));
     }
 

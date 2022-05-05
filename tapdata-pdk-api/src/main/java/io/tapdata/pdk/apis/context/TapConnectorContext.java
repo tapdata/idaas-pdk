@@ -1,20 +1,24 @@
 package io.tapdata.pdk.apis.context;
 
+
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
+import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
+
+import java.util.List;
+
 
 public class TapConnectorContext extends TapConnectionContext {
     protected DataMap nodeConfig;
-    private TapTable table;
-    public TapConnectorContext(TapNodeSpecification specification, TapTable table, DataMap connectionConfig, DataMap nodeConfig) {
+    protected KVReadOnlyMap<TapTable> tableMap;
+
+    public TapConnectorContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig) {
         super(specification, connectionConfig);
-        this.table = table;
         this.nodeConfig = nodeConfig;
     }
-
     public DataMap getNodeConfig() {
         return nodeConfig;
     }
@@ -23,15 +27,15 @@ public class TapConnectorContext extends TapConnectionContext {
         this.nodeConfig = nodeConfig;
     }
 
-    public TapTable getTable() {
-        return table;
+    public KVReadOnlyMap<TapTable> getTableMap() {
+        return tableMap;
     }
 
-    public void setTable(TapTable table) {
-        this.table = table;
+    public void setTableMap(KVReadOnlyMap<TapTable> tableMap) {
+        this.tableMap = tableMap;
     }
 
     public String toString() {
-        return "TapConnectorContext table: " + (table != null ? table.getName() : "") + " connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " nodeConfig: " + (nodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(nodeConfig) : "") + " spec: " + specification;
+        return "TapConnectorContext " + "connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " nodeConfig: " + (nodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(nodeConfig) : "") + " spec: " + specification;
     }
 }

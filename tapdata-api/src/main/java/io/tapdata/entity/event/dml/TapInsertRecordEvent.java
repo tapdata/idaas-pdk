@@ -2,13 +2,10 @@ package io.tapdata.entity.event.dml;
 
 
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.TapUtils;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TapInsertRecordEvent extends TapRecordEvent {
     /**
@@ -41,8 +38,8 @@ public class TapInsertRecordEvent extends TapRecordEvent {
         return this;
     }
 
-    public TapInsertRecordEvent table(TapTable table) {
-        this.table = table;
+    public TapInsertRecordEvent table(String table) {
+        this.tableId = table;
         return this;
     }
 

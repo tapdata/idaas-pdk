@@ -2,10 +2,10 @@ package io.tapdata.pdk.core.workflow.engine.driver;
 
 import io.tapdata.entity.codec.filter.TapCodecFilterManager;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
-import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.control.ControlEvent;
 import io.tapdata.entity.event.control.PatrolEvent;
+import io.tapdata.entity.event.control.TapForerunnerEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.event.ddl.table.*;
 import io.tapdata.entity.event.dml.*;
@@ -16,22 +16,27 @@ import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.ClassFactory;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.cache.KVMapFactory;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.pretty.ClassHandlers;
 import io.tapdata.pdk.core.api.TargetNode;
+import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.pdk.core.error.ErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.LoggerUtils;
 import io.tapdata.pdk.core.utils.queue.ListHandler;
 import io.tapdata.pdk.core.workflow.engine.JobOptions;
+import io.tapdata.pdk.core.workflow.engine.driver.task.TaskManager;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.tapdata.entity.simplify.TapSimplify.table;
 
 public class TargetNodeDriver extends Driver implements ListHandler<List<TapEvent>> {
     private static final String TAG = TargetNodeDriver.class.getSimpleName();
@@ -43,7 +48,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     private AtomicBoolean started = new AtomicBoolean(false);
 
     private AtomicBoolean firstNonControlReceived = new AtomicBoolean(false);
-
+    private KVMap<TapTable> tableKVMap;
     private ClassHandlers classHandlers = new ClassHandlers();
     public TargetNodeDriver() {
         classHandlers.register(TapCreateTableEvent.class, this::handleCreateTableEvent);
@@ -60,7 +65,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         CreateTableFunction createTableFunction = targetNode.getConnectorFunctions().getCreateTableFunction();
         if(createTableFunction != null) {
-            TapLogger.debug(TAG, "Create table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Create table {} before start. {}", createTableEvent.getTable(), LoggerUtils.targetNodeMessage(targetNode));
 
 
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CREATE_TABLE, () -> {
@@ -73,7 +78,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         AlterTableFunction alterTableFunction = targetNode.getConnectorFunctions().getAlterTableFunction();
         if(alterTableFunction != null) {
-            TapLogger.debug(TAG, "Alter table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Alter table {} before start. {}", alterTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_ALTER_TABLE, () -> {
                 alterTableFunction.alterTable(getTargetNode().getConnectorContext(), alterTableEvent);
             }, "Alter table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
@@ -84,7 +89,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         ClearTableFunction clearTableFunction = targetNode.getConnectorFunctions().getClearTableFunction();
         if(clearTableFunction != null) {
-            TapLogger.debug(TAG, "Clear table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Clear table {} before start. {}", clearTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CLEAR_TABLE, () -> {
                 clearTableFunction.clearTable(getTargetNode().getConnectorContext(), clearTableEvent);
             }, "Clear table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
@@ -95,11 +100,11 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         DropTableFunction dropTableFunction = targetNode.getConnectorFunctions().getDropTableFunction();
         if(dropTableFunction != null) {
-            TapLogger.debug(TAG, "Drop table {} before start. {}", targetNode.getConnectorContext().getTable(), LoggerUtils.targetNodeMessage(targetNode));
+            TapLogger.debug(TAG, "Drop table {} before start. {}", dropTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DROP_TABLE, () -> {
                 dropTableFunction.dropTable(getTargetNode().getConnectorContext(), dropTableEvent);
                 //clear the index and fields
-                TapTable table = targetNode.getConnectorContext().getTable();
+//                TapTable table = targetNode.getConnectorContext().getTable();
 //                if(table != null) {
 //                    table.setIndexList(null);
 //                    table.setNameFieldMap(null);
@@ -123,19 +128,13 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 //                }, "connect " + LoggerUtils.targetNodeMessage(targetNode), logger);
 //            }
 //        }
-
+        //TODO each time invoke writeRecord, the events should come from only one table.
+//        Map<String, List<TapRecordEvent>> recordEventMap = new HashMap<>();
         List<TapRecordEvent> recordEvents = new ArrayList<>();
         List<ControlEvent> controlEvents = new ArrayList<>();
         for(List<TapEvent> events : list) {
 //            targetNode.pullAllExternalEvents(tapEvent -> events.add(tapEvent));
             for (TapEvent event : events) {
-                if(!firstNonControlReceived.get() && event instanceof TapBaseEvent) {
-                    TapTable table = ((TapBaseEvent) event).getTable();
-                    firstNonControlReceived.set(true);
-                    handleActionsBeforeStart(table);
-
-                    tableInitialCheck(table);
-                }
                 if(event instanceof TapDDLEvent) {
                     //force to handle DML before handle DDL.
                     handleRecordEvents(recordEvents);
@@ -161,8 +160,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         handleControlEvent(controlEvents);
     }
 
-    private void tableInitialCheck(TapTable incomingTable) {
-        TapTable targetTable = targetNode.getConnectorContext().getTable();
+    private void tableInitialCheck(TapTable incomingTable, TapTable targetTable) {
+//        TapTable targetTable = targetNode.getConnectorContext().getTable();
         LinkedHashMap<String, TapField> targetFieldMap = targetTable.getNameFieldMap();
         if(targetFieldMap == null || targetFieldMap.isEmpty()) {
             return;
@@ -197,26 +196,34 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         }
     }
 
-    private void handleActionsBeforeStart(TapTable table) {
-        configTable(table);
+    private TapTable handleActionsBeforeStart(TapTable table) {
+        TapTable targetTable = configTable(table);
+
+        if(taskManager != null) {
+            taskManager.filterTable(targetTable, TAG);
+        }
+        tableKVMap.put(targetTable.getId(), targetTable);
+        //TODO should discoverSchema to check table exist or not
 
         if(actionsBeforeStart != null) {
             for(String action : actionsBeforeStart) {
                 switch (action) {
                     case JobOptions.ACTION_DROP_TABLE:
-                        final TapDropTableEvent dropTableEvent = newTableEvent(TapDropTableEvent.class);
+                        final TapDropTableEvent dropTableEvent = newTableEvent(TapDropTableEvent.class, targetTable.getId());
                         if(dropTableEvent != null)
                             classHandlers.handle(dropTableEvent);
                         break;
                     case JobOptions.ACTION_CLEAR_TABLE:
-                        final TapClearTableEvent clearTableEvent = newTableEvent(TapClearTableEvent.class);
+                        final TapClearTableEvent clearTableEvent = newTableEvent(TapClearTableEvent.class, targetTable.getId());
                         if(clearTableEvent != null)
                             classHandlers.handle(clearTableEvent);
                         break;
                     case JobOptions.ACTION_CREATE_TABLE:
-                        final TapCreateTableEvent createTableEvent = newTableEvent(TapCreateTableEvent.class);
-                        if(createTableEvent != null)
+                        final TapCreateTableEvent createTableEvent = newTableEvent(TapCreateTableEvent.class, targetTable.getId());
+                        if(createTableEvent != null) {
+                            createTableEvent.setTable(targetTable);
                             classHandlers.handle(createTableEvent);
+                        }
                         break;
                     case JobOptions.ACTION_INDEX_PRIMARY:
                         break;
@@ -226,15 +233,24 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                 }
             }
         }
+        return targetTable;
     }
 
-    private void configTable(TapTable sourceTable) {
-        TapTable targetTable = targetNode.getConnectorContext().getTable();
-        //Convert source table to target target by calculate the originType of target database.
+    private TapTable configTable(TapTable sourceTable) {
+        //Create target table
+        String nodeTable = targetNode.getTable();
+        TapTable targetTable;
+        if(nodeTable != null) {
+            targetTable = table(nodeTable);
+        } else {
+            targetTable = table(sourceTable.getName(), sourceTable.getId());
+        }
+
+        //Convert source table to target target by calculate the dataType of target database.
         TargetTypesGenerator targetTypesGenerator = ClassFactory.create(TargetTypesGenerator.class);
-        LinkedHashMap<String, TapField> nameFieldMap = null;
+        LinkedHashMap<String, TapField> nameFieldMap;
         if (targetTypesGenerator != null) {
-            TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecFilterManager());
+            TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), targetNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap(), targetNode.getCodecsFilterManager());
             if(tapResult.isSuccessfully()) {
                 nameFieldMap = tapResult.getData();
                 targetTable.setNameFieldMap(nameFieldMap);
@@ -247,11 +263,14 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                 }
             } else {
                 TapLogger.error(TAG, "TargetTypesGenerator convert failed, {} {}", tapResult.getResultItems(), LoggerUtils.targetNodeMessage(targetNode));
+                //TODO should throw exception
             }
         } else {
             TapLogger.error(TAG, "TargetTypesGenerator is not initialized, {}", LoggerUtils.targetNodeMessage(targetNode));
+            //TODO should throw exception
         }
 
+        return targetTable;
     }
 
 //    private void replaceTableFromDiscovered() {
@@ -281,8 +300,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         WriteRecordFunction insertRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
         if(insertRecordFunction != null) {
             TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DML, () -> {
-                insertRecordFunction.writeDML(targetNode.getConnectorContext(), recordEvents, (event) -> {
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_WRITE_RECORD, () -> {
+                insertRecordFunction.writeRecord(targetNode.getConnectorContext(), recordEvents, (event) -> {
                     TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
                 });
             }, "insert " + LoggerUtils.targetNodeMessage(targetNode), TAG);
@@ -312,14 +331,70 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                     }
                 }
             }
+            if(controlEvent instanceof TapForerunnerEvent) {
+                TapForerunnerEvent forerunnerEvent = (TapForerunnerEvent) controlEvent;
+                handleForerunnerEvent(forerunnerEvent);
+            }
         }
         events.clear();
     }
 
-    private <T extends TapTableEvent> T newTableEvent(Class<T> tableEventClass) {
+    private void handleForerunnerEvent(TapForerunnerEvent forerunnerEvent) {
+        if(!firstNonControlReceived.get()) {
+            firstNonControlReceived.set(true);
+            if(targetNode.getTasks() != null) {
+                taskManager = new TaskManager();
+                taskManager.init(targetNode.getTasks());
+            }
+            //
+            tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class);
+
+            PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
+                targetNode.connectorInit();
+            }, "Init " + LoggerUtils.targetNodeMessage(targetNode), TAG);
+
+            String nodeTable = targetNode.getTable();
+            if(nodeTable != null) {
+//                pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
+//                    targetNode.getConnector().discoverSchema(targetNode.getConnectorContext(), Collections.singletonList(nodeTable), (tableList) -> {
+//                        if(tableList == null) return;
+//                        List<String> checkTableList = new ArrayList<>();
+//                        if(nodeTable != null) {
+//                            checkTableList.addAll(nodeTable);
+//                        }
+//                        for(TapTable table : tableList) {
+//                            if(table == null) continue;
+//                            analyzeTableFields(table);
+//                            checkTableList.remove(table.getId());
+//
+//                            if(taskManager != null) {
+//                                taskManager.filterTable(table, TAG);
+//                            }
+//
+//                            tableKVMap.put(table.getId(), table);
+//                            finalTargetTables.add(table.getId());
+//                        }
+//                        if(!checkTableList.isEmpty()) {
+//                            throw new CoreException(ErrorCodes.SOURCE_TABLE_NOT_DISCOVERED, "Missing table(s) " + Arrays.toString(checkTableList.toArray()) + " after invoked discoverSchema method.");
+//                        }
+//                    });
+//                }, "Discover schema " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
+            }
+        }
+        TapTable table = forerunnerEvent.getTable();//tableKVMap.get(((TapBaseEvent) event).tableMapKey());
+        if(table == null)
+            throw new CoreException(ErrorCodes.TARGET_TABLE_NOT_FOUND_IN_TAPEVENT, "Table doesn't be found in TapEvent " + forerunnerEvent);
+
+        TapTable targetTable = handleActionsBeforeStart(table);
+
+        tableInitialCheck(table, targetTable);
+    }
+
+    private <T extends TapTableEvent> T newTableEvent(Class<T> tableEventClass, String tableId) {
         try {
             T t = tableEventClass.getConstructor().newInstance();
-            t.setTable(targetNode.getConnectorContext().getTable());
+            t.setTableId(tableId);
             t.setTime(System.currentTimeMillis());
 //            t.setPdkId(targetNode.getTapNodeInfo().getTapNodeSpecification().getId());
 //            t.setPdkGroup(targetNode.getTapNodeInfo().getTapNodeSpecification().getGroup());
@@ -367,25 +442,30 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     }
 
     private TapDeleteRecordEvent filterDeleteEvent(TapDeleteRecordEvent deleteDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(deleteDMLEvent.getBefore());
         return deleteDMLEvent;
     }
 
     private TapUpdateRecordEvent filterUpdateEvent(TapUpdateRecordEvent updateDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(updateDMLEvent.getAfter());
         codecFilterManager.transformFromTapValueMap(updateDMLEvent.getBefore());
         return updateDMLEvent;
     }
 
     private TapInsertRecordEvent filterInsertEvent(TapInsertRecordEvent insertDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecFilterManager();
+        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(insertDMLEvent.getAfter());
         return insertDMLEvent;
     }
 
     public void setActionsBeforeStart(List<String> actionsBeforeStart) {
         this.actionsBeforeStart = actionsBeforeStart;
+    }
+
+    @Override
+    public void destroy() {
+        InstanceFactory.instance(KVMapFactory.class).reset(targetNode.getAssociateId());
     }
 }

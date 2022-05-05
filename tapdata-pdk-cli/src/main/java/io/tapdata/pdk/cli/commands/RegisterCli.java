@@ -2,6 +2,8 @@ package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
@@ -105,7 +107,15 @@ public class RegisterCli extends CommonCli {
                 o.put("group", nodeInfo.getNodeClass().getPackage().getImplementationVendor());
                 String jsonString = o.toJSONString();
                 jsons.add(jsonString);
+
+                  io.tapdata.pdk.apis.TapConnector connector1 = (io.tapdata.pdk.apis.TapConnector) nodeInfo.getNodeClass().getConstructor().newInstance();
+                  ConnectorFunctions connectorFunctions = new ConnectorFunctions();
+                  TapCodecRegistry codecRegistry = new TapCodecRegistry();
+                  connector1.registerCapabilities(connectorFunctions, codecRegistry);
+                  //TODO Zed, please use below to save into database, this is user customized codecs map. TapType -> DataType. Retrieve it back from database for building TapCodecRegister to do the type generation.
+                  codecRegistry.getTapTypeDataTypeMap();
               }
+
               System.out.println(tapNodeInfoCollection);
               UploadFileService.upload(inputStreamMap, file, jsons, latest, tmUrl, authToken);
             }

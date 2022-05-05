@@ -50,7 +50,7 @@ public class DiscoverSchemaCli extends CommonCli {
                     .withPdkId(pdkId)
                     .withConnectionConfig(dataMap)
                     .build();
-            connectionNode.getConnectorNode().discoverSchema(connectionNode.getConnectionContext(), new Consumer<List<TapTable>>() {
+            connectionNode.discoverSchema(null, 1000, new Consumer<List<TapTable>>() {
                 @Override
                 public void accept(List<TapTable> tables) {
                     for(TapTable table : tables) {

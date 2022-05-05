@@ -54,7 +54,7 @@ public class TDDBenchmarkTargetConnector extends ConnectorBase implements TapCon
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         //TODO Load schema from database, connection information in connectionContext#getConnectionConfig
         //Sample code shows how to define tables with specified fields.
         consumer.accept(list(
@@ -247,13 +247,18 @@ public class TDDBenchmarkTargetConnector extends ConnectorBase implements TapCon
                 .removedCount(deleted.get()));
     }
 
-    private String primaryKey(TapConnectorContext connectorContext, Map<String, Object> value) {
-        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+    private String primaryKey(Map<String, Object> value) {
         StringBuilder builder = new StringBuilder();
-        for(String primaryKey : primaryKeys) {
-            builder.append(value.get(primaryKey));
+        for(Map.Entry<String, Object> entry : value.entrySet()) {
+            builder.append(entry.getValue());
         }
         return builder.toString();
+    }
+
+
+    @Override
+    public void onStart(TapConnectorContext connectorContext) throws Throwable {
+
     }
 
     /**
@@ -265,7 +270,7 @@ public class TDDBenchmarkTargetConnector extends ConnectorBase implements TapCon
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
         //TODO release resources
         isShutDown.set(true);
     }

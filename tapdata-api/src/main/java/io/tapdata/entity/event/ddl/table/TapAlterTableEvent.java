@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TapAlterTableEvent extends TapTableEvent {
-    //
+
     private Map<String, TapField> changedNameFields;
     private List<TapField> insertFields;
     private List<String> deleteFields;

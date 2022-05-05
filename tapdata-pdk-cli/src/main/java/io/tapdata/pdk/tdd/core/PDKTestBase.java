@@ -8,10 +8,12 @@ import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
+import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.FilterResults;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
@@ -19,7 +21,6 @@ import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
-import io.tapdata.pdk.apis.functions.connector.source.BatchOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
@@ -53,6 +54,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static io.tapdata.entity.simplify.TapSimplify.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PDKTestBase {
@@ -478,14 +480,14 @@ public class PDKTestBase {
         return updateMap;
     }
 
-    public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap after) {
-        sendInsertRecordEvent(dataFlowEngine, dag, after, null);
+    public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, String sourceTable, DataMap after) {
+        sendInsertRecordEvent(dataFlowEngine, dag, sourceTable, after, null);
     }
 
-    public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap after, PatrolEvent patrolEvent) {
-        TapInsertRecordEvent tapInsertRecordEvent = new TapInsertRecordEvent();
-        tapInsertRecordEvent.setAfter(after);
-        dataFlowEngine.sendExternalTapEvent(dag.getId(), tapInsertRecordEvent);
+    public void sendInsertRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, String sourceTable, DataMap after, PatrolEvent patrolEvent) {
+//        TapInsertRecordEvent tapInsertRecordEvent = new TapInsertRecordEvent();
+//        tapInsertRecordEvent.setAfter(after);
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), insertRecordEvent(after, sourceTable));
         if(patrolEvent != null)
             dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
@@ -494,29 +496,32 @@ public class PDKTestBase {
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendUpdateRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap before, DataMap after, PatrolEvent patrolEvent) {
-        TapUpdateRecordEvent tapUpdateRecordEvent = new TapUpdateRecordEvent();
-        tapUpdateRecordEvent.setAfter(after);
-        tapUpdateRecordEvent.setBefore(before);
-        dataFlowEngine.sendExternalTapEvent(dag.getId(), tapUpdateRecordEvent);
+    public void sendUpdateRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, String sourceTableId, DataMap before, DataMap after, PatrolEvent patrolEvent) {
+//        TapUpdateRecordEvent tapUpdateRecordEvent = new TapUpdateRecordEvent();
+//        tapUpdateRecordEvent.setAfter(after);
+//        tapUpdateRecordEvent.setBefore(before);
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), updateDMLEvent(before, after, sourceTableId));
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendDeleteRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, DataMap before, PatrolEvent patrolEvent) {
+    public void sendDeleteRecordEvent(DataFlowEngine dataFlowEngine, TapDAG dag, String sourceTableId, DataMap before, PatrolEvent patrolEvent) {
         TapDeleteRecordEvent tapDeleteRecordEvent = new TapDeleteRecordEvent();
         tapDeleteRecordEvent.setBefore(before);
-        dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDeleteRecordEvent);
+        dataFlowEngine.sendExternalTapEvent(dag.getId(), deleteDMLEvent(before, sourceTableId));
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendCreateTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag, PatrolEvent patrolEvent) {
+    public void sendCreateTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag, TapTable table, PatrolEvent patrolEvent) {
         TapCreateTableEvent createTableEvent = new TapCreateTableEvent();
+        createTableEvent.setTable(table);
+        createTableEvent.setTableId(table.getId());
         dataFlowEngine.sendExternalTapEvent(dag.getId(), createTableEvent);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    public void sendDropTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag, PatrolEvent patrolEvent) {
+    public void sendDropTableEvent(DataFlowEngine dataFlowEngine, TapDAG dag, String tableId, PatrolEvent patrolEvent) {
         TapDropTableEvent tapDropTableEvent = new TapDropTableEvent();
+        tapDropTableEvent.setTableId(tableId);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), tapDropTableEvent);
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
@@ -524,6 +529,7 @@ public class PDKTestBase {
     protected void verifyUpdateOneRecord(TargetNode targetNode, DataMap before, DataMap verifyRecord) {
         TapFilter filter = new TapFilter();
         filter.setMatch(before);
+        filter.setTableId(targetNode.getTable());
         FilterResult filterResult = filterResults(targetNode, filter);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(before) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
 
@@ -545,7 +551,7 @@ public class PDKTestBase {
             QueryByAdvanceFilterFunction queryByAdvanceFilterFunction = targetNode.getConnectorFunctions().getQueryByAdvanceFilterFunction();
             if(queryByAdvanceFilterFunction != null) {
                 FilterResult filterResult = new FilterResult();
-                CommonUtils.handleAnyError(() -> queryByAdvanceFilterFunction.query(targetNode.getConnectorContext(), TapAdvanceFilter.create().match(filter.getMatch()), new Consumer<FilterResults>() {
+                CommonUtils.handleAnyError(() -> queryByAdvanceFilterFunction.query(targetNode.getConnectorContext(), TapAdvanceFilter.create().match(filter.getMatch()).tableId(targetNode.getTable()), new Consumer<FilterResults>() {
                     @Override
                     public void accept(FilterResults filterResults) {
                         if(filterResults != null && filterResults.getResults() != null && !filterResults.getResults().isEmpty())
@@ -560,24 +566,20 @@ public class PDKTestBase {
         return null;
     }
 
-    protected String getBatchOffset(SourceNode sourceNode) throws Throwable {
-        BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
-        return batchOffsetFunction.batchOffset(sourceNode.getConnectorContext());
-    }
-
-    protected String getStreamOffset(SourceNode sourceNode, Long offsetStartTime) throws Throwable {
+    protected String getStreamOffset(SourceNode sourceNode, List<String> tableList, Long offsetStartTime) throws Throwable {
         StreamOffsetFunction queryByFilterFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
-        return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), offsetStartTime);
+        return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime);
     }
 
-    protected long getBatchCount(SourceNode sourceNode, String offset) throws Throwable {
+    protected long getBatchCount(SourceNode sourceNode, TapTable table) throws Throwable {
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
-        return batchCountFunction.count(sourceNode.getConnectorContext(), offset);
+        return batchCountFunction.count(sourceNode.getConnectorContext(), table);
     }
 
     protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
+        filter.setTableId(targetNode.getTable());
 
         FilterResult filterResult = filterResults(targetNode, filter);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
@@ -592,6 +594,7 @@ public class PDKTestBase {
     protected void verifyRecordNotExists(TargetNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
+        filter.setTableId(targetNode.getTable());
 
         FilterResult filterResult = filterResults(targetNode, filter);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
@@ -608,6 +611,7 @@ public class PDKTestBase {
     protected void verifyBatchRecordExists(SourceNode sourceNode, TargetNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
+        filter.setTableId(sourceNode.getTable());
 
         FilterResult filterResult = filterResults(targetNode, filter);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
@@ -616,9 +620,9 @@ public class PDKTestBase {
         $(() -> assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));
         Map<String, Object> result = filterResult.getResult();
 
-
-        targetNode.getCodecFilterManager().transformToTapValueMap(result, sourceNode.getConnectorContext().getTable().getNameFieldMap());
-        targetNode.getCodecFilterManager().transformFromTapValueMap(result);
+        TapTable sourceTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId(), TapTable.class).get(sourceNode.getTable());
+        targetNode.getCodecsFilterManager().transformToTapValueMap(result, sourceTable.getNameFieldMap());
+        targetNode.getCodecsFilterManager().transformFromTapValueMap(result);
 
         StringBuilder builder = new StringBuilder();
         $(() -> assertTrue(mapEquals(buildInsertRecord(), result, builder), builder.toString()));

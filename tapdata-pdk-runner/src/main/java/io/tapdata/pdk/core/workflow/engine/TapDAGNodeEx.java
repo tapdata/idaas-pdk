@@ -49,7 +49,11 @@ public class TapDAGNodeEx extends TapDAGNode {
         this.type = type;
         return this;
     }
-    public TapDAGNodeEx table(TapTable table) {
+    public TapDAGNodeEx tables(List<String> tables) {
+        this.tables = tables;
+        return this;
+    }
+    public TapDAGNodeEx table(String table) {
         this.table = table;
         return this;
     }

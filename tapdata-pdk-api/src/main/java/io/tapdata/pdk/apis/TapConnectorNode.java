@@ -14,11 +14,15 @@ import java.util.function.Consumer;
  */
 public interface TapConnectorNode extends TapNode  {
     /**
-     * Return all tables in a database by TapListConsumer.
-     *  @param connectionContext
+     * Return all tables in a database when tables is null.
+     * Return the tables in a database specified by param tables
+     *
+     * @param connectionContext
+     * @param tables
+     * @param tableSize
      * @param consumer
      */
-    void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) throws Throwable;
+    void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable;
 
     /**
      * Test connection

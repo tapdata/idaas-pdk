@@ -12,11 +12,11 @@
     <packaging>pom</packaging>
     <modules>
         <module>connector-core</module>
-        <module>empty-connector</module>
-        <module>file-connector</module>
+<!--        <module>empty-connector</module>-->
+<!--        <module>file-connector</module>-->
         <module>tdd-connector</module>
-        <module>aerospike-connector</module>
-        <module>doris-connector</module>
+<!--        <module>aerospike-connector</module>-->
+<!--        <module>doris-connector</module>-->
       <module>mongodb-connector</module>
         <module>postgres-connector</module>
     </modules>

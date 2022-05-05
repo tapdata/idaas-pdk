@@ -4,6 +4,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +41,7 @@ public class BasicTest extends PDKTestBase {
                 }
                 Assertions.assertFalse(testItemMap.isEmpty(), "TestItem is needed to return at least one from connectionTest method");
 
-                connectionNode.getConnectorNode().destroy();
+                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
             });
         });
     }
@@ -54,7 +55,7 @@ public class BasicTest extends PDKTestBase {
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 List<TapTable> allTables = new ArrayList<>();
                 try {
-                    connectionNode.discoverSchema(tables -> allTables.addAll(tables));
+                    connectionNode.discoverSchema(null, 10, tables -> allTables.addAll(tables));
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
                     Assertions.fail(throwable);
@@ -65,7 +66,8 @@ public class BasicTest extends PDKTestBase {
                     Assertions.assertNotNull(table.getName(), "Discovered table name can not be null");
                     Assertions.assertNotNull(table.getId(), "Discovered table id can not be null");
                 }
-                connectionNode.getConnectorNode().destroy();
+
+                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
             });
         });
     }

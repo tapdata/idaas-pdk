@@ -1,13 +1,15 @@
 package io.tapdata.pdk.apis.functions.connector.source;
 
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
+
+import java.util.List;
 
 public interface BatchCountFunction extends TapFunction {
     /**
      * @param nodeContext the node context in a DAG
-     * @param offsetState if null, means start from very beginning, otherwise is the start point for batch count.
-     *                    type can be any that comfortable for saving offset state.
+     * @param table the table to count
      */
-    long count(TapConnectorContext nodeContext, String offsetState) throws Throwable;
+    long count(TapConnectorContext nodeContext, TapTable table) throws Throwable;
 }

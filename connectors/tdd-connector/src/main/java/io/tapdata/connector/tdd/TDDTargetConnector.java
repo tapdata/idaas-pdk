@@ -53,7 +53,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
      * @param consumer
      */
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, Consumer<List<TapTable>> consumer) {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         consumer.accept(list(
                 //Define first table
                 table("tdd-target-table")
@@ -125,7 +125,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportAlterTable(this::alterTable);
         connectorFunctions.supportDropTable(this::dropTable);
         connectorFunctions.supportClearTable(this::clearTable);
-        connectorFunctions.supportControlFunction(this::control);
+        connectorFunctions.supportControl(this::control);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
             if (tapRawValue != null && tapRawValue.getValue() != null)
@@ -196,14 +196,14 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
 
     }
 
-    private String primaryKey(TapConnectorContext connectorContext, Map<String, Object> value) {
-        Collection<String> primaryKeys = connectorContext.getTable().primaryKeys();
+    private String primaryKey(Map<String, Object> value) {
         StringBuilder builder = new StringBuilder();
-        for(String primaryKey : primaryKeys) {
-            builder.append(value.get(primaryKey));
+        for(Map.Entry<String, Object> entry : value.entrySet()) {
+            builder.append(entry.getValue());
         }
         return builder.toString();
     }
+
     /**
      * The method invocation life circle is below,
      * initiated ->
@@ -230,7 +230,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
                 inserted.incrementAndGet();
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> value = insertRecordEvent.getAfter();
-                primaryKeyRecordMap.put(primaryKey(connectorContext, value), value);
+                primaryKeyRecordMap.put(primaryKey(value), value);
                 TapLogger.info(TAG, "Record Write TapInsertRecordEvent {}", toJson(recordEvent));
             } else if(recordEvent instanceof TapUpdateRecordEvent) {
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
@@ -238,7 +238,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
                 Map<String, Object> value = updateRecordEvent.getAfter();
                 Map<String, Object> before = updateRecordEvent.getBefore();
                 if(value != null && before != null) {
-                    primaryKeyRecordMap.put(primaryKey(connectorContext, before), value);
+                    primaryKeyRecordMap.put(primaryKey(before), value);
                     updated.incrementAndGet();
                 }
                 TapLogger.info(TAG, "Record Write TapUpdateRecordEvent {}", toJson(recordEvent));
@@ -246,7 +246,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
                 if(before != null) {
-                    primaryKeyRecordMap.remove(primaryKey(connectorContext, before));
+                    primaryKeyRecordMap.remove(primaryKey(before));
                 }
                 deleted.incrementAndGet();
                 TapLogger.info(TAG, "Record Write TapDeleteRecordEvent {}", toJson(recordEvent));
@@ -259,6 +259,11 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
                 .removedCount(deleted.get()));
     }
 
+    @Override
+    public void onStart(TapConnectorContext connectorContext) {
+
+    }
+
     /**
      * The method invocation life circle is below,
      * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
@@ -268,7 +273,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
         //TODO release resources
         isShutDown.set(true);
     }
