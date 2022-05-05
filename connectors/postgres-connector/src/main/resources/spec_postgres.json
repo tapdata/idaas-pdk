@@ -42,25 +42,11 @@
     }
   },
   "dataTypes": {
-    "bool": {
-      "bit": 8,
-      "unsigned" : "",
-      "to": "TapNumber"
-    },
-    "boolean": {
-      "bit": 8,
-      "unsigned" : "",
-      "to": "TapNumber"
-    },
-    "tinyint": {
-      "bit": 8,
-      "to": "TapNumber"
-    },
     "smallint": {
       "bit": 16,
       "to": "TapNumber"
     },
-    "int": {
+    "integer": {
       "bit": 32,
       "to": "TapNumber"
     },
@@ -68,8 +54,21 @@
       "bit": 64,
       "to": "TapNumber"
     },
-    "largeint": {
+    "numeric[($precision,$scale)]": {
       "bit": 128,
+      "precision": [
+        1,
+        1000
+      ],
+      "scale": [
+        0,
+        1000
+      ],
+      "to": "TapNumber"
+    },
+    "boolean": {
+      "bit": 8,
+      "unsigned" : "",
       "to": "TapNumber"
     },
     "float": {
@@ -80,20 +79,7 @@
       "bit": 64,
       "to": "TapNumber"
     },
-    "decimal[($precision,$scale)]": {
-      "bit": 128,
-      "precision": [
-        1,
-        27
-      ],
-      "defaultPrecision": 10,
-      "scale": [
-        0,
-        9
-      ],
-      "defaultScale": 0,
-      "to": "TapNumber"
-    },
+
     "date": {
       "byte": 3,
       "range": [
