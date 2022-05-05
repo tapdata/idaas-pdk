@@ -153,10 +153,9 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase implements
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
-     * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, TapTable table, String offset) {
+    private long batchCount(TapConnectorContext connectorContext, TapTable table) {
         //TODO Count the batch size.
         return 1L;
     }

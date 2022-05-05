@@ -101,7 +101,7 @@ public class SourceNodeDriver extends Driver {
         InitFunction initFunction = sourceNode.getConnectorFunctions().getInitFunction();
         if (initFunction != null) {
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
-                initFunction.init(sourceNode.getConnectorContext(), mapFactory.createKVReadOnlyMap(sourceNode.getAssociateId()));
+                initFunction.init(sourceNode.getConnectorContext());
             }, "Init " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
         }
 
@@ -186,7 +186,7 @@ public class SourceNodeDriver extends Driver {
                     throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + table + " while batchCount");
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_COUNT, () -> {
                     //TODO batchOffset is not used yet.
-                    batchCount += batchCountFunction.count(sourceNode.getConnectorContext(), tapTable, null);
+                    batchCount += batchCountFunction.count(sourceNode.getConnectorContext(), tapTable);
                 }, "Batch count " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
             }
         }

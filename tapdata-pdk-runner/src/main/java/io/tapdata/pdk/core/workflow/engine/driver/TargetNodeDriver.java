@@ -355,7 +355,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
             InitFunction initFunction = targetNode.getConnectorFunctions().getInitFunction();
             if (initFunction != null) {
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
-                    initFunction.init(targetNode.getConnectorContext(), tableKVMap);
+                    initFunction.init(targetNode.getConnectorContext());
                 }, "Init " + LoggerUtils.targetNodeMessage(targetNode), TAG);
             }
 

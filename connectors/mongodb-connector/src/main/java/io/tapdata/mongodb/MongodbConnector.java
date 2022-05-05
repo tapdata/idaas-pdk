@@ -79,7 +79,6 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
     private BsonDocument resumeToken = null;
 //    private Collection<String> primaryKeys;
 //    private String firstPrimaryKey;
-    private KVReadOnlyMap<TapTable> tapTableKVMap;
 
     MongoChangeStreamCursor<ChangeStreamDocument<Document>> streamCursor;
 
@@ -267,8 +266,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportStreamOffset(this::streamOffset);
     }
 
-    private void init(TapConnectorContext connectorContext, KVReadOnlyMap<TapTable> tapTableKVMap) throws Throwable {
-        this.tapTableKVMap = tapTableKVMap;
+    private void init(TapConnectorContext connectorContext) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
     }
 
@@ -461,22 +459,29 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      *
      * @param connectorContext
-     * @param offset
      * @return
      */
-    private long batchCount(TapConnectorContext connectorContext, TapTable table, String offset) throws Throwable {
-        initConnection(connectorContext.getConnectionConfig());
-        String firstPrimaryKey = getFirstPrimaryKey(table);
-
-        MongoCollection<Document> collection = getMongoCollection(table.getId());
-        if (offset == null) {
-            return collection.countDocuments();
-        } else {
-            MongoOffset mongoOffset = fromJson(offset, MongoOffset.class);
-            return collection.countDocuments(queryCondition(firstPrimaryKey, mongoOffset.value()));
-        }
+    private long batchCount(TapConnectorContext connectorContext, TapTable table) throws Throwable {
+//        MongoCollection<Document> collection = getMongoCollection(table.getId());
+//        return collection.countDocuments();
+        return getCollectionNotAggregateCountByTableName(mongoClient, mongoConfig.getDatabase(), table.getId(), null);
     }
+    public static long getCollectionNotAggregateCountByTableName(MongoClient mongoClient, String db, String collectionName, Document filter) {
+        long dbCount = 0L;
+        MongoDatabase database = mongoClient.getDatabase(db);
+        Document countDocument = database.runCommand(
+                new Document("count", collectionName)
+                        .append("query", filter == null ? new Document() : filter)
+        );
 
+        if (countDocument.containsKey("ok") && countDocument.containsKey("n")) {
+            if (countDocument.get("ok").equals(1d)) {
+                dbCount = Long.valueOf(countDocument.get("n") + "");
+            }
+        }
+
+        return dbCount;
+    }
     /**
      * The method invocation life circle is below,
      * initiated ->

@@ -571,9 +571,9 @@ public class PDKTestBase {
         return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime);
     }
 
-    protected long getBatchCount(SourceNode sourceNode, TapTable table, String offset) throws Throwable {
+    protected long getBatchCount(SourceNode sourceNode, TapTable table) throws Throwable {
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
-        return batchCountFunction.count(sourceNode.getConnectorContext(), table, offset);
+        return batchCountFunction.count(sourceNode.getConnectorContext(), table);
     }
 
     protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {
