@@ -145,7 +145,7 @@ public class SourceNodeDriver extends Driver {
                     if(taskManager != null) {
                         taskManager.filterTable(table, TAG);
                     }
-                    lastOne = new TapForerunnerEvent().table(table).sampleRecords(null/* sample records here*/);
+                    lastOne = new TapForerunnerEvent().table(table).associateId(sourceNode.getAssociateId()).sampleRecords(null/* sample records here*/);
                     forerunnerEvents.add(lastOne);
 
                     tableKVMap.put(table.getId(), table);

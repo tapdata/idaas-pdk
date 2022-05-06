@@ -12,6 +12,11 @@ public class TapForerunnerEvent extends PatrolEvent {
         this.table = table;
         return this;
     }
+    private String associateId;
+    public TapForerunnerEvent associateId(String associateId) {
+        this.associateId = associateId;
+        return this;
+    }
     private List<TapInsertRecordEvent> sampleRecords;
     public TapForerunnerEvent sampleRecords(List<TapInsertRecordEvent> sampleRecords) {
         this.sampleRecords = sampleRecords;
@@ -24,6 +29,7 @@ public class TapForerunnerEvent extends PatrolEvent {
         if(tapEvent instanceof TapForerunnerEvent) {
             TapForerunnerEvent tapForerunnerEvent = (TapForerunnerEvent) tapEvent;
             tapForerunnerEvent.table = table; //TODO need copy?
+            tapForerunnerEvent.associateId = associateId;
             tapForerunnerEvent.sampleRecords = sampleRecords; //TODO need copy?
         }
     }
@@ -34,6 +40,14 @@ public class TapForerunnerEvent extends PatrolEvent {
 
     public void setTable(TapTable table) {
         this.table = table;
+    }
+
+    public String getAssociateId() {
+        return associateId;
+    }
+
+    public void setAssociateId(String associateId) {
+        this.associateId = associateId;
     }
 
     public List<TapInsertRecordEvent> getSampleRecords() {
