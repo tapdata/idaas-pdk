@@ -172,7 +172,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase {
         tableMap.put(createTableEvent.getTableId(), createTableEvent.getTable());
     }
 
-    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, TapTable table, Consumer<List<FilterResult>> listConsumer) {
         if(filters != null) {
             List<FilterResult> filterResults = new ArrayList<>();
             for(TapFilter filter : filters) {
