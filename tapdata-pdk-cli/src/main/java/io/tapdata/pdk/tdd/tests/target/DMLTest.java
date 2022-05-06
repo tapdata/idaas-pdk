@@ -116,7 +116,7 @@ public class DMLTest extends PDKTestBase {
 
                     boolean found = false;
                     for(TapTable table : allTables) {
-                        if(table.getId() != null && table.getId().equals(targetTable)) {
+                        if(table.getId() != null && table.getId().equalsIgnoreCase(targetTable)) {
                             found = true;
                             break;
                         }

@@ -6,8 +6,6 @@ import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
-import io.tapdata.entity.event.dml.TapInsertRecordEvent;
-import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
@@ -529,8 +527,10 @@ public class PDKTestBase {
     protected void verifyUpdateOneRecord(TargetNode targetNode, DataMap before, DataMap verifyRecord) {
         TapFilter filter = new TapFilter();
         filter.setMatch(before);
-        filter.setTableId(targetNode.getTable());
-        FilterResult filterResult = filterResults(targetNode, filter);
+//        filter.setTableId(targetNode.getTable());
+        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
+
+        FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(before) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
 
         $(() -> assertNotNull(filterResult.getResult().get("tapInt"), "The value of tapInt should not be null"));
@@ -539,26 +539,23 @@ public class PDKTestBase {
         }
     }
 
-    private FilterResult filterResults(TargetNode targetNode, TapFilter filter) {
+    private FilterResult filterResults(TargetNode targetNode, TapFilter filter, TapTable targetTable) {
         QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         if(queryByFilterFunction != null) {
             List<FilterResult> results = new ArrayList<>();
             List<TapFilter> filters = Collections.singletonList(filter);
-            CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, results::addAll));
+            CommonUtils.handleAnyError(() -> queryByFilterFunction.query(targetNode.getConnectorContext(), filters, targetTable, results::addAll));
             if(results.size() > 0)
                 return results.get(0);
         } else {
             QueryByAdvanceFilterFunction queryByAdvanceFilterFunction = targetNode.getConnectorFunctions().getQueryByAdvanceFilterFunction();
             if(queryByAdvanceFilterFunction != null) {
                 FilterResult filterResult = new FilterResult();
-                CommonUtils.handleAnyError(() -> queryByAdvanceFilterFunction.query(targetNode.getConnectorContext(), TapAdvanceFilter.create().match(filter.getMatch()).tableId(targetNode.getTable()), new Consumer<FilterResults>() {
-                    @Override
-                    public void accept(FilterResults filterResults) {
-                        if(filterResults != null && filterResults.getResults() != null && !filterResults.getResults().isEmpty())
-                            filterResult.setResult(filterResults.getResults().get(0));
-                        else if(filterResults.getError() != null)
-                            filterResult.setError(filterResults.getError());
-                    }
+                CommonUtils.handleAnyError(() -> queryByAdvanceFilterFunction.query(targetNode.getConnectorContext(), TapAdvanceFilter.create().match(filter.getMatch()), targetTable, filterResults -> {
+                    if(filterResults != null && filterResults.getResults() != null && !filterResults.getResults().isEmpty())
+                        filterResult.setResult(filterResults.getResults().get(0));
+                    else if(filterResults.getError() != null)
+                        filterResult.setError(filterResults.getError());
                 }));
                 return filterResult;
             }
@@ -579,9 +576,10 @@ public class PDKTestBase {
     protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
-        filter.setTableId(targetNode.getTable());
+//        filter.setTableId(targetNode.getTable());
+        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
 
-        FilterResult filterResult = filterResults(targetNode, filter);
+        FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
 
         if(filterResult.getResult() == null) {
@@ -594,9 +592,10 @@ public class PDKTestBase {
     protected void verifyRecordNotExists(TargetNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
-        filter.setTableId(targetNode.getTable());
+//        filter.setTableId(targetNode.getTable());
+        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
 
-        FilterResult filterResult = filterResults(targetNode, filter);
+        FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
 
         Object result = filterResult.getResult();
@@ -611,16 +610,16 @@ public class PDKTestBase {
     protected void verifyBatchRecordExists(SourceNode sourceNode, TargetNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
-        filter.setTableId(sourceNode.getTable());
+        TapTable sourceTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId(), TapTable.class).get(sourceNode.getTable());
+        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
 
-        FilterResult filterResult = filterResults(targetNode, filter);
+        FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
 
         $(() -> Assertions.assertNull(filterResult.getError(), "Error occurred while queryByFilter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " error " + filterResult.getError()));
         $(() -> assertNotNull(filterResult.getResult(), "Result should not be null, as the record has been inserted"));
         Map<String, Object> result = filterResult.getResult();
 
-        TapTable sourceTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId(), TapTable.class).get(sourceNode.getTable());
         targetNode.getCodecsFilterManager().transformToTapValueMap(result, sourceTable.getNameFieldMap());
         targetNode.getCodecsFilterManager().transformFromTapValueMap(result);
 
