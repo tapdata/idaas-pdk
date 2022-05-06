@@ -1,6 +1,7 @@
 package io.tapdata.connector.mysql;
 
 import io.tapdata.connector.mysql.util.JdbcUtil;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.WriteListResult;
@@ -23,8 +24,15 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 	private Map<String, PreparedStatement> deleteMap = new LRUOnRemoveMap<>(10, entry -> JdbcUtil.closeQuietly(entry.getValue()));
 	private Map<String, PreparedStatement> checkExistsMap = new LRUOnRemoveMap<>(10, entry -> JdbcUtil.closeQuietly(entry.getValue()));
 
+	public MysqlJdbcOneByOneWriter(MysqlJdbcContext mysqlJdbcContext) {
+		super(mysqlJdbcContext);
+	}
+
 	@Override
 	public void write(TapConnectorContext tapConnectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
-		
+		for (TapRecordEvent tapRecordEvent : tapRecordEvents) {
+			if (tapRecordEvent instanceof TapInsertRecordEvent) {
+			}
+		}
 	}
 }
