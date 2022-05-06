@@ -304,7 +304,7 @@ public class MongodbConnector extends ConnectorBase {
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
@@ -316,9 +316,9 @@ public class MongodbConnector extends ConnectorBase {
 
         WriteListResult<TapRecordEvent> writeListResult = writeListResult();
 
-        for (TapRecordEvent recordEvent : tapRecordEvents) {
-            MongoCollection<Document> collection = getMongoCollection(recordEvent.getTableId());
+        MongoCollection<Document> collection = getMongoCollection(table.getId());
 
+        for (TapRecordEvent recordEvent : tapRecordEvents) {
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 insertMap.computeIfAbsent(insertRecordEvent.getTableId(), s -> new ArrayList<>()).add(new Document(insertRecordEvent.getAfter()));
