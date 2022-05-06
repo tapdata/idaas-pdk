@@ -34,6 +34,7 @@ import io.tapdata.pdk.core.workflow.engine.JobOptions;
 import io.tapdata.pdk.core.workflow.engine.driver.task.TaskManager;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.tapdata.entity.simplify.TapSimplify.table;
@@ -50,6 +51,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     private AtomicBoolean firstNonControlReceived = new AtomicBoolean(false);
     private KVMap<TapTable> tableKVMap;
     private ClassHandlers classHandlers = new ClassHandlers();
+    private Map<String, String> tableIdAssociateIdToTableIdMap = new ConcurrentHashMap<>();
+    private Map<String, TableTapEventHandler> tableIdTapEventHandlerMap = new ConcurrentHashMap<>();
     public TargetNodeDriver() {
         classHandlers.register(TapCreateTableEvent.class, this::handleCreateTableEvent);
         classHandlers.register(TapAlterTableEvent.class, this::handleAlterTableEvent);
@@ -116,20 +119,11 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 
     @Override
     public void execute(List<List<TapEvent>> list) throws Throwable {
-//        if(started.compareAndSet(false, true)) {
-//            replaceTableFromDiscovered();
-//        }
-
-//        if(connected.compareAndSet(false, true)) {
-//            ConnectFunction connectFunction = targetNode.getTargetFunctions().getConnectFunction();
-//            if(connectFunction != null) {
-//                pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CONNECT, () -> {
-//                    connectFunction.connect(targetNode.getConnectorContext());
-//                }, "connect " + LoggerUtils.targetNodeMessage(targetNode), logger);
+//        for(List<TapEvent> events : list) {
+//            for (TapEvent event : events) {
+//                TODO split events by tables
 //            }
 //        }
-        //TODO each time invoke writeRecord, the events should come from only one table.
-//        Map<String, List<TapRecordEvent>> recordEventMap = new HashMap<>();
         List<TapRecordEvent> recordEvents = new ArrayList<>();
         List<ControlEvent> controlEvents = new ArrayList<>();
         for(List<TapEvent> events : list) {
@@ -196,12 +190,13 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         }
     }
 
-    private TapTable handleActionsBeforeStart(TapTable table) {
+    private TapTable handleActionsBeforeStart(TapTable table, String associateId) {
         TapTable targetTable = configTable(table);
 
         if(taskManager != null) {
             taskManager.filterTable(targetTable, TAG);
         }
+        tableIdAssociateIdToTableIdMap.put(table.getId() + "@" + associateId, targetTable.getId());
         tableKVMap.put(targetTable.getId(), targetTable);
         //TODO should discoverSchema to check table exist or not
 
@@ -296,12 +291,17 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     private void handleRecordEvents(List<TapRecordEvent> recordEvents) {
         if(recordEvents.isEmpty())
             return;
+        //TODO temp code for retrieving table
+        TapRecordEvent recordEvent = recordEvents.get(0);
+        String tableId = tableIdAssociateIdToTableIdMap.get(recordEvent.getTableId() + "@" + recordEvent.getAssociateId());
+        TapTable targetTable = tableKVMap.get(tableId);
+
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
         WriteRecordFunction insertRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
         if(insertRecordFunction != null) {
             TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_WRITE_RECORD, () -> {
-                insertRecordFunction.writeRecord(targetNode.getConnectorContext(), recordEvents, (event) -> {
+                insertRecordFunction.writeRecord(targetNode.getConnectorContext(), recordEvents, targetTable, (event) -> {
                     TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
                 });
             }, "insert " + LoggerUtils.targetNodeMessage(targetNode), TAG);
@@ -386,7 +386,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         if(table == null)
             throw new CoreException(ErrorCodes.TARGET_TABLE_NOT_FOUND_IN_TAPEVENT, "Table doesn't be found in TapEvent " + forerunnerEvent);
 
-        TapTable targetTable = handleActionsBeforeStart(table);
+        TapTable targetTable = handleActionsBeforeStart(table, forerunnerEvent.getAssociateId());
 
         tableInitialCheck(table, targetTable);
     }

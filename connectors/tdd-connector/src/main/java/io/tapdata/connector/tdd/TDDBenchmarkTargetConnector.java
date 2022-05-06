@@ -203,7 +203,7 @@ public class TDDBenchmarkTargetConnector extends ConnectorBase {
      * @param tapRecordEvents
      * @param writeListResultConsumer
      */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
         //TODO write records into database
 
         //Below is sample code to print received events which suppose to write to database.
