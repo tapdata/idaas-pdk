@@ -117,10 +117,11 @@ public class SqlBuilder {
         record.forEach((fieldName, value) -> {
             builder.append(fieldName).append("=");
             if (!(value instanceof Number)) {
-                builder.append("'").append(getFieldOriginValue(value)).append("' ");
+                builder.append("'").append(getFieldOriginValue(value)).append("'");
             } else {
-                builder.append(getFieldOriginValue(value)).append(" ");
+                builder.append(getFieldOriginValue(value));
             }
+            builder.append(splitSymbol).append(" ");
         });
         builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
         return builder.toString();

@@ -15,7 +15,6 @@ import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;
 import io.tapdata.entity.schema.value.TapRawValue;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -39,7 +38,7 @@ import java.util.function.Consumer;
  * @date 2022/4/18
  */
 @TapConnectorClass("spec_postgres.json")
-public class PostgresConnector extends ConnectorBase implements TapConnector {
+public class PostgresConnector extends ConnectorBase {
 
     private PostgresConfig postgresConfig;
     private Connection conn;
@@ -63,13 +62,11 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
             e.printStackTrace();
             throw new RuntimeException("Create Connection Failed!");
         }
-
     }
 
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
         initConnection(connectionContext.getConnectionConfig());
-
         List<TapTable> tapTableList = new LinkedList<>();
         DatabaseMetaData databaseMetaData = conn.getMetaData();
         ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{TABLE_COLUMN_NAME});
@@ -137,23 +134,19 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
                     break;
                 }
             } catch (SQLException e) {
-//                e.printStackTrace();
                 filterResult.setError(e);
             } finally {
                 filterResults.add(filterResult);
             }
         }
         listConsumer.accept(filterResults);
-
     }
-
 
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
         Collection<String> primaryKeys = tapTable.primaryKeys();
         String sql = "CREATE TABLE " + tapTable.getName() + "(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " UNIQUE (" + StringKit.combineStringWithComma(primaryKeys) + " ) )";
-
         try {
             stmt = conn.createStatement();
             stmt.execute(sql);
@@ -163,10 +156,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         }
     }
 
-//FIXME DOIRS异步执行alter命令，无回调接口，没次对同一个table同时执行一个alter命令；不能保证某个时刻是否存在alter命令正在执行
-
 //    private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent)
-//        // TODO 需要实现修改表的功能， 不过测试只能先从源端模拟一个修改表事件
 //        initConnection(tapConnectorContext.getConnectionConfig());
 //        TapTable tapTable = tapConnectorContext.getTable();
 //        Set<String> fieldNames = tapTable.getNameFieldMap().keySet();
@@ -184,7 +174,6 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 //                        " DROP COLUMN " + deletedFieldName;
 //                stmt.execute(sql);
 //            }
-//            // TODO Doris在文档中没有看到修改列名的相关操作
 //
 //        } catch (SQLException e) {
 //            e.printStackTrace();
@@ -226,15 +215,16 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
         initConnection(connectorContext.getConnectionConfig());
-        //Below is sample code to print received events which suppose to write to database.
-        AtomicLong inserted = new AtomicLong(0); //insert count
-        AtomicLong updated = new AtomicLong(0); //update count
-        AtomicLong deleted = new AtomicLong(0); //delete count
+        AtomicLong inserted = new AtomicLong(0);
+        AtomicLong updated = new AtomicLong(0);
+        AtomicLong deleted = new AtomicLong(0);
 
         PreparedStatement preparedStatement = conn.prepareStatement(SqlBuilder.buildPrepareInsertSQL(tapTable));
+        ResultSet table = conn.getMetaData().getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), tapTable.getName().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
+        if (!table.first()) {
+            throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
+        }
         for (TapRecordEvent recordEvent : tapRecordEvents) {
-            ResultSet table = conn.getMetaData().getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), tapTable.getName().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
-            if (!table.first()) throw new RuntimeException("Table " + tapTable.getName() + " not exist!");
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> after = insertRecordEvent.getAfter();
@@ -248,7 +238,6 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
                 for (Map.Entry<String, Object> entry : before.entrySet()) {
                     after.remove(entry.getKey(), entry.getValue());
                 }
-
                 String sql = "UPDATE " + tapTable.getName() + " SET " + SqlBuilder.buildKeyAndValue(after, ",") + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
                 stmt.execute(sql);
                 updated.incrementAndGet();
@@ -262,7 +251,6 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
             }
         }
         executeBatchInsert(preparedStatement);
-        //Need to tell flow engine the write result
         preparedStatement.close();
         writeListResultConsumer.accept(writeListResult().insertedCount(inserted.get()).modifiedCount(updated.get()).removedCount(deleted.get()));
     }
