@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 @TapConnectorClass("targetSpec.json")
-public class TDDTargetConnector extends ConnectorBase implements TapConnector {
+public class TDDTargetConnector extends ConnectorBase {
     public static final String TAG = TDDTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
@@ -259,6 +259,11 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
                 .removedCount(deleted.get()));
     }
 
+    @Override
+    public void onStart(TapConnectorContext connectorContext) {
+
+    }
+
     /**
      * The method invocation life circle is below,
      * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
@@ -268,7 +273,7 @@ public class TDDTargetConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
         //TODO release resources
         isShutDown.set(true);
     }

@@ -20,7 +20,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @TapConnectorClass("sourceSpec.json")
-public class TDDSourceConnector extends ConnectorBase implements TapConnector {
+public class TDDSourceConnector extends ConnectorBase {
     public static final String TAG = TDDSourceConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
@@ -179,7 +179,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * @param tapReadOffsetConsumer
      */
     private Date date = new Date();
-    private void batchRead(TapConnectorContext connectorContext, TapTable table, String offsetState, int batchSize, BiConsumer<List<TapEvent>, String> eventsOffsetConsumer) {
+    private void batchRead(TapConnectorContext connectorContext, TapTable table, Object offsetState, int batchSize, BiConsumer<List<TapEvent>, Object> eventsOffsetConsumer) {
         //TODO batch read all records from database, use consumer#accept to send to flow engine.
 
         //Below is sample code to generate records directly.
@@ -218,6 +218,11 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
         counter.set(counter.get() + 1000);
     }
 
+    @Override
+    public void onStart(TapConnectorContext connectorContext) throws Throwable {
+
+    }
+
     /**
      * The method invocation life circle is below,
      * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
@@ -227,7 +232,7 @@ public class TDDSourceConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
         //TODO release resources
         isShutDown.set(true);
     }

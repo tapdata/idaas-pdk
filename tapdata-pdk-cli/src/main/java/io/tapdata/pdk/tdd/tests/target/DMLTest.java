@@ -121,7 +121,7 @@ public class DMLTest extends PDKTestBase {
                             break;
                         }
                     }
-                    connectionNode.getConnectorNode().destroy();
+                    CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                     if(!found)
                         $(() -> Assertions.fail("Target table " + targetTable + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable));
 
@@ -165,7 +165,7 @@ public class DMLTest extends PDKTestBase {
                                     $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                 }
                             }
-                            connectionNode.getConnectorNode().destroy();
+                            CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                             completed();
                         });
                     }

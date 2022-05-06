@@ -18,11 +18,11 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.ObjectSerializable;
 import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
-import io.tapdata.pdk.apis.functions.connector.common.InitFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
@@ -44,8 +44,8 @@ public class SourceNodeDriver extends Driver {
 
     private SourceNode sourceNode;
 
-    private String streamOffsetStr;
-    private String batchOffsetStr;
+    private byte[] streamOffsetBytes;
+    private byte[] batchOffsetBytes;
     private String batchOffsetOnTable;
     private List<String> completedBatchTables = new ArrayList<>();
     private SourceStateListener sourceStateListener;
@@ -98,12 +98,9 @@ public class SourceNodeDriver extends Driver {
         KVMapFactory mapFactory = InstanceFactory.instance(KVMapFactory.class);
         tableKVMap = mapFactory.getCacheMap(sourceNode.getAssociateId(), TapTable.class);
 
-        InitFunction initFunction = sourceNode.getConnectorFunctions().getInitFunction();
-        if (initFunction != null) {
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
-                initFunction.init(sourceNode.getConnectorContext());
-            }, "Init " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
-        }
+        pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
+            sourceNode.connectorInit();
+        }, "Init " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
 
         //Init tasks
         List<Map<String, Object>> tasks = sourceNode.getTasks();
@@ -244,8 +241,13 @@ public class SourceNodeDriver extends Driver {
                 TapTable tapTable = tableKVMap.get(table);
                 if(tapTable == null)
                     throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + table + " while batchRead");
+                Object offsetObj = null;
+                if(batchOffsetBytes != null) {
+                    offsetObj = InstanceFactory.instance(ObjectSerializable.class).toObject(batchOffsetBytes, new ObjectSerializable.ToObjectOptions().classLoader(sourceNode.getConnector().getClass().getClassLoader()));
+                }
+                Object finalOffsetObj = offsetObj;
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
-                        () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), tapTable, batchOffsetStr, batchLimit, (events, batchOffset) -> {
+                        () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), tapTable, finalOffsetObj, batchLimit, (events, batchOffset) -> {
                             if (events != null && !events.isEmpty()) {
                                 if(events.size() > batchLimit)
                                     throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
@@ -253,7 +255,7 @@ public class SourceNodeDriver extends Driver {
                                 offerToQueue(events);
 
                                 if(batchOffset != null){
-                                    batchOffsetStr = batchOffset;
+                                    batchOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(batchOffset);
                                     batchOffsetOnTable = table;
                                 }
 //                            BatchOffsetFunction batchOffsetFunction = sourceNode.getConnectorFunctions().getBatchOffsetFunction();
@@ -268,7 +270,7 @@ public class SourceNodeDriver extends Driver {
 //                            }
                             }
                         }), "Batch read " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
-                batchOffsetStr = null;
+                batchOffsetBytes = null;
                 batchOffsetOnTable = null;
                 if(!completedBatchTables.contains(table))
                     completedBatchTables.add(table);
@@ -289,9 +291,14 @@ public class SourceNodeDriver extends Driver {
 
         StreamReadFunction streamReadFunction = sourceNode.getConnectorFunctions().getStreamReadFunction();
         if (enableStreamRead && streamReadFunction != null) {
+            Object streamOffsetObj = null;
+            if(streamOffsetBytes != null) {
+                streamOffsetObj = InstanceFactory.instance(ObjectSerializable.class).toObject(streamOffsetBytes, new ObjectSerializable.ToObjectOptions().classLoader(sourceNode.getConnector().getClass().getClassLoader()));
+            }
+            Object finalStreamOffsetObj = streamOffsetObj;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
                 while(!shutDown.get()) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, streamOffsetStr, batchLimit, StreamReadConsumer.create((events) -> {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, StreamReadConsumer.create((events) -> {
                         if (events != null) {
                             if(events.size() > batchLimit)
                                 throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
@@ -302,10 +309,10 @@ public class SourceNodeDriver extends Driver {
                         StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
                         if(streamOffsetFunction != null) {
                             pdkInvocationMonitor.invokePDKMethod(PDKMethod.STREAM_OFFSET, () -> {
-                                String offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), finalTargetTables, null);
+                                Object offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), finalTargetTables, null);
                                 if (offsetState != null) {
-                                    TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetStr, offsetState);
-                                    this.streamOffsetStr = offsetState;
+                                    TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetBytes, offsetState);
+                                    this.streamOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(offsetState);
                                 }
                             }, "Stream read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
                                 TapLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());

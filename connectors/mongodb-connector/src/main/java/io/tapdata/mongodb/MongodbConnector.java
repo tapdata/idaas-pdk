@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
  * In parent class "ConnectorBase", provides many simplified methods to develop connector
  */
 @TapConnectorClass("spec.json")
-public class MongodbConnector extends ConnectorBase implements TapConnector {
+public class MongodbConnector extends ConnectorBase {
     public static final String TAG = MongodbConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
@@ -215,7 +215,6 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      */
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
-        connectorFunctions.supportInit(this::init);
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportDropTable(this::dropTable);
@@ -266,7 +265,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         connectorFunctions.supportStreamOffset(this::streamOffset);
     }
 
-    private void init(TapConnectorContext connectorContext) throws Throwable {
+    public void onStart(TapConnectorContext connectorContext) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
     }
 
@@ -499,7 +498,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param offset
      * @param tapReadOffsetConsumer
      */
-    private void batchRead(TapConnectorContext connectorContext, TapTable table, String offset, int eventBatchSize, BiConsumer<List<TapEvent>, String> tapReadOffsetConsumer) throws Throwable {
+    private void batchRead(TapConnectorContext connectorContext, TapTable table, Object offset, int eventBatchSize, BiConsumer<List<TapEvent>, Object> tapReadOffsetConsumer) throws Throwable {
         List<TapEvent> tapEvents = list();
         MongoCursor<Document> mongoCursor;
         MongoCollection<Document> collection = getMongoCollection(table.getId());
@@ -509,7 +508,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         if (offset == null) {
             mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
         } else {
-            MongoOffset mongoOffset = fromJson(offset, MongoOffset.class);
+            MongoOffset mongoOffset = (MongoOffset) offset;//fromJson(offset, MongoOffset.class);
             Object offsetValue = mongoOffset.value();
             if(offsetValue != null) {
                 mongoCursor = collection.find(queryCondition(firstPrimaryKey, offsetValue)).sort(Sorts.ascending(firstPrimaryKey))
@@ -531,7 +530,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
                     Object value = lastDocument.get(firstPrimaryKey);
                     batchOffset = new MongoOffset(firstPrimaryKey, value);
                 }
-                tapReadOffsetConsumer.accept(tapEvents, toJson(batchOffset));
+                tapReadOffsetConsumer.accept(tapEvents, batchOffset);
                 tapEvents = list();
             }
         }
@@ -540,7 +539,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
         }
     }
 
-    private String streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) {
+    private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) {
         if(offsetStartTime != null) {
             List<Bson> pipeline = singletonList(Aggregates.match(
                     Filters.in("ns.coll", tableList)
@@ -552,12 +551,11 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             BsonDocument theResumeToken = cursor.getResumeToken();
 
             if(theResumeToken != null) {
-                String json =  theResumeToken.toJson();
                 cursor.close();
-                return json;
+                return theResumeToken;
             }
         } else if(resumeToken != null) {
-            return resumeToken.toJson();
+            return resumeToken;
         }
         return null;
     }
@@ -578,7 +576,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * @param connectorContext //     * @param offset
      *                         //     * @param consumer
      */
-    private void streamRead(TapConnectorContext connectorContext, List<String> tableList, String offset, int eventBatchSize, StreamReadConsumer consumer) {
+    private void streamRead(TapConnectorContext connectorContext, List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer) {
         List<Bson> pipeline = singletonList(Aggregates.match(
                 Filters.in("ns.coll", tableList)
         ));
@@ -590,7 +588,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
             List<TapEvent> tapEvents = list();
             ChangeStreamIterable<Document> changeStream;
             if (offset != null) {
-                changeStream = mongoDatabase.watch(pipeline).resumeAfter(BsonDocument.parse(offset)).fullDocument(FullDocument.UPDATE_LOOKUP);
+                changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
             } else {
                 changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
             }
@@ -735,7 +733,7 @@ public class MongodbConnector extends ConnectorBase implements TapConnector {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void destroy() {
+    public void onDestroy() {
 //        if (mongoClient != null) {
 //            mongoClient.close();
 //        }

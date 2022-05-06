@@ -19,7 +19,6 @@ import io.tapdata.entity.utils.ClassFactory;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.entity.utils.cache.KVMap;
-import io.tapdata.pdk.apis.functions.connector.common.InitFunction;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.pretty.ClassHandlers;
@@ -351,13 +350,9 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
             tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class);
 
             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-
-            InitFunction initFunction = targetNode.getConnectorFunctions().getInitFunction();
-            if (initFunction != null) {
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
-                    initFunction.init(targetNode.getConnectorContext());
-                }, "Init " + LoggerUtils.targetNodeMessage(targetNode), TAG);
-            }
+            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
+                targetNode.connectorInit();
+            }, "Init " + LoggerUtils.targetNodeMessage(targetNode), TAG);
 
             String nodeTable = targetNode.getTable();
             if(nodeTable != null) {

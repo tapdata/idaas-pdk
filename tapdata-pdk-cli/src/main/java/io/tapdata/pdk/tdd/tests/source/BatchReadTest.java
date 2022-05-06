@@ -16,6 +16,7 @@ import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
+import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import io.tapdata.pdk.tdd.core.SupportFunction;
@@ -189,7 +190,7 @@ public class BatchReadTest extends PDKTestBase {
                                                     $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                                 }
                                             }
-                                            connectionNode.getConnectorNode().destroy();
+                                            CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                                             completed();
                                         });
                                     }
