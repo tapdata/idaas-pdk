@@ -13,7 +13,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -23,7 +22,6 @@ import java.util.function.Consumer;
  **/
 public class MysqlSchemaLoader {
 	private static final String TAG = MysqlSchemaLoader.class.getSimpleName();
-	private static final int BATCH_SIZE = 10;
 	private static final String SELECT_TABLES = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '%s'";
 	private static final String SELECT_COLUMNS = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME='%s'";
 	private final static String SELECT_ALL_INDEX_SQL = "select i.TABLE_NAME, i.INDEX_NAME, i.INDEX_TYPE, i.COLLATION, i.NON_UNIQUE, i.COLUMN_NAME, i.SEQ_IN_INDEX from INFORMATION_SCHEMA.STATISTICS i\n" +
@@ -44,7 +42,7 @@ public class MysqlSchemaLoader {
 		this.tapConnectionContext = mysqlJdbcContext.getTapConnectionContext();
 	}
 
-	public void discoverSchema(Consumer<List<TapTable>> consumer) throws Throwable {
+	public void discoverSchema(Consumer<List<TapTable>> consumer, int tableSize) throws Throwable {
 		if (null == consumer) {
 			throw new IllegalArgumentException("Consumer cannot be null");
 		}
@@ -60,7 +58,7 @@ public class MysqlSchemaLoader {
 					TapLogger.info(TAG, e.getMessage() + "\n" + TapSimplify.getStackString(e));
 				}
 				tempList.add(tapTable);
-				if (tempList.size() == BATCH_SIZE) {
+				if (tempList.size() == tableSize) {
 					consumer.accept(tempList);
 					tempList.clear();
 				}
@@ -72,7 +70,7 @@ public class MysqlSchemaLoader {
 		});
 	}
 
-	private void addColumns(TapConnectionContext connectionContext, TapTable tapTable) throws Exception {
+	private void addColumns(TapConnectionContext connectionContext, TapTable tapTable) throws Throwable {
 		AtomicInteger primaryPos = new AtomicInteger(1);
 		DataMap connectionConfig = connectionContext.getConnectionConfig();
 		String database = connectionConfig.getString("database");

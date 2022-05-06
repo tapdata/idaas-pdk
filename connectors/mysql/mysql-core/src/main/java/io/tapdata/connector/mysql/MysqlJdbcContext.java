@@ -1,7 +1,9 @@
 package io.tapdata.connector.mysql;
 
+import com.mysql.cj.jdbc.StatementImpl;
 import com.zaxxer.hikari.HikariDataSource;
 import io.tapdata.connector.mysql.util.JdbcUtil;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -20,12 +23,15 @@ import java.util.concurrent.atomic.AtomicReference;
  **/
 public class MysqlJdbcContext implements AutoCloseable {
 
+	private static final String TAG = MysqlJdbcContext.class.getSimpleName();
 	private TapConnectionContext tapConnectionContext;
 	private String jdbcUrl;
 	private HikariDataSource hikariDataSource;
 	private static final String SELECT_SQL_MODE = "select @@sql_mode";
 	private static final String SET_CLIENT_SQL_MODE = "set sql_mode = ?";
 	private static final String SELECT_MYSQL_VERSION = "select version() as version";
+	public static final String SELECT_TABLE = "SELECT t.* FROM `%s`.`%s` t";
+	private static final String SELECT_COUNT = "SELECT count(*) FROM `%s`.`%s` t";
 
 	private static final Map<String, String> DEFAULT_PROPERTIES = new HashMap<String, String>() {{
 		put("rewriteBatchedStatements", "true");
@@ -137,7 +143,8 @@ public class MysqlJdbcContext implements AutoCloseable {
 		return version.get();
 	}
 
-	public void query(String sql, ResultSetConsumer resultSetConsumer) throws SQLException {
+	public void query(String sql, ResultSetConsumer resultSetConsumer) throws Throwable {
+		TapLogger.debug(TAG, "Execute query, sql: " + sql);
 		try (
 				Connection connection = getConnection();
 				Statement statement = connection.createStatement();
@@ -146,7 +153,42 @@ public class MysqlJdbcContext implements AutoCloseable {
 			if (null != resultSet) {
 				resultSetConsumer.accept(resultSet);
 			}
+		} catch (SQLException e) {
+			throw new Exception("Execute query failed, sql: " + sql + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
 		}
+	}
+
+	public void queryWithStream(String sql, ResultSetConsumer resultSetConsumer) throws Throwable {
+		TapLogger.debug(TAG, "Execute query with stream, sql: " + sql);
+		try (
+				Connection connection = getConnection();
+				Statement statement = connection.createStatement()
+		) {
+			if (statement instanceof StatementImpl) {
+				((StatementImpl) statement).enableStreamingResults();
+			}
+			try (
+					ResultSet resultSet = statement.executeQuery(sql)
+			) {
+				if (null != resultSet) {
+					resultSetConsumer.accept(resultSet);
+				}
+			}
+		} catch (SQLException e) {
+			throw new Exception("Execute steaming query failed, sql: " + sql + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
+		}
+	}
+
+	public int count(String tableName) throws Throwable {
+		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		AtomicInteger count = new AtomicInteger(0);
+		query(String.format(SELECT_COUNT, database, tableName), rs -> {
+			if (rs.next()) {
+				count.set(rs.getInt(1));
+			}
+		});
+		return count.get();
 	}
 
 	@Override

@@ -1,7 +1,6 @@
 package io.tapdata.connector.mysql;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 /**
  * @author samuel
@@ -9,5 +8,5 @@ import java.sql.SQLException;
  * @create 2022-04-28 17:24
  **/
 public interface ResultSetConsumer {
-	void accept(ResultSet rs) throws SQLException;
+	void accept(ResultSet rs) throws Throwable;
 }

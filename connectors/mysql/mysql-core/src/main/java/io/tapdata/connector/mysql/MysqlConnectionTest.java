@@ -233,7 +233,7 @@ public class MysqlConnectionTest {
 		}
 	}
 
-	private boolean checkMySqlCreateTablePrivilege(String username) throws SQLException {
+	private boolean checkMySqlCreateTablePrivilege(String username) throws Exception {
 		AtomicBoolean result = new AtomicBoolean(true);
 		mysqlJdbcContext.query(String.format(CHECK_CREATE_TABLE_PRIVILEGES_SQL, username), resultSet -> {
 			while (resultSet.next()) {
