@@ -29,7 +29,7 @@ public class MysqlReader {
 	}
 
 	public void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, MysqlSnapshotOffset mysqlSnapshotOffset, Predicate<?> stop,
-						  BiConsumer<Map<String, Object>, MysqlSnapshotOffset> biConsumer) throws Throwable {
+						  BiConsumer<Map<String, Object>, MysqlSnapshotOffset> consumer) throws Throwable {
 		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
 		String database = connectionConfig.getString("database");
 		String sql = String.format(MysqlJdbcContext.SELECT_TABLE, database, tapTable.getName());
@@ -83,7 +83,7 @@ public class MysqlReader {
 							throw new Exception("Read column value failed, row: " + row.get() + ", column name: " + columnName + ", data: " + data + "; Error: " + e.getMessage(), e);
 						}
 					}
-					biConsumer.accept(data, mysqlSnapshotOffset);
+					consumer.accept(data, mysqlSnapshotOffset);
 				}
 			});
 		} catch (Exception e) {

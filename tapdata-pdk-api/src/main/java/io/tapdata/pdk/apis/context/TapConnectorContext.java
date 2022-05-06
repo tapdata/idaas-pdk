@@ -8,8 +8,6 @@ import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
-import java.util.List;
-
 
 public class TapConnectorContext extends TapConnectionContext {
     protected DataMap nodeConfig;

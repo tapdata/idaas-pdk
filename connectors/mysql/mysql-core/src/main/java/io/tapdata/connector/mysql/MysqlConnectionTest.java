@@ -81,7 +81,7 @@ public class MysqlConnectionTest {
 		return testItem(MysqlTestItem.CHECK_VERSION.getContent(), TestItem.RESULT_SUCCESSFULLY);
 	}
 
-	public TestItem testCDCPrivileges() {
+	public TestItem testCDCPrivileges() throws Throwable {
 		AtomicReference<TestItem> testItem = new AtomicReference<>();
 		try {
 			StringBuilder missPri = new StringBuilder();
@@ -176,7 +176,7 @@ public class MysqlConnectionTest {
 			return testItem(MysqlTestItem.CHECK_BINLOG_MODE.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
 					"Check binlog mode failed; " + e.getErrorCode() + " " + e.getSQLState() + " " + e.getMessage() + "\n" + getStackString(e));
 
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			return testItem(MysqlTestItem.CHECK_BINLOG_MODE.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
 					"Check binlog mode failed; " + e.getMessage() + "\n" + getStackString(e));
 		}
@@ -198,7 +198,7 @@ public class MysqlConnectionTest {
 			if (null == testItem.get()) {
 				testItem.set(testItem(MysqlTestItem.CHECK_BINLOG_ROW_IMAGE.getContent(), TestItem.RESULT_SUCCESSFULLY));
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			return testItem(MysqlTestItem.CHECK_BINLOG_ROW_IMAGE.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
 					"Check binlog row image failed; " + e.getMessage() + "\n" + getStackString(e));
 		}
@@ -227,13 +227,13 @@ public class MysqlConnectionTest {
 				return testItem(MysqlTestItem.CHECK_CREATE_TABLE_PRIVILEGE.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
 						"Check create table privileges failed; " + e.getErrorCode() + " " + e.getSQLState() + " " + e.getMessage() + "\n" + getStackString(e));
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			return testItem(MysqlTestItem.CHECK_CREATE_TABLE_PRIVILEGE.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
 					"Check create table privileges failed; " + e.getMessage() + "\n" + getStackString(e));
 		}
 	}
 
-	private boolean checkMySqlCreateTablePrivilege(String username) throws Exception {
+	private boolean checkMySqlCreateTablePrivilege(String username) throws Throwable {
 		AtomicBoolean result = new AtomicBoolean(true);
 		mysqlJdbcContext.query(String.format(CHECK_CREATE_TABLE_PRIVILEGES_SQL, username), resultSet -> {
 			while (resultSet.next()) {

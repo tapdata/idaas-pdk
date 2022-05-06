@@ -1,31 +1,31 @@
 package io.tapdata.base;
 
-import io.tapdata.entity.simplify.TapSimplify;
-import io.tapdata.entity.utils.Entry;
-import io.tapdata.entity.event.dml.*;
+import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
-import io.tapdata.entity.utils.DataMap;
-import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.entity.simplify.TapSimplify;
+import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.Entry;
+import io.tapdata.entity.utils.FormatUtils;
+import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
-import io.tapdata.entity.utils.FormatUtils;
 import io.tapdata.pdk.apis.utils.TypeConverter;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.tapdata.entity.simplify.TapSimplify.fromJsonWithClass;
-import static io.tapdata.entity.simplify.TapSimplify.toJsonWithClass;
 
 public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);

@@ -9,7 +9,7 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;
-import io.tapdata.pdk.apis.TapConnector;
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -20,12 +20,10 @@ import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -35,32 +33,65 @@ import java.util.function.Consumer;
  * @create 2022-04-25 15:09
  **/
 @TapConnectorClass("spec.json")
-public class MysqlConnector extends ConnectorBase implements TapConnector {
+public class MysqlConnector extends ConnectorBase {
 
 	private static final String TAG = MysqlConnector.class.getSimpleName();
 	private MysqlJdbcContext mysqlJdbcContext;
 	private MysqlReader mysqlReader;
-	private AtomicBoolean running;
 	private String version;
 
 	@Override
 	public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
 		codecRegistry.registerFromTapValue(TapMapValue.class, "json", tapValue -> toJson(tapValue.getOriginValue()));
 		codecRegistry.registerFromTapValue(TapArrayValue.class, "json", tapValue -> toJson(tapValue.getOriginValue()));
-		connectorFunctions.supportBatchRead(this::batchRead);
 		connectorFunctions.supportBatchCount(this::batchCount);
+		connectorFunctions.supportBatchRead(this::batchRead);
 		connectorFunctions.supportStreamRead(this::streamRead);
 		connectorFunctions.supportStreamOffset(this::streamOffset);
 		connectorFunctions.supportQueryByAdvanceFilter(this::query);
 		connectorFunctions.supportWriteRecord(this::writeRecord);
-		connectorFunctions.supportInit(this::init);
 	}
 
-	private void init(TapConnectorContext tapConnectorContext) throws Throwable {
+	private void streamRead(TapConnectorContext tapConnectorContext, List<String> tables, Object offset, int batchSize, StreamReadConsumer consumer) {
+
+	}
+
+	private void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, Object offset, int batchSize, BiConsumer<List<TapEvent>, Object> consumer) throws Throwable {
+		MysqlSnapshotOffset mysqlSnapshotOffset;
+		if (offset instanceof MysqlSnapshotOffset) {
+			mysqlSnapshotOffset = (MysqlSnapshotOffset) offset;
+		} else {
+			mysqlSnapshotOffset = new MysqlSnapshotOffset();
+		}
+		List<TapEvent> tempList = new ArrayList<>();
+		this.mysqlReader.batchRead(tapConnectorContext, tapTable, mysqlSnapshotOffset, n -> !isAlive(), (data, snapshotOffset) -> {
+			TapRecordEvent tapRecordEvent = tapRecordWrapper(tapConnectorContext, null, data, tapTable, "i");
+			tempList.add(tapRecordEvent);
+			if (tempList.size() == batchSize) {
+				consumer.accept(tempList, mysqlSnapshotOffset);
+				tempList.clear();
+			}
+		});
+		if (CollectionUtils.isNotEmpty(tempList)) {
+			consumer.accept(tempList, mysqlSnapshotOffset);
+			tempList.clear();
+		}
+	}
+
+	@Override
+	public void onStart(TapConnectorContext tapConnectorContext) throws Throwable {
 		this.mysqlJdbcContext = new MysqlJdbcContext(tapConnectorContext);
 		this.mysqlReader = new MysqlReader(mysqlJdbcContext);
-		this.running.set(true);
 		this.version = mysqlJdbcContext.getMysqlVersion();
+	}
+
+	@Override
+	public void onDestroy() throws Throwable {
+		try {
+			this.mysqlJdbcContext.close();
+		} catch (Exception e) {
+			TapLogger.error(TAG, "Release connector failed, error: " + e.getMessage() + "\n" + getStackString(e));
+		}
 	}
 
 	private void writeRecord(TapConnectorContext tapConnectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
@@ -75,10 +106,6 @@ public class MysqlConnector extends ConnectorBase implements TapConnector {
 		return null;
 	}
 
-	private void streamRead(TapConnectorContext tapConnectorContext, List<String> tables, String offset, int recordSize, StreamReadConsumer streamReadConsumer) {
-
-	}
-
 	private long batchCount(TapConnectorContext tapConnectorContext, TapTable tapTable) throws Throwable {
 		int count;
 		try {
@@ -89,35 +116,24 @@ public class MysqlConnector extends ConnectorBase implements TapConnector {
 		return count;
 	}
 
-	private void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, String offset, int eventBatchSize, BiConsumer<List<TapEvent>, String> biConsumer) throws Throwable {
-		MysqlSnapshotOffset mysqlSnapshotOffset;
-		if (StringUtils.isNotBlank(offset)) {
-			mysqlSnapshotOffset = fromJson(offset, MysqlSnapshotOffset.class);
-		} else {
-			mysqlSnapshotOffset = new MysqlSnapshotOffset();
+	private TapRecordEvent tapRecordWrapper(TapConnectorContext tapConnectorContext, Map<String, Object> before, Map<String, Object> after, TapTable tapTable, String op) {
+		TapRecordEvent tapRecordEvent;
+		switch (op) {
+			case "i":
+				tapRecordEvent = TapSimplify.insertRecordEvent(after, tapTable.getId());
+				break;
+			case "u":
+				tapRecordEvent = TapSimplify.updateDMLEvent(before, after, tapTable.getId());
+				break;
+			case "d":
+				tapRecordEvent = TapSimplify.deleteDMLEvent(before, tapTable.getId());
+				break;
+			default:
+				throw new IllegalArgumentException("Operation " + op + " not support");
 		}
-		List<TapEvent> tempList = new ArrayList<>();
-		this.mysqlReader.batchRead(tapConnectorContext, tapTable, mysqlSnapshotOffset, null, (data, snapshotOffset) -> {
-			TapRecordEvent tapRecordEvent = tapRecordWrapper(tapConnectorContext, data);
-			tempList.add(tapRecordEvent);
-			if (tempList.size() == eventBatchSize) {
-				biConsumer.accept(tempList, "");
-				tempList.clear();
-			}
-		});
-		if (CollectionUtils.isNotEmpty(tempList)) {
-			biConsumer.accept(tempList, "");
-			tempList.clear();
-		}
-	}
-
-	private TapRecordEvent tapRecordWrapper(TapConnectorContext tapConnectorContext, Map<String, Object> data) {
-		TapRecordEvent tapEvent = new TapRecordEvent();
-		tapEvent.setConnector(tapConnectorContext.getSpecification().getId());
-		tapEvent.setConnectorVersion(version);
-		tapEvent.setInfo(data);
-		tapEvent.setTime(System.currentTimeMillis());
-		return tapEvent;
+		tapRecordEvent.setConnector(tapConnectorContext.getSpecification().getId());
+		tapRecordEvent.setConnectorVersion(version);
+		return tapRecordEvent;
 	}
 
 	@Override
@@ -150,15 +166,5 @@ public class MysqlConnector extends ConnectorBase implements TapConnector {
 		consumer.accept(mysqlConnectionTest.testBinlogRowImage());
 		consumer.accept(mysqlConnectionTest.testCDCPrivileges());
 		consumer.accept(mysqlConnectionTest.testCreateTablePrivilege(databaseContext));
-	}
-
-	@Override
-	public void destroy() {
-		running.compareAndSet(true, false);
-		try {
-			this.mysqlJdbcContext.close();
-		} catch (Exception e) {
-			TapLogger.error(TAG, "Release connector failed, error: " + e.getMessage() + "\n" + getStackString(e));
-		}
 	}
 }
