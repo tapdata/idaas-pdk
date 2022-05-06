@@ -20,6 +20,11 @@ public class SqlBuilder {
 
     /**
      * combine column definition for creating table
+     * e.g.
+     * id text NULL ,
+     * tapString text NULL ,
+     * tddUser text NULL ,
+     * tapString10 VARCHAR(10) NULL
      *
      * @param tapTable Table Object
      * @return substring of SQL
@@ -29,7 +34,9 @@ public class SqlBuilder {
         StringBuilder builder = new StringBuilder();
         nameFieldMap.keySet().forEach(columnName -> {
             TapField tapField = nameFieldMap.get(columnName);
-            if (tapField.getDataType() == null) return;
+            if (tapField.getDataType() == null) {
+                return;
+            }
             builder.append(tapField.getName()).append(' ').append(tapField.getDataType()).append(' ');
             if (tapField.getNullable() != null && !tapField.getNullable()) {
                 builder.append("NOT NULL").append(' ');
@@ -47,6 +54,8 @@ public class SqlBuilder {
 
     /**
      * combine columns for inserting records
+     * e.g.
+     * INSERT INTO DMLTest_postgres_oFsAOk VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      *
      * @param tapTable Table Object
      * @return insert SQL
@@ -62,6 +71,14 @@ public class SqlBuilder {
         return "INSERT INTO " + tapTable.getName() + " VALUES (" + stringBuilder + ")";
     }
 
+    /**
+     * build prepareStatement with one record
+     *
+     * @param tapTable          table
+     * @param insertRecord      one record
+     * @param preparedStatement ps
+     * @throws SQLException SQLException
+     */
     public static void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
         preparedStatement.clearParameters();
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
@@ -69,7 +86,9 @@ public class SqlBuilder {
         for (String columnName : nameFieldMap.keySet()) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = insertRecord.get(columnName);
-            if (tapField.getDataType() == null) continue;
+            if (tapField.getDataType() == null) {
+                continue;
+            }
             if (tapValue == null) {
                 if (tapField.getNullable() != null && !tapField.getNullable()) {
                     preparedStatement.setObject(pos, tapField.getDefaultValue());
@@ -84,52 +103,59 @@ public class SqlBuilder {
         preparedStatement.addBatch();
     }
 
+    /**
+     * set value for each column in sql
+     * e.g.
+     * id=12,name=Jarad,age=34
+     *
+     * @param record      key-val
+     * @param splitSymbol split symbol
+     * @return substring of sql
+     */
     public static String buildKeyAndValue(Map<String, Object> record, String splitSymbol) {
         StringBuilder builder = new StringBuilder();
-        for (Map.Entry<String, Object> entry : record.entrySet()) {
-            String fieldName = entry.getKey();
+        record.forEach((fieldName, value) -> {
             builder.append(fieldName).append("=");
-            if (!(entry.getValue() instanceof Number)) builder.append("'");
-
-            builder.append(getFieldOriginValue(entry.getValue()));
-
-            if (!(entry.getValue() instanceof Number)) builder.append("'");
-
-            builder.append(splitSymbol).append(" ");
-        }
+            if (!(value instanceof Number)) {
+                builder.append("'").append(getFieldOriginValue(value)).append("' ");
+            } else {
+                builder.append(getFieldOriginValue(value)).append(" ");
+            }
+        });
         builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
         return builder.toString();
     }
 
-    public String buildInsertValues(TapTable tapTable, Map<String, Object> record) {
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        StringBuilder builder = new StringBuilder();
-        for (String columnName : nameFieldMap.keySet()) {
-            TapField tapField = nameFieldMap.get(columnName);
-            Object tapValue = record.get(columnName);
-            if (tapField.getDataType() == null) continue;
-            if (tapValue == null) {
-                if (tapField.getNullable() != null && !tapField.getNullable()) {
-                    builder.append("'").append(tapField.getDefaultValue()).append("'").append(',');
-                } else {
-                    builder.append("null").append(',');
-                }
-            } else {
-                builder.append("'").append(getFieldOriginValue(tapValue)).append("'").append(',');
-            }
-        }
-        builder.delete(builder.length() - 1, builder.length());
-        return builder.toString();
-    }
+    /**
+     * public String buildInsertValues(TapTable tapTable, Map<String, Object> record) {
+     * LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
+     * StringBuilder builder = new StringBuilder();
+     * for (String columnName : nameFieldMap.keySet()) {
+     * TapField tapField = nameFieldMap.get(columnName);
+     * Object tapValue = record.get(columnName);
+     * if (tapField.getDataType() == null) continue;
+     * if (tapValue == null) {
+     * if (tapField.getNullable() != null && !tapField.getNullable()) {
+     * builder.append("'").append(tapField.getDefaultValue()).append("'").append(',');
+     * } else {
+     * builder.append("null").append(',');
+     * }
+     * } else {
+     * builder.append("'").append(getFieldOriginValue(tapValue)).append("'").append(',');
+     * }
+     * }
+     * builder.delete(builder.length() - 1, builder.length());
+     * return builder.toString();
+     * }
+     */
 
     private static Object getFieldOriginValue(Object tapValue) {
-        Object result = tapValue;
         if (tapValue instanceof DateTime) {
             DateTime dateTime = (DateTime) tapValue;
             return new java.sql.Date(dateTime.getSeconds() * 1000L + dateTime.getNano() / 1000000L);
         } else if (tapValue instanceof Date) {
             return new java.sql.Date(((Date) tapValue).getTime());
         }
-        return result;
+        return tapValue;
     }
 }

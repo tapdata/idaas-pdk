@@ -17,13 +17,11 @@ public class CommonColumn {
     protected String columnDefaultValue;
 
     public CommonColumn() {
-
     }
 
     private Boolean isNullable() {
         return "1".equals(this.nullable);
     }
-
 
     public TapField getTapField() {
         return new TapField(this.columnName, this.dataType).nullable(this.isNullable()).

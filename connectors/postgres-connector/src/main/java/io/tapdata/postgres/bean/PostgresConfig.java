@@ -35,7 +35,7 @@ public class PostgresConfig implements Serializable {
     }
 
     /**
-     * load mysql database config
+     * load postgresql database config
      *
      * @param map config attributes in Map
      * @return Config
@@ -47,7 +47,7 @@ public class PostgresConfig implements Serializable {
     }
 
     /**
-     * get real database url for mysql-jdbc
+     * get real database url for postgresql-jdbc
      *
      * @return DB URL
      */

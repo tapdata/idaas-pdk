@@ -72,7 +72,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
 
         List<TapTable> tapTableList = new LinkedList<>();
         DatabaseMetaData databaseMetaData = conn.getMetaData();
-        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{"TABLE"});
+        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{TABLE_COLUMN_NAME});
         while (tableResult.next()) {
             String tableName = tableResult.getString("TABLE_NAME");
             TapTable table = table(tableName);
@@ -119,10 +119,8 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         });
     }
 
-    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, TapTable tapTable, Consumer<List<FilterResult>> listConsumer) {
         initConnection(connectorContext.getConnectionConfig());
-        if (null == filters || filters.isEmpty()) return;
-        TapTable tapTable = connectorContext.getTableMap().get(filters.stream().findFirst().orElseGet(TapFilter::new).getTableId());
         Set<String> columnNames = tapTable.getNameFieldMap().keySet();
         List<FilterResult> filterResults = new LinkedList<>();
         for (TapFilter filter : filters) {
@@ -200,7 +198,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapClearTableEvent.getTableId());
         try {
-            ResultSet table = conn.getMetaData().getTables(null, postgresConfig.getDatabase(), tapTable.getName(), new String[]{TABLE_COLUMN_NAME});
+            ResultSet table = conn.getMetaData().getTables(conn.getCatalog(), postgresConfig.getSchema(), tapTable.getName().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
             if (table.first()) {
                 String sql = "TRUNCATE TABLE " + tapTable.getName();
                 stmt.execute(sql);
@@ -214,7 +212,7 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapDropTableEvent.getTableId());
         try {
-            ResultSet table = conn.getMetaData().getTables(null, postgresConfig.getDatabase(), tapTable.getName(), new String[]{});
+            ResultSet table = conn.getMetaData().getTables(conn.getCatalog(), postgresConfig.getSchema(), tapTable.getName().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
             if (table.first()) {
                 String sql = "DROP TABLE " + tapTable.getName();
                 stmt.execute(sql);
@@ -226,15 +224,13 @@ public class PostgresConnector extends ConnectorBase implements TapConnector {
     }
 
 
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
         initConnection(connectorContext.getConnectionConfig());
         //Below is sample code to print received events which suppose to write to database.
         AtomicLong inserted = new AtomicLong(0); //insert count
         AtomicLong updated = new AtomicLong(0); //update count
         AtomicLong deleted = new AtomicLong(0); //delete count
 
-        if (null == tapRecordEvents || tapRecordEvents.isEmpty()) return;
-        TapTable tapTable = connectorContext.getTableMap().get(tapRecordEvents.stream().findFirst().orElseGet(TapRecordEvent::new).getTableId());
         PreparedStatement preparedStatement = conn.prepareStatement(SqlBuilder.buildPrepareInsertSQL(tapTable));
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             ResultSet table = conn.getMetaData().getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), tapTable.getName().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
