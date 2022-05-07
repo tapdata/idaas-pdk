@@ -1,17 +1,17 @@
 package io.tapdata.connector.mysql;
 
 import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
-import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
+import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
 import java.sql.ResultSetMetaData;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -28,66 +28,61 @@ public class MysqlReader {
 		this.mysqlJdbcContext = mysqlJdbcContext;
 	}
 
-	public void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, MysqlSnapshotOffset mysqlSnapshotOffset, Predicate<?> stop,
-						  BiConsumer<Map<String, Object>, MysqlSnapshotOffset> consumer) throws Throwable {
-		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
-		String database = connectionConfig.getString("database");
-		String sql = String.format(MysqlJdbcContext.SELECT_TABLE, database, tapTable.getName());
+	public void readWithOffset(TapConnectorContext tapConnectorContext, TapTable tapTable, MysqlSnapshotOffset mysqlSnapshotOffset,
+							   Predicate<?> stop, BiConsumer<Map<String, Object>, MysqlSnapshotOffset> consumer) throws Throwable {
+		SqlMaker sqlMaker = new MysqlMaker();
+		String sql = sqlMaker.selectSql(tapConnectorContext, tapTable, mysqlSnapshotOffset);
 		Collection<String> pks = tapTable.primaryKeys();
-		List<String> whereList = new ArrayList<>();
-		List<String> orderList = new ArrayList<>();
-		if (MapUtils.isNotEmpty(mysqlSnapshotOffset.getOffset())) {
-			for (Map.Entry<String, Object> entry : mysqlSnapshotOffset.getOffset().entrySet()) {
-				String key = entry.getKey();
-				Object value = entry.getValue();
-				if (value instanceof Number) {
-					whereList.add(key + ">" + value);
-				} else {
-					whereList.add(key + ">'" + value + "'");
-				}
-				orderList.add(key + " ASC");
-			}
-		}
-		if (CollectionUtils.isNotEmpty(pks)) {
-			for (String pk : pks) {
-				orderList.add(pk + " ASC");
-			}
-		} else {
-			TapLogger.info(TAG, "Table {} not support snapshot offset", tapTable.getName());
-		}
-		if (CollectionUtils.isNotEmpty(whereList)) {
-			sql += " WHERE " + String.join(" AND ", whereList);
-		}
-		if (CollectionUtils.isNotEmpty(orderList)) {
-			sql += " ORDER BY " + String.join(",", orderList);
-		}
 		AtomicLong row = new AtomicLong(0L);
-		try {
-			this.mysqlJdbcContext.queryWithStream(sql, rs -> {
-				ResultSetMetaData metaData = rs.getMetaData();
-				while (rs.next()) {
-					if (null != stop && stop.test(null)) {
-						break;
-					}
-					row.incrementAndGet();
-					Map<String, Object> data = new HashMap<>();
-					for (int i = 0; i < metaData.getColumnCount(); i++) {
-						String columnName = metaData.getColumnName(i + 1);
-						try {
-							Object value = rs.getObject(i + 1);
-							data.put(columnName, value);
-							if (pks.contains(columnName)) {
-								mysqlSnapshotOffset.getOffset().put(columnName, value);
-							}
-						} catch (Exception e) {
-							throw new Exception("Read column value failed, row: " + row.get() + ", column name: " + columnName + ", data: " + data + "; Error: " + e.getMessage(), e);
-						}
-					}
-					consumer.accept(data, mysqlSnapshotOffset);
+		this.mysqlJdbcContext.queryWithStream(sql, rs -> {
+			ResultSetMetaData metaData = rs.getMetaData();
+			while (rs.next()) {
+				if (null != stop && stop.test(null)) {
+					break;
 				}
-			});
-		} catch (Exception e) {
-			throw new Exception("Batch read table " + tapTable.getName() + " failed, sql: " + sql + "; Error: " + e.getMessage(), e);
-		}
+				row.incrementAndGet();
+				Map<String, Object> data = new HashMap<>();
+				for (int i = 0; i < metaData.getColumnCount(); i++) {
+					String columnName = metaData.getColumnName(i + 1);
+					try {
+						Object value = rs.getObject(i + 1);
+						data.put(columnName, value);
+						if (pks.contains(columnName)) {
+							mysqlSnapshotOffset.getOffset().put(columnName, value);
+						}
+					} catch (Exception e) {
+						throw new Exception("Read column value failed, row: " + row.get() + ", column name: " + columnName + ", data: " + data + "; Error: " + e.getMessage(), e);
+					}
+				}
+				consumer.accept(data, mysqlSnapshotOffset);
+			}
+		});
+	}
+
+	public void readWithFilter(TapConnectorContext tapConnectorContext, TapTable tapTable, TapAdvanceFilter tapAdvanceFilter,
+							   Predicate<?> stop, Consumer<Map<String, Object>> consumer) throws Throwable {
+		SqlMaker sqlMaker = new MysqlMaker();
+		String sql = sqlMaker.selectSql(tapConnectorContext, tapTable, tapAdvanceFilter);
+		AtomicLong row = new AtomicLong(0L);
+		this.mysqlJdbcContext.queryWithStream(sql, rs -> {
+			ResultSetMetaData metaData = rs.getMetaData();
+			while (rs.next()) {
+				if (null != stop && stop.test(null)) {
+					break;
+				}
+				row.incrementAndGet();
+				Map<String, Object> data = new HashMap<>();
+				for (int i = 0; i < metaData.getColumnCount(); i++) {
+					String columnName = metaData.getColumnName(i + 1);
+					try {
+						Object value = rs.getObject(i + 1);
+						data.put(columnName, value);
+					} catch (Exception e) {
+						throw new Exception("Read column value failed, row: " + row.get() + ", column name: " + columnName + ", data: " + data + "; Error: " + e.getMessage(), e);
+					}
+				}
+				consumer.accept(data);
+			}
+		});
 	}
 }

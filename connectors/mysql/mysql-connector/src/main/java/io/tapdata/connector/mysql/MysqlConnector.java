@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 public class MysqlConnector extends ConnectorBase {
 
 	private static final String TAG = MysqlConnector.class.getSimpleName();
+	private static final int MAX_FILTER_RESULT_SIZE = 100;
 	private MysqlJdbcContext mysqlJdbcContext;
 	private MysqlReader mysqlReader;
 	private MysqlWriter mysqlWriter;
@@ -59,8 +60,8 @@ public class MysqlConnector extends ConnectorBase {
 		connectorFunctions.supportClearTable(this::clearTable);
 		connectorFunctions.supportBatchCount(this::batchCount);
 		connectorFunctions.supportBatchRead(this::batchRead);
-		connectorFunctions.supportStreamRead(this::streamRead);
-		connectorFunctions.supportStreamOffset(this::streamOffset);
+//		connectorFunctions.supportStreamRead(this::streamRead);
+//		connectorFunctions.supportStreamOffset(this::streamOffset);
 		connectorFunctions.supportQueryByAdvanceFilter(this::query);
 		connectorFunctions.supportWriteRecord(this::writeRecord);
 	}
@@ -85,31 +86,21 @@ public class MysqlConnector extends ConnectorBase {
 
 	private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) throws Throwable {
 		String tableId = tapClearTableEvent.getTableId();
-		try (
-				MysqlJdbcContext mysqlJdbcContext = new MysqlJdbcContext(tapConnectorContext)
-		) {
-			if (mysqlJdbcContext.tableExists(tableId)) {
-				mysqlJdbcContext.clearTable(tableId);
-			} else {
-				DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
-				String database = connectionConfig.getString("database");
-				TapLogger.warn(TAG, "Table \"{}.{}\" not exists, will skip clear table", database, tableId);
-			}
+		if (mysqlJdbcContext.tableExists(tableId)) {
+			mysqlJdbcContext.clearTable(tableId);
+		} else {
+			DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
+			String database = connectionConfig.getString("database");
+			TapLogger.warn(TAG, "Table \"{}.{}\" not exists, will skip clear table", database, tableId);
 		}
 	}
 
 	private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) throws Throwable {
-		try (
-				MysqlJdbcContext mysqlJdbcContext = new MysqlJdbcContext(tapConnectorContext)
-		) {
-			mysqlJdbcContext.dropTable(tapDropTableEvent.getTableId());
-		}
+		mysqlJdbcContext.dropTable(tapDropTableEvent.getTableId());
 	}
 
 	private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) throws Throwable {
-		try (
-				MysqlJdbcContext mysqlJdbcContext = new MysqlJdbcContext(tapConnectorContext)
-		) {
+		try {
 			if (mysqlJdbcContext.tableExists(tapCreateTableEvent.getTableId())) {
 				DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
 				String database = connectionConfig.getString("database");
@@ -145,7 +136,7 @@ public class MysqlConnector extends ConnectorBase {
 			mysqlSnapshotOffset = new MysqlSnapshotOffset();
 		}
 		List<TapEvent> tempList = new ArrayList<>();
-		this.mysqlReader.batchRead(tapConnectorContext, tapTable, mysqlSnapshotOffset, n -> !isAlive(), (data, snapshotOffset) -> {
+		this.mysqlReader.readWithOffset(tapConnectorContext, tapTable, mysqlSnapshotOffset, n -> !isAlive(), (data, snapshotOffset) -> {
 			TapRecordEvent tapRecordEvent = tapRecordWrapper(tapConnectorContext, null, data, tapTable, "i");
 			tempList.add(tapRecordEvent);
 			if (tempList.size() == batchSize) {
@@ -159,8 +150,25 @@ public class MysqlConnector extends ConnectorBase {
 		}
 	}
 
-	private void query(TapConnectorContext tapConnectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> filterResultsConsumer) {
-
+	private void query(TapConnectorContext tapConnectorContext, TapAdvanceFilter tapAdvanceFilter, TapTable tapTable, Consumer<FilterResults> consumer) throws Throwable {
+		FilterResults filterResults = new FilterResults();
+		filterResults.setFilter(tapAdvanceFilter);
+		try {
+			this.mysqlReader.readWithFilter(tapConnectorContext, tapTable, tapAdvanceFilter, n -> !isAlive(), data -> {
+				filterResults.add(data);
+				if (filterResults.getResults().size() == MAX_FILTER_RESULT_SIZE) {
+					consumer.accept(filterResults);
+					filterResults.getResults().clear();
+				}
+			});
+			if (CollectionUtils.isNotEmpty(filterResults.getResults())) {
+				consumer.accept(filterResults);
+				filterResults.getResults().clear();
+			}
+		} catch (Throwable e) {
+			filterResults.setError(e);
+			consumer.accept(filterResults);
+		}
 	}
 
 	private void streamRead(TapConnectorContext tapConnectorContext, List<String> tables, Object offset, int batchSize, StreamReadConsumer consumer) {
@@ -203,40 +211,31 @@ public class MysqlConnector extends ConnectorBase {
 
 	@Override
 	public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
-		try (
-				MysqlJdbcContext mysqlJdbcContext = new MysqlJdbcContext(connectionContext)
-		) {
-			MysqlSchemaLoader mysqlSchemaLoader = new MysqlSchemaLoader(mysqlJdbcContext);
-			mysqlSchemaLoader.discoverSchema(consumer, tableSize);
-		}
-
+		MysqlSchemaLoader mysqlSchemaLoader = new MysqlSchemaLoader(mysqlJdbcContext);
+		mysqlSchemaLoader.discoverSchema(consumer, tableSize);
 	}
 
 	@Override
 	public void connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer) throws Throwable {
-		try (
-				MysqlJdbcContext mysqlJdbcContext = new MysqlJdbcContext(databaseContext)
-		) {
-			MysqlConnectionTest mysqlConnectionTest = new MysqlConnectionTest(mysqlJdbcContext);
-			TestItem testHostPort = mysqlConnectionTest.testHostPort(databaseContext);
-			consumer.accept(testHostPort);
-			if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
-				return;
-			}
-			TestItem testConnect = mysqlConnectionTest.testConnect();
-			consumer.accept(testConnect);
-			if (testConnect.getResult() == TestItem.RESULT_FAILED) {
-				return;
-			}
-			TestItem testDatabaseVersion = mysqlConnectionTest.testDatabaseVersion();
-			consumer.accept(testDatabaseVersion);
-			if (testDatabaseVersion.getResult() == TestItem.RESULT_FAILED) {
-				return;
-			}
-			consumer.accept(mysqlConnectionTest.testBinlogMode());
-			consumer.accept(mysqlConnectionTest.testBinlogRowImage());
-			consumer.accept(mysqlConnectionTest.testCDCPrivileges());
-			consumer.accept(mysqlConnectionTest.testCreateTablePrivilege(databaseContext));
+		MysqlConnectionTest mysqlConnectionTest = new MysqlConnectionTest(mysqlJdbcContext);
+		TestItem testHostPort = mysqlConnectionTest.testHostPort(databaseContext);
+		consumer.accept(testHostPort);
+		if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
+			return;
 		}
+		TestItem testConnect = mysqlConnectionTest.testConnect();
+		consumer.accept(testConnect);
+		if (testConnect.getResult() == TestItem.RESULT_FAILED) {
+			return;
+		}
+		TestItem testDatabaseVersion = mysqlConnectionTest.testDatabaseVersion();
+		consumer.accept(testDatabaseVersion);
+		if (testDatabaseVersion.getResult() == TestItem.RESULT_FAILED) {
+			return;
+		}
+		consumer.accept(mysqlConnectionTest.testBinlogMode());
+		consumer.accept(mysqlConnectionTest.testBinlogRowImage());
+		consumer.accept(mysqlConnectionTest.testCDCPrivileges());
+		consumer.accept(mysqlConnectionTest.testCreateTablePrivilege(databaseContext));
 	}
 }

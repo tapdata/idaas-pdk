@@ -1,16 +1,21 @@
 package io.tapdata.connector.mysql;
 
+import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.QueryOperator;
+import io.tapdata.pdk.apis.entity.SortOn;
+import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +53,91 @@ public class MysqlMaker implements SqlMaker {
 
 		String sql = String.format(CREATE_TABLE_TEMPLATE, database, tapTable.getId(), fieldSql, tablePropertiesSql);
 		return new String[]{sql};
+	}
+
+	@Override
+	public String selectSql(TapConnectorContext tapConnectorContext, TapTable tapTable, MysqlSnapshotOffset mysqlSnapshotOffset) throws Throwable {
+		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		String tableId = tapTable.getId();
+		String sql = String.format(MysqlJdbcContext.SELECT_TABLE, database, tableId);
+		Collection<String> pks = tapTable.primaryKeys();
+		List<String> whereList = new ArrayList<>();
+		List<String> orderList = new ArrayList<>();
+		if (MapUtils.isNotEmpty(mysqlSnapshotOffset.getOffset())) {
+			for (Map.Entry<String, Object> entry : mysqlSnapshotOffset.getOffset().entrySet()) {
+				String key = entry.getKey();
+				Object value = entry.getValue();
+				if (value instanceof Number) {
+					whereList.add(key + ">" + value);
+				} else {
+					whereList.add(key + ">'" + value + "'");
+				}
+				orderList.add(key + " ASC");
+			}
+		}
+		if (CollectionUtils.isNotEmpty(pks)) {
+			for (String pk : pks) {
+				orderList.add(pk + " ASC");
+			}
+		} else {
+			TapLogger.info(TAG, "Table {} not support snapshot offset", tapTable.getName());
+		}
+		if (CollectionUtils.isNotEmpty(whereList)) {
+			sql += " WHERE " + String.join(" AND ", whereList);
+		}
+		if (CollectionUtils.isNotEmpty(orderList)) {
+			sql += " ORDER BY " + String.join(",", orderList);
+		}
+		return sql;
+	}
+
+	@Override
+	public String selectSql(TapConnectorContext tapConnectorContext, TapTable tapTable, TapAdvanceFilter tapAdvanceFilter) throws Throwable {
+		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		String tableId = tapTable.getId();
+		String sql = String.format(MysqlJdbcContext.SELECT_TABLE, database, tableId);
+		List<QueryOperator> operators = tapAdvanceFilter.getOperators();
+		if (CollectionUtils.isNotEmpty(operators)) {
+			List<String> whereList = new ArrayList<>();
+			for (QueryOperator operator : operators) {
+				String key = operator.getKey();
+				Object value = operator.getValue();
+				int op = operator.getOperator();
+				QueryOperatorEnum queryOperatorEnum = QueryOperatorEnum.fromOp(op);
+				String opStr = queryOperatorEnum.getOpStr();
+				if (value instanceof Number) {
+					whereList.add(key + opStr + value);
+				} else {
+					whereList.add(key + opStr + "'" + value + "'");
+				}
+			}
+			sql += " WHERE " + String.join(" AND ", whereList);
+		}
+		List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
+		if (CollectionUtils.isNotEmpty(sortOnList)) {
+			List<String> orderList = new ArrayList<>();
+			for (SortOn sortOn : sortOnList) {
+				String key = sortOn.getKey();
+				int sort = sortOn.getSort();
+				if (sort == SortOn.ASCENDING) {
+					orderList.add(key + " ASC");
+				} else if (sort == SortOn.DESCENDING) {
+					orderList.add(key + " DESC");
+				}
+			}
+			sql += " ORDER BY " + String.join(",", orderList);
+		}
+		Integer limit = tapAdvanceFilter.getLimit();
+		if (null != limit && limit.compareTo(0) > 0) {
+			sql += " LIMIT " + limit;
+		}
+		Integer skip = tapAdvanceFilter.getSkip();
+		if (null != skip && skip.compareTo(0) > 0) {
+			sql += " OFFSET " + skip;
+		}
+		return sql;
 	}
 
 	protected String createTableAppendField(TapField tapField) {
@@ -124,5 +214,38 @@ public class MysqlMaker implements SqlMaker {
 		}
 		constraintName += RandomStringUtils.randomAlphabetic(4).toUpperCase();
 		return constraintName;
+	}
+
+	private enum QueryOperatorEnum {
+		GT(QueryOperator.GT, ">"),
+		GTE(QueryOperator.GTE, ">="),
+		LE(QueryOperator.LT, "<"),
+		LTE(QueryOperator.LTE, "<="),
+		;
+
+		private int op;
+		private String opStr;
+
+		QueryOperatorEnum(int op, String opStr) {
+			this.op = op;
+			this.opStr = opStr;
+		}
+
+		public String getOpStr() {
+			return opStr;
+		}
+
+		private static Map<String, QueryOperatorEnum> opMap;
+
+		static {
+			opMap = new HashMap<>();
+			for (QueryOperatorEnum queryOperatorEnum : QueryOperatorEnum.values()) {
+				opMap.put(String.valueOf(queryOperatorEnum.op), queryOperatorEnum);
+			}
+		}
+
+		public static QueryOperatorEnum fromOp(int op) {
+			return opMap.get(String.valueOf(op));
+		}
 	}
 }
