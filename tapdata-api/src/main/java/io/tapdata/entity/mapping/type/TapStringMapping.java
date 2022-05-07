@@ -6,6 +6,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.type.TapType;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import static io.tapdata.entity.simplify.TapSimplify.tapString;
@@ -50,30 +51,30 @@ public class TapStringMapping extends TapBytesBase {
     }
 
     @Override
-    public long matchingScore(TapField field) {
+    public BigDecimal matchingScore(TapField field) {
         if (field.getTapType() instanceof TapString) {
             TapString tapString = (TapString) field.getTapType();
 
             //field is primary key, but this type is not able to be primary type.
             if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
-                return Long.MIN_VALUE;
+                return BigDecimal.valueOf(-Double.MAX_VALUE);
             }
             Long theBytes = bytes;
             if(theBytes != null)
                 theBytes = theBytes * byteRatio;
             Long width = tapString.getBytes();
             if(width == null && theBytes != null) {
-                return theBytes;
+                return BigDecimal.valueOf(theBytes);
             } else if(theBytes != null) {
 //                width = getFromTapTypeBytes(width);
                 if(width <= theBytes) {
-                    return (Long.MAX_VALUE - (theBytes - width));
+                    return BigDecimal.valueOf(Long.MAX_VALUE - (theBytes - width));
                 } else {
-                    return theBytes - width; // unacceptable
+                    return BigDecimal.valueOf(theBytes - width); // unacceptable
                 }
             }
-            return 0L;
+            return BigDecimal.ZERO;
         }
-        return Long.MIN_VALUE;
+        return BigDecimal.valueOf(-Double.MAX_VALUE);
     }
 }

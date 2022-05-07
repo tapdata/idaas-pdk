@@ -6,6 +6,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapBinary;
 import io.tapdata.entity.schema.type.TapType;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -45,7 +46,7 @@ public class TapBinaryMapping extends TapBytesBase {
     }
 
     @Override
-    public long matchingScore(TapField field) {
+    public BigDecimal matchingScore(TapField field) {
         if (field.getTapType() instanceof TapBinary) {
             TapBinary tapBinary = (TapBinary) field.getTapType();
 
@@ -54,18 +55,18 @@ public class TapBinaryMapping extends TapBytesBase {
                 theBytes = theBytes * byteRatio;
             Long width = tapBinary.getBytes();
             if(width == null && theBytes != null) {
-                return theBytes;
+                return BigDecimal.valueOf(theBytes);
             } else if(theBytes != null) {
 //                width = getFromTapTypeBytes(width);
                 if(width <= theBytes) {
-                    return (Long.MAX_VALUE - (theBytes - width));
+                    return BigDecimal.valueOf(Long.MAX_VALUE - (theBytes - width));
                 } else {
-                    return theBytes - width; // unacceptable
+                    return BigDecimal.valueOf(theBytes - width); // unacceptable
                 }
             }
 
-            return 0L;
+            return BigDecimal.ZERO;
         }
-        return Long.MIN_VALUE;
+        return BigDecimal.valueOf(-Double.MAX_VALUE);
     }
 }

@@ -5,6 +5,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapArray;
 import io.tapdata.entity.schema.type.TapType;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -26,10 +27,10 @@ public class TapArrayMapping extends TapSizeBase {
     }
 
     @Override
-    public long matchingScore(TapField field) {
+    public BigDecimal matchingScore(TapField field) {
         if (field.getTapType() instanceof TapArray) {
-            return 0L;
+            return BigDecimal.ZERO;
         }
-        return Long.MIN_VALUE;
+        return BigDecimal.valueOf(-Double.MAX_VALUE);
     }
 }

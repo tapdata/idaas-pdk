@@ -12,7 +12,9 @@ import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.utils.InstanceFactory;
+import sun.nio.cs.ext.Big5;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,11 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             TapField field = entry.getValue();
 
             String dataType = null;
+            //User custom codec
+            if(dataType == null && field.getTapType() != null) {
+                dataType = targetCodecFilterManager.getDataTypeByTapType(field.getTapType().getClass());
+            }
+
             //Find best codec
             if(dataType == null) {
                 TapResult<String> result = calculateBestTypeMapping(field, targetMatchingMap);
@@ -47,11 +54,6 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                         }
                     }
                 }
-            }
-
-            //User custom codec
-            if(dataType == null && field.getTapType() != null) {
-                dataType = targetCodecFilterManager.getDataTypeByTapType(field.getTapType().getClass());
             }
 
             //handle by default, find largest string type as default
@@ -89,8 +91,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                     return false;
                 }
                 if(tapMapping.getTo().equals(tapString.getClass().getSimpleName())) {
-                    long score = tapMapping.matchingScore(field);
-                    if(score >= 0) {
+                    BigDecimal score = tapMapping.matchingScore(field);
+                    if(score.compareTo(BigDecimal.ZERO) > 0) {
                         hitTapMapping.input(expressionValueEntry.getKey(), tapMapping, score);
 //                        if(score > hitTapMapping.score) {
 //                            hitTapMapping.score = score;
@@ -120,9 +122,9 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
     static class HitTapMapping {
         String hitExpression;
         TapMapping tapMapping;
-        long score = Long.MIN_VALUE;
+        BigDecimal score = BigDecimal.valueOf(-Double.MAX_VALUE);
 
-        public HitTapMapping(String hitExpression, TapMapping tapMapping, long score) {
+        public HitTapMapping(String hitExpression, TapMapping tapMapping, BigDecimal score) {
             this.hitExpression = hitExpression;
             this.tapMapping = tapMapping;
             this.score = score;
@@ -133,18 +135,18 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         TreeMap<Integer, HitTapMapping> sortedMap = new TreeMap<>();
         HitTapMapping bestOne = null;
 
-        void input(String hitExpression, TapMapping tapMapping, long score) {
-            if(bestOne == null || score > bestOne.score) {
+        void input(String hitExpression, TapMapping tapMapping, BigDecimal score) {
+            if(bestOne == null || score.compareTo(bestOne.score) > 0) {
                 sortedMap.clear();
                 bestOne = new HitTapMapping(hitExpression, tapMapping, score);
                 sortedMap.put(tapMapping.getPriority(), bestOne);
-            } else if(score == bestOne.score) {
+            } else if(score.equals(bestOne.score)) {
                 sortedMap.put(tapMapping.getPriority(), new HitTapMapping(hitExpression, tapMapping, score));
             }
         }
 
         HitTapMapping getBestOne() {
-            Map.Entry<Integer, HitTapMapping> entry = sortedMap.firstEntry();
+            Map.Entry<Integer, HitTapMapping> entry = sortedMap.lastEntry();
             if(entry != null)
                 return entry.getValue();
             return null;
@@ -164,8 +166,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                     return false;
                 }
 
-                long score = tapMapping.matchingScore(field);
-                if(score >= 0) {
+                BigDecimal score = tapMapping.matchingScore(field);
+                if(score.compareTo(BigDecimal.ZERO) >= 0) {
                     bestTapMapping.input(expressionValueEntry.getKey(), tapMapping, score);
 //                    if(score > bestTapMapping.score) {
 //                        bestTapMapping.score = score;
@@ -191,7 +193,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         HitTapMapping notHitBestOne = bestNotHitTapMapping.getBestOne();
         if(notHitBestOne != null && notHitBestOne.tapMapping != null && notHitBestOne.hitExpression != null) {
             TapResult<String> tapResult = notHitBestOne.tapMapping.fromTapType(notHitBestOne.hitExpression, field.getTapType());
-            tapResult.addItem(new ResultItem("BEST_IN_UNMATCHED", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Select best in unmatched TapMapping, " + notHitBestOne.hitExpression));
+            if(tapResult != null)
+                tapResult.addItem(new ResultItem("BEST_IN_UNMATCHED", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Select best in unmatched TapMapping, " + notHitBestOne.hitExpression));
             return tapResult;
         }
         return null;

@@ -3,6 +3,8 @@ package io.tapdata.entity.schema.type;
 import io.tapdata.entity.schema.value.TapNumberValue;
 import io.tapdata.entity.schema.value.TapValue;
 
+import java.math.BigDecimal;
+
 import static io.tapdata.entity.simplify.TapSimplify.tapNumber;
 
 public class TapNumber extends TapType {
@@ -20,6 +22,12 @@ public class TapNumber extends TapType {
         return this;
     }
 
+    private Boolean fixed;
+    public TapNumber fixed(Boolean fixed) {
+        this.fixed = fixed;
+        return this;
+    }
+
     private Boolean unsigned;
     public TapNumber unsigned(Boolean unsigned) {
         this.unsigned = unsigned;
@@ -31,22 +39,16 @@ public class TapNumber extends TapType {
         this.zerofill = zerofill;
         return this;
     }
-//    /**
-//     * 最小值
-//     */
-//    private Long min;
-//    public TapNumber min(Long min) {
-//        this.min = min;
-//        return this;
-//    }
-//    /**
-//     * 最大值
-//     */
-//    private Long max;
-//    public TapNumber max(Long max) {
-//        this.max = max;
-//        return this;
-//    }
+    private BigDecimal minValue;
+    public TapNumber minValue(BigDecimal minValue) {
+        this.minValue = minValue;
+        return this;
+    }
+    private BigDecimal maxValue;
+    public TapNumber maxValue(BigDecimal maxValue) {
+        this.maxValue = maxValue;
+        return this;
+    }
     /**
      *
      */
@@ -112,9 +114,40 @@ public class TapNumber extends TapType {
         this.zerofill = zerofill;
     }
 
+    public BigDecimal getMinValue() {
+        return minValue;
+    }
+
+    public void setMinValue(BigDecimal minValue) {
+        this.minValue = minValue;
+    }
+
+    public BigDecimal getMaxValue() {
+        return maxValue;
+    }
+
+    public void setMaxValue(BigDecimal maxValue) {
+        this.maxValue = maxValue;
+    }
+
+    public Boolean getFixed() {
+        return fixed;
+    }
+
+    public void setFixed(Boolean fixed) {
+        this.fixed = fixed;
+    }
+
     @Override
     public TapType cloneTapType() {
-        return tapNumber().bit(bit).precision(precision).scale(scale).unsigned(unsigned).zerofill(zerofill);
+        return tapNumber()
+                .bit(bit)
+                .precision(precision)
+                .scale(scale)
+                .unsigned(unsigned)
+                .zerofill(zerofill)
+                .maxValue(maxValue)
+                .minValue(minValue);
     }
 
     @Override
