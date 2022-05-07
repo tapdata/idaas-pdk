@@ -152,16 +152,16 @@ class TargetTypesGeneratorTest {
                 "}";
         String targetTypeExpression = "{\n" +
                 "    \"char[($byte)]\":{\"byte\":255, \"byteRatio\": 2, \"to\": \"TapString\", \"defaultByte\": 1},\n" +
-                "    \"myint[($bit)][unsigned]\":{\"bit\":48, \"bitRatio\": 2, \"unsigned\":\"unsigned\", \"to\":\"TapNumber\"},\n" +
                 "    \"decimal[($precision,$scale)]\":{\"precision\": [1, 27], \"defaultPrecision\": 10, \"scale\": [0, 9], \"defaultScale\": 0, \"to\": \"TapNumber\"},\n" +
                 "    \"string\":{\"byte\":\"2147483643\", \"to\":\"TapString\"},\n" +
+                "    \"myint[($bit)][unsigned]\":{\"bit\":48, \"bitRatio\": 2, \"unsigned\":\"unsigned\", \"to\":\"TapNumber\"},\n" +
 
+                "    \"largeint\":{\"bit\":128, \"to\":\"TapNumber\"},\n" +
                 "    \"boolean\":{\"bit\":8, \"unsigned\":\"\", \"to\":\"TapNumber\"},\n" +
                 "    \"tinyint\":{\"bit\":8, \"to\":\"TapNumber\"},\n" +
                 "    \"smallint\":{\"bit\":16, \"to\":\"TapNumber\"},\n" +
                 "    \"int\":{\"bit\":32, \"to\":\"TapNumber\"},\n" +
                 "    \"bigint\":{\"bit\":64, \"to\":\"TapNumber\"},\n" +
-                "    \"largeint\":{\"bit\":128, \"to\":\"TapNumber\"},\n" +
                 "    \"float\":{\"bit\":32, \"to\":\"TapNumber\"},\n" +
                 "    \"double\":{\"bit\":64, \"to\":\"TapNumber\"},\n" +
                 "    \"date\":{\"byte\":3, \"range\":[\"0000-01-01\", \"9999-12-31\"], \"to\":\"TapDate\"},\n" +
@@ -176,17 +176,7 @@ class TargetTypesGeneratorTest {
                 .add(field("longtext", "longtext")) // exceed the max of target types
                 .add(field("varchar(10)", "varchar(10)"))
                 .add(field("decimal(27, -3)", "decimal(27, -3)"))
-//                .add(field("tinytext", "tinytext"))
-//                .add(field("datetime", "datetime"))
-//                .add(field("bigint", "bigint"))
-//                .add(field("bigint unsigned", "bigint unsigned"))
-//                .add(field("char(300)", "char(300)"))
-//                .add(field("double(32)", "double(32)"))
-//                .add(field("mediumtext", "mediumtext"))
-//                .add(field("bit(8)", "bit(8)")) //no binary in target types
-//                .add(field("binary(200)", "binary(200)"))
-//                .add(field("timestamp", "timestamp"))
-//                .add(field("mediumint unsigned", "mediumint unsigned"))
+
 
         ;
         tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
@@ -196,13 +186,7 @@ class TargetTypesGeneratorTest {
 
         TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
 
-        //源端一个byte等于3个byte， 目标端一个byte等于2个byte的case， 适用于解决byte有时是byte， 有时是char的问题
-        //Source: "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"byteRatio\": 3, \"fixed\": false, \"to\": \"TapString\"},\n" +
-        //Target: "    \"char[($byte)]\":{\"byte\":255, \"byteRatio\": 2, \"to\": \"TapString\", \"defaultByte\": 1},\n" +
         LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
-        TapField varchar10Field = nameFieldMap.get("varchar(10)");
-        assertEquals("char(15)", varchar10Field.getDataType());
-        assertEquals(30, ((TapString)varchar10Field.getTapType()).getBytes());
 
         //源端一个bit等于3个bit， 目标端一个bit等于2个bit的case， 适用于解决bit有时是bit， 有时是byte的问题。
         //Source: "    \"int[($bit)][unsigned][zerofill]\": {\"bit\": 32, \"bitRatio\": 3, \"unsigned\": \"unsigned\", \"zerofill\": \"zerofill\", \"to\": \"TapNumber\"},\n" +
@@ -210,6 +194,13 @@ class TargetTypesGeneratorTest {
         TapField int32unsignedField = nameFieldMap.get("int(32) unsigned");
         assertEquals("myint(48) unsigned", int32unsignedField.getDataType());
         assertEquals(96, ((TapNumber)int32unsignedField.getTapType()).getBit());
+
+        //源端一个byte等于3个byte， 目标端一个byte等于2个byte的case， 适用于解决byte有时是byte， 有时是char的问题
+        //Source: "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"byteRatio\": 3, \"fixed\": false, \"to\": \"TapString\"},\n" +
+        //Target: "    \"char[($byte)]\":{\"byte\":255, \"byteRatio\": 2, \"to\": \"TapString\", \"defaultByte\": 1},\n" +
+        TapField varchar10Field = nameFieldMap.get("varchar(10)");
+        assertEquals("char(15)", varchar10Field.getDataType());
+        assertEquals(30, ((TapString)varchar10Field.getTapType()).getBytes());
 
         //源端scale是负数， 目标端不支持负数的case
         //Source: "    \"decimal($precision,$scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"to\": \"TapNumber\"},\n" +
@@ -277,6 +268,7 @@ class TargetTypesGeneratorTest {
                 "\"int\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647]},\n" +
                 "\"int unsigned\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ 0, 4294967295], \"unsigned\": \"unsigned\"},\n" +
                 "\"bigint\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807]},\n" +
+                "\"superbigint\": {\"to\": \"TapNumber\",\"bit\": 640},\n" +
                 "\"bigint unsigned\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709551615], \"unsigned\": \"unsigned\"},\n" +
                 "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10,\"defaultScale\": 0,\"unsigned\": \"unsigned\"},\n" +
                 "\"float($precision,$scale)[unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 30],\"scale\": [ 0, 30],\"value\": [ \"-3.402823466E+38\", \"3.402823466E+38\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
@@ -297,7 +289,8 @@ class TargetTypesGeneratorTest {
                 .add(field("float(8)", "float(8)"))
                 .add(field("double(256) unsigned", "double(256) unsigned"))
                 .add(field("double", "double"))
-
+                .add(field("bigint(150)", "bigint(150)"))
+                .add(field("bigint(50)", "bigint(50)"))
         ;
         tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
 
@@ -321,5 +314,17 @@ class TargetTypesGeneratorTest {
 
         TapField float8Field = nameFieldMap.get("float(8)");
         assertEquals("float", float8Field.getDataType());
+
+        TapField double256UnsignedField = nameFieldMap.get("double(256) unsigned");
+        assertEquals("double(77,6) unsigned", double256UnsignedField.getDataType());
+
+        TapField doubleField = nameFieldMap.get("double");
+        assertEquals("double(77,6)", doubleField.getDataType());
+
+        TapField bigint150Field = nameFieldMap.get("bigint(150)");
+        assertEquals("superbigint", bigint150Field.getDataType());
+
+        TapField bigint50Field = nameFieldMap.get("bigint(50)");
+        assertEquals("bigint", bigint50Field.getDataType());
     }
 }

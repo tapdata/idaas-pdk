@@ -166,6 +166,7 @@ public class TapNumberMapping extends TapMapping {
             if(theBit == null)
                 theBit = defaultBit;
             if(theBit != null) {
+                theBit = theBit * bitRatio;
                 if(unsigned != null && unsignedMinValue == null) {
                     unsignedMinValue = TypeUtils.minValueForBit(theBit, true);
                 }
@@ -275,6 +276,10 @@ public class TapNumberMapping extends TapMapping {
             theMinValue = BigDecimal.valueOf(-Double.MAX_VALUE);
             theMaxValue = BigDecimal.valueOf(Double.MAX_VALUE);
         }
+        int actualPrecision = theMaxValue.precision();
+        if(precision > actualPrecision) {
+            precision = actualPrecision;
+        }
 
         return tapNumber()
                 .fixed(fixed)
@@ -286,10 +291,15 @@ public class TapNumberMapping extends TapMapping {
                 .unsigned(theUnsigned)
                 .zerofill(theZerofill);
     }
-    final BigDecimal valueValue = BigDecimal.valueOf(10000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
-    final BigDecimal scaleValue = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
-    final BigDecimal fixedValue = BigDecimal.valueOf(100000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
-    final BigDecimal unsignedValue = BigDecimal.valueOf(10000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+//    final BigDecimal valueValue = BigDecimal.valueOf(10000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+//    final BigDecimal scaleValue =  BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+//    final BigDecimal fixedValue =   BigDecimal.valueOf(100000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+//    final BigDecimal unsignedValue = BigDecimal.valueOf(10000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+    final BigDecimal valueValue =     BigDecimal.valueOf(100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+    final BigDecimal scaleValue =     BigDecimal.valueOf(100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+    final BigDecimal fixedValue =       BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+    final BigDecimal unsignedValue =    BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d);
+
     @Override
     public BigDecimal matchingScore(TapField field) {
         if (field.getTapType() instanceof TapNumber) {
@@ -303,6 +313,11 @@ public class TapNumberMapping extends TapMapping {
 
             BigDecimal comingMaxValue = tapNumber.getMaxValue();
             BigDecimal comingMinValue = tapNumber.getMinValue();
+
+//            final BigDecimal unsignedValue = realMaxValue.multiply(BigDecimal.TEN);
+//            final BigDecimal fixedValue =   unsignedValue.multiply(BigDecimal.TEN);
+//            final BigDecimal scaleValue =  fixedValue.multiply(BigDecimal.TEN);
+//            final BigDecimal valueValue = scaleValue.multiply(BigDecimal.TEN);
 
             if((scale != null && isScale()) ||
                     (scale == null && !isScale())) {
@@ -334,13 +349,13 @@ public class TapNumberMapping extends TapMapping {
             if(unsigned != null && unsigned) {
                 //unsigned number
                 if(unsignedMinValue != null && unsignedMaxValue != null) {
-                    score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, unsignedMinValue, unsignedMaxValue));
+                    score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, unsignedMinValue, unsignedMaxValue, valueValue));
                 } else {
-                    score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, minValue, maxValue));
+                    score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, minValue, maxValue, valueValue));
                 }
             } else {
                 //singed number
-                score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, minValue, maxValue));
+                score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, minValue, maxValue, valueValue));
             }
 
 //            Integer precision = tapNumber.getPrecision();
@@ -388,7 +403,7 @@ public class TapNumberMapping extends TapMapping {
         return BigDecimal.valueOf(-Double.MAX_VALUE);
     }
 
-    private BigDecimal calculateScoreForValue(BigDecimal comingMinValue, BigDecimal comingMaxValue, BigDecimal minValue, BigDecimal maxValue) {
+    private BigDecimal calculateScoreForValue(BigDecimal comingMinValue, BigDecimal comingMaxValue, BigDecimal minValue, BigDecimal maxValue, BigDecimal valueValue) {
         BigDecimal minDistance = comingMinValue.subtract(minValue);
         BigDecimal maxDistance = maxValue.subtract(comingMaxValue);
 
@@ -451,6 +466,8 @@ public class TapNumberMapping extends TapMapping {
                 theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(precision));
             }
             Integer scale = tapNumber.getScale();
+            if(precision != null && scale == null)
+                scale = 0;
             if (scale != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
 

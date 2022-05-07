@@ -146,7 +146,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
         }
 
         HitTapMapping getBestOne() {
-            Map.Entry<Integer, HitTapMapping> entry = sortedMap.lastEntry();
+            Map.Entry<Integer, HitTapMapping> entry = sortedMap.firstEntry();
             if(entry != null)
                 return entry.getValue();
             return null;

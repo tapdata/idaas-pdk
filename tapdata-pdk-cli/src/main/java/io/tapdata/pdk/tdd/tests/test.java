@@ -30,6 +30,8 @@ public class test {
         System.out.println("number " + (v1 * 10000000d));
         System.out.println("number " + (v2 * 100000000000000d));
         System.out.println("number " + ((v2 * 100000000000000d) + (v1 * 10000000d)));
+
+        System.out.println("aaa " + BigDecimal.valueOf(100d).multiply(BigDecimal.TEN));
     }
 
     public static BigDecimal maxValueForPrecision(int maxPrecision) {
