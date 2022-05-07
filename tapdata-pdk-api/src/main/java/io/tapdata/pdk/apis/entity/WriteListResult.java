@@ -28,6 +28,13 @@ public class WriteListResult<T> {
         errorMap.put(key, value);
         return this;
     }
+    public WriteListResult<T> addErrors(Map<T, Throwable> map) {
+        if(errorMap == null) {
+            errorMap = new HashMap<>();
+        }
+        errorMap.putAll(map);
+        return this;
+    }
 
     public WriteListResult() {}
     public WriteListResult(long insertedCount, long modifiedCount, long removedCount) {
