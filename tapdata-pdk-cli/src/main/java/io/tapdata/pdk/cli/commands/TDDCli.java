@@ -20,6 +20,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.cli.MavenCli;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.shared.invoker.*;
 import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
@@ -43,6 +44,11 @@ public class TDDCli extends CommonCli {
     private static final String TAG = TDDCli.class.getSimpleName();
     @CommandLine.Parameters(paramLabel = "FILE", description = "One ore more pdk jar files")
     File file;
+
+    @CommandLine.Option(names = { "-i", "--installProjects" }, required = false, description = "Specify the projects which need mvn install first.")
+    private List<String> installProjects;
+    @CommandLine.Option(names = { "-m", "--mavenHome" }, required = false, description = "Specify the maven home")
+    private String mavenHome;
     @CommandLine.Option(names = { "-t", "--testCase" }, required = false, description = "Specify the test class simple name to test")
     private String testClass;
     @CommandLine.Option(names = { "-c", "--testConfig" }, required = true, description = "Specify the test json configuration file")
@@ -133,9 +139,39 @@ public class TDDCli extends CommonCli {
                 throw new IllegalArgumentException("Connector project is under connectors directory, are you passing the correct connector project directory? " + file.getAbsolutePath());
             }
 
-            MavenCli mavenCli = new MavenCli();
+
+
+            if(installProjects != null && mavenHome != null) {
+                System.setProperty("maven.home", mavenHome);
+                for(String installProject : installProjects) {
+                    String pomFile = installProject;
+                    if(!pomFile.equals("pom.xml")) {
+                        pomFile = pomFile + File.separator + "pom.xml";
+                    }
+//                    int state = mavenCli.doMain(new String[]{"install", "-f", pomFile}, "./", System.out, System.out);
+
+                    InvocationRequest request = new DefaultInvocationRequest();
+                    request.setPomFile( new File( pomFile ) );
+                    request.setGoals( Collections.singletonList( "install" ) );
+
+                    Invoker invoker = new DefaultInvoker();
+                    InvocationResult result = invoker.execute( request );
+
+                    if ( result.getExitCode() != 0 )
+                    {
+                        if(result.getExecutionException() != null)
+                            System.out.println(result.getExecutionException().getMessage());
+                        System.out.println("------------- Dependency project " + pomFile + " installed Failed --------------");
+                        System.exit(0);
+                    } else {
+                        System.out.println("------------- Dependency project " + pomFile + " installed successfully -------------");
+                    }
+                }
+            }
+
             System.setProperty("maven.multiModuleProjectDirectory", file.getAbsolutePath());
             System.out.println(file.getName() + " is packaging...");
+            MavenCli mavenCli = new MavenCli();
             int state = mavenCli.doMain(new String[]{"clean", "package", "-DskipTests", "-P", "not_encrypt", "-U"}, file.getAbsolutePath(), System.out, System.out);
             if (0 == state){
                 MavenXpp3Reader reader = new MavenXpp3Reader();

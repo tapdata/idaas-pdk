@@ -4,7 +4,10 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
+import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
+import io.tapdata.pdk.core.utils.LoggerUtils;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -29,19 +32,21 @@ public class BasicTest extends PDKTestBase {
 
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 LinkedHashMap<String, TestItem> testItemMap = new LinkedHashMap<>();
+                PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+                pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                 try {
                     connectionNode.connectionTest(testItem -> {
                         Assertions.assertNotNull(testItem, "TestItem is null");
                         TestItem old = testItemMap.put(testItem.getItem(), testItem);
                         Assertions.assertNull(old, "TestItem has duplicated item " + testItem.getItem());
                     });
+                    Assertions.assertFalse(testItemMap.isEmpty(), "TestItem is needed to return at least one from connectionTest method");
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
                     Assertions.fail(throwable);
+                } finally {
+                    CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                 }
-                Assertions.assertFalse(testItemMap.isEmpty(), "TestItem is needed to return at least one from connectionTest method");
-
-                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
             });
         });
     }
@@ -53,21 +58,24 @@ public class BasicTest extends PDKTestBase {
             Assertions.assertNotNull(connectionOptions, "Missing \"connection\" key in test config json file. The value of \"connection\" key is the user input values of json form items. ");
 
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
+                PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+                pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                 List<TapTable> allTables = new ArrayList<>();
                 try {
                     connectionNode.discoverSchema(null, 10, tables -> allTables.addAll(tables));
+
+                    Assertions.assertFalse(allTables.isEmpty(), "At least one table can be discovered from discoverSchema method.");
+                    for(TapTable table : allTables) {
+                        Assertions.assertNotNull(table, "Discovered table can not be null");
+                        Assertions.assertNotNull(table.getName(), "Discovered table name can not be null");
+                        Assertions.assertNotNull(table.getId(), "Discovered table id can not be null");
+                    }
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
                     Assertions.fail(throwable);
+                } finally {
+                    CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                 }
-                Assertions.assertFalse(allTables.isEmpty(), "At least one table can be discovered from discoverSchema method.");
-                for(TapTable table : allTables) {
-                    Assertions.assertNotNull(table, "Discovered table can not be null");
-                    Assertions.assertNotNull(table.getName(), "Discovered table name can not be null");
-                    Assertions.assertNotNull(table.getId(), "Discovered table id can not be null");
-                }
-
-                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
             });
         });
     }

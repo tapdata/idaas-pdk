@@ -12,7 +12,7 @@ import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.pdk.apis.TapConnector;
-import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.entity.utils.FormatUtils;
@@ -21,9 +21,6 @@ import io.tapdata.pdk.apis.utils.TypeConverter;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.tapdata.entity.simplify.TapSimplify.fromJsonWithClass;
-import static io.tapdata.entity.simplify.TapSimplify.toJsonWithClass;
 
 public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
@@ -205,13 +202,13 @@ public abstract class ConnectorBase implements TapConnector {
     }
 
     @Override
-    public final void init(TapConnectorContext connectorContext) throws Throwable {
+    public final void init(TapConnectionContext connectionContext) throws Throwable {
         if(isAlive.compareAndSet(false, true)) {
-            onStart(connectorContext);
+            onStart(connectionContext);
         }
     }
 
-    public abstract void onStart(TapConnectorContext connectorContext) throws Throwable;
+    public abstract void onStart(TapConnectionContext connectionContext) throws Throwable;
     public abstract void onDestroy() throws Throwable;
 
     @Override

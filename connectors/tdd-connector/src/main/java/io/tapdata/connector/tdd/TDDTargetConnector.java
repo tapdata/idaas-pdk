@@ -13,7 +13,6 @@ import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.*;
-import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -260,7 +259,7 @@ public class TDDTargetConnector extends ConnectorBase {
     }
 
     @Override
-    public void onStart(TapConnectorContext connectorContext) {
+    public void onStart(TapConnectionContext connectionContext) {
 
     }
 
