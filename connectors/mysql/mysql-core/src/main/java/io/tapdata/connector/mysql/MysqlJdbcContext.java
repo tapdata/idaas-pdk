@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,6 +33,9 @@ public class MysqlJdbcContext implements AutoCloseable {
 	private static final String SELECT_MYSQL_VERSION = "select version() as version";
 	public static final String SELECT_TABLE = "SELECT t.* FROM `%s`.`%s` t";
 	private static final String SELECT_COUNT = "SELECT count(*) FROM `%s`.`%s` t";
+	private static final String CHECK_TABLE_EXISTS_SQL = "SELECT * FROM information_schema.tables WHERE TABLE_SCHEMA='%s' AND TABLE_NAME='%s'";
+	private static final String DROP_TABLE_IF_EXISTS_SQL = "DROP TABLE IF EXISTS `%s`.`%s`";
+	private static final String TRUNCATE_TABLE_SQL = "TRUNCATE TABLE `%s`.`%s`";
 
 	private static final Map<String, String> DEFAULT_PROPERTIES = new HashMap<String, String>() {{
 		put("rewriteBatchedStatements", "true");
@@ -158,6 +162,19 @@ public class MysqlJdbcContext implements AutoCloseable {
 		}
 	}
 
+	public void query(PreparedStatement preparedStatement, ResultSetConsumer resultSetConsumer) throws Throwable {
+		TapLogger.debug(TAG, "Execute query, sql: " + preparedStatement);
+		try (
+				ResultSet resultSet = preparedStatement.executeQuery()
+		) {
+			if (null != resultSet) {
+				resultSetConsumer.accept(resultSet);
+			}
+		} catch (SQLException e) {
+			throw new Exception("Execute query failed, sql: " + preparedStatement + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
+		}
+	}
+
 	public void queryWithStream(String sql, ResultSetConsumer resultSetConsumer) throws Throwable {
 		TapLogger.debug(TAG, "Execute query with stream, sql: " + sql);
 		try (
@@ -179,6 +196,18 @@ public class MysqlJdbcContext implements AutoCloseable {
 		}
 	}
 
+	public void execute(String sql) throws Throwable {
+		TapLogger.debug(TAG, "Execute sql: " + sql);
+		try (
+				Connection connection = getConnection();
+				Statement statement = connection.createStatement()
+		) {
+			statement.execute(sql);
+		} catch (SQLException e) {
+			throw new Exception("Execute sql failed, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
+		}
+	}
+
 	public int count(String tableName) throws Throwable {
 		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
 		String database = connectionConfig.getString("database");
@@ -189,6 +218,30 @@ public class MysqlJdbcContext implements AutoCloseable {
 			}
 		});
 		return count.get();
+	}
+
+	public boolean tableExists(String tableName) throws Throwable {
+		AtomicBoolean exists = new AtomicBoolean();
+		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		query(String.format(CHECK_TABLE_EXISTS_SQL, database, tableName), rs -> {
+			exists.set(rs.next());
+		});
+		return exists.get();
+	}
+
+	public void dropTable(String tableName) throws Throwable {
+		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		String sql = String.format(DROP_TABLE_IF_EXISTS_SQL, database, tableName);
+		execute(sql);
+	}
+
+	public void clearTable(String tableName) throws Throwable {
+		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		String sql = String.format(TRUNCATE_TABLE_SQL, database, tableName);
+		execute(sql);
 	}
 
 	@Override

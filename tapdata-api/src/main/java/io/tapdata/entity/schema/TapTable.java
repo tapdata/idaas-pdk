@@ -44,6 +44,8 @@ public class TapTable extends TapItem<TapField> {
      */
     private String charset;
 
+    private String comment;
+
     protected String pdkId;
     public TapTable pdkId(String pdkId) {
         this.pdkId = pdkId;
@@ -208,5 +210,13 @@ public class TapTable extends TapItem<TapField> {
 
     public void setPdkVersion(String pdkVersion) {
         this.pdkVersion = pdkVersion;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 }
