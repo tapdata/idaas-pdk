@@ -256,17 +256,16 @@ class TargetTypesGeneratorTest {
     @Test
     void numberTest() {
         String sourceTypeExpression = "{\n" +
-                "    \"int[($bit)][unsigned][zerofill]\": {\"bit\": 32, \"bitRatio\": 3, \"unsigned\": \"unsigned\", \"zerofill\": \"zerofill\", \"to\": \"TapNumber\"},\n" +
-                "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"byteRatio\": 3, \"fixed\": false, \"to\": \"TapString\"},\n" +
-                "    \"decimal($precision,$scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"to\": \"TapNumber\"},\n" +
+                "    \"int[($bit)][unsigned]\": {\"bit\": 32, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"decimal($precision,$scale)[unsigned]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"unsigned\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"fixed\": true, \"to\": \"TapNumber\"},\n" +
 
                 "    \"tinyint[($bit)][unsigned][zerofill]\": {\"bit\": 1, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
                 "    \"smallint[($bit)][unsigned][zerofill]\": {\"bit\": 4, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
                 "    \"mediumint[($bit)][unsigned][zerofill]\": {\"bit\": 8, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
                 "    \"bigint($bit)[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
                 "    \"bigint[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
-                "    \"float[($bit)][unsigned][zerofill]\": {\"bit\": 16, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
-                "    \"double[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"float[($bit)][unsigned][zerofill]\": {\"bit\": 16, \"unsigned\": \"unsigned\", \"scale\": [ 0, 6], \"fixed\": false, \"to\": \"TapNumber\"},\n" +
+                "    \"double[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"scale\": [ 0, 6], \"fixed\": false, \"to\": \"TapNumber\"},\n" +
                 "}";
         String targetTypeExpression = "{" +
                 "\"tinyint\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ 0, 255]},\n" +
@@ -276,9 +275,9 @@ class TargetTypesGeneratorTest {
                 "\"mediumint\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607]},\n" +
                 "\"mediumint unsigned\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 8,\"value\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
                 "\"int\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647]},\n" +
-                "\"int unsigned\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ 0, 4294967295]},\n" +
+                "\"int unsigned\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ 0, 4294967295], \"unsigned\": \"unsigned\"},\n" +
                 "\"bigint\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807]},\n" +
-                "\"bigint unsigned\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709551615]},\n" +
+                "\"bigint unsigned\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709551615], \"unsigned\": \"unsigned\"},\n" +
                 "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10,\"defaultScale\": 0,\"unsigned\": \"unsigned\"},\n" +
                 "\"float($precision,$scale)[unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 30],\"scale\": [ 0, 30],\"value\": [ \"-3.402823466E+38\", \"3.402823466E+38\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
                 "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
@@ -288,7 +287,16 @@ class TargetTypesGeneratorTest {
 
         TapTable sourceTable = table("test");
         sourceTable
+                .add(field("int unsigned", "int unsigned"))
                 .add(field("int(32)", "int(32)"))
+                .add(field("decimal(65,30) unsigned", "decimal(65,30) unsigned"))
+                .add(field("decimal(65,-3)", "decimal(65,-3)"))
+                .add(field("decimal(65,30)", "decimal(65,30)"))
+                .add(field("float", "float"))
+                .add(field("float unsigned", "float unsigned"))
+                .add(field("float(8)", "float(8)"))
+                .add(field("double(256) unsigned", "double(256) unsigned"))
+                .add(field("double", "double"))
 
         ;
         tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
@@ -297,6 +305,21 @@ class TargetTypesGeneratorTest {
         LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
 
         TapField int32unsignedField = nameFieldMap.get("int(32)");
-        assertEquals("tinyint", int32unsignedField.getDataType());
+        assertEquals("int", int32unsignedField.getDataType());
+
+        TapField decimal650Field = nameFieldMap.get("decimal(65,-3)");
+        assertEquals("decimal(65,0)", decimal650Field.getDataType());
+
+        TapField decimal6530Field = nameFieldMap.get("decimal(65,30)");
+        assertEquals("decimal(65,30)", decimal6530Field.getDataType());
+
+        TapField floatField = nameFieldMap.get("float");
+        assertEquals("float", floatField.getDataType());
+
+        TapField floatUnsignedField = nameFieldMap.get("float unsigned");
+        assertEquals("float(5,6) unsigned", floatUnsignedField.getDataType());
+
+        TapField float8Field = nameFieldMap.get("float(8)");
+        assertEquals("float", float8Field.getDataType());
     }
 }

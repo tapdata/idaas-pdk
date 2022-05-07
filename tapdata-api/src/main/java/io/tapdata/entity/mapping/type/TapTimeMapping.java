@@ -5,6 +5,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapTime;
 import io.tapdata.entity.schema.type.TapType;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -31,10 +32,10 @@ public class TapTimeMapping extends TapDateBase {
     }
 
     @Override
-    public long matchingScore(TapField field) {
+    public BigDecimal matchingScore(TapField field) {
         if (field.getTapType() instanceof TapTime) {
-            return 0L;
+            return BigDecimal.ZERO;
         }
-        return Long.MIN_VALUE;
+        return BigDecimal.valueOf(-Double.MAX_VALUE);
     }
 }

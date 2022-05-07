@@ -188,7 +188,7 @@ public class TDDTargetConnector extends ConnectorBase {
 
     }
 
-    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, Consumer<List<FilterResult>> listConsumer) {
+    private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, TapTable table, Consumer<List<FilterResult>> listConsumer) {
 
     }
 

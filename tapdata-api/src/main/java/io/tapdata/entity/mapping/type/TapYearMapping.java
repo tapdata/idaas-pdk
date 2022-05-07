@@ -5,6 +5,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.type.TapYear;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -46,15 +47,15 @@ public class TapYearMapping extends TapMapping {
     }
 
     @Override
-    public long matchingScore(TapField field) {
+    public BigDecimal matchingScore(TapField field) {
         if (field.getTapType() instanceof TapYear) {
 //            TapYear tapYear = (TapYear) field.getTapType();
             if(maxRange != null && minRange != null) {
-                return maxRange - minRange;
+                return BigDecimal.valueOf(maxRange - minRange);
             }
-            return 0L;
+            return BigDecimal.ZERO;
         }
-        return Long.MIN_VALUE;
+        return BigDecimal.valueOf(-Double.MAX_VALUE);
     }
 
     public Integer getMinRange() {

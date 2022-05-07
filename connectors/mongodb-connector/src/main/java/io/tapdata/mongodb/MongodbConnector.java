@@ -378,8 +378,8 @@ public class MongodbConnector extends ConnectorBase {
 
     }
 
-    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, Consumer<FilterResults> consumer) {
-        MongoCollection<Document> collection = getMongoCollection(tapAdvanceFilter.getTableId());
+    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, TapTable table, Consumer<FilterResults> consumer) {
+        MongoCollection<Document> collection = getMongoCollection(table.getId());
         FilterResults filterResults = new FilterResults();
         List<Bson> bsonList = new ArrayList<>();
         DataMap match = tapAdvanceFilter.getMatch();
