@@ -214,7 +214,7 @@ class TargetTypesGeneratorTest {
         //Target: "    \"string\":{\"byte\":\"2147483643\", \"to\":\"TapString\"},\n" +
         TapField longtext = nameFieldMap.get("longtext");
         assertEquals("string", longtext.getDataType());
-        assertEquals(4294967296L, ((TapString)longtext.getTapType()).getBytes());
+        assertEquals(4294967295L, ((TapString)longtext.getTapType()).getBytes());
     }
 
     @Test
@@ -327,4 +327,122 @@ class TargetTypesGeneratorTest {
         TapField bigint50Field = nameFieldMap.get("bigint(50)");
         assertEquals("bigint", bigint50Field.getDataType());
     }
+
+    @Test
+    void stringTest() {
+                String sourceTypeExpression = "{\n" +
+                "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"fixed\": false, \"to\": \"TapString\", \"defaultByte\": 1},\n" +
+                "    \"longtext\": {\"byte\": \"4g\", \"to\": \"TapString\"},\n" +
+                "    \"superlongtext\": {\"byte\": \"8g\", \"to\": \"TapString\"},\n" +
+                "    \"char[($byte)]\": {\"byte\": 255, \"to\": \"TapString\", \"byteRatio\": 3, \"fixed\": true, },\n" +
+                "    \"tinytext\": {\"byte\": 255, \"to\": \"TapString\"},\n" +
+                "    \"text\": {\"byte\": \"64k\", \"to\": \"TapString\"},\n" +
+                "    \"mediumtext\": {\"byte\": \"16m\", \"to\": \"TapString\"},\n" +
+
+                "    \"int[($bit)][unsigned][zerofill]\": {\"bit\": 32, \"bitRatio\": 3, \"unsigned\": \"unsigned\", \"zerofill\": \"zerofill\", \"to\": \"TapNumber\"},\n" +
+                "    \"decimal($precision,$scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"to\": \"TapNumber\"},\n" +
+                "    \"tinyint[($bit)][unsigned][zerofill]\": {\"bit\": 1, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"smallint[($bit)][unsigned][zerofill]\": {\"bit\": 4, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"mediumint[($bit)][unsigned][zerofill]\": {\"bit\": 8, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"bigint($bit)[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"bigint[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"float[($bit)][unsigned][zerofill]\": {\"bit\": 16, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"double[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
+                "    \"date\": {\"range\": [\"1000-01-01\", \"9999-12-31\"], \"gmt\": 8, \"to\": \"TapDate\"},\n" +
+                "    \"time\": {\"range\": [\"-838:59:59\",\"838:59:59\"], \"gmt\": 8, \"to\": \"TapTime\"},\n" +
+                "    \"year\": {\"range\": [1901, 2155], \"to\": \"TapYear\"},\n" +
+                "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"gmt\": 8, \"to\": \"TapDateTime\"},\n" +
+                "    \"timestamp\": {\"to\": \"TapDateTime\"},\n" +
+
+                "    \"longblob\": {\"byte\": \"4g\", \"to\": \"TapBinary\"},\n" +
+                "    \"tinyblob\": {\"byte\": 255, \"to\": \"TapBinary\"},\n" +
+                "    \"blob\": {\"byte\": \"64k\", \"to\": \"TapBinary\"},\n" +
+                "    \"mediumblob\": {\"byte\": \"16m\", \"to\": \"TapBinary\"},\n" +
+                "    \"bit($byte)\": {\"byte\": 8, \"to\": \"TapBinary\"},\n" +
+                "    \"varbinary($byte)\": {\"byte\": 255, \"fixed\": false, \"to\": \"TapBinary\"},\n" +
+                "    \"binary($byte)\": {\"byte\": 255, \"to\": \"TapBinary\"},\n" +
+                "    \"[varbinary]($byte)[ABC$hi]aaaa[DDD[AAA|BBB]]\": {\"byte\": 33333, \"fixed\": false, \"to\": \"TapBinary\"}\n" +
+                "}";
+        String targetTypeExpression = "{" +
+                "\"char[($byte)]\": {\"to\": \"TapString\",\"byte\": 255, \"byteRatio\": 3, \"defaultByte\": 1,\"fixed\": true},\n" +
+                "\"varchar($byte)\": {\"to\": \"TapString\",\"byte\": 65535,\"defaultByte\": 1},\n" +
+                "\"tinytext\": {\"to\": \"TapString\",\"byte\": 255},\n" +
+                "\"text\": {\"to\": \"TapString\",\"byte\": \"64k\"},\n" +
+                "\"mediumtext\": {\"to\": \"TapString\",\"byte\": \"16m\"},\n" +
+                "\"longtext\": {\"to\": \"TapString\",\"byte\": \"4g\"},\n" +
+                "\"json\": {\"to\": \"TapMap\",\"byte\": \"4g\",\"queryOnly\": true},\n" +
+                "\"binary[($byte)]\": {\"to\": \"TapBinary\",\"byte\": 255,\"defaultByte\": 1,\"fixed\": true},\n" +
+                "\"varbinary[($byte)]\": {\"to\": \"TapBinary\",\"byte\": 65535,\"defaultByte\": 1},\n" +
+                "\"tinyblob\": {\"to\": \"TapBinary\",\"byte\": 255},\n" +
+                "\"blob\": {\"to\": \"TapBinary\",\"byte\": \"64k\"},\n" +
+                "\"mediumblob\": {\"to\": \"TapBinary\",\"byte\": \"16m\"},\n" +
+                "\"longblob\": {\"to\": \"TapBinary\",\"byte\": \"4g\"},\n" +
+                "\"bit[($bit)]\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709552000]},\n" +
+                "\"tinyint\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ 0, 255]},\n" +
+                "\"tinyint unsigned\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ -128, 127],\"unsigned\": \"unsigned\"},\n" +
+                "\"smallint\": {\"to\": \"TapNumber\",\"bit\": 16,\"value\": [ -32768, 32767],\"precision\": 5},\n" +
+                "\"smallint unsigned\": {\"to\": \"TapNumber\",\"bit\": 16,\"precision\": 5,\"value\": [ 0, 65535],\"unsigned\": \"unsigned\"},\n" +
+                "\"mediumint\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607]},\n" +
+                "\"mediumint unsigned\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 8,\"value\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
+                "\"int\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647]},\n" +
+                "\"int unsigned\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ 0, 4294967295]},\n" +
+                "\"bigint\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807]},\n" +
+                "\"bigint unsigned\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709551615], \"unsigned\": \"unsigned\"},\n" +
+                "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10,\"defaultScale\": 0,\"unsigned\": \"unsigned\", \"fixed\": true},\n" +
+                "\"float($precision,$scale)[unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 30],\"scale\": [ 0, 30],\"value\": [ \"-3.402823466E+38\", \"3.402823466E+38\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
+                "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
+                "\"double\": {\"to\": \"TapNumber\",\"precision\": [ 1, 11],\"scale\": [ 0, 11],\"fixed\": false},\n" +
+                "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
+                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"format\": \"yyyy-MM-dd\"},\n" +
+                "\"time\": {\"to\": \"TapTime\",\"range\": [ \"-838:59:59\", \"838:59:59\"]},\n" +
+                "\"datetime[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0},\n" +
+                "\"timestamp[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0,\"withTimezone\": true}\n"
+                + "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("varchar(400)", "varchar(400)"))
+                .add(field("varchar(40)", "varchar(40)"))
+                .add(field("char(30)", "char(30)"))
+                .add(field("tinytext", "tinytext"))
+                .add(field("text", "text"))
+                .add(field("longtext", "longtext"))
+                .add(field("superlongtext", "superlongtext"))
+                .add(field("varchar(64k)", "varchar(64k)"))
+                .add(field("varchar", "varchar"))
+
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+        TapField varchar400Field = nameFieldMap.get("varchar(400)");
+        assertEquals("varchar(400)", varchar400Field.getDataType());
+
+        TapField varchar40Field = nameFieldMap.get("varchar(40)");
+        assertEquals("varchar(40)", varchar40Field.getDataType());
+
+        TapField char30Field = nameFieldMap.get("char(30)");
+        assertEquals("char(30)", char30Field.getDataType());
+
+        TapField tinytextField = nameFieldMap.get("tinytext");
+        assertEquals("varchar(255)", tinytextField.getDataType());
+
+        TapField textField = nameFieldMap.get("text");
+        assertEquals("varchar(65535)", textField.getDataType());
+
+        TapField longtextField = nameFieldMap.get("longtext");
+        assertEquals("longtext", longtextField.getDataType());
+
+        TapField superlongtextField = nameFieldMap.get("superlongtext");
+        assertEquals("longtext", superlongtextField.getDataType());
+
+        TapField varchar64kField = nameFieldMap.get("varchar(64k)");
+        assertEquals("varchar(65535)", varchar64kField.getDataType());
+
+        TapField varcharField = nameFieldMap.get("varchar");
+        assertEquals("varchar(1)", varcharField.getDataType());
+    }
+
 }

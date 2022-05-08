@@ -28,6 +28,18 @@ public class TapString extends TapType {
         return this;
     }
 
+    private Long defaultValue;
+    public TapString defaultValue(Long defaultValue) {
+        this.defaultValue = defaultValue;
+        return this;
+    }
+
+    private int byteRatio;
+    public TapString byteRatio(int byteRatio) {
+        this.byteRatio = byteRatio;
+        return this;
+    }
+
     public Long getBytes() {
         return bytes;
     }
@@ -42,6 +54,22 @@ public class TapString extends TapType {
 
     public void setFixed(Boolean fixed) {
         this.fixed = fixed;
+    }
+
+    public Long getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(Long defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+    public int getByteRatio() {
+        return byteRatio;
+    }
+
+    public void setByteRatio(int byteRatio) {
+        this.byteRatio = byteRatio;
     }
 
     @Override

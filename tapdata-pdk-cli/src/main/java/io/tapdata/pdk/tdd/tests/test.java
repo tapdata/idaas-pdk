@@ -31,7 +31,11 @@ public class test {
         System.out.println("number " + (v2 * 100000000000000d));
         System.out.println("number " + ((v2 * 100000000000000d) + (v1 * 10000000d)));
 
-        System.out.println("aaa " + BigDecimal.valueOf(100d).multiply(BigDecimal.TEN));
+        System.out.println("aaa " + BigDecimal.valueOf(Long.MAX_VALUE));
+        System.out.println("aaa " + BigDecimal.valueOf(2).pow(63).precision());
+        System.out.println("aaa " + BigDecimal.valueOf(10).pow(19));
+        System.out.println("aaa " + BigDecimal.valueOf(100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d));
+        System.out.println("aaa " + BigDecimal.valueOf(10).pow(245));
     }
 
     public static BigDecimal maxValueForPrecision(int maxPrecision) {

@@ -8,7 +8,7 @@ public abstract class TapBytesBase extends TapMapping {
     public static final String KEY_BYTE_RATIO = "byteRatio";
     public static final String KEY_BYTE_DEFAULT = "defaultByte";
 
-    protected String fixed;
+    protected Boolean fixed;
     protected Long bytes;
     protected Long defaultBytes;
     /**
@@ -31,11 +31,7 @@ public abstract class TapBytesBase extends TapMapping {
         String byteStr = getParam(params, KEY_BYTE);
         Long bytes = null;
         if(byteStr != null) {
-            try {
-                bytes = Long.parseLong(byteStr);
-            } catch(Throwable throwable) {
-                throwable.printStackTrace();
-            }
+            bytes = objectToNumber(byteStr);//Long.parseLong(byteStr);
         }
         if(bytes == null)
             bytes = defaultBytes;
@@ -49,8 +45,8 @@ public abstract class TapBytesBase extends TapMapping {
     @Override
     public void from(Map<String, Object> info) {
         Object fixedObj = info.get(KEY_FIXED);
-        if(fixedObj instanceof String) {
-            fixed = (String) fixedObj;
+        if(fixedObj instanceof Boolean) {
+            fixed = (Boolean) fixedObj;
         }
 
         Object ratioObj = info.get(KEY_BYTE_RATIO);
@@ -108,16 +104,16 @@ public abstract class TapBytesBase extends TapMapping {
         String numberStr = str.substring(0, str.length() - 1);
         try {
             long num = Long.parseLong(numberStr);
-            return num * ratio;
+            return num * ratio - 1;
         } catch(Throwable ignored) {}
         return null;
     }
 
-    public String getFixed() {
+    public Boolean getFixed() {
         return fixed;
     }
 
-    public void setFixed(String fixed) {
+    public void setFixed(Boolean fixed) {
         this.fixed = fixed;
     }
 
