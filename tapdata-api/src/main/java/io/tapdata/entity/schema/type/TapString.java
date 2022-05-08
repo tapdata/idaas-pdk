@@ -74,7 +74,7 @@ public class TapString extends TapType {
 
     @Override
     public TapType cloneTapType() {
-        return tapString().fixed(fixed).bytes(bytes);
+        return tapString().fixed(fixed).bytes(bytes).byteRatio(byteRatio).defaultValue(defaultValue);
     }
 
     @Override
