@@ -1,7 +1,6 @@
 package io.tapdata.entity.schema;
 
 import java.util.*;
-import java.util.concurrent.atomic.LongAdder;
 
 public class TapTable extends TapItem<TapField> {
     public TapTable() {}

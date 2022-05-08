@@ -350,7 +350,7 @@ public class PostgresConnector extends ConnectorBase {
         initConnection(tapConnectorContext.getConnectionConfig());
         String sql = "SELECT COUNT(1) FROM " + tapTable.getId();
         ResultSet resultSet = stmt.executeQuery(sql);
-        if (resultSet.first()) {
+        if (resultSet.next()) {
             return resultSet.getLong(1);
         }
         return 0;
@@ -369,10 +369,11 @@ public class PostgresConnector extends ConnectorBase {
             TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
             for (int i = 0; i < uniqueIndex.getFields().size(); i++) {
                 String ascOrDesc = uniqueIndex.getFieldAscList().get(i) ? "ASC" : "DESC";
-                orderBy.append(uniqueIndex.getFields().get(i)).append(" ").append(ascOrDesc);
+                orderBy.append(uniqueIndex.getFields().get(i)).append(" ").append(ascOrDesc).append(",");
             }
         }
         // TODO: 2022/5/7 how to deal with which without unique key
+        orderBy.delete(orderBy.length() - 1, orderBy.length());
         return orderBy.toString();
     }
 
