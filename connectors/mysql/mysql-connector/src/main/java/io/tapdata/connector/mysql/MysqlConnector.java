@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -64,6 +65,19 @@ public class MysqlConnector extends ConnectorBase {
 //		connectorFunctions.supportStreamOffset(this::streamOffset);
 		connectorFunctions.supportQueryByAdvanceFilter(this::query);
 		connectorFunctions.supportWriteRecord(this::writeRecord);
+		connectorFunctions.supportTableCount(this::tableCount);
+	}
+
+	private long tableCount(TapConnectorContext tapConnectorContext) throws Throwable {
+		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		AtomicLong count = new AtomicLong(0L);
+		this.mysqlJdbcContext.query(String.format("SELECT COUNT(1) count FROM `information_schema`.`TABLES` WHERE TABLE_SCHEMA='%s' AND TABLE_TYPE='BASE TABLE'", database), rs -> {
+			if (rs.next()) {
+				count.set(Long.parseLong(rs.getString("count")));
+			}
+		});
+		return count.get();
 	}
 
 	@Override
