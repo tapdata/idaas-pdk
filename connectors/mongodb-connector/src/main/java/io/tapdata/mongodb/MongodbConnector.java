@@ -22,13 +22,9 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 
-import static java.util.Arrays.asList;
-
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.mongodb.bean.MongoDBConfig;
-import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -43,7 +39,6 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 import org.bson.types.*;
 
-import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Filters.and;
 import static java.util.Collections.singletonList;
@@ -56,7 +51,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Different Connector need use different "spec.json" file with different pdk id which specified in Annotation "TapConnectorClass"
@@ -229,6 +223,7 @@ public class MongodbConnector extends ConnectorBase {
            Binary binary = (Binary) value;
            return new TapBinaryValue(binary.getData());
         });
+
         codecRegistry.registerToTapValue(Code.class, value -> {
             Code code = (Code) value;
             return new TapStringValue(code.getCode());
@@ -265,8 +260,8 @@ public class MongodbConnector extends ConnectorBase {
         connectorFunctions.supportStreamOffset(this::streamOffset);
     }
 
-    public void onStart(TapConnectorContext connectorContext) throws Throwable {
-        initConnection(connectorContext.getConnectionConfig());
+    public void onStart(TapConnectionContext connectionContext) throws Throwable {
+        initConnection(connectionContext.getConnectionConfig());
     }
 
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {

@@ -20,7 +20,9 @@ public class ConnectionNode extends Node {
     public void connectionTest(Consumer<TestItem> consumer) throws Throwable {
         connectorNode.connectionTest(connectionContext, consumer);
     }
-
+    public void connectorInit() throws Throwable {
+        connectorNode.init(connectionContext);
+    }
     public TapConnectorNode getConnectorNode() {
         return connectorNode;
     }

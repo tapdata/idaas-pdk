@@ -2,6 +2,8 @@ package io.tapdata.entity.schema.value;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
 
+import java.math.BigDecimal;
+
 
 public class TapNumberValue extends TapValue<Double, TapNumber> {
     public TapNumberValue() {}
@@ -11,6 +13,6 @@ public class TapNumberValue extends TapValue<Double, TapNumber> {
 
     @Override
     public TapType createDefaultTapType() {
-        return new TapNumber();
+        return new TapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(-Double.MAX_VALUE));
     }
 }

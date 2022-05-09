@@ -1,6 +1,6 @@
 package io.tapdata.pdk.apis;
 
-import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.context.TapConnectionContext;
 
 /**
  * Tapdata node in a DAG
@@ -11,6 +11,6 @@ public interface TapNode {
      */
     void destroy() throws Throwable;
 
-    void init(TapConnectorContext connectorContext) throws Throwable;
+    void init(TapConnectionContext connectionContext) throws Throwable;
 
 }
