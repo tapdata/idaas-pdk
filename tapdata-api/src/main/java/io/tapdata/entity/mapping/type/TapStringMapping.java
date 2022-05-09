@@ -6,6 +6,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.type.TapType;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import static io.tapdata.entity.simplify.TapSimplify.tapString;
@@ -13,11 +14,7 @@ import static io.tapdata.entity.simplify.TapSimplify.tapString;
 public class TapStringMapping extends TapBytesBase {
     @Override
     public TapType toTapType(String dataType, Map<String, String> params) {
-        Boolean theFixed = null;
-        if (fixed != null && dataType.contains(fixed)) {
-            theFixed = true;
-        }
-        return tapString().bytes(getToTapTypeBytes(params)).fixed(theFixed);
+        return tapString().bytes(getToTapTypeBytes(params)).fixed(fixed).byteRatio(byteRatio).defaultValue(defaultBytes);
     }
 
     @Override
@@ -28,9 +25,9 @@ public class TapStringMapping extends TapBytesBase {
             tapResult.result(TapResult.RESULT_SUCCESSFULLY);
             TapString tapString = (TapString) tapType;
             theFinalExpression = typeExpression;
-            if (tapString.getFixed() != null && tapString.getFixed()) {
-                theFinalExpression = clearBrackets(theFinalExpression, fixed);
-            }
+//            if (tapString.getFixed() != null && tapString.getFixed()) {
+//                theFinalExpression = clearBrackets(theFinalExpression, fixed);
+//            }
 
             Long bytes = tapString.getBytes();
             if (bytes != null) {
@@ -48,32 +45,59 @@ public class TapStringMapping extends TapBytesBase {
         }
         return null;
     }
+    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(17);
+    final BigDecimal byteRatioValue = BigDecimal.valueOf(10).pow(16);
+    final BigDecimal defaultByteValue = BigDecimal.valueOf(10).pow(15);
 
     @Override
-    public long matchingScore(TapField field) {
+    public BigDecimal matchingScore(TapField field) {
         if (field.getTapType() instanceof TapString) {
             TapString tapString = (TapString) field.getTapType();
 
             //field is primary key, but this type is not able to be primary type.
             if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
-                return Long.MIN_VALUE;
+                return BigDecimal.valueOf(-Double.MAX_VALUE);
             }
+
+            Boolean comingFixed = tapString.getFixed();
+            int comingByteRatio = tapString.getByteRatio();
+//            Long comingDefaultValue = tapString.getDefaultValue();
+
+            BigDecimal score = BigDecimal.ZERO;
+
+            if(((comingFixed != null && comingFixed) && (fixed != null && fixed)) ||
+                    ((comingFixed == null || !comingFixed) && (fixed == null || !fixed))) {
+                score = score.add(fixedValue);
+            } else {
+                score = score.subtract(fixedValue);
+            }
+
+            if(comingByteRatio == byteRatio) {
+                score = score.add(byteRatioValue);
+            } else {
+                score = score.subtract(byteRatioValue);
+            }
+
             Long theBytes = bytes;
             if(theBytes != null)
                 theBytes = theBytes * byteRatio;
             Long width = tapString.getBytes();
             if(width == null && theBytes != null) {
-                return theBytes;
+                return score.add(BigDecimal.valueOf(theBytes));
             } else if(theBytes != null) {
 //                width = getFromTapTypeBytes(width);
                 if(width <= theBytes) {
-                    return (Long.MAX_VALUE - (theBytes - width));
+                    if(defaultBytes != null) {
+                        score = score.add(defaultByteValue);
+                    }
+                    return score.add(BigDecimal.valueOf(Long.MAX_VALUE - (theBytes - width)));
                 } else {
-                    return theBytes - width; // unacceptable
+                    score = score.subtract(BigDecimal.valueOf(Long.MAX_VALUE));
+                    return score.add(BigDecimal.valueOf(theBytes - width)); // unacceptable
                 }
             }
-            return 0L;
+            return BigDecimal.ZERO;
         }
-        return Long.MIN_VALUE;
+        return BigDecimal.valueOf(-Double.MAX_VALUE);
     }
 }

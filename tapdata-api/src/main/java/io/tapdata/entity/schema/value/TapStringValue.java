@@ -12,6 +12,6 @@ public class TapStringValue extends TapValue<String, TapString> {
 
     @Override
     public TapType createDefaultTapType() {
-        return new TapString();
+        return new TapString().bytes(Long.MAX_VALUE);
     }
 }

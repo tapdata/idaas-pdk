@@ -10,6 +10,6 @@ public class TapBinaryValue extends TapValue<byte[], TapBinary> {
 
     @Override
     public TapType createDefaultTapType() {
-        return new TapBinary();
+        return new TapBinary().bytes(Long.MAX_VALUE);
     }
 }

@@ -5,6 +5,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -188,5 +189,5 @@ public abstract class TapMapping {
      * @param field
      * @return
      */
-    public abstract long matchingScore(TapField field);
+    public abstract BigDecimal matchingScore(TapField field);
 }

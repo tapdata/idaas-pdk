@@ -5,9 +5,13 @@ import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.utils.TypeUtils;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+
+import static io.tapdata.entity.simplify.TapSimplify.tapNumber;
 
 /**
  * "decimal($precision, $scale)[unsigned][zerofill]": {"precision":[1, 65], "scale": [0, 30], "unsigned": true, "to": "typeNumber"},
@@ -23,6 +27,11 @@ public class TapNumberMapping extends TapMapping {
     public static final String KEY_BIT = "bit";
     public static final String KEY_BIT_DEFAULT = "bitDefault";
     public static final String KEY_BIT_RATIO = "bitRatio";
+    public static final String KEY_VALUE = "value";
+    public static final String KEY_UNSIGNED_VALUE = "unsignedValue";
+    public static final String KEY_FIXED = "fixed";
+
+    private Boolean fixed;
 
     private Integer bit;
     private Integer defaultBit;
@@ -39,6 +48,12 @@ public class TapNumberMapping extends TapMapping {
     private String unsigned;
     private String zerofill;
 
+    private BigDecimal minValue;
+    private BigDecimal maxValue;
+
+    private BigDecimal unsignedMinValue;
+    private BigDecimal unsignedMaxValue;
+
     protected Integer getFromTapTypeBytes(Integer bit) {
         if(bitRatio == 1)
             return bit;
@@ -48,6 +63,11 @@ public class TapNumberMapping extends TapMapping {
 
     @Override
     public void from(Map<String, Object> info) {
+        Object fixedObj = getObject(info, KEY_FIXED);
+        if (fixedObj instanceof Boolean) {
+            fixed = (Boolean) fixedObj;
+        }
+
         Object bitObj = getObject(info, KEY_BIT);
         if (bitObj instanceof Number) {
             bit = ((Number) bitObj).intValue();
@@ -102,6 +122,32 @@ public class TapNumberMapping extends TapMapping {
             defaultScale = ((Number) defaultScaleObj).intValue();
         }
 
+        Object valueObj = getObject(info, KEY_VALUE);
+        if (valueObj instanceof List) {
+            List<?> list = (List<?>) valueObj;
+            if (list.size() == 2) {
+                if ((list.get(0) instanceof Number) || (list.get(0) instanceof String)) {
+                    minValue = new BigDecimal(String.valueOf(list.get(0)));
+                }
+                if ((list.get(1) instanceof Number) || (list.get(1) instanceof String)) {
+                    maxValue = new BigDecimal(String.valueOf(list.get(1)));
+                }
+            }
+        }
+
+        Object unsignedValueObj = getObject(info, KEY_UNSIGNED_VALUE);
+        if (unsignedValueObj instanceof List) {
+            List<?> list = (List<?>) unsignedValueObj;
+            if (list.size() == 2) {
+                if ((list.get(0) instanceof Number) || (list.get(0) instanceof String)) {
+                    unsignedMinValue = new BigDecimal(String.valueOf(list.get(0)));
+                }
+                if ((list.get(1) instanceof Number) || (list.get(1) instanceof String)) {
+                    unsignedMaxValue = new BigDecimal(String.valueOf(list.get(1)));
+                }
+            }
+        }
+
         Object unsignedObj = getObject(info, KEY_UNSIGNED);
         if (unsignedObj instanceof String) {
             unsigned = (String) unsignedObj;
@@ -110,6 +156,54 @@ public class TapNumberMapping extends TapMapping {
         Object zerofillObj = getObject(info, KEY_ZEROFILL);
         if (zerofillObj instanceof String) {
             zerofill = (String) zerofillObj;
+        }
+
+        //calculate the min and max value.
+        //The accuracy order, min/max value > bit > precision.
+        if(minValue == null || maxValue == null) {
+            //bit is higher priority than precision, lower than given min/max value.
+            Integer theBit = bit;
+            if(theBit == null)
+                theBit = defaultBit;
+            if(theBit != null) {
+                theBit = theBit * bitRatio;
+                if(unsigned != null && unsignedMinValue == null) {
+                    unsignedMinValue = TypeUtils.minValueForBit(theBit, true);
+                }
+                if(minValue == null)
+                    minValue = TypeUtils.minValueForBit(theBit, false);
+                if(unsigned != null && unsignedMaxValue == null) {
+                    unsignedMaxValue = TypeUtils.maxValueForBit(theBit, true);
+                }
+                if(maxValue == null)
+                    maxValue = TypeUtils.maxValueForBit(theBit, false);
+            }
+        }
+        if(minValue == null || maxValue == null) {
+            //precision is lowest priority, for the value boundary, the most case, the precision is not accurate.
+            Integer thePrecision = maxPrecision;
+            if(thePrecision == null)
+                thePrecision = defaultPrecision;
+            if(thePrecision != null) {
+                if(unsigned != null && unsignedMinValue == null) {
+                    unsignedMinValue = BigDecimal.ZERO;
+                }
+                if(minValue == null)
+                    minValue = TypeUtils.minValueForPrecision(thePrecision);
+                if(unsigned != null && unsignedMaxValue == null) {
+                    unsignedMaxValue = TypeUtils.maxValueForPrecision(thePrecision);
+                }
+                if(maxValue == null)
+                    maxValue = TypeUtils.maxValueForPrecision(thePrecision);
+            }
+        }
+        if(minValue == null || maxValue == null) {
+            minValue = BigDecimal.valueOf(-Double.MAX_VALUE);
+            maxValue = BigDecimal.valueOf(Double.MAX_VALUE);
+        }
+        if(minPrecision == null && maxPrecision == null) {
+            minPrecision = 1;
+            maxPrecision = maxValue.precision();
         }
     }
 
@@ -170,12 +264,168 @@ public class TapNumberMapping extends TapMapping {
         if(scale == null)
             scale = maxScale;
 
-        return new TapNumber()
+        BigDecimal theMinValue = null;
+        BigDecimal theMaxValue = null;
+        if(length != null) {
+            theMinValue = TypeUtils.minValueForBit(length, theUnsigned);
+            theMaxValue = TypeUtils.maxValueForBit(length, theUnsigned);
+        } else if(precision != null){
+            theMinValue = (theUnsigned != null && theUnsigned) ? BigDecimal.ZERO : TypeUtils.minValueForPrecision(precision);
+            theMaxValue = TypeUtils.maxValueForPrecision(precision);
+        } else {
+            theMinValue = BigDecimal.valueOf(-Double.MAX_VALUE);
+            theMaxValue = BigDecimal.valueOf(Double.MAX_VALUE);
+        }
+        int actualPrecision = theMaxValue.precision();
+        if(precision > actualPrecision) {
+            precision = actualPrecision;
+        }
+
+        return tapNumber()
+                .fixed(fixed)
                 .precision(precision)
                 .scale(scale)
                 .bit(length)
+                .minValue(theMinValue)
+                .maxValue(theMaxValue)
                 .unsigned(theUnsigned)
                 .zerofill(theZerofill);
+    }
+    final BigDecimal valueValue = BigDecimal.valueOf(10).pow(245);
+    final BigDecimal scaleValue = BigDecimal.valueOf(10).pow(245);
+    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(244);
+    final BigDecimal unsignedValue = BigDecimal.valueOf(10).pow(244);
+
+    @Override
+    public BigDecimal matchingScore(TapField field) {
+        if (field.getTapType() instanceof TapNumber) {
+            TapNumber tapNumber = (TapNumber) field.getTapType();
+
+            //field is primary key, but this type is not able to be primary type.
+            if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
+                return BigDecimal.valueOf(-Double.MAX_VALUE);
+            }
+
+            BigDecimal score = BigDecimal.ZERO;
+
+            Integer scale = tapNumber.getScale();
+            Boolean fixed = tapNumber.getFixed();
+            Boolean unsigned = tapNumber.getUnsigned();
+
+            BigDecimal comingMaxValue = tapNumber.getMaxValue();
+            BigDecimal comingMinValue = tapNumber.getMinValue();
+
+//            final BigDecimal unsignedValue = realMaxValue.multiply(BigDecimal.TEN);
+//            final BigDecimal fixedValue =   unsignedValue.multiply(BigDecimal.TEN);
+//            final BigDecimal scaleValue =  fixedValue.multiply(BigDecimal.TEN);
+//            final BigDecimal valueValue = scaleValue.multiply(BigDecimal.TEN);
+
+            if((scale != null && isScale()) ||
+                    (scale == null && !isScale())) {
+//                score += scaleValue;
+                score = score.add(scaleValue);
+            } else {
+//                score -= scaleValue;
+                score = score.subtract(scaleValue);
+            }
+
+            if(((fixed != null && fixed) && (this.fixed != null && this.fixed)) ||
+                    ((fixed == null || !fixed) && (this.fixed == null || !this.fixed))) {
+//                score += fixedValue;
+                score = score.add(fixedValue);
+            } else {
+//                score -= fixedValue;
+                score = score.subtract(fixedValue);
+            }
+
+            if(((unsigned != null && unsigned) && (this.unsigned != null)) ||
+                    ((unsigned == null || !unsigned) && (this.unsigned == null))) {
+//                score += unsignedValue;
+                score = score.add(unsignedValue);
+            } else {
+//                score -= unsignedValue;
+                score = score.subtract(unsignedValue);
+            }
+
+            if(unsigned != null && unsigned) {
+                //unsigned number
+                if(unsignedMinValue != null && unsignedMaxValue != null) {
+                    score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, unsignedMinValue, unsignedMaxValue, valueValue));
+                } else {
+                    score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, minValue, maxValue, valueValue));
+                }
+            } else {
+                //singed number
+                score = score.add(calculateScoreForValue(comingMinValue, comingMaxValue, minValue, maxValue, valueValue));
+            }
+
+//            Integer precision = tapNumber.getPrecision();
+//            if(precision != null && scale != null && minPrecision != null && minScale != null && maxPrecision != null && maxScale != null) {
+//                if(minPrecision <= precision && precision <= maxPrecision) {
+//                    score += 1000L - (maxPrecision - precision); // The closest to maxPrecision the better.
+//                } else {
+//                    if(precision > maxPrecision) {
+//                        return (maxPrecision - precision);
+//                    }
+//                    return Long.MIN_VALUE; //if precision didn't match, it is not acceptable
+//                }
+//                if(minScale <= scale && scale <= maxScale) {
+//                    score += 500;
+//                } else {
+//                    score += 1; //loss scale, somehow is acceptable as lowest priority
+//                }
+//            }
+//
+//            Integer bit = tapNumber.getBit();
+//            if(bit != null && this.bit != null) {
+//                int theBit = this.bit * bitRatio;
+//                if(0 < bit && bit <= theBit) {
+//                    score = 1000L - (theBit - bit); //The closest to max bit, the better
+//                } else {
+////                    if(bit > theBit) {
+////                        return theBit - bit;
+////                    }
+//                    return Long.MIN_VALUE; //if bit didn't match, it is not acceptable
+//                }
+//            }
+//
+//            if(tapNumber.getUnsigned() != null && tapNumber.getUnsigned() && unsigned != null) {
+//                //number is unsigned, current mapping support unsigned, closer.
+//                score += 10;
+//            }
+//
+//            if(tapNumber.getZerofill() != null && tapNumber.getZerofill() && zerofill != null) {
+//                //number is zerofill, current mapping support zerofill, closer.
+//                score += 1;
+//            }
+            return score;
+        }
+
+        return BigDecimal.valueOf(-Double.MAX_VALUE);
+    }
+
+    private BigDecimal calculateScoreForValue(BigDecimal comingMinValue, BigDecimal comingMaxValue, BigDecimal minValue, BigDecimal maxValue, BigDecimal valueValue) {
+        BigDecimal minDistance = comingMinValue.subtract(minValue);
+        BigDecimal maxDistance = maxValue.subtract(comingMaxValue);
+
+        if (minDistance.compareTo(BigDecimal.ZERO) < 0 || maxDistance.compareTo(BigDecimal.ZERO) < 0) {
+            BigDecimal theDistance = minDistance.add(maxDistance).abs();
+            if(theDistance.compareTo(valueValue) > 0) {
+                return valueValue.add(valueValue).negate();//-valueValue - valueValue;
+            } else {
+                return valueValue.add(theDistance).negate();//-valueValue - theDistance.negate().doubleValue();
+            }
+        } else {
+            BigDecimal valueDistance = valueValue.subtract(minDistance.add(maxDistance));
+            if(valueDistance.compareTo(BigDecimal.ZERO) < 0) {
+                return BigDecimal.ZERO;
+            }
+            return valueDistance;
+        }
+    }
+
+    private boolean isScale() {
+        return this.defaultScale != null || (this.minScale != null && this.maxScale != null);
     }
 
     @Override
@@ -217,6 +467,8 @@ public class TapNumberMapping extends TapMapping {
                 theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(precision));
             }
             Integer scale = tapNumber.getScale();
+            if(precision != null && scale == null)
+                scale = 0;
             if (scale != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
 
@@ -238,59 +490,6 @@ public class TapNumberMapping extends TapMapping {
         else
             tapResult.result(TapResult.RESULT_SUCCESSFULLY);
         return tapResult.data(theFinalExpression);
-    }
-
-    @Override
-    public long matchingScore(TapField field) {
-        if (field.getTapType() instanceof TapNumber) {
-            TapNumber tapNumber = (TapNumber) field.getTapType();
-
-            long score = 0L;
-
-            Integer precision = tapNumber.getPrecision();
-            Integer scale = tapNumber.getScale();
-            if(precision != null && scale != null && minPrecision != null && minScale != null && maxPrecision != null && maxScale != null) {
-                if(minPrecision <= precision && precision <= maxPrecision) {
-                    score += 1000L - (maxPrecision - precision); // The closest to maxPrecision the better.
-                } else {
-                    if(precision > maxPrecision) {
-                        return (maxPrecision - precision);
-                    }
-                    return Long.MIN_VALUE; //if precision didn't match, it is not acceptable
-                }
-                if(minScale <= scale && scale <= maxScale) {
-                    score += 500;
-                } else {
-                    score += 1; //loss scale, somehow is acceptable as lowest priority
-                }
-            }
-
-            Integer bit = tapNumber.getBit();
-            if(bit != null && this.bit != null) {
-                int theBit = this.bit * bitRatio;
-                if(0 < bit && bit <= theBit) {
-                    score = 1000L - (theBit - bit); //The closest to max bit, the better
-                } else {
-//                    if(bit > theBit) {
-//                        return theBit - bit;
-//                    }
-                    return Long.MIN_VALUE; //if bit didn't match, it is not acceptable
-                }
-            }
-
-            if(tapNumber.getUnsigned() != null && tapNumber.getUnsigned() && unsigned != null) {
-                //number is unsigned, current mapping support unsigned, closer.
-                score += 10;
-            }
-
-            if(tapNumber.getZerofill() != null && tapNumber.getZerofill() && zerofill != null) {
-                //number is zerofill, current mapping support zerofill, closer.
-                score += 1;
-            }
-            return score;
-        }
-
-        return Long.MIN_VALUE;
     }
 
     public Integer getMinPrecision() {

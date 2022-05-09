@@ -1,5 +1,7 @@
 package io.tapdata.entity.schema.value;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
 
@@ -25,6 +27,27 @@ public class DateTime {
 
     }
 
+    public DateTime(Instant instant) {
+        seconds = instant.getEpochSecond();
+        nano = instant.getNano();
+    }
+
+    public DateTime(Date date) {
+
+    }
+
+    public Date toDate() {
+        Long milliseconds;
+        if(seconds != null) {
+            milliseconds = seconds * 1000;
+            if(nano != null) {
+                milliseconds += milliseconds + (nano / 1000 / 1000);
+            }
+        } else {
+            return null;
+        }
+        return new Date(milliseconds);
+    }
 
     @Override
     public boolean equals(Object o) {

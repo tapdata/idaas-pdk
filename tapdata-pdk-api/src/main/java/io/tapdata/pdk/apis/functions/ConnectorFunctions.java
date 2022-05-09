@@ -16,6 +16,24 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private ClearTableFunction clearTableFunction;
     private DropTableFunction dropTableFunction;
     private ControlFunction controlFunction;
+    private CreateIndexFunction createIndexFunction;
+    private DeleteIndexFunction deleteIndexFunction;
+    private QueryIndexesFunction queryIndexesFunction;
+
+    public ConnectorFunctions supportQueryIndexes(QueryIndexesFunction function) {
+        queryIndexesFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportCreateIndex(CreateIndexFunction function) {
+        createIndexFunction = function;
+        return this;
+    }
+
+    public ConnectorFunctions supportDeleteIndex(DeleteIndexFunction function) {
+        deleteIndexFunction = function;
+        return this;
+    }
 
     public ConnectorFunctions supportControl(ControlFunction function) {
         controlFunction = function;
@@ -142,5 +160,17 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public ControlFunction getControlFunction() {
         return controlFunction;
+    }
+
+    public CreateIndexFunction getCreateIndexFunction() {
+        return createIndexFunction;
+    }
+
+    public DeleteIndexFunction getDeleteIndexFunction() {
+        return deleteIndexFunction;
+    }
+
+    public QueryIndexesFunction getQueryIndexesFunction() {
+        return queryIndexesFunction;
     }
 }
