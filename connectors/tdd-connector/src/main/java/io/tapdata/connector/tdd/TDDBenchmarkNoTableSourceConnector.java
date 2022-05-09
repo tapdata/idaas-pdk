@@ -6,7 +6,6 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapStringValue;
-import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -200,7 +199,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
     }
 
     @Override
-    public void onStart(TapConnectorContext connectorContext) throws Throwable {
+    public void onStart(TapConnectionContext connectionContext) throws Throwable {
 
     }
 

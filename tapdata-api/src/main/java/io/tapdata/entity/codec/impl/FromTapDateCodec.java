@@ -6,7 +6,7 @@ import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.schema.value.TapDateValue;
 
-import static io.tapdata.entity.simplify.TapSimplify.convertDateTimeToDate;
+
 
 @Implementation(value = FromTapValueCodec.class, type = TapDefaultCodecs.TAP_DATE_VALUE, buildNumber = 0)
 public class FromTapDateCodec implements FromTapValueCodec<TapDateValue> {

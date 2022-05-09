@@ -1,8 +1,9 @@
 package io.tapdata.entity.schema;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class TapIndex {
+public class TapIndex implements Serializable {
     /**
      * Index name
      */
