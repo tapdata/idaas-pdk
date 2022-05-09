@@ -1,7 +1,14 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.utils.TypeUtils;
+
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -19,15 +26,15 @@ public abstract class TapDateBase extends TapMapping {
     public static final String KEY_PATTERN = "pattern";
     public static final String KEY_DEFAULT_FRACTION = "defaultFraction";
 
-    private Long bytes;
-    private Date min;
-    private Date max;
-    private String pattern;
-    private Integer minFraction;
-    private Integer maxFraction;
-    private Integer defaultFraction;
+    protected Long bytes;
+    protected Instant min;
+    protected Instant max;
+    protected String pattern;
+    protected Integer minFraction;
+    protected Integer maxFraction;
+    protected Integer defaultFraction;
 
-    private Boolean withTimeZone;
+    protected Boolean withTimeZone;
 
     protected abstract String pattern();
 
@@ -44,25 +51,17 @@ public abstract class TapDateBase extends TapMapping {
             if(list.size() == 2) {
                 String thePattern = this.pattern != null ? this.pattern : pattern();
                 if(thePattern != null) {
-                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(thePattern);
+//                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(thePattern);
 
                     String minStr;
                     String maxStr;
                     if(list.get(0) instanceof String) {
                         minStr = (String) list.get(0);
-                        try {
-                            min = simpleDateFormat.parse(minStr);
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
+                        min = TypeUtils.dateTimeString2Instant(minStr, thePattern);
                     }
                     if(list.get(1) instanceof String) {
                         maxStr = (String) list.get(1);
-                        try {
-                            max = simpleDateFormat.parse(maxStr);
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
+                        max = TypeUtils.dateTimeString2Instant(maxStr, thePattern);
                     }
                     //both must be not null
                     if(min == null || max == null) {
@@ -104,19 +103,55 @@ public abstract class TapDateBase extends TapMapping {
         }
     }
 
-    public Date getMin() {
+    protected boolean isFraction() {
+        return this.defaultFraction != null || (this.minFraction != null && this.maxFraction != null);
+    }
+
+    protected BigDecimal calculateScoreForValue(Instant comingMinValue, Instant comingMaxValue, Instant minValue, Instant maxValue, BigDecimal rangeValue) {
+        BigDecimal comingMinNanoSeconds = getNanoSeconds(comingMinValue);
+        BigDecimal minNanoSeconds = getNanoSeconds(minValue);
+        BigDecimal comingMaxNanoSeconds = getNanoSeconds(comingMaxValue);
+        BigDecimal maxNanoSeconds = getNanoSeconds(maxValue);
+
+        BigDecimal minDistance = comingMinNanoSeconds.subtract(minNanoSeconds);
+        BigDecimal maxDistance = maxNanoSeconds.subtract(comingMaxNanoSeconds);
+
+        if (minDistance.compareTo(BigDecimal.ZERO) < 0 || maxDistance.compareTo(BigDecimal.ZERO) < 0) {
+            BigDecimal theDistance = minDistance.add(maxDistance).abs();
+            if(theDistance.compareTo(rangeValue) > 0) {
+                return rangeValue.add(rangeValue).negate();//-valueValue - valueValue;
+            } else {
+                return rangeValue.add(theDistance).negate();//-valueValue - theDistance.negate().doubleValue();
+            }
+        } else {
+            BigDecimal valueDistance = rangeValue.subtract(minDistance.add(maxDistance));
+            if(valueDistance.compareTo(BigDecimal.ZERO) < 0) {
+                return BigDecimal.ZERO;
+            }
+            return valueDistance;
+        }
+    }
+
+    protected BigDecimal getNanoSeconds(Instant dateTime) {
+        return BigDecimal
+                .valueOf(dateTime.getEpochSecond())
+                .multiply(BigDecimal.valueOf(1000000000))
+                .add(BigDecimal.valueOf(dateTime.getNano()));
+    }
+
+    public Instant getMin() {
         return min;
     }
 
-    public void setMin(Date min) {
+    public void setMin(Instant min) {
         this.min = min;
     }
 
-    public Date getMax() {
+    public Instant getMax() {
         return max;
     }
 
-    public void setMax(Date max) {
+    public void setMax(Instant max) {
         this.max = max;
     }
 

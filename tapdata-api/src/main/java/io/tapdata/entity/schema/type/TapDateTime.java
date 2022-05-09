@@ -3,48 +3,57 @@ package io.tapdata.entity.schema.type;
 import io.tapdata.entity.schema.value.TapDateTimeValue;
 import io.tapdata.entity.schema.value.TapValue;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Date;
+
 import static io.tapdata.entity.simplify.TapSimplify.tapDateTime;
 
 public class TapDateTime extends TapType {
     /**
-     * 字段的时间精度
-     * 秒之后算scale， 3（毫秒）， 6（微秒）， 9（纳秒）
-     * 秒点之后算scale
-     *
-     */
-    private Integer scale;
-    public TapDateTime scale(Integer scale) {
-        this.scale = scale;
-        return this;
-    }
-    /**
      * 字段是否有时区信息
      */
-    private Boolean hasTimeZone;
-    public TapDateTime hasTimeZone(Boolean hasTimeZone) {
-        this.hasTimeZone = hasTimeZone;
+    private Boolean withTimeZone;
+    public TapDateTime withTimeZone(Boolean withTimeZone) {
+        this.withTimeZone = withTimeZone;
         return this;
     }
 
-    public Integer getScale() {
-        return scale;
+    private Long bytes;
+    public TapDateTime bytes(Long bytes) {
+        this.bytes = bytes;
+        return this;
     }
-
-    public void setScale(Integer scale) {
-        this.scale = scale;
+    private Instant min;
+    public TapDateTime min(Instant min) {
+        this.min = min;
+        return this;
     }
-
-    public Boolean getHasTimeZone() {
-        return hasTimeZone;
+    private Instant max;
+    public TapDateTime max(Instant max) {
+        this.max = max;
+        return this;
     }
-
-    public void setHasTimeZone(Boolean hasTimeZone) {
-        this.hasTimeZone = hasTimeZone;
+    private Integer fraction;
+    public TapDateTime fraction(Integer fraction) {
+        this.fraction = fraction;
+        return this;
+    }
+    private Integer defaultFraction;
+    public TapDateTime defaultFraction(Integer defaultFraction) {
+        this.defaultFraction = defaultFraction;
+        return this;
     }
 
     @Override
     public TapType cloneTapType() {
-        return tapDateTime().hasTimeZone(hasTimeZone).scale(scale);
+        return tapDateTime()
+                .withTimeZone(withTimeZone)
+                .fraction(fraction)
+                .defaultFraction(defaultFraction)
+                .min(min)
+                .max(max)
+                .bytes(bytes);
     }
 
     @Override
@@ -52,4 +61,51 @@ public class TapDateTime extends TapType {
         return TapDateTimeValue.class;
     }
 
+    public Boolean getWithTimeZone() {
+        return withTimeZone;
+    }
+
+    public void setWithTimeZone(Boolean withTimeZone) {
+        this.withTimeZone = withTimeZone;
+    }
+
+    public Long getBytes() {
+        return bytes;
+    }
+
+    public void setBytes(Long bytes) {
+        this.bytes = bytes;
+    }
+
+    public Instant getMin() {
+        return min;
+    }
+
+    public void setMin(Instant min) {
+        this.min = min;
+    }
+
+    public Instant getMax() {
+        return max;
+    }
+
+    public void setMax(Instant max) {
+        this.max = max;
+    }
+
+    public Integer getFraction() {
+        return fraction;
+    }
+
+    public void setFraction(Integer fraction) {
+        this.fraction = fraction;
+    }
+
+    public Integer getDefaultFraction() {
+        return defaultFraction;
+    }
+
+    public void setDefaultFraction(Integer defaultFraction) {
+        this.defaultFraction = defaultFraction;
+    }
 }

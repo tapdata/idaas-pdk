@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -44,10 +46,13 @@ public class test {
         DateTime dateTime = new DateTime();
         Instant instant = Instant.now();
         LocalDate date = LocalDate.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy MM dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy MM dd").withZone(ZoneId.systemDefault());
 
         String text = date.format(formatter);
         LocalDate parsedDate = LocalDate.parse(text, formatter);
+
+        ZonedDateTime dateTime1 = ZonedDateTime.from(formatter.parse("2011 12 31"));
+
     }
 
     public static BigDecimal maxValueForPrecision(int maxPrecision) {
