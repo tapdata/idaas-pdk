@@ -52,7 +52,7 @@ public class PostgresConnector extends ConnectorBase {
     private static final int BATCH_READ_SIZE = 5000;
 
     @Override
-    public void onStart(TapConnectorContext connectorContext) throws Throwable {
+    public void onStart(TapConnectionContext connectorContext) throws Throwable {
         initConnection(connectorContext.getConnectionConfig());
     }
 
