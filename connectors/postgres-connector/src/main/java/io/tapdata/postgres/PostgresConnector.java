@@ -25,6 +25,7 @@ import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.postgres.bean.PostgresColumn;
 import io.tapdata.postgres.bean.PostgresConfig;
+import io.tapdata.postgres.bean.PostgresOffset;
 
 import java.sql.*;
 import java.util.*;
@@ -48,6 +49,7 @@ public class PostgresConnector extends ConnectorBase {
     private Connection conn;
     private Statement stmt;
     private static final String TABLE_COLUMN_NAME = "TABLE";
+    private static final int BATCH_READ_SIZE = 5000;
 
     @Override
     public void onStart(TapConnectorContext connectorContext) throws Throwable {
@@ -78,10 +80,10 @@ public class PostgresConnector extends ConnectorBase {
             }
             //4、primary key
             ResultSet primaryKeyResult = databaseMetaData.getPrimaryKeys(conn.getCatalog(), postgresConfig.getSchema(), tableName);
-            table.setDefaultPrimaryKeys(getDataFromResultSet(primaryKeyResult).stream().sorted(Comparator.comparing(v -> (int) v.get("key_seq"))).map(v -> (String) v.get("column_name")).collect(Collectors.toList()));
+            table.setDefaultPrimaryKeys(getAllFromResultSet(primaryKeyResult).stream().sorted(Comparator.comparing(v -> (int) v.get("key_seq"))).map(v -> (String) v.get("column_name")).collect(Collectors.toList()));
             //5、table index
             ResultSet indexResult = databaseMetaData.getIndexInfo(conn.getCatalog(), postgresConfig.getSchema(), tableName, false, false);
-            Map<String, List<DataMap>> indexMap = getDataFromResultSet(indexResult).stream().sorted(Comparator.comparing(v -> (int) v.get("ORDINAL_POSITION"))).collect(Collectors.groupingBy(v -> (String) v.get("INDEX_NAME"), LinkedHashMap::new, Collectors.toList()));
+            Map<String, List<DataMap>> indexMap = getAllFromResultSet(indexResult).stream().sorted(Comparator.comparing(v -> (int) v.get("ORDINAL_POSITION"))).collect(Collectors.groupingBy(v -> (String) v.get("INDEX_NAME"), LinkedHashMap::new, Collectors.toList()));
             indexMap.forEach((key, value) -> {
                 TapIndex index = new TapIndex();
                 index.setName(key);
@@ -121,7 +123,7 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportStreamRead(this::streamRead);
+//        connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
@@ -358,7 +360,37 @@ public class PostgresConnector extends ConnectorBase {
 
     private void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, Object offsetState, int eventBatchSize, BiConsumer<List<TapEvent>, Object> eventsOffsetConsumer) throws SQLException {
         initConnection(tapConnectorContext.getConnectionConfig());
-        String sql = "SELECT * FROM " + tapTable.getId() + getOrderByUniqueKey(tapTable);
+        List<TapEvent> tapEvents = list();
+        PostgresOffset postgresOffset;
+        //beginning
+        if (null == offsetState) {
+            postgresOffset = new PostgresOffset(getOrderByUniqueKey(tapTable), 0L);
+        }
+        //with offset
+        else {
+            postgresOffset = (PostgresOffset) offsetState;
+        }
+        String sql = "SELECT * FROM " + tapTable.getId() + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue() + " LIMIT " + BATCH_READ_SIZE;
+        ResultSet resultSet = stmt.executeQuery(sql);
+        //get all column names
+        List<String> columnNames = list();
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+            columnNames.add(resultSetMetaData.getColumnName(i));
+        }
+        while (resultSet.next()) {
+            tapEvents.add(insertRecordEvent(getRowFromResultSet(resultSet, columnNames), tapTable.getId()));
+            if (tapEvents.size() == eventBatchSize) {
+                postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + eventBatchSize);
+                eventsOffsetConsumer.accept(tapEvents, postgresOffset);
+                tapEvents = list();
+            }
+        }
+        //last events those less than eventBatchSize
+        if (!tapEvents.isEmpty()) {
+            postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + tapEvents.size());
+            eventsOffsetConsumer.accept(tapEvents, postgresOffset);
+        }
     }
 
     private String getOrderByUniqueKey(TapTable tapTable) {
@@ -377,7 +409,7 @@ public class PostgresConnector extends ConnectorBase {
         return orderBy.toString();
     }
 
-    private List<DataMap> getDataFromResultSet(ResultSet resultSet) throws SQLException {
+    private List<DataMap> getAllFromResultSet(ResultSet resultSet) throws SQLException {
         List<DataMap> list = new LinkedList<>();
         if (resultSet != null) {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -391,6 +423,16 @@ public class PostgresConnector extends ConnectorBase {
             }
         }
         return list;
+    }
+
+    private DataMap getRowFromResultSet(ResultSet resultSet, List<String> columnNames) throws SQLException {
+        DataMap map = DataMap.create();
+        if (resultSet != null) {
+            for (int i = 0; i < columnNames.size(); i++) {
+                map.put(columnNames.get(i), resultSet.getObject(i + 1));
+            }
+        }
+        return map;
     }
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
