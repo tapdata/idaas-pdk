@@ -50,6 +50,7 @@ public class PostgresConnector extends ConnectorBase {
     private Statement stmt;
     private static final String TABLE_COLUMN_NAME = "TABLE";
     private static final int BATCH_READ_SIZE = 5000;
+    private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
 
     @Override
     public void onStart(TapConnectionContext connectorContext) throws Throwable {
@@ -208,8 +209,15 @@ public class PostgresConnector extends ConnectorBase {
         FilterResults filterResults = new FilterResults();
         String sql = "SELECT * FROM \"" + table.getId() + "\" " + SqlBuilder.buildSqlByAdvanceFilter(filter);
         ResultSet resultSet = stmt.executeQuery(sql);
-
-        consumer.accept(filterResults);
+        while (resultSet.next()) {
+            filterResults.add(getRowFromResultSet(resultSet, getColumnsFromResultSet(resultSet)));
+            if (filterResults.getResults().size() == BATCH_ADVANCE_READ_LIMIT) {
+                consumer.accept(filterResults);
+            }
+        }
+        if (SmartKit.isNotEmpty(filterResults.getResults())) {
+            consumer.accept(filterResults);
+        }
     }
 
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
@@ -383,11 +391,7 @@ public class PostgresConnector extends ConnectorBase {
         String sql = "SELECT * FROM \"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue() + " LIMIT " + BATCH_READ_SIZE;
         ResultSet resultSet = stmt.executeQuery(sql);
         //get all column names
-        List<String> columnNames = list();
-        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-        for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-            columnNames.add(resultSetMetaData.getColumnName(i));
-        }
+        List<String> columnNames = getColumnsFromResultSet(resultSet);
         while (resultSet.next()) {
             tapEvents.add(insertRecordEvent(getRowFromResultSet(resultSet, columnNames), tapTable.getId()));
             if (tapEvents.size() == eventBatchSize) {
@@ -443,6 +447,16 @@ public class PostgresConnector extends ConnectorBase {
             }
         }
         return map;
+    }
+
+    private List<String> getColumnsFromResultSet(ResultSet resultSet) throws SQLException {
+        //get all column names
+        List<String> columnNames = list();
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+            columnNames.add(resultSetMetaData.getColumnName(i));
+        }
+        return columnNames;
     }
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
