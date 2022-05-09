@@ -123,7 +123,7 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
-//        connectorFunctions.supportStreamRead(this::streamRead);
+        connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
@@ -182,7 +182,7 @@ public class PostgresConnector extends ConnectorBase {
         Set<String> columnNames = tapTable.getNameFieldMap().keySet();
         List<FilterResult> filterResults = new LinkedList<>();
         for (TapFilter filter : filters) {
-            String sql = "SELECT * FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND");
+            String sql = "SELECT * FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND", "=");
             FilterResult filterResult = new FilterResult();
             try {
                 DataMap resultMap = new DataMap();
@@ -203,12 +203,21 @@ public class PostgresConnector extends ConnectorBase {
         listConsumer.accept(filterResults);
     }
 
+    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<FilterResults> consumer) throws Throwable {
+        initConnection(connectorContext.getConnectionConfig());
+        FilterResults filterResults = new FilterResults();
+        String sql = "SELECT * FROM \"" + table.getId() + "\" " + SqlBuilder.buildSqlByAdvanceFilter(filter);
+        ResultSet resultSet = stmt.executeQuery(sql);
+
+        consumer.accept(filterResults);
+    }
+
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
         Collection<String> primaryKeys = tapTable.primaryKeys();
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
-        String sql = "CREATE TABLE \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " PRIMARY KEY (\"" + StringKit.combineString(primaryKeys, "\",\"") + "\" ) )";
+        String sql = "CREATE TABLE \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " PRIMARY KEY (\"" + SmartKit.combineString(primaryKeys, "\",\"") + "\" ) )";
         try {
             stmt = conn.createStatement();
             stmt.execute(sql);
@@ -305,7 +314,7 @@ public class PostgresConnector extends ConnectorBase {
                 for (Map.Entry<String, Object> entry : before.entrySet()) {
                     after.remove(entry.getKey(), entry.getValue());
                 }
-                String sql = "UPDATE \"" + tapTable.getId() + "\" SET " + SqlBuilder.buildKeyAndValue(after, ",") + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
+                String sql = "UPDATE \"" + tapTable.getId() + "\" SET " + SqlBuilder.buildKeyAndValue(after, ",", "=") + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND", "=");
                 try {
                     stmt.execute(sql);
                     updated.incrementAndGet();
@@ -317,7 +326,7 @@ public class PostgresConnector extends ConnectorBase {
                 inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
-                String sql = "DELETE FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
+                String sql = "DELETE FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(before, "AND", "=");
                 try {
                     stmt.execute(sql);
                     deleted.incrementAndGet();
@@ -388,7 +397,7 @@ public class PostgresConnector extends ConnectorBase {
             }
         }
         //last events those less than eventBatchSize
-        if (!tapEvents.isEmpty()) {
+        if (SmartKit.isNotEmpty(tapEvents)) {
             postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + tapEvents.size());
             eventsOffsetConsumer.accept(tapEvents, postgresOffset);
         }
@@ -397,7 +406,7 @@ public class PostgresConnector extends ConnectorBase {
     private String getOrderByUniqueKey(TapTable tapTable) {
         StringBuilder orderBy = new StringBuilder();
         List<TapIndex> indexList = tapTable.getIndexList();
-        if (indexList != null && !indexList.isEmpty() && indexList.stream().anyMatch(TapIndex::isUnique)) {
+        if (SmartKit.isNotEmpty(indexList) && indexList.stream().anyMatch(TapIndex::isUnique)) {
             orderBy.append(" ORDER BY ");
             TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
             for (int i = 0; i < uniqueIndex.getFields().size(); i++) {
@@ -442,10 +451,6 @@ public class PostgresConnector extends ConnectorBase {
 
     private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) throws Throwable {
         return null;
-    }
-
-    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<FilterResults> consumer) throws Throwable {
-
     }
 
 }

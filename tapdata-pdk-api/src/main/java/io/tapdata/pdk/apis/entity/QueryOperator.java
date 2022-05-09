@@ -55,4 +55,31 @@ public class QueryOperator {
     public void setOperator(int operator) {
         this.operator = operator;
     }
+
+    public String toString() {
+        return toString("");
+    }
+
+    public String toString(String quote) {
+        String operatorStr;
+        switch (operator) {
+            case GT:
+                operatorStr = ">";
+                break;
+            case GTE:
+                operatorStr = ">=";
+                break;
+            case LT:
+                operatorStr = "<";
+                break;
+            case LTE:
+                operatorStr = "<=";
+                break;
+            default:
+                operatorStr = "";
+                break;
+        }
+        return quote + key + quote + operatorStr + "'" + value.toString() + "'";
+    }
+
 }

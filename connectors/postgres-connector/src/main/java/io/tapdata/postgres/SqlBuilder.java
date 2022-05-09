@@ -3,6 +3,7 @@ package io.tapdata.postgres;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -81,6 +82,9 @@ public class SqlBuilder {
      */
     public static void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
         preparedStatement.clearParameters();
+        if (SmartKit.isEmpty(insertRecord)) {
+            return;
+        }
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         int pos = 1;
         for (String columnName : nameFieldMap.keySet()) {
@@ -103,6 +107,31 @@ public class SqlBuilder {
         preparedStatement.addBatch();
     }
 
+    public static String buildSqlByAdvanceFilter(TapAdvanceFilter filter) {
+        StringBuilder builder = new StringBuilder();
+        if (SmartKit.isNotEmpty(filter.getMatch()) || SmartKit.isNotEmpty(filter.getOperators())) {
+            builder.append("WHERE ");
+            builder.append(SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND", "="));
+        }
+        if(SmartKit.isNotEmpty(filter.getOperators())) {
+            if(SmartKit.isNotEmpty(filter.getMatch())) {
+                builder.append("AND ");
+            }
+            builder.append(filter.getOperators().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new)).append(' ');
+        }
+        if(SmartKit.isNotEmpty(filter.getSortOnList())) {
+            builder.append("ORDER BY ");
+            builder.append(filter.getSortOnList().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)).append(' ');
+        }
+        if(null != filter.getSkip()) {
+            builder.append("OFFSET ").append(filter.getSkip()).append(' ');
+        }
+        if(null != filter.getLimit()) {
+            builder.append("LIMIT ").append(filter.getLimit()).append(' ');
+        }
+        return builder.toString();
+    }
+
     /**
      * set value for each column in sql
      * e.g.
@@ -112,18 +141,20 @@ public class SqlBuilder {
      * @param splitSymbol split symbol
      * @return substring of sql
      */
-    public static String buildKeyAndValue(Map<String, Object> record, String splitSymbol) {
+    public static String buildKeyAndValue(Map<String, Object> record, String splitSymbol, String operator) {
         StringBuilder builder = new StringBuilder();
-        record.forEach((fieldName, value) -> {
-            builder.append('\"').append(fieldName).append("\"=");
-            if (!(value instanceof Number)) {
-                builder.append('\'').append(getFieldOriginValue(value)).append('\'');
-            } else {
-                builder.append(getFieldOriginValue(value));
-            }
-            builder.append(splitSymbol).append(' ');
-        });
-        builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
+        if (SmartKit.isNotEmpty(record)) {
+            record.forEach((fieldName, value) -> {
+                builder.append('\"').append(fieldName).append('\"').append(operator);
+                if (!(value instanceof Number)) {
+                    builder.append('\'').append(getFieldOriginValue(value)).append('\'');
+                } else {
+                    builder.append(getFieldOriginValue(value));
+                }
+                builder.append(' ').append(splitSymbol).append(' ');
+            });
+            builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
+        }
         return builder.toString();
     }
 

@@ -1,5 +1,13 @@
+import io.tapdata.entity.utils.DataMap;
+import io.tapdata.pdk.apis.entity.QueryOperator;
+import io.tapdata.pdk.apis.entity.SortOn;
+import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
+import io.tapdata.postgres.SmartKit;
+import io.tapdata.postgres.SqlBuilder;
+
 import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -17,14 +25,14 @@ public class Main {
 //            System.out.println(k);
 //        });
 //        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-        Class.forName("org.postgresql.Driver");
-        Connection conn = DriverManager.getConnection("jdbc:postgresql://192.168.1.189:5432/coolgj", "postgres", "abc123");
-        PreparedStatement statement = conn.prepareStatement("insert into public.ccc values (?)");
-        statement.setObject(1,"B");
-        statement.addBatch();
-        statement.setObject(1,"AC");
-        statement.addBatch();
-        statement.executeBatch();
+//        Class.forName("org.postgresql.Driver");
+//        Connection conn = DriverManager.getConnection("jdbc:postgresql://192.168.1.189:5432/coolgj", "postgres", "abc123");
+//        PreparedStatement statement = conn.prepareStatement("insert into public.ccc values (?)");
+//        statement.setObject(1,"B");
+//        statement.addBatch();
+//        statement.setObject(1,"AC");
+//        statement.addBatch();
+//        statement.executeBatch();
 //        statement.setObject(1, new java.sql.Timestamp(123123123123L));
 //        statement.execute();
 //        statement.close();
@@ -37,6 +45,25 @@ public class Main {
 //                System.out.println(resultSetMetaData.getColumnName(i+1) + ":" + resultSet.getObject(i+1));
 //            }
 //        }
-        conn.close();
+//        conn.close();
+        StringBuilder stringBuilder = new StringBuilder();
+        TapAdvanceFilter filter = new TapAdvanceFilter();
+//        filter.setLimit(100);
+//        filter.setSkip(50);
+        DataMap dataMap = new DataMap();
+        dataMap.put("k1", "v1");
+        dataMap.put("k2", "v2");
+//        filter.setMatch(dataMap);
+        List<QueryOperator> list = new ArrayList<>();
+        list.add(new QueryOperator("k3", "v3", 4));
+        list.add(new QueryOperator("k4", "v4", 1));
+        filter.setOperators(list);
+        List<SortOn> list2 = new ArrayList<>();
+        list2.add(new SortOn("k1", 2));
+        list2.add(new SortOn("k3", 1));
+//        filter.setSortOnList(list2);
+        stringBuilder.append("SELECT * FROM \"").append("TAble1").append("\" ");
+
+        System.out.println(stringBuilder.append(SqlBuilder.buildSqlByAdvanceFilter(filter)));
     }
 }
