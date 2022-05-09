@@ -30,23 +30,29 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 	private final Map<String, PreparedStatement> deleteMap = new LRUOnRemoveMap<>(10, entry -> JdbcUtil.closeQuietly(entry.getValue()));
 	private final Map<String, PreparedStatement> checkExistsMap = new LRUOnRemoveMap<>(10, entry -> JdbcUtil.closeQuietly(entry.getValue()));
 
-	public MysqlJdbcOneByOneWriter(MysqlJdbcContext mysqlJdbcContext) {
+	public MysqlJdbcOneByOneWriter(MysqlJdbcContext mysqlJdbcContext) throws Throwable {
 		super(mysqlJdbcContext);
 	}
 
 	@Override
 	public WriteListResult<TapRecordEvent> write(TapConnectorContext tapConnectorContext, TapTable tapTable, List<TapRecordEvent> tapRecordEvents) throws Throwable {
 		WriteListResult<TapRecordEvent> writeListResult = new WriteListResult<>(0L, 0L, 0L, new HashMap<>());
-		for (TapRecordEvent tapRecordEvent : tapRecordEvents) {
-			if (tapRecordEvent instanceof TapInsertRecordEvent) {
-				doInsertOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
-			} else if (tapRecordEvent instanceof TapUpdateRecordEvent) {
-				doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
-			} else if (tapRecordEvent instanceof TapDeleteRecordEvent) {
-				doDeleteOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
-			} else {
-				writeListResult.addError(tapRecordEvent, new Exception("Event type \"" + tapRecordEvent.getClass().getSimpleName() + "\" not support: " + tapRecordEvent));
+		try {
+			for (TapRecordEvent tapRecordEvent : tapRecordEvents) {
+				if (tapRecordEvent instanceof TapInsertRecordEvent) {
+					doInsertOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+				} else if (tapRecordEvent instanceof TapUpdateRecordEvent) {
+					doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+				} else if (tapRecordEvent instanceof TapDeleteRecordEvent) {
+					doDeleteOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+				} else {
+					writeListResult.addError(tapRecordEvent, new Exception("Event type \"" + tapRecordEvent.getClass().getSimpleName() + "\" not support: " + tapRecordEvent));
+				}
 			}
+			MysqlJdbcContext.tryCommit(connection);
+		} catch (Throwable e) {
+			MysqlJdbcContext.tryRollBack(connection);
+			throw e;
 		}
 		return writeListResult;
 	}

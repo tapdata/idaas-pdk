@@ -67,6 +67,24 @@ public class MysqlJdbcContext implements AutoCloseable {
 		return connection;
 	}
 
+	public static void tryCommit(Connection connection) {
+		try {
+			if (connection != null && connection.isValid(5) && !connection.getAutoCommit()) {
+				connection.commit();
+			}
+		} catch (Throwable ignored) {
+		}
+	}
+
+	public static void tryRollBack(Connection connection) {
+		try {
+			if (connection != null && connection.isValid(5) && !connection.getAutoCommit()) {
+				connection.rollback();
+			}
+		} catch (Throwable ignored) {
+		}
+	}
+
 	private String jdbcUrl() {
 		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
 		String type = tapConnectionContext.getSpecification().getId();
@@ -254,30 +272,24 @@ public class MysqlJdbcContext implements AutoCloseable {
 	}
 
 	static class HikariConnection {
-		private static volatile HikariDataSource hikariDataSource;
-
 		public static HikariDataSource getHikariDataSource(TapConnectionContext tapConnectionContext, String jdbcUrl) throws IllegalArgumentException {
+			HikariDataSource hikariDataSource;
 			if (null == tapConnectionContext) {
 				throw new IllegalArgumentException("TapConnectionContext cannot be null");
 			}
-			if (null == hikariDataSource) {
-				synchronized (HikariDataSource.class) {
-					if (null == hikariDataSource) {
-						hikariDataSource = new HikariDataSource();
-						DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
-						hikariDataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-						String username = connectionConfig.getString("username");
-						String password = connectionConfig.getString("password");
-						hikariDataSource.setJdbcUrl(jdbcUrl);
-						hikariDataSource.setUsername(username);
-						hikariDataSource.setPassword(password);
-						hikariDataSource.setMinimumIdle(1);
-						hikariDataSource.setMaximumPoolSize(20);
-						hikariDataSource.setAutoCommit(false);
-						hikariDataSource.setIdleTimeout(60 * 1000L);
-					}
-				}
-			}
+			hikariDataSource = new HikariDataSource();
+			DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
+			hikariDataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+			String username = connectionConfig.getString("username");
+			String password = connectionConfig.getString("password");
+			hikariDataSource.setJdbcUrl(jdbcUrl);
+			hikariDataSource.setUsername(username);
+			hikariDataSource.setPassword(password);
+			hikariDataSource.setMinimumIdle(1);
+			hikariDataSource.setMaximumPoolSize(20);
+			hikariDataSource.setAutoCommit(false);
+			hikariDataSource.setIdleTimeout(60 * 1000L);
+			hikariDataSource.setKeepaliveTime(60 * 1000L);
 			return hikariDataSource;
 		}
 	}

@@ -10,10 +10,7 @@ import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.schema.value.TapArrayValue;
-import io.tapdata.entity.schema.value.TapBooleanValue;
-import io.tapdata.entity.schema.value.TapMapValue;
-import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -54,6 +51,9 @@ public class MysqlConnector extends ConnectorBase {
 		codecRegistry.registerFromTapValue(TapMapValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapArrayValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapBooleanValue.class, "bool", TapValue::getValue);
+		codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> tapTimeValue.getValue().toDate());
+		codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
+		codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toDate());
 
 		connectorFunctions.supportCreateTable(this::createTable);
 		connectorFunctions.supportDropTable(this::dropTable);
@@ -67,8 +67,8 @@ public class MysqlConnector extends ConnectorBase {
 	}
 
 	@Override
-	public void onStart(TapConnectorContext tapConnectorContext) throws Throwable {
-		this.mysqlJdbcContext = new MysqlJdbcContext(tapConnectorContext);
+	public void onStart(TapConnectionContext tapConnectionContext) throws Throwable {
+		this.mysqlJdbcContext = new MysqlJdbcContext(tapConnectionContext);
 		this.mysqlReader = new MysqlReader(mysqlJdbcContext);
 		this.mysqlWriter = new MysqlJdbcOneByOneWriter(mysqlJdbcContext);
 		this.version = mysqlJdbcContext.getMysqlVersion();

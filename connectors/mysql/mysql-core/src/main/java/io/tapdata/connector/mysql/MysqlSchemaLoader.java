@@ -101,7 +101,6 @@ public class MysqlSchemaLoader {
 					tapTable.add(field);
 				}
 			});
-			tapTable.defaultPrimaryKeys(defaultPk);
 		} catch (Exception e) {
 			throw new Exception("Load column metadata error, table: " + database + "." + tapTable.getName() + "; Reason: " + e.getMessage(), e);
 		}

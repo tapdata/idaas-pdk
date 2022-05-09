@@ -5,6 +5,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
+import java.math.BigDecimal;
 import java.sql.ResultSetMetaData;
 import java.util.Collection;
 import java.util.HashMap;

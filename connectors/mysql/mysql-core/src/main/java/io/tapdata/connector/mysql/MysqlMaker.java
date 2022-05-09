@@ -44,7 +44,6 @@ public class MysqlMaker implements SqlMaker {
 		if (CollectionUtils.isNotEmpty(tapTable.getDefaultPrimaryKeys())) {
 			fieldSql += ",\n  " + createTableAppendPrimaryKey(tapTable);
 		}
-		fieldSql += "\n)";
 		String tablePropertiesSql = "";
 		// table comment
 		if (StringUtils.isNotBlank(tapTable.getComment())) {
@@ -98,9 +97,21 @@ public class MysqlMaker implements SqlMaker {
 		String database = connectionConfig.getString("database");
 		String tableId = tapTable.getId();
 		String sql = String.format(MysqlJdbcContext.SELECT_TABLE, database, tableId);
+		DataMap match = tapAdvanceFilter.getMatch();
+		List<String> whereList = new ArrayList<>();
+		if (MapUtils.isNotEmpty(match)) {
+			for (Map.Entry<String, Object> entry : match.entrySet()) {
+				String key = entry.getKey();
+				Object value = entry.getValue();
+				if (value instanceof Number) {
+					whereList.add(key + "<=>" + value);
+				} else {
+					whereList.add(key + "<=>'" + value + "'");
+				}
+			}
+		}
 		List<QueryOperator> operators = tapAdvanceFilter.getOperators();
 		if (CollectionUtils.isNotEmpty(operators)) {
-			List<String> whereList = new ArrayList<>();
 			for (QueryOperator operator : operators) {
 				String key = operator.getKey();
 				Object value = operator.getValue();
@@ -113,6 +124,8 @@ public class MysqlMaker implements SqlMaker {
 					whereList.add(key + opStr + "'" + value + "'");
 				}
 			}
+		}
+		if (CollectionUtils.isNotEmpty(whereList)) {
 			sql += " WHERE " + String.join(" AND ", whereList);
 		}
 		List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
@@ -146,13 +159,7 @@ public class MysqlMaker implements SqlMaker {
 
 		// auto increment
 		// mysql a table can only create one auto-increment column, and must be the primary key
-		if (tapField.getAutoInc()
-				&& tapField.getPrimaryKeyPos() > 0
-				&& !hasAutoIncrement) {
-			fieldSql += " AUTO_INCREMENT";
-			hasAutoIncrement = true;
-		}
-		if (tapField.getAutoInc()) {
+		if (null != tapField.getAutoInc() && tapField.getAutoInc()) {
 			if (tapField.getPrimaryKeyPos() == 1) {
 				fieldSql += " AUTO_INCREMENT";
 			} else {
@@ -161,14 +168,14 @@ public class MysqlMaker implements SqlMaker {
 		}
 
 		// nullable
-		if (tapField.getNullable()) {
-			fieldSql += " NULL";
-		} else {
+		if (null != tapField.getNullable() && !tapField.getNullable()) {
 			fieldSql += " NOT NULL";
+		} else {
+			fieldSql += " NULL";
 		}
 
 		// default value
-		String defaultValue = tapField.getDefaultValue().toString();
+		String defaultValue = tapField.getDefaultValue() == null ? "" : tapField.getDefaultValue().toString();
 		if (StringUtils.isNotBlank(defaultValue)) {
 			fieldSql += " DEFAULT '" + defaultValue + "'";
 		}

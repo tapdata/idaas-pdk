@@ -14,6 +14,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.map.LRUMap;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
@@ -33,24 +34,33 @@ public abstract class MysqlWriter {
 	protected static final String DELETE_SQL_TEMPLATE = "DELETE FROM `%s`.`%s` WHERE %s";
 	protected static final String CHECK_ROW_EXISTS_TEMPLATE = "SELECT COUNT(1) as count FROM `%s`.`%s` WHERE %s";
 	protected MysqlJdbcContext mysqlJdbcContext;
+	protected Connection connection;
 
-	public MysqlWriter(MysqlJdbcContext mysqlJdbcContext) {
+	public MysqlWriter(MysqlJdbcContext mysqlJdbcContext) throws Throwable {
 		this.mysqlJdbcContext = mysqlJdbcContext;
+		this.connection = mysqlJdbcContext.getConnection();
 	}
 
 	abstract public WriteListResult<TapRecordEvent> write(TapConnectorContext tapConnectorContext, TapTable tapTable, List<TapRecordEvent> tapRecordEvents) throws Throwable;
 
 	abstract public void onDestroy();
 
-	protected String getKey(TapTable tapTable) {
-		LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-		Set<String> keys = nameFieldMap.keySet();
+	protected String getKey(TapTable tapTable, TapRecordEvent tapRecordEvent) {
+		Map<String, Object> after = getAfter(tapRecordEvent);
+		Map<String, Object> before = getBefore(tapRecordEvent);
+		Map<String, Object> data;
+		if (MapUtils.isNotEmpty(after)) {
+			data = after;
+		} else {
+			data = before;
+		}
+		Set<String> keys = data.keySet();
 		String keyString = String.join("-", keys);
 		return tapTable.getId() + "-" + keyString;
 	}
 
 	protected PreparedStatement getInsertPreparedStatement(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, Map<String, PreparedStatement> insertMap) throws Throwable {
-		String key = getKey(tapTable);
+		String key = getKey(tapTable, tapRecordEvent);
 		PreparedStatement preparedStatement = insertMap.get(key);
 		if (null == preparedStatement) {
 			DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
@@ -71,7 +81,7 @@ public abstract class MysqlWriter {
 			List<String> questionMarks = fields.stream().map(f -> "?").collect(Collectors.toList());
 			String sql = String.format(INSERT_SQL_TEMPLATE, database, tableId, String.join(",", fields), String.join(",", questionMarks));
 			try {
-				preparedStatement = this.mysqlJdbcContext.getConnection().prepareStatement(sql);
+				preparedStatement = this.connection.prepareStatement(sql);
 			} catch (SQLException e) {
 				throw new Exception("Create insert prepared statement error, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
 			} catch (Exception e) {
@@ -83,7 +93,7 @@ public abstract class MysqlWriter {
 	}
 
 	protected PreparedStatement getUpdatePreparedStatement(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, Map<String, PreparedStatement> updateMap) throws Throwable {
-		String key = getKey(tapTable);
+		String key = getKey(tapTable, tapRecordEvent);
 		PreparedStatement preparedStatement = updateMap.get(key);
 		if (null == preparedStatement) {
 			DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
@@ -102,13 +112,13 @@ public abstract class MysqlWriter {
 				setList.add("`" + fieldName + "`=?");
 			});
 			List<String> whereList = new ArrayList<>();
-			List<String> uniqueKeys = getUniqueKeys(tapTable);
+			Collection<String> uniqueKeys = getUniqueKeys(tapTable);
 			for (String uniqueKey : uniqueKeys) {
 				whereList.add("`" + uniqueKey + "`<=>?");
 			}
 			String sql = String.format(UPDATE_SQL_TEMPLATE, database, tableId, String.join(",", setList), String.join(",", whereList));
 			try {
-				preparedStatement = this.mysqlJdbcContext.getConnection().prepareStatement(sql);
+				preparedStatement = this.connection.prepareStatement(sql);
 			} catch (SQLException e) {
 				throw new Exception("Create update prepared statement error, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
 			} catch (Exception e) {
@@ -120,7 +130,7 @@ public abstract class MysqlWriter {
 	}
 
 	protected PreparedStatement getDeletePreparedStatement(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, Map<String, PreparedStatement> deleteMap) throws Throwable {
-		String key = getKey(tapTable);
+		String key = getKey(tapTable, tapRecordEvent);
 		PreparedStatement preparedStatement = deleteMap.get(key);
 		if (null == preparedStatement) {
 			DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
@@ -132,13 +142,13 @@ public abstract class MysqlWriter {
 				throw new Exception("Create delete prepared statement error, table \"" + tableId + "\"'s fields is empty, retry after reload connection \"" + name + "\"'s schema");
 			}
 			List<String> whereList = new ArrayList<>();
-			List<String> uniqueKeys = getUniqueKeys(tapTable);
+			Collection<String> uniqueKeys = getUniqueKeys(tapTable);
 			for (String uniqueKey : uniqueKeys) {
 				whereList.add("`" + uniqueKey + "`<=>?");
 			}
 			String sql = String.format(DELETE_SQL_TEMPLATE, database, tableId, String.join(",", whereList));
 			try {
-				preparedStatement = this.mysqlJdbcContext.getConnection().prepareStatement(sql);
+				preparedStatement = this.connection.prepareStatement(sql);
 			} catch (SQLException e) {
 				throw new Exception("Create delete prepared statement error, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
 			} catch (Exception e) {
@@ -150,7 +160,7 @@ public abstract class MysqlWriter {
 	}
 
 	protected PreparedStatement getCheckRowExistsPreparedStatement(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, Map<String, PreparedStatement> checkExistsMap) throws Throwable {
-		String key = getKey(tapTable);
+		String key = getKey(tapTable, tapRecordEvent);
 		PreparedStatement preparedStatement = checkExistsMap.get(key);
 		if (null == preparedStatement) {
 			DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
@@ -162,13 +172,13 @@ public abstract class MysqlWriter {
 				throw new Exception("Create check row exists prepared statement error, table \"" + tableId + "\"'s fields is empty, retry after reload connection \"" + name + "\"'s schema");
 			}
 			List<String> whereList = new ArrayList<>();
-			List<String> uniqueKeys = getUniqueKeys(tapTable);
+			Collection<String> uniqueKeys = getUniqueKeys(tapTable);
 			for (String uniqueKey : uniqueKeys) {
 				whereList.add("`" + uniqueKey + "`<=>?");
 			}
-			String sql = String.format(CHECK_ROW_EXISTS_TEMPLATE, database, tableId, String.join(",", whereList));
+			String sql = String.format(CHECK_ROW_EXISTS_TEMPLATE, database, tableId, String.join(" AND ", whereList));
 			try {
-				preparedStatement = this.mysqlJdbcContext.getConnection().prepareStatement(sql);
+				preparedStatement = this.connection.prepareStatement(sql);
 			} catch (SQLException e) {
 				throw new Exception("Create check row exists prepared statement error, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
 			} catch (Exception e) {
@@ -214,28 +224,29 @@ public abstract class MysqlWriter {
 		if (MapUtils.isEmpty(before) && MapUtils.isEmpty(after)) {
 			throw new Exception("Set prepared statement where clause failed, before and after both empty: " + tapRecordEvent);
 		}
-		List<String> uniqueKeys = getUniqueKeys(tapTable);
+		Map<String, Object> data;
+		if (MapUtils.isNotEmpty(before)) {
+			data = before;
+		} else {
+			data = after;
+		}
+		Collection<String> uniqueKeys = getUniqueKeys(tapTable);
 		for (String uniqueKey : uniqueKeys) {
-			if (!before.containsKey(uniqueKey) && !after.containsKey(uniqueKey)) {
+			if (!data.containsKey(uniqueKey)) {
 				throw new Exception("Set prepared statement where clause failed, unique key \"" + uniqueKey + "\" not exists in data: " + tapRecordEvent);
 			}
-			Object value;
-			if (MapUtils.isNotEmpty(before)) {
-				value = before.get(uniqueKey);
-			} else {
-				value = after.get(uniqueKey);
-			}
+			Object value = data.get(uniqueKey);
 			preparedStatement.setObject(parameterIndex++, value);
 		}
 	}
 
-	protected List<String> getUniqueKeys(TapTable tapTable) {
-		List<String> defaultPrimaryKeys = tapTable.getDefaultPrimaryKeys();
+	protected Collection<String> getUniqueKeys(TapTable tapTable) {
+		Collection<String> primaryKeys = tapTable.primaryKeys();
 		LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-		if (CollectionUtils.isEmpty(defaultPrimaryKeys)) {
-			defaultPrimaryKeys = new ArrayList<>(nameFieldMap.keySet());
+		if (CollectionUtils.isEmpty(primaryKeys)) {
+			primaryKeys = new ArrayList<>(nameFieldMap.keySet());
 		}
-		return defaultPrimaryKeys;
+		return primaryKeys;
 	}
 
 	protected boolean needAddIntoPreparedStatementValues(TapField field, TapRecordEvent tapRecordEvent) {

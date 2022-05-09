@@ -4,7 +4,7 @@
 	"port": 3307,
 	"username": "root",
 	"password": "tapdata",
-	"database": "INSURANCE",
+	"database": "tdd",
 	"timezone": "",
 	"name": "mysql connection",
 	"addtionalString": "",
