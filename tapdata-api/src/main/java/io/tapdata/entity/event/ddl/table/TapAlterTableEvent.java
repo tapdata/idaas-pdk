@@ -27,6 +27,7 @@ public class TapAlterTableEvent extends TapTableEvent {
      */
     private String charset;
 
+    @Override
     public void clone(TapEvent tapEvent) {
         super.clone(tapEvent);
         if(tapEvent instanceof TapAlterTableEvent) {
