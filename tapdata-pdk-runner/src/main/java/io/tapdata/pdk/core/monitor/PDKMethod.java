@@ -14,6 +14,7 @@ public enum PDKMethod {
     INIT,
     BATCH_OFFSET,
     STREAM_OFFSET,
+    TABLE_COUNT,
     SOURCE_CONNECTION_TEST(TimeUnit.SECONDS.toMillis(10)),
     TARGET_CONNECTION_TEST(TimeUnit.SECONDS.toMillis(10)),
 
