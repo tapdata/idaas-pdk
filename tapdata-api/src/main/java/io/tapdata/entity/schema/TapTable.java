@@ -12,6 +12,11 @@ public class TapTable extends TapItem<TapField> {
         this.name = name;
         this.id = id;
     }
+    private Long lastUpdate;
+    public TapTable lastUpdate(Long lastUpdate) {
+        this.lastUpdate = lastUpdate;
+        return this;
+    }
 
     /**
      * Please don't add or remove on this field. If you need to add or delete, please set new one.
@@ -218,5 +223,13 @@ public class TapTable extends TapItem<TapField> {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+    
+    public Long getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(Long lastUpdate) {
+        this.lastUpdate = lastUpdate;
     }
 }
