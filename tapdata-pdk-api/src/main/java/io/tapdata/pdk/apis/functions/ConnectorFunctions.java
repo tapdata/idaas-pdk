@@ -18,6 +18,12 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private ControlFunction controlFunction;
     private CreateIndexFunction createIndexFunction;
     private DeleteIndexFunction deleteIndexFunction;
+    private QueryIndexesFunction queryIndexesFunction;
+
+    public ConnectorFunctions supportQueryIndexes(QueryIndexesFunction function) {
+        queryIndexesFunction = function;
+        return this;
+    }
 
     public ConnectorFunctions supportCreateIndex(CreateIndexFunction function) {
         createIndexFunction = function;
@@ -162,5 +168,9 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public DeleteIndexFunction getDeleteIndexFunction() {
         return deleteIndexFunction;
+    }
+
+    public QueryIndexesFunction getQueryIndexesFunction() {
+        return queryIndexesFunction;
     }
 }
