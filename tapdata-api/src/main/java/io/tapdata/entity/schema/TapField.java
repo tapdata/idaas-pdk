@@ -21,7 +21,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
     /**
      * Field value can be null
      */
-    private Boolean nullable;
+    private Boolean nullable = true;
     public TapField nullable(Boolean nullable) {
         this.nullable = nullable;
         return this;
@@ -37,7 +37,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
     /**
      * Primary key
      */
-    private Boolean isPrimaryKey;
+    private Boolean isPrimaryKey = false;
     public TapField isPrimaryKey(Boolean isPrimaryKey) {
         this.isPrimaryKey = isPrimaryKey;
         return this;
@@ -45,7 +45,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
     /**
      * Partition key
      */
-    private Boolean isPartitionKey;
+    private Boolean isPartitionKey = false;
     public TapField isPartitionKey(Boolean isPartitionKey) {
         this.isPartitionKey = isPartitionKey;
         return this;
@@ -55,7 +55,10 @@ public class TapField extends TapItem<TapField> implements Serializable {
      */
     private Integer partitionKeyPos;
     public TapField partitionKeyPos(Integer partitionKeyPos) {
-        this.partitionKeyPos = partitionKeyPos;
+        if(partitionKeyPos != null && partitionKeyPos >= 0) {
+            this.partitionKeyPos = partitionKeyPos;
+            isPartitionKey = true;
+        }
         return this;
     }
     /**
@@ -71,7 +74,10 @@ public class TapField extends TapItem<TapField> implements Serializable {
      */
     private Integer primaryKeyPos;
     public TapField primaryKeyPos(Integer primaryKeyPos) {
-        this.primaryKeyPos = primaryKeyPos;
+        if(primaryKeyPos != null && primaryKeyPos >= 0) {
+            this.primaryKeyPos = primaryKeyPos;
+            isPrimaryKey = true;
+        }
         return this;
     }
     /**
@@ -101,7 +107,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
     /**
      * Auto incremental
      */
-    private Boolean autoInc;
+    private Boolean autoInc = false;
     public TapField autoInc(Boolean autoInc) {
         this.autoInc = autoInc;
         return this;
