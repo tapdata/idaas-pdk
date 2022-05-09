@@ -3,10 +3,14 @@ package io.tapdata.pdk.tdd.tests;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.utils.TypeUtils;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class test {
@@ -36,6 +40,14 @@ public class test {
         System.out.println("aaa " + BigDecimal.valueOf(10).pow(19));
         System.out.println("aaa " + BigDecimal.valueOf(100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d));
         System.out.println("aaa " + BigDecimal.valueOf(10).pow(245));
+
+        DateTime dateTime = new DateTime();
+        Instant instant = Instant.now();
+        LocalDate date = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy MM dd");
+
+        String text = date.format(formatter);
+        LocalDate parsedDate = LocalDate.parse(text, formatter);
     }
 
     public static BigDecimal maxValueForPrecision(int maxPrecision) {

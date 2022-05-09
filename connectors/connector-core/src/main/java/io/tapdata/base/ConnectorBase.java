@@ -194,10 +194,6 @@ public abstract class ConnectorBase implements TapConnector {
         return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
     }
 
-    public static Object convertDateTimeToDate(DateTime dateTime) {
-        return TapSimplify.convertDateTimeToDate(dateTime);
-    }
-
     private final AtomicBoolean isAlive = new AtomicBoolean(false);
 
     public boolean isAlive() {

@@ -243,9 +243,9 @@ public class MongodbConnector extends ConnectorBase {
         });
 
         //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "TapTime", tapTimeValue -> convertDateTimeToDate(tapTimeValue.getValue()));
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TapDateTime", tapDateTimeValue -> convertDateTimeToDate(tapDateTimeValue.getValue()));
-        codecRegistry.registerFromTapValue(TapDateValue.class, "TapDate", tapDateValue -> convertDateTimeToDate(tapDateValue.getValue()));
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "TapTime", tapTimeValue -> tapTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TapDateTime", tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateValue.class, "TapDate", tapDateValue -> tapDateValue.getValue().toDate());
 
         //Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
         //We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.

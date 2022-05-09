@@ -13,6 +13,7 @@ import java.util.Map;
 public class TapMapMapping extends TapSizeBase {
 
 
+
     @Override
     public TapType toTapType(String dataType, Map<String, String> params) {
         return new TapMap();

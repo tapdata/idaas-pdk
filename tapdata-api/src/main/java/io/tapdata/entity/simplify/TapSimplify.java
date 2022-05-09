@@ -150,21 +150,4 @@ public class TapSimplify {
         }
     }
 
-    public static Object convertDateTimeToDate(DateTime dateTime) {
-        if(dateTime != null) {
-            Long milliseconds;
-            Integer nano = dateTime.getNano();
-            Long seconds = dateTime.getSeconds();
-            if(seconds != null) {
-                milliseconds = seconds * 1000;
-                if(nano != null) {
-                    milliseconds += milliseconds + (nano / 1000 / 1000);
-                }
-            } else {
-                return null;
-            }
-            return new Date(milliseconds);
-        }
-        return null;
-    }
 }
