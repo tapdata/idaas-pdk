@@ -610,8 +610,8 @@ class TargetTypesGeneratorTest {
                 "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
                 "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"format\": \"yyyy-MM-dd\"},\n" +
                 "\"time\": {\"to\": \"TapTime\",\"range\": [ \"-838:59:59\", \"838:59:59\"]},\n" +
-                "\"datetime[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0},\n" +
-                "\"timestamp[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0,\"withTimezone\": true}\n"
+                "\"datetime[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0},\n" +
+                "\"timestamp[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0,\"withTimeZone\": true}\n"
                 + "}";
 
         TapTable sourceTable = table("test");
