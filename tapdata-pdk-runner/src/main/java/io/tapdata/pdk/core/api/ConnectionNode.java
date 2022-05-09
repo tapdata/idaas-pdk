@@ -16,7 +16,9 @@ public class ConnectionNode extends Node {
     public void discoverSchema(List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
         connectorNode.discoverSchema(connectionContext, tables, tableSize, consumer);
     }
-
+    public int tableCount() throws Throwable {
+        return connectorNode.tableCount(connectionContext);
+    }
     public void connectionTest(Consumer<TestItem> consumer) throws Throwable {
         connectorNode.connectionTest(connectionContext, consumer);
     }

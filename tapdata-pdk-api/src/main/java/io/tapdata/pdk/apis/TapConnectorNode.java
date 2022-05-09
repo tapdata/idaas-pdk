@@ -26,9 +26,17 @@ public interface TapConnectorNode extends TapNode  {
 
     /**
      * Test connection
-     * @param databaseContext
+     * @param connectionContext
      * @return
      */
-    void connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer) throws Throwable;
+    void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable;
 
+    /**
+     * Table count for database.
+     *
+     * @param connectionContext
+     * @return
+     * @throws Throwable
+     */
+    int tableCount(TapConnectionContext connectionContext) throws Throwable;
 }

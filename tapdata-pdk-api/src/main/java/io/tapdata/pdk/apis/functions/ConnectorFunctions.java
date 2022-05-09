@@ -19,12 +19,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private CreateIndexFunction createIndexFunction;
     private DeleteIndexFunction deleteIndexFunction;
     private QueryIndexesFunction queryIndexesFunction;
-    private TableCountFunction tableCountFunction;
-
-    public ConnectorFunctions supportTableCount(TableCountFunction function) {
-        tableCountFunction = function;
-        return this;
-    }
 
     public ConnectorFunctions supportQueryIndexes(QueryIndexesFunction function) {
         queryIndexesFunction = function;
@@ -178,13 +172,5 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public QueryIndexesFunction getQueryIndexesFunction() {
         return queryIndexesFunction;
-    }
-
-    public TableCountFunction getTableCountFunction() {
-        return tableCountFunction;
-    }
-
-    public void setTableCountFunction(TableCountFunction tableCountFunction) {
-        this.tableCountFunction = tableCountFunction;
     }
 }
