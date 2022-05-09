@@ -176,7 +176,7 @@ public class TDDCli extends CommonCli {
             if (0 == state){
                 MavenXpp3Reader reader = new MavenXpp3Reader();
                 Model model = reader.read(new FileReader(FilenameUtils.concat(file.getAbsolutePath(), "pom.xml")));
-                jarFile = FilenameUtils.concat(file.getAbsolutePath(), "../../dist/" + model.getArtifactId() + "-v" + model.getVersion() + ".jar");
+                jarFile = FilenameUtils.concat("./", "./dist/" + model.getArtifactId() + "-v" + model.getVersion() + ".jar");
                 System.out.println("------------- Maven package successfully -------------");
                 System.out.println("Connector jar is " + jarFile);
 //                System.setProperty("maven.multiModuleProjectDirectory", ".");

@@ -15,6 +15,8 @@ import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
+import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
+import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
@@ -233,24 +235,28 @@ public class StreamReadTest extends PDKTestBase {
             sendDropTableEvent(dataFlowEngine, tddToSourceDag, testTableId, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                 if (innerNodeId.equals(testSourceAsTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                     prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                        PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+                        pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
+
                         String targetTable = tddToSourceDag.getNodeMap().get(testSourceAsTargetNodeId).getTable();
 
                         List<TapTable> allTables = new ArrayList<>();
                         try {
                             connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
+                            for(TapTable table : allTables) {
+                                if(table.getId() != null && table.getId().equals(targetTable)) {
+                                    $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                                }
+                            }
+
+                            CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                            completed();
                         } catch (Throwable throwable) {
                             throwable.printStackTrace();
                             Assertions.fail(throwable);
+                        } finally {
+                            CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                         }
-
-                        for(TapTable table : allTables) {
-                            if(table.getId() != null && table.getId().equals(targetTable)) {
-                                $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
-                            }
-                        }
-
-                        CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
-                        completed();
                     });
                 }
             }));

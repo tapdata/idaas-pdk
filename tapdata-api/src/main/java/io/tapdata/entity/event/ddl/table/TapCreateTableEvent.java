@@ -1,7 +1,11 @@
 package io.tapdata.entity.event.ddl.table;
 
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
 import io.tapdata.entity.schema.TapTable;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TapCreateTableEvent extends TapTableEvent {
     private TapTable table;
@@ -12,5 +16,14 @@ public class TapCreateTableEvent extends TapTableEvent {
 
     public void setTable(TapTable table) {
         this.table = table;
+    }
+
+    @Override
+    public void clone(TapEvent tapEvent) {
+        super.clone(tapEvent);
+        if(tapEvent instanceof TapCreateTableEvent) {
+            TapCreateTableEvent createTableEvent = (TapCreateTableEvent) tapEvent;
+            createTableEvent.table = table;
+        }
     }
 }

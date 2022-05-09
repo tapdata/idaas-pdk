@@ -9,6 +9,8 @@ import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.utils.*;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.*;
 
 public class TapSimplify {
@@ -150,4 +152,31 @@ public class TapSimplify {
         }
     }
 
+    public static Object convertDateTimeToDate(DateTime dateTime) {
+        if(dateTime != null) {
+            Long milliseconds;
+            Integer nano = dateTime.getNano();
+            Long seconds = dateTime.getSeconds();
+            if(seconds != null) {
+                milliseconds = seconds * 1000;
+                if(nano != null) {
+                    milliseconds += milliseconds + (nano / 1000 / 1000);
+                }
+            } else {
+                return null;
+            }
+            return new Date(milliseconds);
+        }
+        return null;
+    }
+
+    public static String getStackString(Throwable throwable) {
+        StringWriter sw = new StringWriter();
+        try (
+                PrintWriter pw = new PrintWriter(sw)
+        ) {
+            throwable.printStackTrace(pw);
+            return sw.toString();
+        }
+    }
 }
