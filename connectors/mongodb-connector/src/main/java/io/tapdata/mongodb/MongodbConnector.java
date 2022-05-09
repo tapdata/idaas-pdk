@@ -176,6 +176,17 @@ public class MongodbConnector extends ConnectorBase {
         }
     }
 
+    @Override
+    public int tableCount(TapConnectionContext connectionContext) throws Throwable {
+        initConnection(connectionContext.getConnectionConfig());
+        MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+        int index = 0;
+        for (String collectionName : collectionNames) {
+            index++;
+        }
+        return index;
+    }
+
     /**
      * Register connector capabilities here.
      * <p>

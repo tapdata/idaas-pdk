@@ -108,6 +108,11 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
  //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
     }
 
+    @Override
+    public int tableCount(TapConnectionContext connectionContext) throws Throwable {
+        return 1;
+    }
+
     /**
      * Register connector capabilities here.
      *
