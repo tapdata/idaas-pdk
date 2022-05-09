@@ -140,7 +140,7 @@ public class SourceNodeDriver extends Driver {
                 for(TapTable table : tableList) {
                     if(table == null) continue;
                     analyzeTableFields(table);
-                    checkTableList.removeIf(v->v.equalsIgnoreCase(table.getId()));
+                    checkTableList.remove(table.getId());
 
                     if(taskManager != null) {
                         taskManager.filterTable(table, TAG);

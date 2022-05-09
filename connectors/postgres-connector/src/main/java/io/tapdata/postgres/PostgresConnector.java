@@ -67,7 +67,7 @@ public class PostgresConnector extends ConnectorBase {
         while (tableResult.next()) {
             String tableName = tableResult.getString("TABLE_NAME");
             //1、filter by tableList
-            if (tables != null && tables.stream().noneMatch(tableName::equalsIgnoreCase)) {
+            if (tables != null && tables.stream().noneMatch(tableName::equals)) {
                 continue;
             }
             //2、table name
@@ -182,7 +182,7 @@ public class PostgresConnector extends ConnectorBase {
         Set<String> columnNames = tapTable.getNameFieldMap().keySet();
         List<FilterResult> filterResults = new LinkedList<>();
         for (TapFilter filter : filters) {
-            String sql = "SELECT * FROM " + tapTable.getId() + " WHERE " + SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND");
+            String sql = "SELECT * FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND");
             FilterResult filterResult = new FilterResult();
             try {
                 DataMap resultMap = new DataMap();
@@ -208,7 +208,7 @@ public class PostgresConnector extends ConnectorBase {
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
         Collection<String> primaryKeys = tapTable.primaryKeys();
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
-        String sql = "CREATE TABLE " + tapTable.getId() + "(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " PRIMARY KEY (" + StringKit.combineStringWithComma(primaryKeys) + " ) )";
+        String sql = "CREATE TABLE \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " PRIMARY KEY (\"" + StringKit.combineString(primaryKeys, "\",\"") + "\" ) )";
         try {
             stmt = conn.createStatement();
             stmt.execute(sql);
@@ -216,6 +216,7 @@ public class PostgresConnector extends ConnectorBase {
             e.printStackTrace();
             throw new RuntimeException("Create Table " + tapTable.getId() + " Failed! " + e.getMessage());
         }
+        // TODO: 2022/5/9 column comments
     }
 
 //    private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent)
@@ -249,9 +250,9 @@ public class PostgresConnector extends ConnectorBase {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapClearTableEvent.getTableId());
         try {
-            ResultSet table = conn.getMetaData().getTables(conn.getCatalog(), postgresConfig.getSchema(), tapTable.getId().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
+            ResultSet table = conn.getMetaData().getTables(conn.getCatalog(), postgresConfig.getSchema(), tapTable.getId(), new String[]{TABLE_COLUMN_NAME});
             if (table.first()) {
-                String sql = "TRUNCATE TABLE " + tapTable.getId();
+                String sql = "TRUNCATE TABLE \"" + tapTable.getId() + "\"";
                 stmt.execute(sql);
             }
         } catch (SQLException e) {
@@ -263,9 +264,9 @@ public class PostgresConnector extends ConnectorBase {
         initConnection(tapConnectorContext.getConnectionConfig());
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapDropTableEvent.getTableId());
         try {
-            ResultSet table = conn.getMetaData().getTables(conn.getCatalog(), postgresConfig.getSchema(), tapTable.getId().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
+            ResultSet table = conn.getMetaData().getTables(conn.getCatalog(), postgresConfig.getSchema(), tapTable.getId(), new String[]{TABLE_COLUMN_NAME});
             if (table.first()) {
-                String sql = "DROP TABLE " + tapTable.getId(); // DROP TABLE IF EXISTS
+                String sql = "DROP TABLE \"" + tapTable.getId() + "\""; // DROP TABLE IF EXISTS
                 stmt.execute(sql);
             }
         } catch (SQLException e) {
@@ -283,7 +284,7 @@ public class PostgresConnector extends ConnectorBase {
         List<TapRecordEvent> batchInsertCache = list(); //records in batch cache
 
         PreparedStatement preparedStatement = conn.prepareStatement(SqlBuilder.buildPrepareInsertSQL(tapTable));
-        ResultSet table = conn.getMetaData().getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), tapTable.getId().toLowerCase(), new String[]{TABLE_COLUMN_NAME});
+        ResultSet table = conn.getMetaData().getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), tapTable.getId(), new String[]{TABLE_COLUMN_NAME});
         if (!table.first()) {
             throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
         }
@@ -304,7 +305,7 @@ public class PostgresConnector extends ConnectorBase {
                 for (Map.Entry<String, Object> entry : before.entrySet()) {
                     after.remove(entry.getKey(), entry.getValue());
                 }
-                String sql = "UPDATE " + tapTable.getId() + " SET " + SqlBuilder.buildKeyAndValue(after, ",") + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
+                String sql = "UPDATE \"" + tapTable.getId() + "\" SET " + SqlBuilder.buildKeyAndValue(after, ",") + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
                 try {
                     stmt.execute(sql);
                     updated.incrementAndGet();
@@ -316,7 +317,7 @@ public class PostgresConnector extends ConnectorBase {
                 inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
-                String sql = "DELETE FROM " + tapTable.getId() + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
+                String sql = "DELETE FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(before, "AND");
                 try {
                     stmt.execute(sql);
                     deleted.incrementAndGet();
@@ -350,7 +351,7 @@ public class PostgresConnector extends ConnectorBase {
 
     private long batchCount(TapConnectorContext tapConnectorContext, TapTable tapTable) throws SQLException {
         initConnection(tapConnectorContext.getConnectionConfig());
-        String sql = "SELECT COUNT(1) FROM " + tapTable.getId();
+        String sql = "SELECT COUNT(1) FROM \"" + tapTable.getId() + "\"";
         ResultSet resultSet = stmt.executeQuery(sql);
         if (resultSet.next()) {
             return resultSet.getLong(1);
@@ -370,7 +371,7 @@ public class PostgresConnector extends ConnectorBase {
         else {
             postgresOffset = (PostgresOffset) offsetState;
         }
-        String sql = "SELECT * FROM " + tapTable.getId() + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue() + " LIMIT " + BATCH_READ_SIZE;
+        String sql = "SELECT * FROM \"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue() + " LIMIT " + BATCH_READ_SIZE;
         ResultSet resultSet = stmt.executeQuery(sql);
         //get all column names
         List<String> columnNames = list();
@@ -401,7 +402,7 @@ public class PostgresConnector extends ConnectorBase {
             TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
             for (int i = 0; i < uniqueIndex.getFields().size(); i++) {
                 String ascOrDesc = uniqueIndex.getFieldAscList().get(i) ? "ASC" : "DESC";
-                orderBy.append(uniqueIndex.getFields().get(i)).append(" ").append(ascOrDesc).append(",");
+                orderBy.append('\"').append(uniqueIndex.getFields().get(i)).append("\" ").append(ascOrDesc).append(',');
             }
         }
         // TODO: 2022/5/7 how to deal with which without unique key

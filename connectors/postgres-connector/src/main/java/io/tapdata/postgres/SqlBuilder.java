@@ -37,7 +37,7 @@ public class SqlBuilder {
             if (tapField.getDataType() == null) {
                 return;
             }
-            builder.append(tapField.getName()).append(' ').append(tapField.getDataType()).append(' ');
+            builder.append('\"').append(tapField.getName()).append("\" ").append(tapField.getDataType()).append(' ');
             if (tapField.getNullable() != null && !tapField.getNullable()) {
                 builder.append("NOT NULL").append(' ');
             } else {
@@ -68,7 +68,7 @@ public class SqlBuilder {
             stringBuilder.append("?, ");
         }
         stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
-        return "INSERT INTO " + tapTable.getName() + " VALUES (" + stringBuilder + ")";
+        return "INSERT INTO \"" + tapTable.getId() + "\" VALUES (" + stringBuilder + ")";
     }
 
     /**
@@ -115,13 +115,13 @@ public class SqlBuilder {
     public static String buildKeyAndValue(Map<String, Object> record, String splitSymbol) {
         StringBuilder builder = new StringBuilder();
         record.forEach((fieldName, value) -> {
-            builder.append(fieldName).append("=");
+            builder.append('\"').append(fieldName).append("\"=");
             if (!(value instanceof Number)) {
-                builder.append("'").append(getFieldOriginValue(value)).append("'");
+                builder.append('\'').append(getFieldOriginValue(value)).append('\'');
             } else {
                 builder.append(getFieldOriginValue(value));
             }
-            builder.append(splitSymbol).append(" ");
+            builder.append(splitSymbol).append(' ');
         });
         builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
         return builder.toString();
