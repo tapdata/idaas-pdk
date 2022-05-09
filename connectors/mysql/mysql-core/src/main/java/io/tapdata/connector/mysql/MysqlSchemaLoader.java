@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author samuel
@@ -23,6 +24,7 @@ import java.util.function.Consumer;
 public class MysqlSchemaLoader {
 	private static final String TAG = MysqlSchemaLoader.class.getSimpleName();
 	private static final String SELECT_TABLES = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '%s'";
+	private static final String TABLE_NAME_IN = " AND TABLE_NAME IN(%s)";
 	private static final String SELECT_COLUMNS = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME='%s'";
 	private final static String SELECT_ALL_INDEX_SQL = "select i.TABLE_NAME, i.INDEX_NAME, i.INDEX_TYPE, i.COLLATION, i.NON_UNIQUE, i.COLUMN_NAME, i.SEQ_IN_INDEX from INFORMATION_SCHEMA.STATISTICS i\n" +
 			"  left join INFORMATION_SCHEMA.KEY_COLUMN_USAGE k\n" +
@@ -42,14 +44,20 @@ public class MysqlSchemaLoader {
 		this.tapConnectionContext = mysqlJdbcContext.getTapConnectionContext();
 	}
 
-	public void discoverSchema(Consumer<List<TapTable>> consumer, int tableSize) throws Throwable {
+	public void discoverSchema(List<String> filterTable, Consumer<List<TapTable>> consumer, int tableSize) throws Throwable {
 		if (null == consumer) {
 			throw new IllegalArgumentException("Consumer cannot be null");
 		}
 		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
 		String database = connectionConfig.getString("database");
 		List<TapTable> tempList = new ArrayList<>();
-		mysqlJdbcContext.query(String.format(SELECT_TABLES, database), tableRs -> {
+		String sql = String.format(SELECT_TABLES, database);
+		if (CollectionUtils.isNotEmpty(filterTable)) {
+			filterTable = filterTable.stream().map(t -> "'" + t + "'").collect(Collectors.toList());
+			String tableNameIn = String.join(",", filterTable);
+			sql += String.format(TABLE_NAME_IN, tableNameIn);
+		}
+		mysqlJdbcContext.query(sql, tableRs -> {
 			while (tableRs.next()) {
 				TapTable tapTable = TapSimplify.table(tableRs.getString("TABLE_NAME"));
 				try {

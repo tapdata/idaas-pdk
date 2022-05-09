@@ -116,7 +116,7 @@ public abstract class MysqlWriter {
 			for (String uniqueKey : uniqueKeys) {
 				whereList.add("`" + uniqueKey + "`<=>?");
 			}
-			String sql = String.format(UPDATE_SQL_TEMPLATE, database, tableId, String.join(",", setList), String.join(",", whereList));
+			String sql = String.format(UPDATE_SQL_TEMPLATE, database, tableId, String.join(",", setList), String.join(" AND ", whereList));
 			try {
 				preparedStatement = this.connection.prepareStatement(sql);
 			} catch (SQLException e) {
@@ -146,7 +146,7 @@ public abstract class MysqlWriter {
 			for (String uniqueKey : uniqueKeys) {
 				whereList.add("`" + uniqueKey + "`<=>?");
 			}
-			String sql = String.format(DELETE_SQL_TEMPLATE, database, tableId, String.join(",", whereList));
+			String sql = String.format(DELETE_SQL_TEMPLATE, database, tableId, String.join(" AND ", whereList));
 			try {
 				preparedStatement = this.connection.prepareStatement(sql);
 			} catch (SQLException e) {
@@ -216,8 +216,6 @@ public abstract class MysqlWriter {
 	protected void setPreparedStatementWhere(TapTable tapTable, TapRecordEvent tapRecordEvent, PreparedStatement preparedStatement, int parameterIndex) throws Throwable {
 		if (parameterIndex <= 1) {
 			parameterIndex = 1;
-		} else {
-			parameterIndex = parameterIndex + 1;
 		}
 		Map<String, Object> before = getBefore(tapRecordEvent);
 		Map<String, Object> after = getAfter(tapRecordEvent);

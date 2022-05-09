@@ -109,6 +109,10 @@ public class MysqlConnector extends ConnectorBase {
 			} else {
 				String mysqlVersion = mysqlJdbcContext.getMysqlVersion();
 				SqlMaker sqlMaker = new MysqlMaker();
+				if (null == tapCreateTableEvent.getTable()) {
+					TapLogger.warn(TAG, "Create table event's tap table is null, will skip it: " + tapCreateTableEvent);
+					return;
+				}
 				String[] createTableSqls = sqlMaker.createTable(tapConnectorContext, tapCreateTableEvent, mysqlVersion);
 				for (String createTableSql : createTableSqls) {
 					try {
@@ -212,7 +216,7 @@ public class MysqlConnector extends ConnectorBase {
 	@Override
 	public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
 		MysqlSchemaLoader mysqlSchemaLoader = new MysqlSchemaLoader(mysqlJdbcContext);
-		mysqlSchemaLoader.discoverSchema(consumer, tableSize);
+		mysqlSchemaLoader.discoverSchema(tables, consumer, tableSize);
 	}
 
 	@Override
