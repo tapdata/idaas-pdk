@@ -57,11 +57,11 @@ public abstract class TapDateBase extends TapMapping {
                     String maxStr;
                     if(list.get(0) instanceof String) {
                         minStr = (String) list.get(0);
-                        min = TypeUtils.dateTimeString2Instant(minStr, thePattern);
+                        min = parse(minStr, thePattern);
                     }
                     if(list.get(1) instanceof String) {
                         maxStr = (String) list.get(1);
-                        max = TypeUtils.dateTimeString2Instant(maxStr, thePattern);
+                        max = parse(maxStr, thePattern);
                     }
                     //both must be not null
                     if(min == null || max == null) {
@@ -102,6 +102,8 @@ public abstract class TapDateBase extends TapMapping {
             bytes = objectToNumber(byteObj);
         }
     }
+
+    protected abstract Instant parse(String minStr, String thePattern);
 
     protected boolean isFraction() {
         return this.defaultFraction != null || (this.minFraction != null && this.maxFraction != null);

@@ -51,7 +51,7 @@ public class TapYearMapping extends TapMapping {
         if (field.getTapType() instanceof TapYear) {
 //            TapYear tapYear = (TapYear) field.getTapType();
             if(maxRange != null && minRange != null) {
-                return BigDecimal.valueOf(maxRange - minRange);
+                return BigDecimal.valueOf((long)maxRange - minRange);
             }
             return BigDecimal.ZERO;
         }

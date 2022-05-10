@@ -45,7 +45,7 @@ public class TapCodecFilterManager {
                             typeFromSchema = field.getTapType();
                         }
                     }
-                    TapValue tapValue = valueCodec.toTapValue(theValue);
+                    TapValue tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
                     tapValue.setOriginType(dataType);
                     tapValue.setTapType(typeFromSchema);
                     tapValue.setOriginValue(theValue);

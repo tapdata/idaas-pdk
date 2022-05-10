@@ -535,7 +535,7 @@ public class SourceNodeDriver extends Driver {
         int counter = 0;
         int primaryPos = 0;
         for(Map.Entry<String, ToTapValueCodec<?>> entry : combinedMap.entrySet()) {
-            TapValue<?, ?> tapValue = entry.getValue().toTapValue(combinedValueMap.get(entry.getKey()));
+            TapValue<?, ?> tapValue = entry.getValue().toTapValue(combinedValueMap.get(entry.getKey()), null);
             if(tapValue != null) {
                 TapType tapType = tapValue.createDefaultTapType();
                 TapField field = new TapField(entry.getKey(), tapType.getClass().getSimpleName()).tapType(tapType).pos(++counter);

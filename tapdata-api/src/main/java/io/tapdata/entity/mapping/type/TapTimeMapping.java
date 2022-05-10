@@ -1,12 +1,15 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapDate;
 import io.tapdata.entity.schema.type.TapTime;
 import io.tapdata.entity.schema.type.TapType;
+import io.tapdata.entity.utils.TypeUtils;
 
 import java.math.BigDecimal;
+import java.sql.Time;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -15,6 +18,7 @@ import java.util.Map;
  * "time": {"range": ["-838:59:59","838:59:59"], "to": "typeInterval:typeNumber"},
  */
 public class TapTimeMapping extends TapDateBase {
+    private static final String TAG = TapTimeMapping.class.getSimpleName();
 
     @Override
     protected String pattern() {
@@ -23,7 +27,18 @@ public class TapTimeMapping extends TapDateBase {
 
     @Override
     public TapType toTapType(String dataType, Map<String, String> params) {
-        return new TapTime();
+        return new TapTime().bytes(bytes).min(min).max(max);
+    }
+
+    @Override
+    protected Instant parse(String timeString, String thePattern) {
+        try {
+            return Instant.ofEpochMilli(Time.valueOf(timeString).getTime());
+        } catch(Throwable throwable) {
+            throwable.printStackTrace();
+            TapLogger.error(TAG, "parse time {} pattern {}, failed {}", timeString, thePattern, throwable.getMessage());
+        }
+        return null;
     }
 
     @Override

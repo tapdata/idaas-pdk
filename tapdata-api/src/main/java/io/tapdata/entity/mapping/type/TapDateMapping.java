@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapDate;
@@ -7,8 +8,8 @@ import io.tapdata.entity.schema.type.TapDateTime;
 import io.tapdata.entity.schema.type.TapType;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 /**
@@ -16,9 +17,24 @@ import java.util.Map;
  */
 public class TapDateMapping extends TapDateBase {
 
+    private static final String TAG = TapDateMapping.class.getSimpleName();
+
     @Override
     protected String pattern() {
         return "yyyy-MM-dd";
+    }
+
+    @Override
+    protected Instant parse(String dateString, String thePattern) {
+        try {
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(thePattern);
+            LocalDate localDate = LocalDate.parse(dateString, dateTimeFormatter);
+            return localDate.atStartOfDay(ZoneId.of("GMT-0")).toInstant();
+        } catch(Throwable throwable) {
+            throwable.printStackTrace();
+            TapLogger.error(TAG, "Parse date {} pattern {}, failed {}", dateString, thePattern, throwable.getMessage());
+        }
+        return null;
     }
 
     @Override

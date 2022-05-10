@@ -416,7 +416,7 @@
 		"1000-01-01",
 		"9999-12-31"
 	  ],
-	  "format": "yyyy-MM-dd"
+	  "pattern": "yyyy-MM-dd"
 	},
 	"time": {
 	  "to": "TapTime",
@@ -425,32 +425,32 @@
 		"838:59:59"
 	  ]
 	},
-	"datetime[($precision)]": {
+	"datetime[($fraction)]": {
 	  "to": "TapDateTime",
 	  "range": [
 		"1000-01-01 00:00:00.000000",
 		"9999-12-31 23:59:59.999999"
 	  ],
-	  "format": "yyyy-MM-dd HH:mm:ss.SSSSSS",
-	  "precision": [
+	  "pattern": "yyyy-MM-dd HH:mm:ss.SSSSSS",
+	  "fraction": [
 		0,
 		6
 	  ],
-	  "defaultPrecision": 0
+	  "defaultFraction": 0
 	},
-	"timestamp[($precision)]": {
+	"timestamp[($fraction)]": {
 	  "to": "TapDateTime",
 	  "range": [
 		"1970-01-01 00:00:01.000000",
 		"2038-01-19 03:14:07.999999"
 	  ],
-	  "format": "yyyy-MM-dd HH:mm:ss.SSSSSS",
-	  "precision": [
+	  "pattern": "yyyy-MM-dd HH:mm:ss.SSSSSS",
+	  "fraction": [
 		0,
 		6
 	  ],
-	  "defaultPrecision": 0,
-	  "withTimezone": true
+	  "defaultFraction": 0,
+	  "withTimeZone": true
 	}
   }
 }

@@ -93,8 +93,9 @@ The "to" means the data type expression will be converted to the specified TapTy
 Common fields
 ```text
 {
-  "queryOnly" : true, //Optional. The type is only for query, will not be used for table creation. 
-  "priority" : 1 //Optional. If source type matches multiple target types which is the same score (bit or bytes), then the target type will be selected when the priority is the smallest. 
+  "queryOnly" : true, //Optional, default is false. The type is only for query, will not be used for table creation. 
+  "priority" : 1 //Optional, default is Integer.MAX_VALUE. If source type matches multiple target types which is the same score (bit or bytes), then the target type will be selected when the priority is the smallest.
+  "pkEnablement" : true //Optional, default is true. Whether the data type can be primary key or not. 
 }
 ```
 
@@ -111,8 +112,13 @@ Some TapType have extra fields
     "precision" : [1, 30], //precision range, [min, max]
     "precisionDefault" : 10, //default precision
     
-    "scale" : [0, 30], //scale range, [min, max]
+    "scale" : [0, 30], //scale range, [min, max], distinguish int, long and float, double.  
     "scaleDefault" : 3, //default scale
+    
+    "value": [-128, 127], //Also support like [ "-3.402823466E+38", "3.402823466E+38"], the min/max value of this data type.
+    "unsignedValue": [0, 255], //Also support like [ "-3.402823466E+38", "3.402823466E+38"], the min/max value of this data type when unsigned. 
+    
+    "fixed" : false, // Default is false, if true, means it is important to preserve exact precision, normally with precision and scale specified. Otherwise only precision or none specified.  
     
     "unsigned" : "unsignedEx", //alias of unsigned, different database may use different label for unsigned
     "zerofill" : "zerofill" //alias of zerofill, different database may use different label for zerofill

@@ -135,7 +135,7 @@ class TargetTypesGeneratorTest {
                 "    \"date\": {\"range\": [\"1000-01-01\", \"9999-12-31\"], \"gmt\": 8, \"to\": \"TapDate\"},\n" +
                 "    \"time\": {\"range\": [\"-838:59:59\",\"838:59:59\"], \"gmt\": 8, \"to\": \"TapTime\"},\n" +
                 "    \"year\": {\"range\": [1901, 2155], \"to\": \"TapYear\"},\n" +
-                "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"gmt\": 8, \"to\": \"TapDateTime\"},\n" +
+                "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"pattern\": \"yyyy-MM-dd HH:mm:ss\", \"to\": \"TapDateTime\"},\n" +
                 "    \"timestamp\": {\"to\": \"TapDateTime\"},\n" +
                 "    \"char[($byte)]\": {\"byte\": 255, \"to\": \"TapString\"},\n" +
                 "    \"tinyblob\": {\"byte\": 255, \"to\": \"TapBinary\"},\n" +
@@ -164,8 +164,8 @@ class TargetTypesGeneratorTest {
                 "    \"bigint\":{\"bit\":64, \"to\":\"TapNumber\"},\n" +
                 "    \"float\":{\"bit\":32, \"to\":\"TapNumber\"},\n" +
                 "    \"double\":{\"bit\":64, \"to\":\"TapNumber\"},\n" +
-                "    \"date\":{\"byte\":3, \"range\":[\"0000-01-01\", \"9999-12-31\"], \"to\":\"TapDate\"},\n" +
-                "    \"datetime\":{\"byte\":8, \"range\":[\"0000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"to\":\"TapDateTime\"},\n" +
+                "    \"date\":{\"byte\":3, \"range\":[\"1000-01-01\", \"9999-12-31\"], \"to\":\"TapDate\"},\n" +
+                "    \"datetime\":{\"byte\":8, \"range\":[\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\", \"to\":\"TapDateTime\"},\n" +
                 "    \"varchar[($byte)]\":{\"byte\":\"65535\", \"to\":\"TapString\"},\n" +
                 "    \"HLL\":{\"byte\":\"16385\", \"to\":\"TapNumber\", \"queryOnly\":true}\n" +
                 "}";
@@ -259,17 +259,12 @@ class TargetTypesGeneratorTest {
                 "    \"double[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"scale\": [ 0, 6], \"fixed\": false, \"to\": \"TapNumber\"},\n" +
                 "}";
         String targetTypeExpression = "{" +
-                "\"tinyint\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ 0, 255]},\n" +
-                "\"tinyint unsigned\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ -128, 127],\"unsigned\": \"unsigned\"},\n" +
-                "\"smallint\": {\"to\": \"TapNumber\",\"bit\": 16,\"value\": [ -32768, 32767],\"precision\": 5},\n" +
-                "\"smallint unsigned\": {\"to\": \"TapNumber\",\"bit\": 16,\"precision\": 5,\"value\": [ 0, 65535],\"unsigned\": \"unsigned\"},\n" +
-                "\"mediumint\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607]},\n" +
-                "\"mediumint unsigned\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 8,\"value\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
-                "\"int\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647]},\n" +
-                "\"int unsigned\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ 0, 4294967295], \"unsigned\": \"unsigned\"},\n" +
-                "\"bigint\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807]},\n" +
+                "\"tinyint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ -128, 127],\"unsignedValue\": [ 0, 255],\"unsigned\": \"unsigned\"},\n" +
+                "\"smallint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 16,\"value\": [ -32768, 32767],\"unsignedValue\": [ 0, 65535],\"unsigned\": \"unsigned\",\"precision\": 5},\n" +
+                "\"mediumint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607],\"unsignedValue\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
+                "\"int[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647],\"unsignedValue\": [ 0, 4294967295],\"unsigned\": \"unsigned\"},\n" +
+                "\"bigint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807], \"unsignedValue\": [ 0, 18446744073709551615],\"unsigned\": \"unsigned\"},\n" +
                 "\"superbigint\": {\"to\": \"TapNumber\",\"bit\": 640},\n" +
-                "\"bigint unsigned\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709551615], \"unsigned\": \"unsigned\"},\n" +
                 "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10,\"defaultScale\": 0,\"unsigned\": \"unsigned\", \"fixed\": true},\n" +
                 "\"float($precision,$scale)[unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 30],\"scale\": [ 0, 30],\"value\": [ \"-3.402823466E+38\", \"3.402823466E+38\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
                 "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
@@ -296,6 +291,9 @@ class TargetTypesGeneratorTest {
 
         TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
         LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+        TapField intUnsignedField = nameFieldMap.get("int unsigned");
+        assertEquals("int unsigned", intUnsignedField.getDataType());
 
         TapField int32unsignedField = nameFieldMap.get("int(32)");
         assertEquals("int", int32unsignedField.getDataType());
@@ -348,10 +346,10 @@ class TargetTypesGeneratorTest {
                 "    \"bigint[unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
                 "    \"float[($bit)][unsigned][zerofill]\": {\"bit\": 16, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
                 "    \"double[($bit)][unsigned][zerofill]\": {\"bit\": 256, \"unsigned\": \"unsigned\", \"to\": \"TapNumber\"},\n" +
-                "    \"date\": {\"range\": [\"1000-01-01\", \"9999-12-31\"], \"gmt\": 8, \"to\": \"TapDate\"},\n" +
-                "    \"time\": {\"range\": [\"-838:59:59\",\"838:59:59\"], \"gmt\": 8, \"to\": \"TapTime\"},\n" +
+                "    \"date\": {\"range\": [\"1000-01-01\", \"9999-12-31\"], \"pattern\": \"yyyy-MM-dd\", \"to\": \"TapDate\"},\n" +
+                "    \"time\": {\"range\": [\"-838:59:59\",\"838:59:59\"], \"to\": \"TapTime\"},\n" +
                 "    \"year\": {\"range\": [1901, 2155], \"to\": \"TapYear\"},\n" +
-                "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"gmt\": 8, \"to\": \"TapDateTime\"},\n" +
+                "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"pattern\": \"yyyy-MM-dd HH:mm:ss\", \"to\": \"TapDateTime\"},\n" +
                 "    \"timestamp\": {\"to\": \"TapDateTime\"},\n" +
 
                 "    \"longblob\": {\"byte\": \"4g\", \"to\": \"TapBinary\"},\n" +
@@ -393,10 +391,10 @@ class TargetTypesGeneratorTest {
                 "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
                 "\"double\": {\"to\": \"TapNumber\",\"precision\": [ 1, 11],\"scale\": [ 0, 11],\"fixed\": false},\n" +
                 "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
-                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"format\": \"yyyy-MM-dd\"},\n" +
+                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"pattern\": \"yyyy-MM-dd\"},\n" +
                 "\"time\": {\"to\": \"TapTime\",\"range\": [ \"-838:59:59\", \"838:59:59\"]},\n" +
-                "\"datetime[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0},\n" +
-                "\"timestamp[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0,\"withTimezone\": true}\n"
+                "\"datetime[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0},\n" +
+                "\"timestamp[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0,\"withTimezone\": true}\n"
                 + "}";
 
         TapTable sourceTable = table("test");
@@ -468,7 +466,7 @@ class TargetTypesGeneratorTest {
                 "    \"date\": {\"range\": [\"1000-01-01\", \"9999-12-31\"], \"gmt\": 8, \"to\": \"TapDate\"},\n" +
                 "    \"time\": {\"range\": [\"-838:59:59\",\"838:59:59\"], \"gmt\": 8, \"to\": \"TapTime\"},\n" +
                 "    \"year\": {\"range\": [1901, 2155], \"to\": \"TapYear\"},\n" +
-                "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"gmt\": 8, \"to\": \"TapDateTime\"},\n" +
+                "    \"datetime\": {\"range\": [\"1000-01-01 00:00:00\", \"9999-12-31 23:59:59\"], \"pattern\": \"yyyy-MM-dd HH:mm:ss\", \"to\": \"TapDateTime\"},\n" +
                 "    \"timestamp\": {\"to\": \"TapDateTime\"},\n" +
 
                 "    \"longblob\": {\"byte\": \"4g\", \"to\": \"TapBinary\"},\n" +
@@ -510,10 +508,10 @@ class TargetTypesGeneratorTest {
                 "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
                 "\"double\": {\"to\": \"TapNumber\",\"precision\": [ 1, 11],\"scale\": [ 0, 11],\"fixed\": false},\n" +
                 "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
-                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"format\": \"yyyy-MM-dd\"},\n" +
+                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"pattern\": \"yyyy-MM-dd\"},\n" +
                 "\"time\": {\"to\": \"TapTime\",\"range\": [ \"-838:59:59\", \"838:59:59\"]},\n" +
-                "\"datetime[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0},\n" +
-                "\"timestamp[($precision)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"format\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"precision\": [ 0, 6],\"defaultPrecision\": 0,\"withTimezone\": true}\n"
+                "\"datetime[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0},\n" +
+                "\"timestamp[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0,\"withTimezone\": true}\n"
                 + "}";
 
         TapTable sourceTable = table("test");
@@ -608,7 +606,7 @@ class TargetTypesGeneratorTest {
 //                "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
 //                "\"double\": {\"to\": \"TapNumber\",\"precision\": [ 1, 11],\"scale\": [ 0, 11],\"fixed\": false},\n" +
 //                "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
-//                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"format\": \"yyyy-MM-dd\"},\n" +
+//                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"pattern\": \"yyyy-MM-dd\"},\n" +
 //                "\"time\": {\"to\": \"TapTime\",\"range\": [ \"-838:59:59\", \"838:59:59\"]},\n" +
 //                "\"datetime[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0},\n" +
 //                "\"timestamp[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0,\"withTimeZone\": true}\n"
@@ -677,23 +675,18 @@ class TargetTypesGeneratorTest {
                 "\"mediumblob\": {\"to\": \"TapBinary\",\"byte\": \"16m\"},\n" +
                 "\"longblob\": {\"to\": \"TapBinary\",\"byte\": \"4g\"},\n" +
                 "\"bit[($bit)]\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709552000]},\n" +
-                "\"tinyint\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ 0, 255]},\n" +
-                "\"tinyint unsigned\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ -128, 127],\"unsigned\": \"unsigned\"},\n" +
-                "\"smallint\": {\"to\": \"TapNumber\",\"bit\": 16,\"value\": [ -32768, 32767],\"precision\": 5},\n" +
-                "\"smallint unsigned\": {\"to\": \"TapNumber\",\"bit\": 16,\"precision\": 5,\"value\": [ 0, 65535],\"unsigned\": \"unsigned\"},\n" +
-                "\"mediumint\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607]},\n" +
-                "\"mediumint unsigned\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 8,\"value\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
-                "\"int\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647]},\n" +
-                "\"int unsigned\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10, \"unsigned\": \"unsigned\", \"value\": [ 0, 4294967295]},\n" +
-                "\"bigint\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807]},\n" +
-                "\"bigint unsigned\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709551615], \"unsigned\": \"unsigned\"},\n" +
+                "\"tinyint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ -128, 127],\"unsignedValue\": [ 0, 255],\"unsigned\": \"unsigned\"},\n" +
+                "\"smallint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 16,\"value\": [ -32768, 32767],\"unsignedValue\": [ 0, 65535],\"unsigned\": \"unsigned\",\"precision\": 5},\n" +
+                "\"mediumint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607],\"unsignedValue\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
+                "\"int[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 32,\"precision\": 10,\"value\": [ -2147483648, 2147483647],\"unsignedValue\": [ 0, 4294967295],\"unsigned\": \"unsigned\"},\n" +
+                "\"bigint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807], \"unsignedValue\": [ 0, 18446744073709551615],\"unsigned\": \"unsigned\"},\n" +
                 "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10,\"defaultScale\": 0,\"unsigned\": \"unsigned\", \"fixed\": true},\n" +
                 "\"float($precision,$scale)[unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 30],\"scale\": [ 0, 30],\"value\": [ \"-3.402823466E+38\", \"3.402823466E+38\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
                 "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
                 "\"double\": {\"to\": \"TapNumber\",\"precision\": [ 1, 11],\"scale\": [ 0, 11],\"fixed\": false},\n" +
                 "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
-                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"format\": \"yyyy-MM-dd\"},\n" +
-                "\"time\": {\"to\": \"TapTime\",\"range\": [ \"00:00:00\", \"24:00:00\"]},\n" +
+                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"pattern\": \"yyyy-MM-dd\"},\n" +
+                "\"time\": {\"to\": \"TapTime\",\"range\": [\"-838:59:59\",\"838:59:59\"]},\n" +
                 "\"datetime[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0},\n" +
                 "\"timestamp[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0,\"withTimeZone\": true}\n"
                 + "}";

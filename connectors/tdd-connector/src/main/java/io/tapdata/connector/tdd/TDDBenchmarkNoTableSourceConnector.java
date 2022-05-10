@@ -130,7 +130,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
         connectorFunctions.supportBatchCount(this::batchCount);
 //        connectorFunctions.supportWriteRecord(this::writeRecord);
 
-        codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));
+        codecRegistry.registerToTapValue(TDDUser.class, (value, tapType) -> new TapStringValue(toJson(value)));
 
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
