@@ -18,6 +18,10 @@ public abstract class Node {
         }
     }
 
+    public ClassLoader getConnectorClassLoader() {
+        return tapNodeInfo.getNodeClass().getClassLoader();
+    }
+
     public String getDagId() {
         return dagId;
     }

@@ -9,6 +9,7 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 
+import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -46,6 +47,12 @@ public class TapCodecsFilterManager {
                         if(field != null) {
                             dataType = field.getDataType();
                             typeFromSchema = field.getTapType();
+//                            Type[] types = valueCodec.getClass().getGenericInterfaces();
+//                            ((ParameterizedTypeImpl) valueCodec.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0]
+//                            if(types != null && types.length > 0) {
+//
+//                            }
+//                            if(typeFromSchema.getTapValueClass() )
                         }
                     }
                     TapValue tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
