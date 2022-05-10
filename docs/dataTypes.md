@@ -1,7 +1,5 @@
 # Data Types
 
-**Data types is only required for your data source which need create table before insert records**, like MySQL, Oracle, Postgres, etc.
-
 Data types is the mapping of data type (include capabilities) with TapType.   
 TapType is the generic type definition in iDaaS Incremental Engine.
 
@@ -124,13 +122,25 @@ Some TapType have extra fields
     "zerofill" : "zerofill" //alias of zerofill, different database may use different label for zerofill
 }
 ```
+For the data type accuracy, we prefer
+
+**value/unsignedValue > bit > precision**
+
+
 for example
 
 ```text
 {
-  "int[($bit)]": {"bit": 32, "defaultBit": 8, "to": "TapNumber"},
-  "double[($precision,$scale)[unsigned]": {"precision": [1, 64], "defaultPrecision": 10, "scale": [0, 8], "defaultScale": 4, "unsigned":  "unsigned", "to":  "TapNumber"},
-  "tinyint": {"bit":  8, "to":  "TapNumber"}
+    "tinyint[unsigned]": {"to": "TapNumber","bit": 8,"precision": 3,"value": [ -128, 127],"unsignedValue": [ 0, 255],"unsigned": "unsigned"},
+    "smallint[unsigned]": {"to": "TapNumber","bit": 16,"value": [ -32768, 32767],"unsignedValue": [ 0, 65535],"unsigned": "unsigned","precision": 5},
+    "mediumint[unsigned]": {"to": "TapNumber","bit": 24,"precision": 7,"value": [ -8388608, 8388607],"unsignedValue": [ 0, 16777215],"unsigned": "unsigned"},
+    "int[unsigned]": {"to": "TapNumber","bit": 32,"precision": 10,"value": [ -2147483648, 2147483647],"unsignedValue": [ 0, 4294967295],"unsigned": "unsigned"},
+    "bigint[unsigned]": {"to": "TapNumber","bit": 64,"precision": 19,"value": [ -9223372036854775808, 9223372036854775807], "unsignedValue": [ 0, 18446744073709551615],"unsigned": "unsigned"},
+    "decimal[($precision,$scale)][unsigned]": {"to": "TapNumber","precision": [ 1, 65],"scale": [ 0, 30],"defaultPrecision": 10,"defaultScale": 0,"unsigned": "unsigned", "fixed": true},
+    "float($precision,$scale)[unsigned]": {"to": "TapNumber","precision": [ 1, 30],"scale": [ 0, 30],"value": [ "-3.402823466E+38", "3.402823466E+38"],"unsigned": "unsigned","fixed": false},
+    "float": {"to": "TapNumber","precision": [ 1, 6],"scale": [ 0, 6],"fixed": false},
+    "double": {"to": "TapNumber","precision": [ 1, 11],"scale": [ 0, 11],"fixed": false},
+    "double[($precision,$scale)][unsigned]": {"to": "TapNumber","precision": [ 1, 255],"scale": [ 0, 30],"value": [ "-1.7976931348623157E+308", "1.7976931348623157E+308"],"unsigned": "unsigned","fixed": false}
 }
 
 ```    
