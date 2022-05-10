@@ -297,6 +297,7 @@ public class SourceNodeDriver extends Driver {
             }
             Object finalStreamOffsetObj = streamOffsetObj;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
+                sourceNode.applyClassLoaderContext();
                 while(!shutDown.get()) {
                     streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, StreamReadConsumer.create((events) -> {
                         if (events != null) {

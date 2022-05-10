@@ -12,6 +12,12 @@ public abstract class Node {
     TapNodeInfo tapNodeInfo;
     List<Map<String, Object>> tasks;
 
+    public void applyClassLoaderContext() {
+        if(tapNodeInfo != null && tapNodeInfo.getNodeClass() != null) {
+            Thread.currentThread().setContextClassLoader(tapNodeInfo.getNodeClass().getClassLoader());
+        }
+    }
+
     public String getDagId() {
         return dagId;
     }

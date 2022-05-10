@@ -119,6 +119,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 
     @Override
     public void execute(List<List<TapEvent>> list) throws Throwable {
+        targetNode.applyClassLoaderContext();
 //        for(List<TapEvent> events : list) {
 //            for (TapEvent event : events) {
 //                TODO split events by tables

@@ -12,6 +12,7 @@ public class ProcessorNode extends Node {
     ProcessorFunctions processorFunctions;
 
     void processorFunctions(ProcessorFunctions processorFunctions) {
+        applyClassLoaderContext();
         processor.processorFunctions(processorFunctions);
     }
 

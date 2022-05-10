@@ -46,8 +46,13 @@ public class PDKInvocationMonitor {
         invokePDKMethod(method, r, message, logTag, errorConsumer, false, 0, 0);
     }
     public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
+        invokePDKMethod(method, r, message, logTag, errorConsumer, async, null, retryTimes, retryPeriodSeconds);
+    }
+    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
         if(async) {
             new Thread(() -> {
+                if(contextClassLoader != null)
+                    Thread.currentThread().setContextClassLoader(contextClassLoader);
                 if(retryTimes > 0) {
                     CommonUtils.autoRetryAsync(() -> {
                         invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
