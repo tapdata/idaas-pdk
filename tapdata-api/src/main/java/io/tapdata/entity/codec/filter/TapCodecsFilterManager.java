@@ -9,7 +9,10 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static io.tapdata.entity.simplify.TapSimplify.field;
 
 public class TapCodecsFilterManager {
     private MapIterator mapIterator;
@@ -47,6 +50,8 @@ public class TapCodecsFilterManager {
                     }
                     TapValue tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
                     tapValue.setOriginType(dataType);
+                    if(typeFromSchema == null)
+                        typeFromSchema = tapValue.createDefaultTapType();
                     tapValue.setTapType(typeFromSchema);
                     tapValue.setOriginValue(theValue);
                     entry.setValue(tapValue);
@@ -55,7 +60,8 @@ public class TapCodecsFilterManager {
         });
     }
 
-    public void transformFromTapValueMap(Map<String, Object> tapValueMap) {
+    public Map<String, TapField> transformFromTapValueMap(Map<String, Object> tapValueMap) {
+        Map<String, TapField> nameFieldMap = new LinkedHashMap<>();
         mapIterator.iterate(tapValueMap, stringTapValueEntry -> {
             Object object = stringTapValueEntry.getValue();
             if(object instanceof TapValue) {
@@ -64,12 +70,14 @@ public class TapCodecsFilterManager {
                 if(fieldName != null) {
                     FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
                     if(fromTapValueCodec == null)
-                        throw new UnknownCodecException("fromTapValueMap codec not found for value class " + theValue.getClass());
+                        throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
 
                     stringTapValueEntry.setValue(fromTapValueCodec.fromTapValue(theValue));
+                    nameFieldMap.put(stringTapValueEntry.getKey(), field(stringTapValueEntry.getKey(), theValue.getOriginType()).tapType(theValue.getTapType()));
                 }
             }
         });
+        return nameFieldMap;
     }
 
     public String getDataTypeByTapType(Class<? extends TapType> tapTypeClass) {
