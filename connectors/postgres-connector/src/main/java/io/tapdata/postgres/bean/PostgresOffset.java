@@ -1,5 +1,11 @@
 package io.tapdata.postgres.bean;
 
+/**
+ * offset for batch read
+ *
+ * @author Jarad
+ * @date 2022/5/09
+ */
 public class PostgresOffset {
 
     private String sortString;

@@ -1,4 +1,4 @@
-package io.tapdata.postgres;
+package io.tapdata.postgres.kit;
 
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;

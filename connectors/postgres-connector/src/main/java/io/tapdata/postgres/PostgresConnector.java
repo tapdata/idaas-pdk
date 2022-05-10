@@ -16,6 +16,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;
 import io.tapdata.entity.schema.value.TapRawValue;
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
@@ -24,11 +25,17 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.postgres.bean.PostgresColumn;
-import io.tapdata.postgres.bean.PostgresConfig;
+import io.tapdata.postgres.config.PostgresConfig;
 import io.tapdata.postgres.bean.PostgresOffset;
+import io.tapdata.postgres.kit.SmartKit;
+import io.tapdata.postgres.kit.SqlBuilder;
+import org.apache.kafka.connect.source.SourceRecord;
 
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -48,6 +55,7 @@ public class PostgresConnector extends ConnectorBase {
     private PostgresConfig postgresConfig;
     private Connection conn;
     private Statement stmt;
+    private PostgresCdcRunner cdcRunner;
     private static final String TABLE_COLUMN_NAME = "TABLE";
     private static final int BATCH_READ_SIZE = 5000;
     private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
@@ -459,8 +467,20 @@ public class PostgresConnector extends ConnectorBase {
         return columnNames;
     }
 
-    private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
+    public void consumeRecord(SourceRecord sourceRecord, Object offsetState, int recordSize, StreamReadConsumer consumer) {
+        System.out.println("Supercoolgj: ");
+        cdcRunner.stopCdcRunner();
+        consumer.accept(list());
+    }
 
+    private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
+        initConnection(nodeContext.getConnectionConfig());
+        if(cdcRunner == null || !cdcRunner.isRunning()) {
+            cdcRunner = new PostgresCdcRunner(postgresConfig).connect(this, offsetState, recordSize, consumer).watch(tableList);
+            cdcRunner.run();
+            Executors.newSingleThreadExecutor().execute(cdcRunner); // TODO: 2022/5/10 replace with thread pool for TapData
+        }
+        TapSimplify.sleep(3000);
     }
 
     private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) throws Throwable {

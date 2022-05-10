@@ -51,9 +51,26 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.13.2</version>
-      <scope>compile</scope>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/io.debezium/debezium-embedded -->
+    <dependency>
+      <groupId>io.debezium</groupId>
+      <artifactId>debezium-embedded</artifactId>
+      <version>1.5.4.Final</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.debezium/debezium-connector-postgres -->
+    <dependency>
+      <groupId>io.debezium</groupId>
+      <artifactId>debezium-connector-postgres</artifactId>
+      <version>1.5.4.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.30</version>
+    </dependency>
 
   </dependencies>
   <build>

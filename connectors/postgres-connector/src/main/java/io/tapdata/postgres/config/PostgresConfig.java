@@ -1,4 +1,4 @@
-package io.tapdata.postgres.bean;
+package io.tapdata.postgres.config;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Mysql database config
+ * Postgres database config
  *
  * @author Jarad
  * @date 2022/4/18

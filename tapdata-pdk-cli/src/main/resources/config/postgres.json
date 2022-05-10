@@ -2,11 +2,11 @@
   "connection": {
     "host": "192.168.1.189",
     "port": "5432",
-    "database": "coolgj",
+    "database": "COOLGJ",
     "schema": "public",
     "extParams": "",
     "user": "postgres",
-    "password": "abc123"
+    "password": "gj0628"
   },
   "node": {
   }

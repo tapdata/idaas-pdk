@@ -1,4 +1,4 @@
-package io.tapdata.postgres;
+package io.tapdata.postgres.kit;
 
 import java.util.Collection;
 import java.util.Map;
@@ -14,16 +14,13 @@ public class SmartKit {
 //    public final static String STRING_SPACE = " ";
 
     public static String combineString(Collection<String> strings, String combiner) {
-        if (null == strings || strings.isEmpty()) {
+        if (isEmpty(strings)) {
             return STRING_EMPTY;
         }
         if (null == combiner) {
             return combineString(strings, STRING_EMPTY);
         }
-        StringBuilder builder = new StringBuilder();
-        strings.forEach(str -> builder.append(str).append(combiner));
-        builder.delete(builder.length() - combiner.length(), builder.length());
-        return builder.toString();
+        return strings.stream().reduce((v1, v2) -> v1 + combiner + v2).orElseGet(String::new);
     }
 
     public static String combineStringWithComma(Collection<String> strings) {
