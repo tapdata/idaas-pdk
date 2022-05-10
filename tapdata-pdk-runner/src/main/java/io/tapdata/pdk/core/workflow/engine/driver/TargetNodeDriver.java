@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.control.ControlEvent;
@@ -443,20 +443,20 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     }
 
     private TapDeleteRecordEvent filterDeleteEvent(TapDeleteRecordEvent deleteDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
+        TapCodecsFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(deleteDMLEvent.getBefore());
         return deleteDMLEvent;
     }
 
     private TapUpdateRecordEvent filterUpdateEvent(TapUpdateRecordEvent updateDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
+        TapCodecsFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(updateDMLEvent.getAfter());
         codecFilterManager.transformFromTapValueMap(updateDMLEvent.getBefore());
         return updateDMLEvent;
     }
 
     private TapInsertRecordEvent filterInsertEvent(TapInsertRecordEvent insertDMLEvent) {
-        TapCodecFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
+        TapCodecsFilterManager codecFilterManager = targetNode.getCodecsFilterManager();
         codecFilterManager.transformFromTapValueMap(insertDMLEvent.getAfter());
         return insertDMLEvent;
     }

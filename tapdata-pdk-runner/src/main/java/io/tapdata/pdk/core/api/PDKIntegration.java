@@ -1,10 +1,9 @@
 package io.tapdata.pdk.core.api;
 
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.pdk.apis.TapConnector;
@@ -308,12 +307,12 @@ public class PDKIntegration {
             TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
             if(nodeInstance == null)
                 throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
-            ConnectionNode sourceNode = new ConnectionNode();
-            sourceNode.connectorNode = (TapConnectorNode) nodeInstance.getTapNode();
-            sourceNode.associateId = associateId;
-            sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            sourceNode.connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig);
-            return sourceNode;
+            ConnectionNode connectionNode = new ConnectionNode();
+            connectionNode.connectorNode = (TapConnectorNode) nodeInstance.getTapNode();
+            connectionNode.associateId = associateId;
+            connectionNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
+            connectionNode.connectionContext = new TapConnectionContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig);
+            return connectionNode;
         }
     }
 
@@ -396,7 +395,7 @@ public class PDKIntegration {
             nodeContext.setTableMap(tableMap);
 
             ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-            TapCodecRegistry codecRegistry = new TapCodecRegistry();
+            TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
 
             SourceNode sourceNode = new SourceNode();
             sourceNode.init((TapConnector) nodeInstance.getTapNode(), codecRegistry, connectorFunctions);

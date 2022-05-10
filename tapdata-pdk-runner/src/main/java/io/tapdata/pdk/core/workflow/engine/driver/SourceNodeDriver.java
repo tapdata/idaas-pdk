@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
@@ -403,7 +403,7 @@ public class SourceNodeDriver extends Driver {
     }
 
     public List<TapEvent> filterEvents(List<TapEvent> events, boolean needClone) {
-        TapCodecFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
+        TapCodecsFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
         List<TapEvent> newEvents = new ArrayList<>();
         for(TapEvent tapEvent : events) {
             if(tapEvent instanceof TapBaseEvent) {
@@ -510,7 +510,7 @@ public class SourceNodeDriver extends Driver {
     }
 
     private void fillNameFieldsFromSampleRecords(LinkedHashMap<String, TapField> nameFieldMap, List<Map<String, Object>> mapList, List<String> defaultPrimaryKeys) {
-        TapCodecFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
+        TapCodecsFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
         Map<String, ToTapValueCodec<?>> combinedMap = new LinkedHashMap<>();
         Map<String, Object> combinedValueMap = new HashMap<>();
         //Sample records

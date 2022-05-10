@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.api;
 
-import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
@@ -11,25 +11,25 @@ import java.util.List;
 public class ConnectorNode extends Node {
     private static final String TAG = ConnectorNode.class.getSimpleName();
     TapConnector connector;
-    TapCodecRegistry codecsRegistry;
+    TapCodecsRegistry codecsRegistry;
     TapConnectorContext connectorContext;
 
     ConnectorFunctions connectorFunctions;
-    TapCodecFilterManager codecsFilterManager;
+    TapCodecsFilterManager codecsFilterManager;
     String table;
     List<String> tables;
 //    Queue<TapEvent> externalEvents;
 
-    public void init(TapConnector tapNode, TapCodecRegistry codecsRegistry, ConnectorFunctions connectorFunctions) {
+    public void init(TapConnector tapNode, TapCodecsRegistry codecsRegistry, ConnectorFunctions connectorFunctions) {
         connector = tapNode;
         this.codecsRegistry = codecsRegistry;
         this.connectorFunctions = connectorFunctions;
-        codecsFilterManager = new TapCodecFilterManager(this.codecsRegistry);
+        codecsFilterManager = new TapCodecsFilterManager(this.codecsRegistry);
 //        externalEvents = new ConcurrentLinkedQueue<>();
     }
 
     public void init(TapConnector tapNode) {
-        init(tapNode, new TapCodecRegistry(), new ConnectorFunctions());
+        init(tapNode, new TapCodecsRegistry(), new ConnectorFunctions());
     }
 
 //    public void offerExternalEvent(TapEvent tapEvent) {
@@ -71,7 +71,7 @@ public class ConnectorNode extends Node {
 //        }
 //    }
 
-    public TapCodecRegistry getCodecsRegistry() {
+    public TapCodecsRegistry getCodecsRegistry() {
         return codecsRegistry;
     }
 
@@ -96,7 +96,7 @@ public class ConnectorNode extends Node {
         return connectorFunctions;
     }
 
-    public TapCodecFilterManager getCodecsFilterManager() {
+    public TapCodecsFilterManager getCodecsFilterManager() {
         return codecsFilterManager;
     }
 

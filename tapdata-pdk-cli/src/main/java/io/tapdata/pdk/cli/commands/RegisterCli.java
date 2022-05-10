@@ -2,37 +2,23 @@ package io.tapdata.pdk.cli.commands;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.CommonCli;
-import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.cli.services.UploadFileService;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.platform.launcher.Launcher;
-import org.junit.platform.launcher.LauncherDiscoveryRequest;
-import org.junit.platform.launcher.TestExecutionListener;
-import org.junit.platform.launcher.TestPlan;
-import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
-import org.junit.platform.launcher.core.LauncherFactory;
-import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
-import org.junit.platform.launcher.listeners.TestExecutionSummary;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.util.*;
 
-import static org.junit.platform.engine.discovery.ClassNameFilter.includeClassNamePatterns;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
-import static org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage;
 
 @CommandLine.Command(
         description = "Push PDK jar file into Tapdata",
@@ -110,7 +96,7 @@ public class RegisterCli extends CommonCli {
 
                   io.tapdata.pdk.apis.TapConnector connector1 = (io.tapdata.pdk.apis.TapConnector) nodeInfo.getNodeClass().getConstructor().newInstance();
                   ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-                  TapCodecRegistry codecRegistry = new TapCodecRegistry();
+                  TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
                   connector1.registerCapabilities(connectorFunctions, codecRegistry);
                   //TODO Zed, please use below to save into database, this is user customized codecs map. TapType -> DataType. Retrieve it back from database for building TapCodecRegister to do the type generation.
                   codecRegistry.getTapTypeDataTypeMap();

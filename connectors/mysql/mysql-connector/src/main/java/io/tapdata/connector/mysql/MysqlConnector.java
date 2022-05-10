@@ -2,7 +2,7 @@ package io.tapdata.connector.mysql;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -49,7 +48,7 @@ public class MysqlConnector extends ConnectorBase {
 	private String version;
 
 	@Override
-	public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+	public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 		codecRegistry.registerFromTapValue(TapMapValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapArrayValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapBooleanValue.class, "bool", TapValue::getValue);

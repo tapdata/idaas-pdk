@@ -1,7 +1,7 @@
 package io.tapdata.entity.conversion.impl;
 
 import io.tapdata.entity.annotations.Implementation;
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
 import io.tapdata.entity.conversion.UnsupportedTypeFallbackHandler;
 import io.tapdata.entity.logger.TapLogger;
@@ -12,7 +12,6 @@ import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.utils.InstanceFactory;
-import sun.nio.cs.ext.Big5;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -24,7 +23,7 @@ import java.util.TreeMap;
 public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
     private static final String TAG = TargetTypesGeneratorImpl.class.getSimpleName();
 
-    public TapResult<LinkedHashMap<String, TapField>> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap targetMatchingMap, TapCodecFilterManager targetCodecFilterManager) {
+    public TapResult<LinkedHashMap<String, TapField>> convert(LinkedHashMap<String, TapField> sourceFields, DefaultExpressionMatchingMap targetMatchingMap, TapCodecsFilterManager targetCodecFilterManager) {
         if(sourceFields == null || targetMatchingMap == null)
             return null;
         TapResult<LinkedHashMap<String, TapField>> finalResult = TapResult.successfully();
@@ -64,8 +63,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
                 if(largestStringMappingField != null) {
                     UnsupportedTypeFallbackHandler unsupportedTypeFallbackHandler = InstanceFactory.instance(UnsupportedTypeFallbackHandler.class);
-                    if(unsupportedTypeFallbackHandler != null && targetCodecFilterManager.getCodecRegistry() != null) {
-                        unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecRegistry(), field, largestStringMappingField.getDataType(), cachedTapString);
+                    if(unsupportedTypeFallbackHandler != null && targetCodecFilterManager.getCodecsRegistry() != null) {
+                        unsupportedTypeFallbackHandler.handle(targetCodecFilterManager.getCodecsRegistry(), field, largestStringMappingField.getDataType(), cachedTapString);
                     }
                 }
             }

@@ -14,7 +14,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
 import io.tapdata.base.ConnectorBase;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
@@ -219,7 +219,7 @@ public class MongodbConnector extends ConnectorBase {
      * @param codecRegistry
      */
     @Override
-    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportDropTable(this::dropTable);

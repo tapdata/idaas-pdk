@@ -1,7 +1,7 @@
 package io.tapdata.connector.tdd;
 
 import io.tapdata.base.ConnectorBase;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapTable;
@@ -124,7 +124,7 @@ public class TDDSourceConnector extends ConnectorBase {
      * @param codecRegistry
      */
     @Override
-    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
         connectorFunctions.supportBatchRead(this::batchRead);
 //        connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);

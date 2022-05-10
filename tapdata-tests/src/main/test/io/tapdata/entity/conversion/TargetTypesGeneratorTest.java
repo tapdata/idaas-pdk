@@ -1,7 +1,7 @@
 package io.tapdata.entity.conversion;
 
-import io.tapdata.entity.codec.TapCodecRegistry;
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class TargetTypesGeneratorTest {
     private TargetTypesGenerator targetTypesGenerator;
     private TableFieldTypesGenerator tableFieldTypesGenerator;
-    private TapCodecFilterManager targetCodecFilterManager;
-    private TapCodecRegistry codecRegistry;
+    private TapCodecsFilterManager targetCodecFilterManager;
+    private TapCodecsRegistry codecRegistry;
 
     @BeforeEach
     void beforeEach() {
@@ -33,8 +33,8 @@ class TargetTypesGeneratorTest {
         tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
         if(tableFieldTypesGenerator == null)
             throw new CoreException(ErrorCodes.SOURCE_TABLE_FIELD_TYPES_GENERATOR_NOT_FOUND, "TableFieldTypesGenerator's implementation is not found in current classloader");
-        codecRegistry = TapCodecRegistry.create();
-        targetCodecFilterManager = TapCodecFilterManager.create(codecRegistry);
+        codecRegistry = TapCodecsRegistry.create();
+        targetCodecFilterManager = TapCodecsFilterManager.create(codecRegistry);
     }
     /*
     @Test
