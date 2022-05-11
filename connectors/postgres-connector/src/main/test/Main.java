@@ -2,6 +2,8 @@ import io.tapdata.postgres.PostgresCdcRunner;
 import io.tapdata.postgres.config.PostgresConfig;
 import org.apache.kafka.connect.storage.SimpleHeaderConverter;
 
+import java.util.concurrent.Executors;
+
 /**
  * @author Administrator
  * @date 2022/4/29
@@ -56,14 +58,16 @@ public class Main {
 //
 //        System.out.println(stringBuilder.append(SqlBuilder.buildSqlByAdvanceFilter(filter)));
 
-        PostgresConfig postgresConfig = new PostgresConfig();
-        postgresConfig.setHost("192.168.1.189");
-        postgresConfig.setPort(5432);
-        postgresConfig.setDatabase("COOLGJ");
-        postgresConfig.setUser("postgres");
-        postgresConfig.setPassword("gj0628");
-        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig);
+//        PostgresConfig postgresConfig = new PostgresConfig();
+//        postgresConfig.setHost("192.168.1.189");
+//        postgresConfig.setPort(5432);
+//        postgresConfig.setDatabase("COOLGJ");
+//        postgresConfig.setUser("postgres");
+//        postgresConfig.setPassword("gj0628");
+//        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig);
 //        runner.connect(null);
-        runner.run();
+//        runner.run();
+
+//        System.out.println();
     }
 }

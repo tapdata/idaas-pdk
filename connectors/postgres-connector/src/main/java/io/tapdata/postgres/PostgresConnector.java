@@ -25,17 +25,14 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.postgres.bean.PostgresColumn;
-import io.tapdata.postgres.config.PostgresConfig;
 import io.tapdata.postgres.bean.PostgresOffset;
+import io.tapdata.postgres.config.PostgresConfig;
 import io.tapdata.postgres.kit.SmartKit;
 import io.tapdata.postgres.kit.SqlBuilder;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -475,12 +472,11 @@ public class PostgresConnector extends ConnectorBase {
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
         initConnection(nodeContext.getConnectionConfig());
-        if(cdcRunner == null || !cdcRunner.isRunning()) {
+        if (cdcRunner == null) {
             cdcRunner = new PostgresCdcRunner(postgresConfig).connect(this, offsetState, recordSize, consumer).watch(tableList);
             cdcRunner.run();
-            Executors.newSingleThreadExecutor().execute(cdcRunner); // TODO: 2022/5/10 replace with thread pool for TapData
+            System.out.println("SBSBSBSB");
         }
-        TapSimplify.sleep(3000);
     }
 
     private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) throws Throwable {
