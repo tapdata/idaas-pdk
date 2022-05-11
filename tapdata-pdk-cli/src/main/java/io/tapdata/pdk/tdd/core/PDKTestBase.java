@@ -257,8 +257,6 @@ public class PDKTestBase {
                     .withVersion(nodeInfo.getTapNodeSpecification().getVersion())
                     .withConnectionConfig(connection)
                     .build());
-        } catch(Throwable throwable) {
-            fail("Prepare connection failed, " + throwable.getMessage());
         } finally {
             PDKIntegration.releaseAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup());
         }
