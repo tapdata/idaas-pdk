@@ -105,15 +105,19 @@ public class RegisterCli extends CommonCli {
                 // get the version info and group info from jar
                 o.put("version", nodeInfo.getNodeClass().getPackage().getImplementationVersion());
                 o.put("group", nodeInfo.getNodeClass().getPackage().getImplementationVendor());
-                String jsonString = o.toJSONString();
-                jsons.add(jsonString);
+                o.put("expression", specification.getDataExpressionJson());
 
                   io.tapdata.pdk.apis.TapConnector connector1 = (io.tapdata.pdk.apis.TapConnector) nodeInfo.getNodeClass().getConstructor().newInstance();
                   ConnectorFunctions connectorFunctions = new ConnectorFunctions();
                   TapCodecRegistry codecRegistry = new TapCodecRegistry();
                   connector1.registerCapabilities(connectorFunctions, codecRegistry);
                   //TODO Zed, please use below to save into database, this is user customized codecs map. TapType -> DataType. Retrieve it back from database for building TapCodecRegister to do the type generation.
-                  codecRegistry.getTapTypeDataTypeMap();
+                  Map<Class<?>, String> tapTypeDataTypeMap = codecRegistry.getTapTypeDataTypeMap();
+                  o.put("tapTypeDataTypeMap", JSON.toJSONString(tapTypeDataTypeMap));
+                  String jsonString = o.toJSONString();
+                  jsons.add(jsonString);
+
+
               }
 
               System.out.println(tapNodeInfoCollection);

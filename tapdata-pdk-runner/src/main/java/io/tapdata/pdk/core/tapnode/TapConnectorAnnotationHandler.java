@@ -42,6 +42,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
                             TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
                             tapNodeSpecification = tapNodeContainer.getProperties();
+                            tapNodeSpecification.setDataExpressionJson(JSON.toJSONString(tapNodeContainer.getDataTypes()));
 
                             String errorMessage = null;
                             if (tapNodeSpecification == null) {
