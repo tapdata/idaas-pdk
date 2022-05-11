@@ -68,7 +68,11 @@ public class TapCodecsFilterManager {
     }
 
     public Map<String, TapField> transformFromTapValueMap(Map<String, Object> tapValueMap) {
-        Map<String, TapField> nameFieldMap = new LinkedHashMap<>();
+        return transformFromTapValueMap(tapValueMap, null);
+    }
+
+    public Map<String, TapField> transformFromTapValueMap(Map<String, Object> tapValueMap, Map<String, TapField> sourceNameFieldMap) {
+        Map<String, TapField> nameFieldMap = sourceNameFieldMap != null ? sourceNameFieldMap : new LinkedHashMap<>();
         mapIterator.iterate(tapValueMap, stringTapValueEntry -> {
             Object object = stringTapValueEntry.getValue();
             if(object instanceof TapValue) {
@@ -80,7 +84,12 @@ public class TapCodecsFilterManager {
                         throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
 
                     stringTapValueEntry.setValue(fromTapValueCodec.fromTapValue(theValue));
-                    nameFieldMap.put(stringTapValueEntry.getKey(), field(stringTapValueEntry.getKey(), theValue.getOriginType()).tapType(theValue.getTapType()));
+                    if(!nameFieldMap.containsKey(stringTapValueEntry.getKey())) {
+                        //Handle inserted new field
+                        nameFieldMap.put(stringTapValueEntry.getKey(), field(stringTapValueEntry.getKey(), theValue.getOriginType()).tapType(theValue.getTapType()));
+                    }
+                    //TODO Handle updated tapType field?
+                    //TODO Handle deleted field?
                 }
             }
         });
