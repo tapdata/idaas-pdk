@@ -18,7 +18,7 @@ public class ConnectionNode extends Node {
         connectorNode.discoverSchema(connectionContext, tables, tableSize, consumer);
     }
     public int tableCount() throws Throwable {
-        applyClassLoaderContext();
+
         return connectorNode.tableCount(connectionContext);
     }
     public void connectionTest(Consumer<TestItem> consumer) throws Throwable {
@@ -28,6 +28,11 @@ public class ConnectionNode extends Node {
     public void connectorInit() throws Throwable {
         applyClassLoaderContext();
         connectorNode.init(connectionContext);
+    }
+
+    public void connectorDestroy() throws Throwable {
+        applyClassLoaderContext();
+        connectorNode.destroy();
     }
     public TapConnectorNode getConnectorNode() {
         return connectorNode;

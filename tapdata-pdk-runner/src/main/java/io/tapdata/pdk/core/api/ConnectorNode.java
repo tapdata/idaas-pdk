@@ -84,6 +84,10 @@ public class ConnectorNode extends Node {
         applyClassLoaderContext();
         connector.init(connectorContext);
     }
+    public void connectorDestroy() throws Throwable {
+        applyClassLoaderContext();
+        connector.destroy();
+    }
     public TapConnectorContext getConnectorContext() {
         return connectorContext;
     }
