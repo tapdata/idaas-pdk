@@ -96,7 +96,7 @@ public class CreateTableTest extends PDKTestBase {
                 }
             }
         });
-        waitCompleted(50);
+        waitCompleted(5000000);
     }
 
     private void verifyTableFields() {

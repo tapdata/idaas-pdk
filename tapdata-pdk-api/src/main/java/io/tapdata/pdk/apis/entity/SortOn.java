@@ -34,4 +34,12 @@ public class SortOn {
     public void setSort(int sort) {
         this.sort = sort;
     }
+
+    public String toString() {
+        return toString("");
+    }
+
+    public String toString(String quote) {
+        return quote + key + quote + " " + (sort == ASCENDING ? "ASC" : "DESC");
+    }
 }

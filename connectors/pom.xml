@@ -19,6 +19,7 @@
 <!--        <module>doris-connector</module>-->
         <module>mongodb-connector</module>
         <module>mysql</module>
+        <module>postgres-connector</module>
     </modules>
 
     <properties>
