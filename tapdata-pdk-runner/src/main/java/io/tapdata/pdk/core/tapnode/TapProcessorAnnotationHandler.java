@@ -2,6 +2,8 @@ package io.tapdata.pdk.core.tapnode;
 
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.apis.TapProcessor;
 import io.tapdata.pdk.apis.annotations.TapProcessorClass;
@@ -35,7 +37,7 @@ public class TapProcessorAnnotationHandler extends TapBaseAnnotationHandler {
                         try {
                             InputStream is = url.openStream();
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
-                            TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
+                            TapNodeContainer tapNodeContainer = InstanceFactory.instance(JsonParser.class).fromJson(json, TapNodeContainer.class);
                             tapNodeSpecification = tapNodeContainer.getProperties();
                             String errorMessage = null;
                             if(tapNodeSpecification == null)

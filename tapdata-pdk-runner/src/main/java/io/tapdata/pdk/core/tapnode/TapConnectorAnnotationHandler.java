@@ -3,6 +3,8 @@ package io.tapdata.pdk.core.tapnode;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
@@ -39,7 +41,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                         try {
                             InputStream is = url.openStream();
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
-                            TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
+                            TapNodeContainer tapNodeContainer = InstanceFactory.instance(JsonParser.class).fromJson(json, TapNodeContainer.class);
                             tapNodeSpecification = tapNodeContainer.getProperties();
                             tapNodeSpecification.setDataExpressionJson(JSON.toJSONString(tapNodeContainer.getDataTypes()));
 
