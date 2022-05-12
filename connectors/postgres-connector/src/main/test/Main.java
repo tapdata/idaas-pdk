@@ -1,8 +1,9 @@
+import io.tapdata.entity.simplify.TapSimplify;
+import io.tapdata.postgres.PostgresCdcPool;
 import io.tapdata.postgres.PostgresCdcRunner;
 import io.tapdata.postgres.config.PostgresConfig;
-import org.apache.kafka.connect.storage.SimpleHeaderConverter;
 
-import java.util.concurrent.Executors;
+import java.util.Scanner;
 
 /**
  * @author Administrator
@@ -58,16 +59,42 @@ public class Main {
 //
 //        System.out.println(stringBuilder.append(SqlBuilder.buildSqlByAdvanceFilter(filter)));
 
-//        PostgresConfig postgresConfig = new PostgresConfig();
-//        postgresConfig.setHost("192.168.1.189");
-//        postgresConfig.setPort(5432);
-//        postgresConfig.setDatabase("COOLGJ");
-//        postgresConfig.setUser("postgres");
-//        postgresConfig.setPassword("gj0628");
-//        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig);
-//        runner.connect(null);
-//        runner.run();
+        PostgresConfig postgresConfig = new PostgresConfig();
+        postgresConfig.setHost("192.168.1.189");
+        postgresConfig.setPort(5432);
+        postgresConfig.setDatabase("COOLGJ");
+        postgresConfig.setExtParams("");
+        postgresConfig.setUser("postgres");
+        postgresConfig.setPassword("gj0628");
+        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig, null);
+        runner.consumeOffset(null, 0, null);
+        PostgresCdcPool.addRunner(runner.getSlotName(), runner);
+        runner.startCdcRunner();
 
-//        System.out.println();
+//        Thread.sleep(20000);
+//        runner.closeCdc();
+//        new Thread(() -> PostgresCdcPool.removeRunner(runner.getSlotName())).start();
+
+//        runner.closeCdc();
+//        System.out.println("SB");
+
+//        Count count = new Count();
+//        new Thread(count).start();
+//        Thread.sleep(200);
+//        count.stop();
+//        while(true) {
+//            Thread.sleep(10000);
+//            ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
+//            //activeCount()返回当前正在活动的线程的数量
+//            int total = Thread.activeCount();
+//            Thread[] threads = new Thread[total];
+//            //enumerate(threads)将当前线程组中的active线程全部复制到传入的线程数组threads中
+//            // 并且返回数组中元素个数，即线程组中active线程数量
+//            threadGroup.enumerate(threads);
+//            for (Thread t:threads){
+//                System.out.println(TapSimplify.toJson(t));
+//            }
+//        }
+//        System.exit(0);
     }
 }

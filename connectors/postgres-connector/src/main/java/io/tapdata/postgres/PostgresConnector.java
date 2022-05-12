@@ -16,7 +16,6 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;
 import io.tapdata.entity.schema.value.TapRawValue;
-import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
@@ -29,7 +28,6 @@ import io.tapdata.postgres.bean.PostgresOffset;
 import io.tapdata.postgres.config.PostgresConfig;
 import io.tapdata.postgres.kit.SmartKit;
 import io.tapdata.postgres.kit.SqlBuilder;
-import org.apache.kafka.connect.source.SourceRecord;
 
 import java.sql.*;
 import java.util.*;
@@ -464,18 +462,12 @@ public class PostgresConnector extends ConnectorBase {
         return columnNames;
     }
 
-    public void consumeRecord(SourceRecord sourceRecord, Object offsetState, int recordSize, StreamReadConsumer consumer) {
-        System.out.println("Supercoolgj: ");
-        cdcRunner.stopCdcRunner();
-        consumer.accept(list());
-    }
-
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
         initConnection(nodeContext.getConnectionConfig());
         if (cdcRunner == null) {
-            cdcRunner = new PostgresCdcRunner(postgresConfig).connect(this, offsetState, recordSize, consumer).watch(tableList);
-            cdcRunner.run();
-            System.out.println("SBSBSBSB");
+            cdcRunner = new PostgresCdcRunner(postgresConfig, tableList).consumeOffset(offsetState, recordSize, consumer);
+            PostgresCdcPool.addRunner(cdcRunner.getSlotName(), cdcRunner);
+            cdcRunner.startCdcRunner();
         }
     }
 
