@@ -6,6 +6,9 @@ import io.tapdata.entity.schema.value.TapValue;
 import static io.tapdata.entity.simplify.TapSimplify.tapArray;
 
 public class TapArray extends TapType {
+    public TapArray() {
+        type = TYPE_ARRAY;
+    }
     @Override
     public TapType cloneTapType() {
         return tapArray();

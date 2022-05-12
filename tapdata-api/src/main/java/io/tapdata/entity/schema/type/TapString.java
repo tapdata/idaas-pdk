@@ -6,8 +6,11 @@ import io.tapdata.entity.schema.value.TapValue;
 import static io.tapdata.entity.simplify.TapSimplify.tapString;
 
 public class TapString extends TapType {
-    public TapString() {}
+    public TapString() {
+        type = TYPE_STRING;
+    }
     public TapString(Long bytes, Boolean fixed) {
+        this();
         this.bytes = bytes;
         this.fixed = fixed;
     }

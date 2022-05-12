@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 import static io.tapdata.entity.simplify.TapSimplify.tapNumber;
 
 public class TapNumber extends TapType {
+    public TapNumber() {
+        type = TYPE_NUMBER;
+    }
     /**
      * 存储位数， 字节数， 不同数据库实现不一样
      * 数字的几位数， 小数点后面几位数

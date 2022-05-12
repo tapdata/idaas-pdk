@@ -6,6 +6,9 @@ import io.tapdata.entity.schema.value.TapYearValue;
 import static io.tapdata.entity.simplify.TapSimplify.tapYear;
 
 public class TapYear extends TapType {
+    public TapYear() {
+        type = TYPE_YEAR;
+    }
 
     @Override
     public TapType cloneTapType() {

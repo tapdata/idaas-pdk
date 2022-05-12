@@ -10,6 +10,9 @@ import static io.tapdata.entity.simplify.TapSimplify.tapRaw;
  * 在完全不认识的字段时， 会有用户， 例如同构时， 可以使用这个在字段到目标库， 写入， 之后originValue， 都可以没有value
  */
 public class TapRaw extends TapType {
+    public TapRaw() {
+        type = TYPE_RAW;
+    }
     @Override
     public TapType cloneTapType() {
         return tapRaw();
