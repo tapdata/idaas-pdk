@@ -92,4 +92,11 @@ public class WriteListResult<T> {
 	public void incrementRemove(long value) {
 		this.removedCount = this.removedCount + value;
 	}
+
+    public void addErrors(Map<T, Throwable> map) {
+		if (errorMap == null) {
+			errorMap = new HashMap<>();
+		}
+		errorMap.putAll(map);
+    }
 }

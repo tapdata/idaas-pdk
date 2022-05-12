@@ -1,7 +1,7 @@
 package io.tapdata.postgres;
 
 import io.tapdata.base.ConnectorBase;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
@@ -117,7 +117,12 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     @Override
-    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+    public int tableCount(TapConnectionContext connectionContext) throws Throwable {
+        return 0;
+    }
+
+    @Override
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportCreateTable(this::createTable);
