@@ -104,13 +104,19 @@ public class PDKTestBase {
         }
 
         tddConnector = TapConnectorManager.getInstance().getTapConnectorByJarName(tddJarFile.getName());
-        PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> $(() -> {
-            try {
+        PDKInvocationMonitor.getInstance().setErrorListener(errorMessage -> {
+            if(enterWaitCompletedStage.get()) {
+                $(() -> {
+                    try {
+                        fail(errorMessage);
+                    } finally {
+                        tearDown();
+                    }
+                });
+            } else {
                 fail(errorMessage);
-            } finally {
-                tearDown();
             }
-        }));
+        });
     }
 
     public String testTableName(String id) {
@@ -199,9 +205,11 @@ public class PDKTestBase {
         }
     }
 
+    private AtomicBoolean enterWaitCompletedStage = new AtomicBoolean(false);
     public void waitCompleted(long seconds) throws Throwable {
         while (!completed.get()) {
             synchronized (completed) {
+                enterWaitCompletedStage.compareAndSet(false, true);
                 if (!completed.get()) {
                     try {
                         completed.wait(seconds * 1000);

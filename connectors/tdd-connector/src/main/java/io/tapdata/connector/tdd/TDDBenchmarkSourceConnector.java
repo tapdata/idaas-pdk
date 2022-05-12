@@ -1,7 +1,7 @@
 package io.tapdata.connector.tdd;
 
 import io.tapdata.base.ConnectorBase;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapTable;
@@ -125,13 +125,13 @@ public class TDDBenchmarkSourceConnector extends ConnectorBase {
      * @param codecRegistry
      */
     @Override
-    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
         connectorFunctions.supportBatchRead(this::batchRead);
 //        connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportBatchCount(this::batchCount);
 //        connectorFunctions.supportWriteRecord(this::writeRecord);
 
-        codecRegistry.registerToTapValue(TDDUser.class, value -> new TapStringValue(toJson(value)));
+        codecRegistry.registerToTapValue(TDDUser.class, (value, tapType) -> new TapStringValue(toJson(value)));
 
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportBatchOffset(this::batchOffset);

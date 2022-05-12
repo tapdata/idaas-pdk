@@ -13,7 +13,7 @@ public abstract class TapMapping {
     public static final String FIELD_TYPE_MAPPING = "_tapMapping";
 
     protected String to;
-    protected Boolean queryOnly;
+    protected Boolean queryOnly = false;
     protected Integer priority = Integer.MAX_VALUE;
     protected Boolean pkEnablement = true;
     private static final Map<String, Class<?>> classCacheMap = new ConcurrentHashMap<>();

@@ -3,6 +3,7 @@ package io.tapdata.entity.codec.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapArrayValue;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 public class ToTapArrayCodec implements ToTapValueCodec<TapArrayValue> {
 
     @Override
-    public TapArrayValue toTapValue(Object value) {
+    public TapArrayValue toTapValue(Object value, TapType typeFromSchema) {
 
         TapArrayValue arrayValue = null;
         if (List.class.isAssignableFrom(value.getClass())) {

@@ -1,6 +1,6 @@
 package io.tapdata.pdk.cli.commands;
 
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
@@ -260,7 +260,7 @@ public class TDDCli extends CommonCli {
     private List<DiscoverySelector> generateTestTargets(TapNodeInfo tapNodeInfo, TapSummary testResultSummary) throws Throwable {
         io.tapdata.pdk.apis.TapConnector connector = (io.tapdata.pdk.apis.TapConnector) tapNodeInfo.getNodeClass().getConstructor().newInstance();
         ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-        TapCodecRegistry codecRegistry = new TapCodecRegistry();
+        TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
         connector.registerCapabilities(connectorFunctions, codecRegistry);
 
         List<Class<? extends PDKTestBase>> tests = Arrays.asList(

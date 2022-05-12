@@ -14,7 +14,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
 import io.tapdata.base.ConnectorBase;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.*;
@@ -219,31 +219,31 @@ public class MongodbConnector extends ConnectorBase {
      * @param codecRegistry
      */
     @Override
-    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportDropTable(this::dropTable);
 
         //Handle the special bson types, convert them to TapValue. Otherwise the unrecognized types will be converted to TapRawValue by default.
         //Target side will not easy to handle the TapRawValue.
-        codecRegistry.registerToTapValue(ObjectId.class, value -> {
+        codecRegistry.registerToTapValue(ObjectId.class, (value, tapType) -> {
             ObjectId objValue = (ObjectId) value;
             return new TapStringValue(objValue.toHexString());
         });
-        codecRegistry.registerToTapValue(Binary.class, value -> {
+        codecRegistry.registerToTapValue(Binary.class, (value, tapType) -> {
            Binary binary = (Binary) value;
            return new TapBinaryValue(binary.getData());
         });
 
-        codecRegistry.registerToTapValue(Code.class, value -> {
+        codecRegistry.registerToTapValue(Code.class, (value, tapType) -> {
             Code code = (Code) value;
             return new TapStringValue(code.getCode());
         });
-        codecRegistry.registerToTapValue(Decimal128.class, value -> {
+        codecRegistry.registerToTapValue(Decimal128.class, (value, tapType) -> {
             Decimal128 decimal128 = (Decimal128) value;
             return new TapNumberValue(decimal128.doubleValue());
         });
-        codecRegistry.registerToTapValue(Symbol.class, value -> {
+        codecRegistry.registerToTapValue(Symbol.class, (value, tapType) -> {
             Symbol symbol = (Symbol) value;
             return new TapStringValue(symbol.getSymbol());
         });

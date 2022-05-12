@@ -1,9 +1,8 @@
 package io.tapdata.pdk.core.tapnode;
 
 import com.alibaba.fastjson.JSON;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
-import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
@@ -113,7 +112,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
             try {
                 TapConnector connector = (TapConnector) clazz.getConstructor().newInstance();
                 ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-                TapCodecRegistry codecRegistry = new TapCodecRegistry();
+                TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
                 connector.registerCapabilities(connectorFunctions, codecRegistry);
 
                 if (connectorFunctions.getBatchReadFunction() != null || connectorFunctions.getStreamReadFunction() != null) {

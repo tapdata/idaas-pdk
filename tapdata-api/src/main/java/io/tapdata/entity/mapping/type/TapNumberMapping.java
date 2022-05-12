@@ -339,7 +339,7 @@ public class TapNumberMapping extends TapMapping {
             }
 
             if(((unsigned != null && unsigned) && (this.unsigned != null)) ||
-                    ((unsigned == null || !unsigned) && (this.unsigned == null))) {
+                    ((unsigned == null || !unsigned)/* && (this.unsigned == null)*/)) {
 //                score += unsignedValue;
                 score = score.add(unsignedValue);
             } else {
