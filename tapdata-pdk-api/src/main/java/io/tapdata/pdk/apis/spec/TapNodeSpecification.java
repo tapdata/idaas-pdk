@@ -18,8 +18,6 @@ public class TapNodeSpecification {
     private DataMap configOptions; //include connection and node
     private DefaultExpressionMatchingMap dataTypesMap;
 
-    private String dataExpressionJson;
-
     public String verify() {
         if(name == null)
             return "missing name";
@@ -100,11 +98,4 @@ public class TapNodeSpecification {
         this.dataTypesMap = dataTypesMap;
     }
 
-    public String getDataExpressionJson() {
-        return dataExpressionJson;
-    }
-
-    public void setDataExpressionJson(String dataExpressionJson) {
-        this.dataExpressionJson = dataExpressionJson;
-    }
 }
