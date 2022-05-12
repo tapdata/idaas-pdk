@@ -43,21 +43,21 @@ public class JsonParserImpl implements JsonParser {
 
     @Override
     public String toJson(Object obj) {
-        return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect, SerializerFeature.SortField, SerializerFeature.MapSortField);
+        return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
     }
 
     @Override
     public DataMap fromJson(String json) {
-        return JSON.parseObject(json, DataMap.class, Feature.OrderedField, Feature.UseNativeJavaObject, Feature.DisableCircularReferenceDetect);
+        return JSON.parseObject(json, DataMap.class, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
     }
 
     @Override
     public <T> T fromJson(String json, Class<T> clazz) {
-        return JSON.parseObject(json, clazz, Feature.OrderedField, Feature.UseNativeJavaObject, Feature.DisableCircularReferenceDetect);
+        return JSON.parseObject(json, clazz, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
     }
 
     @Override
     public <T> T fromJson(String json, TypeHolder<T> typeHolder) {
-        return JSON.parseObject(json, typeHolder.getType(), Feature.OrderedField, Feature.UseNativeJavaObject, Feature.DisableCircularReferenceDetect);
+        return JSON.parseObject(json, typeHolder.getType(), Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
     }
 }

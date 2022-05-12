@@ -74,17 +74,19 @@
     "date": {
       "byte": 3,
       "range": [
-        "0000-01-01",
+        "1000-01-01",
         "9999-12-31"
       ],
+      "pattern": "yyyy-MM-dd",
       "to": "TapDate"
     },
     "datetime": {
       "byte": 8,
       "range": [
-        "0000-01-01 00:00:00",
+        "1000-01-01 00:00:00",
         "9999-12-31 23:59:59"
       ],
+      "pattern": "yyyy-MM-dd HH:mm:ss",
       "to": "TapDateTime"
     },
     "char[($byte)]": {

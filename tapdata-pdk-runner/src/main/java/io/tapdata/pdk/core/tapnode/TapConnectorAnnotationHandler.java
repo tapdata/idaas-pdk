@@ -1,9 +1,10 @@
 package io.tapdata.pdk.core.tapnode;
 
 import com.alibaba.fastjson.JSON;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
-import io.tapdata.entity.mapping.type.TapMapping;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
@@ -40,7 +41,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
                         try {
                             InputStream is = url.openStream();
                             String json = IOUtils.toString(is, StandardCharsets.UTF_8);
-                            TapNodeContainer tapNodeContainer = JSON.parseObject(json, TapNodeContainer.class);
+                            TapNodeContainer tapNodeContainer = InstanceFactory.instance(JsonParser.class).fromJson(json, TapNodeContainer.class);
                             tapNodeSpecification = tapNodeContainer.getProperties();
 
                             String errorMessage = null;
@@ -112,7 +113,7 @@ public class TapConnectorAnnotationHandler extends TapBaseAnnotationHandler {
             try {
                 TapConnector connector = (TapConnector) clazz.getConstructor().newInstance();
                 ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-                TapCodecRegistry codecRegistry = new TapCodecRegistry();
+                TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
                 connector.registerCapabilities(connectorFunctions, codecRegistry);
 
                 if (connectorFunctions.getBatchReadFunction() != null || connectorFunctions.getStreamReadFunction() != null) {

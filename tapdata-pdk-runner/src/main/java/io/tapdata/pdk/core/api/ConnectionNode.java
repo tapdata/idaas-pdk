@@ -14,14 +14,25 @@ public class ConnectionNode extends Node {
     TapConnectionContext connectionContext;
 
     public void discoverSchema(List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
+        applyClassLoaderContext();
         connectorNode.discoverSchema(connectionContext, tables, tableSize, consumer);
     }
+    public int tableCount() throws Throwable {
 
+        return connectorNode.tableCount(connectionContext);
+    }
     public void connectionTest(Consumer<TestItem> consumer) throws Throwable {
+        applyClassLoaderContext();
         connectorNode.connectionTest(connectionContext, consumer);
     }
     public void connectorInit() throws Throwable {
+        applyClassLoaderContext();
         connectorNode.init(connectionContext);
+    }
+
+    public void connectorDestroy() throws Throwable {
+        applyClassLoaderContext();
+        connectorNode.destroy();
     }
     public TapConnectorNode getConnectorNode() {
         return connectorNode;

@@ -1,7 +1,7 @@
 package io.tapdata.connector.empty;
 
 import io.tapdata.base.ConnectorBase;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
@@ -98,6 +98,11 @@ public class EmptyDorisTargetConnector extends ConnectorBase {
  //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
     }
 
+    @Override
+    public int tableCount(TapConnectionContext connectionContext) throws Throwable {
+        return 1;
+    }
+
     /**
      * Register connector capabilities here.
      *
@@ -109,7 +114,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase {
      * @param codecRegistry
      */
     @Override
-    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecRegistry codecRegistry) {
+    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 //        connectorFunctions.supportBatchRead(this::batchRead);
 //        connectorFunctions.supportStreamRead(this::streamRead);
 //        connectorFunctions.supportBatchCount(this::batchCount);

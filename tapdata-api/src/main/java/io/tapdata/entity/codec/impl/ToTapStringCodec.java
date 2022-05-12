@@ -3,6 +3,7 @@ package io.tapdata.entity.codec.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapStringValue;
 
 import java.util.*;
@@ -10,7 +11,7 @@ import java.util.*;
 @Implementation(value = ToTapValueCodec.class, type = TapDefaultCodecs.TAP_STRING_VALUE, buildNumber = 0)
 public class ToTapStringCodec implements ToTapValueCodec<TapStringValue> {
     @Override
-    public TapStringValue toTapValue(Object value) {
+    public TapStringValue toTapValue(Object value, TapType typeFromSchema) {
         TapStringValue stringValue;
         Class<?> clazz = value.getClass();
         if(value instanceof String) {

@@ -1,6 +1,6 @@
 package io.tapdata.pdk.cli.commands;
 
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
@@ -176,7 +176,7 @@ public class TDDCli extends CommonCli {
             if (0 == state){
                 MavenXpp3Reader reader = new MavenXpp3Reader();
                 Model model = reader.read(new FileReader(FilenameUtils.concat(file.getAbsolutePath(), "pom.xml")));
-                jarFile = FilenameUtils.concat(file.getAbsolutePath(), "../../dist/" + model.getArtifactId() + "-v" + model.getVersion() + ".jar");
+                jarFile = FilenameUtils.concat("./", "./dist/" + model.getArtifactId() + "-v" + model.getVersion() + ".jar");
                 System.out.println("------------- Maven package successfully -------------");
                 System.out.println("Connector jar is " + jarFile);
 //                System.setProperty("maven.multiModuleProjectDirectory", ".");
@@ -260,7 +260,7 @@ public class TDDCli extends CommonCli {
     private List<DiscoverySelector> generateTestTargets(TapNodeInfo tapNodeInfo, TapSummary testResultSummary) throws Throwable {
         io.tapdata.pdk.apis.TapConnector connector = (io.tapdata.pdk.apis.TapConnector) tapNodeInfo.getNodeClass().getConstructor().newInstance();
         ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-        TapCodecRegistry codecRegistry = new TapCodecRegistry();
+        TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
         connector.registerCapabilities(connectorFunctions, codecRegistry);
 
         List<Class<? extends PDKTestBase>> tests = Arrays.asList(

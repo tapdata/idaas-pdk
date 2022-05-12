@@ -39,6 +39,27 @@ public class PDKInvocationMonitor {
         }
         return instance;
     }
+
+
+    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String logTag) {
+        instance.invokePDKMethod(method, r, null, logTag);
+    }
+    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
+        instance.invokePDKMethod(method, r, message, logTag, null, false, 0, 0);
+    }
+    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
+        instance.invokePDKMethod(method, r, message, logTag, errorConsumer, false, 0, 0);
+    }
+    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
+        instance.invokePDKMethod(method, r, message, logTag, errorConsumer, async, null, retryTimes, retryPeriodSeconds);
+    }
+    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
+        instance.invokePDKMethod(method, r, message, logTag, errorConsumer, async, contextClassLoader, retryTimes, retryPeriodSeconds);
+    }
+
+    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String logTag) {
+        invokePDKMethod(method, r, null, logTag);
+    }
     public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
         invokePDKMethod(method, r, message, logTag, null, false, 0, 0);
     }
@@ -46,8 +67,13 @@ public class PDKInvocationMonitor {
         invokePDKMethod(method, r, message, logTag, errorConsumer, false, 0, 0);
     }
     public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
+        invokePDKMethod(method, r, message, logTag, errorConsumer, async, null, retryTimes, retryPeriodSeconds);
+    }
+    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
         if(async) {
             new Thread(() -> {
+                if(contextClassLoader != null)
+                    Thread.currentThread().setContextClassLoader(contextClassLoader);
                 if(retryTimes > 0) {
                     CommonUtils.autoRetryAsync(() -> {
                         invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);

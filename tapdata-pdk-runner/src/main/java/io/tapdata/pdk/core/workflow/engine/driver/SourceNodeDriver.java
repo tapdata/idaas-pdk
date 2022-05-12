@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.workflow.engine.driver;
 
 import io.tapdata.entity.codec.ToTapValueCodec;
-import io.tapdata.entity.codec.filter.TapCodecFilterManager;
+import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
@@ -297,7 +297,7 @@ public class SourceNodeDriver extends Driver {
             }
             Object finalStreamOffsetObj = streamOffsetObj;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
-                Thread.currentThread().setContextClassLoader(sourceNode.getConnector().getClass().getClassLoader());
+                sourceNode.applyClassLoaderContext();
                 while(!shutDown.get()) {
                     streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, StreamReadConsumer.create((events) -> {
                         if (events != null) {
@@ -403,7 +403,7 @@ public class SourceNodeDriver extends Driver {
     }
 
     public List<TapEvent> filterEvents(List<TapEvent> events, boolean needClone) {
-        TapCodecFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
+        TapCodecsFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
         List<TapEvent> newEvents = new ArrayList<>();
         for(TapEvent tapEvent : events) {
             if(tapEvent instanceof TapBaseEvent) {
@@ -510,7 +510,7 @@ public class SourceNodeDriver extends Driver {
     }
 
     private void fillNameFieldsFromSampleRecords(LinkedHashMap<String, TapField> nameFieldMap, List<Map<String, Object>> mapList, List<String> defaultPrimaryKeys) {
-        TapCodecFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
+        TapCodecsFilterManager codecFilterManager = sourceNode.getCodecsFilterManager();
         Map<String, ToTapValueCodec<?>> combinedMap = new LinkedHashMap<>();
         Map<String, Object> combinedValueMap = new HashMap<>();
         //Sample records
@@ -536,7 +536,7 @@ public class SourceNodeDriver extends Driver {
         int counter = 0;
         int primaryPos = 0;
         for(Map.Entry<String, ToTapValueCodec<?>> entry : combinedMap.entrySet()) {
-            TapValue<?, ?> tapValue = entry.getValue().toTapValue(combinedValueMap.get(entry.getKey()));
+            TapValue<?, ?> tapValue = entry.getValue().toTapValue(combinedValueMap.get(entry.getKey()), null);
             if(tapValue != null) {
                 TapType tapType = tapValue.createDefaultTapType();
                 TapField field = new TapField(entry.getKey(), tapType.getClass().getSimpleName()).tapType(tapType).pos(++counter);

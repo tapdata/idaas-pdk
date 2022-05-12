@@ -8,21 +8,21 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TapCodecRegistry {
+public class TapCodecsRegistry {
     private final Map<Class<?>, ToTapValueCodec<? extends TapValue<?, ?>>> classToTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<? extends TapValue<?, ?>>, FromTapValueCodec<? extends TapValue<?, ?>>> classFromTapValueCodecMap = new ConcurrentHashMap<>();
     private final Map<Class<?>, String> tapTypeDataTypeMap = new ConcurrentHashMap<>();
 
 //    private final Map<String, ToTapValueCodec<?>> fieldToTapValueCodecMap = new ConcurrentHashMap<>();
 
-    public TapCodecRegistry() {
+    public TapCodecsRegistry() {
     }
 
-    public static TapCodecRegistry create() {
-        return new TapCodecRegistry();
+    public static TapCodecsRegistry create() {
+        return new TapCodecsRegistry();
     }
 
-    public <T extends TapValue<?, ?>> TapCodecRegistry registerToTapValue(Class<?> anyClass, ToTapValueCodec<T> toTapValueCodec) {
+    public <T extends TapValue<?, ?>> TapCodecsRegistry registerToTapValue(Class<?> anyClass, ToTapValueCodec<T> toTapValueCodec) {
         classToTapValueCodecMap.put(anyClass, toTapValueCodec);
         return this;
     }
@@ -35,10 +35,10 @@ public class TapCodecRegistry {
         return tapTypeDataTypeMap.containsKey(tapValueClass);
     }
 
-    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, FromTapValueCodec<T> fromTapValueCodec) {
+    public <T extends TapValue<?, ?>> TapCodecsRegistry registerFromTapValue(Class<T> tapValueClass, FromTapValueCodec<T> fromTapValueCodec) {
         return registerFromTapValue(tapValueClass, null, fromTapValueCodec);
     }
-    public <T extends TapValue<?, ?>> TapCodecRegistry registerFromTapValue(Class<T> tapValueClass, String dataType, FromTapValueCodec<T> fromTapValueCodec) {
+    public <T extends TapValue<?, ?>> TapCodecsRegistry registerFromTapValue(Class<T> tapValueClass, String dataType, FromTapValueCodec<T> fromTapValueCodec) {
         if(dataType != null) {
             Type[] types = ((ParameterizedTypeImpl) tapValueClass.getGenericSuperclass()).getActualTypeArguments();
             if(types != null && types.length == 2 && types[1] instanceof Class) {

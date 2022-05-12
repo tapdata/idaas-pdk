@@ -14,6 +14,8 @@ import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
+import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
+import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.*;
@@ -104,29 +106,32 @@ public class DMLTest extends PDKTestBase {
             if(nodeId.equals(targetNodeId) && state == PatrolEvent.STATE_LEAVE){
 
                 prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                    PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+                    pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                     String targetTable = dag.getNodeMap().get(targetNodeId).getTable();
 
                     List<TapTable> allTables = new ArrayList<>();
                     try {
                         connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
+                        boolean found = false;
+                        for(TapTable table : allTables) {
+                            if(table.getId() != null && table.getId().equalsIgnoreCase(targetTable)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                        if(!found)
+                            $(() -> Assertions.fail("Target table " + targetTable + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable));
+
+                        verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
+                        updateOneRecord(dataFlowEngine, dag);
                     } catch (Throwable throwable) {
                         throwable.printStackTrace();
                         Assertions.fail(throwable);
+                    } finally {
+                        CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                     }
-
-                    boolean found = false;
-                    for(TapTable table : allTables) {
-                        if(table.getId() != null && table.getId().equals(targetTable)) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
-                    if(!found)
-                        $(() -> Assertions.fail("Target table " + targetTable + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable));
-
-                    verifyBatchRecordExists(tddSourceNode, targetNode, filterMap);
-                    updateOneRecord(dataFlowEngine, dag);
                 });
             }
         }));
@@ -152,21 +157,25 @@ public class DMLTest extends PDKTestBase {
                 sendDropTableEvent(dataFlowEngine, dag, targetTableId, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                         prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
+                            PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+                            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                             String targetTable = dag.getNodeMap().get(targetNodeId).getTable();
                             List<TapTable> allTables = new ArrayList<>();
                             try {
                                 connectionNode.discoverSchema(Collections.singletonList(targetTable), 10, tables -> allTables.addAll(tables));
+                                for(TapTable table : allTables) {
+                                    if(table.getId() != null && table.getId().equals(targetTable)) {
+                                        $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
+                                    }
+                                }
+                                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                                completed();
                             } catch (Throwable throwable) {
                                 throwable.printStackTrace();
                                 Assertions.fail(throwable);
+                            } finally {
+                                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                             }
-                            for(TapTable table : allTables) {
-                                if(table.getId() != null && table.getId().equals(targetTable)) {
-                                    $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
-                                }
-                            }
-                            CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
-                            completed();
                         });
                     }
                 }));

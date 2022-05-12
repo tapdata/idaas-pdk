@@ -1,7 +1,7 @@
 package io.tapdata.entity.codec.filter;
 
 import io.tapdata.entity.codec.FromTapValueCodec;
-import io.tapdata.entity.codec.TapCodecRegistry;
+import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.filter.impl.FirstLayerMapIterator;
 import io.tapdata.entity.error.UnknownCodecException;
@@ -9,20 +9,24 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
 
+import java.lang.reflect.Type;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class TapCodecFilterManager {
-    private MapIterator mapIterator;
-    private final TapCodecRegistry codecRegistry;
+import static io.tapdata.entity.simplify.TapSimplify.field;
 
-    public TapCodecFilterManager(TapCodecRegistry codecRegistry) {
-        this.codecRegistry = codecRegistry;
+public class TapCodecsFilterManager {
+    private MapIterator mapIterator;
+    private final TapCodecsRegistry codecsRegistry;
+
+    public TapCodecsFilterManager(TapCodecsRegistry codecsRegistry) {
+        this.codecsRegistry = codecsRegistry;
 //        mapIterator = new AllLayerMapIterator();
         mapIterator = new FirstLayerMapIterator();
     }
 
-    public static TapCodecFilterManager create(TapCodecRegistry codecRegistry) {
-        return new TapCodecFilterManager(codecRegistry);
+    public static TapCodecsFilterManager create(TapCodecsRegistry codecsRegistry) {
+        return new TapCodecsFilterManager(codecsRegistry);
     }
 
     public void transformToTapValueMap(Map<String, Object> value, Map<String, TapField> nameFieldMap) {
@@ -32,7 +36,7 @@ public class TapCodecFilterManager {
             Object theValue = entry.getValue();
             String fieldName = entry.getKey();
             if(theValue != null && fieldName != null) {
-                ToTapValueCodec<?> valueCodec = this.codecRegistry.getToTapValueCodec(theValue.getClass());
+                ToTapValueCodec<?> valueCodec = this.codecsRegistry.getToTapValueCodec(theValue.getClass());
 //                if(valueCodec == null)
 //                    throw new UnknownCodecException("toTapValueMap codec not found for value class " + theValue.getClass());
                 if(valueCodec != null) {
@@ -43,10 +47,18 @@ public class TapCodecFilterManager {
                         if(field != null) {
                             dataType = field.getDataType();
                             typeFromSchema = field.getTapType();
+//                            Type[] types = valueCodec.getClass().getGenericInterfaces();
+//                            ((ParameterizedTypeImpl) valueCodec.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0]
+//                            if(types != null && types.length > 0) {
+//
+//                            }
+//                            if(typeFromSchema.getTapValueClass() )
                         }
                     }
-                    TapValue tapValue = valueCodec.toTapValue(theValue);
+                    TapValue tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
                     tapValue.setOriginType(dataType);
+                    if(typeFromSchema == null)
+                        typeFromSchema = tapValue.createDefaultTapType();
                     tapValue.setTapType(typeFromSchema);
                     tapValue.setOriginValue(theValue);
                     entry.setValue(tapValue);
@@ -55,33 +67,45 @@ public class TapCodecFilterManager {
         });
     }
 
-    public void transformFromTapValueMap(Map<String, Object> tapValueMap) {
+    public Map<String, TapField> transformFromTapValueMap(Map<String, Object> tapValueMap) {
+        return transformFromTapValueMap(tapValueMap, null);
+    }
+
+    public Map<String, TapField> transformFromTapValueMap(Map<String, Object> tapValueMap, Map<String, TapField> sourceNameFieldMap) {
+        Map<String, TapField> nameFieldMap = sourceNameFieldMap != null ? sourceNameFieldMap : new LinkedHashMap<>();
         mapIterator.iterate(tapValueMap, stringTapValueEntry -> {
             Object object = stringTapValueEntry.getValue();
             if(object instanceof TapValue) {
                 TapValue<?, ?> theValue = (TapValue<?, ?>) object;
                 String fieldName = stringTapValueEntry.getKey();
                 if(fieldName != null) {
-                    FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecRegistry.getFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
+                    FromTapValueCodec<TapValue<?, ?>> fromTapValueCodec = this.codecsRegistry.getFromTapValueCodec((Class<TapValue<?, ?>>) theValue.getClass());
                     if(fromTapValueCodec == null)
-                        throw new UnknownCodecException("fromTapValueMap codec not found for value class " + theValue.getClass());
+                        throw new UnknownCodecException("fromTapValueMap codecs not found for value class " + theValue.getClass());
 
                     stringTapValueEntry.setValue(fromTapValueCodec.fromTapValue(theValue));
+                    if(!nameFieldMap.containsKey(stringTapValueEntry.getKey())) {
+                        //Handle inserted new field
+                        nameFieldMap.put(stringTapValueEntry.getKey(), field(stringTapValueEntry.getKey(), theValue.getOriginType()).tapType(theValue.getTapType()));
+                    }
+                    //TODO Handle updated tapType field?
+                    //TODO Handle deleted field?
                 }
             }
         });
+        return nameFieldMap;
     }
 
     public String getDataTypeByTapType(Class<? extends TapType> tapTypeClass) {
-        return codecRegistry.getDataTypeByTapType(tapTypeClass);
+        return codecsRegistry.getDataTypeByTapType(tapTypeClass);
     }
 
     public Map<Class<?>, String> getTapTypeDataTypeMap() {
-        return codecRegistry.getTapTypeDataTypeMap();
+        return codecsRegistry.getTapTypeDataTypeMap();
     }
 
     public ToTapValueCodec<?> getToTapValueCodec(Object value) {
-        return this.codecRegistry.getToTapValueCodec(value.getClass());
+        return this.codecsRegistry.getToTapValueCodec(value.getClass());
     }
 
     public MapIterator getMapIterator() {
@@ -92,7 +116,7 @@ public class TapCodecFilterManager {
         this.mapIterator = mapIterator;
     }
 
-    public TapCodecRegistry getCodecRegistry() {
-        return codecRegistry;
+    public TapCodecsRegistry getCodecsRegistry() {
+        return codecsRegistry;
     }
 }

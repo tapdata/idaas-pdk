@@ -1,6 +1,8 @@
 package io.tapdata.entity.schema.value;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -20,11 +22,15 @@ public class DateTime {
     /**
      * 时区 GMT+8
      */
-    //ZoneId
     private TimeZone timeZone;
 
     public DateTime() {
 
+    }
+
+    public DateTime(ZonedDateTime zonedDateTime) {
+        this(zonedDateTime.toInstant());
+        timeZone = TimeZone.getTimeZone(zonedDateTime.getZone());
     }
 
     public DateTime(Instant instant) {
@@ -33,15 +39,25 @@ public class DateTime {
     }
 
     public DateTime(Date date) {
+        long time = date.getTime();
+        seconds = time / 1000;
+        nano = (int)((time % 1000) * 1000000);
+    }
 
+    public Instant toInstant() {
+        return Instant.ofEpochSecond(seconds, nano);
+    }
+
+    public ZonedDateTime toZonedDateTime() {
+        return ZonedDateTime.ofInstant(toInstant(), timeZone.toZoneId());
     }
 
     public Date toDate() {
-        Long milliseconds;
+        long milliseconds;
         if(seconds != null) {
             milliseconds = seconds * 1000;
             if(nano != null) {
-                milliseconds += milliseconds + (nano / 1000 / 1000);
+                milliseconds = milliseconds + (nano / 1000 / 1000);
             }
         } else {
             return null;

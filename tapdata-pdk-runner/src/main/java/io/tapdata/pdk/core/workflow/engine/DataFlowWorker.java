@@ -110,6 +110,7 @@ public class DataFlowWorker {
         for(String nodeId : headNodeIds) {
             TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
             if(nodeWorker.sourceNodeDriver != null) {
+                nodeWorker.sourceNodeDriver.getSourceNode().applyClassLoaderContext();
                 nodeWorker.sourceNodeDriver.start(state -> {
                     if(sourceStateListener != null) {
                         CommonUtils.ignoreAnyError(() -> {

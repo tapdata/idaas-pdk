@@ -17,9 +17,32 @@
         <module>tdd-connector</module>
 <!--        <module>aerospike-connector</module>-->
 <!--        <module>doris-connector</module>-->
-      <module>mongodb-connector</module>
+        <module>mongodb-connector</module>
+        <module>mysql</module>
         <module>postgres-connector</module>
     </modules>
+
+    <properties>
+        <commons.lang3.version>3.12.0</commons.lang3.version>
+        <commons.collections4.version>4.4</commons.collections4.version>
+        <log4j.version>2.17.1</log4j.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- common utils -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons.lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${commons.collections4.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

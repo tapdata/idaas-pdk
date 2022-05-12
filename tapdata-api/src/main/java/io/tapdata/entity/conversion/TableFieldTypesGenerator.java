@@ -7,4 +7,6 @@ import java.util.LinkedHashMap;
 
 public interface TableFieldTypesGenerator {
     void autoFill(LinkedHashMap<String, TapField> fieldMap, DefaultExpressionMatchingMap expressionMatchingMap);
+
+    void autoFill(TapField tapField, DefaultExpressionMatchingMap expressionMatchingMap);
 }
