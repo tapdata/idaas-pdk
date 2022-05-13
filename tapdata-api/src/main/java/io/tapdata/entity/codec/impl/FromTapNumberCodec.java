@@ -7,6 +7,8 @@ import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapNumberValue;
 
+import java.math.BigDecimal;
+
 @Implementation(value = FromTapValueCodec.class, type = TapDefaultCodecs.TAP_NUMBER_VALUE, buildNumber = 0)
 public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
     @Override
@@ -20,12 +22,27 @@ public class FromTapNumberCodec implements FromTapValueCodec<TapNumberValue> {
         }
         if(tapNumber != null) {
             Integer scale = tapNumber.getScale();
-            //TODO need more code
-//            if(scale == null || scale == 0)
-//                return tapValue.getValue().longValue();
-//            else
+            if(scale == null || scale == 0) {
+                if(tapNumber.getMaxValue().compareTo(BigDecimal.valueOf(Long.MAX_VALUE)) <= 0 && tapNumber.getMinValue().compareTo(BigDecimal.valueOf(Long.MIN_VALUE)) >= 0) {
+                    long maxValue = tapNumber.getMaxValue().longValue();
+                    long minValue = tapNumber.getMinValue().longValue();
+                    if(Byte.MAX_VALUE >= maxValue && Byte.MIN_VALUE <= minValue) {
+                        return tapValue.getValue().byteValue();
+                    } else if(Short.MAX_VALUE >= maxValue && Short.MIN_VALUE <= minValue) {
+                        return tapValue.getValue().shortValue();
+                    } else if(Integer.MAX_VALUE >= maxValue && Integer.MIN_VALUE <= minValue) {
+                        return tapValue.getValue().intValue();
+                    } else {
+                        return tapValue.getValue().longValue();
+                    }
+                } else {
+                    return BigDecimal.valueOf(tapValue.getValue());
+                }
+            } else {
                 return tapValue.getValue();
+            }
         }
+
         return tapValue.getValue();
     }
 
