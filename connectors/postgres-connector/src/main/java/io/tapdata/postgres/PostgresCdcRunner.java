@@ -88,7 +88,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         if(SmartKit.isNotEmpty(eventList)) {
             consumer.accept(eventList);
         }
-        consumer.streamReadEnded();
+//        consumer.streamReadEnded();
     }
 
     private DataMap getMapFromStruct(Struct struct) {

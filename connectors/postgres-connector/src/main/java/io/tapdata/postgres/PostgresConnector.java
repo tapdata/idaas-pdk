@@ -167,6 +167,10 @@ public class PostgresConnector extends ConnectorBase {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            synchronized (this) {
+                this.notifyAll();
+            }
         }
     }
 
@@ -479,8 +483,12 @@ public class PostgresConnector extends ConnectorBase {
 //            DebeziumCdcPool.addRunner(cdcRunner.getRunnerName(), cdcRunner);
             cdcRunner.startCdcRunner();
         }
-        while (cdcRunner.isRunning()) {
-            consumer.streamReadStarted();
+        while (!cdcRunner.isRunning()) {
+            sleep(100L);
+        }
+        consumer.streamReadStarted();
+        synchronized (this) {
+            this.wait();
         }
     }
 
