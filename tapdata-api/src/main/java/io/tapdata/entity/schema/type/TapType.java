@@ -18,7 +18,7 @@ public abstract class TapType implements Serializable {
     public static final byte TYPE_DATE = 11;
     protected byte type;
 
-    public Class<? extends TapType> getTapTypeClass(byte type) {
+    public static Class<? extends TapType> getTapTypeClass(byte type) {
         switch (type) {
             case TYPE_ARRAY:
                 return TapArray.class;
