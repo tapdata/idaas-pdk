@@ -1,9 +1,8 @@
-import io.tapdata.entity.simplify.TapSimplify;
-import io.tapdata.postgres.PostgresCdcPool;
+import io.tapdata.postgres.DebeziumCdcPool;
 import io.tapdata.postgres.PostgresCdcRunner;
 import io.tapdata.postgres.config.PostgresConfig;
 
-import java.util.Scanner;
+import java.util.Collections;
 
 /**
  * @author Administrator
@@ -63,13 +62,15 @@ public class Main {
         postgresConfig.setHost("192.168.1.189");
         postgresConfig.setPort(5432);
         postgresConfig.setDatabase("COOLGJ");
+        postgresConfig.setSchema("public");
         postgresConfig.setExtParams("");
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
-        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig, null);
-        runner.consumeOffset(null, 0, null);
-        PostgresCdcPool.addRunner(runner.getSlotName(), runner);
+        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig, Collections.singletonList("Student"));
+        runner.registerConsumer(null, 0, null);
+        DebeziumCdcPool.addRunner(runner.getRunnerName(), runner);
         runner.startCdcRunner();
+
 
 //        Thread.sleep(20000);
 //        runner.closeCdc();

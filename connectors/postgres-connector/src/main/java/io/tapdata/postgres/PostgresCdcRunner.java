@@ -1,100 +1,114 @@
 package io.tapdata.postgres;
 
 import io.debezium.embedded.EmbeddedEngine;
+import io.debezium.engine.DebeziumEngine;
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.simplify.TapSimplify;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
-import io.tapdata.postgres.config.DebeziumConfig;
 import io.tapdata.postgres.config.PostgresConfig;
+import io.tapdata.postgres.config.PostgresDebeziumConfig;
+import io.tapdata.postgres.kit.SmartKit;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
 
-public class PostgresCdcRunner implements Runnable {
+public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     private final PostgresConfig postgresConfig;
-    private final DebeziumConfig debeziumConfig;
-    private EmbeddedEngine engine;
-    private final String slotName;
     private Object offsetState;
     private int recordSize;
     private StreamReadConsumer consumer;
 
     public PostgresCdcRunner(PostgresConfig postgresConfig, List<String> observedTableList) {
         this.postgresConfig = postgresConfig;
-        debeziumConfig = new DebeziumConfig(postgresConfig, observedTableList);
-        this.slotName = debeziumConfig.getSlotName();
+        postgresDebeziumConfig = new PostgresDebeziumConfig(postgresConfig, observedTableList);
+        this.runnerName = postgresDebeziumConfig.getSlotName();
     }
 
-    public PostgresCdcRunner consumeOffset(Object offsetState, int recordSize, StreamReadConsumer consumer) {
+    public PostgresCdcRunner registerConsumer(Object offsetState, int recordSize, StreamReadConsumer consumer) {
         this.engine = EmbeddedEngine.create()
-                .using(debeziumConfig.create())
-                .notifying(this::consumeRecord)
+                .using(postgresDebeziumConfig.create())
+//                .notifying(this::consumeRecord)
+                .notifying(this::consumeRecords)
                 .build();
+        // TODO: 2022/5/13 observed tables must have unique key or index, otherwise need to open <REPLICA IDENTITY> 
         this.offsetState = offsetState;
         this.recordSize = recordSize;
         this.consumer = consumer;
         return this;
     }
 
-    public void consumeRecord(SourceRecord sourceRecord) {
-        System.out.println(sourceRecord);
-        System.out.println(offsetState);
-        System.out.println(recordSize);
-        PostgresCdcPool.removeRunner(slotName);
-//        TapSimplify.sleep(10000);
-//        consumer.accept(TapSimplify.list());
-    }
+//    public void consumeRecord(SourceRecord sourceRecord) {
+//        System.out.println(sourceRecord);
+//        System.out.println(offsetState);
+//        System.out.println(recordSize);
+//        DebeziumCdcPool.removeRunner(slotName);
+//    }
 
-    public String getSlotName() {
-        return slotName;
-    }
-
-    public void startCdcRunner() {
-        if (engine != null && !engine.isRunning()) {
-            new Thread(() -> {
-                engine.run();
-            }).start();
-        }
-    }
-
-    public void stopCdcRunner() {
-        if (engine != null && engine.isRunning()) {
-            engine.stop();
-        }
-    }
-
-    public boolean isRunning() {
-        return engine != null && engine.isRunning();
-    }
-
-    public void closeCdc() {
-        new Thread(() -> {
-            try {
-                engine.close();
-                clearSlot();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+    @Override
+    public void consumeRecords(List<SourceRecord> sourceRecords, DebeziumEngine.RecordCommitter<SourceRecord> committer) {
+        super.consumeRecords(sourceRecords, committer);
+        List<TapEvent> eventList = TapSimplify.list();
+        for (SourceRecord sr : sourceRecords) {
+            Struct struct = ((Struct) sr.value());
+            if (struct == null) {
+                return;
             }
-        }).start();
+            String op = struct.getString("op");
+            String table = struct.getStruct("source").getString("table");
+            Struct after = struct.getStruct("after");
+            Struct before = struct.getStruct("before");
+            switch (op) {
+                case "c":
+                case "r":
+                    eventList.add(new TapInsertRecordEvent().table(table).after(getMapFromStruct(after)));
+                    break;
+                case "d":
+                    eventList.add(new TapDeleteRecordEvent().table(table).before(getMapFromStruct(before)));
+                    break;
+                case "u":
+                    eventList.add(new TapUpdateRecordEvent().table(table).after(getMapFromStruct(after)).before(getMapFromStruct(before)));
+                    break;
+                default:
+                    break;
+            }
+            if (eventList.size() >= recordSize) {
+                consumer.accept(eventList);
+                eventList = TapSimplify.list();
+            }
+        }
+        if(SmartKit.isNotEmpty(eventList)) {
+            consumer.accept(eventList);
+        }
+        consumer.streamReadEnded();
     }
 
-    public void clearSlot() {
+    private DataMap getMapFromStruct(Struct struct) {
+        DataMap dataMap = new DataMap();
+        struct.schema().fields().forEach(field -> {
+            dataMap.put(field.name(), struct.get(field.name()));
+        });
+        return dataMap;
+    }
+
+    @Override
+    public void releaseResource() {
         try {
             String dbUrl = postgresConfig.getDatabaseUrl();
             Class.forName(postgresConfig.getJdbcDriver());
             Connection conn = DriverManager.getConnection(dbUrl, postgresConfig.getUser(), postgresConfig.getPassword());
-            conn.createStatement().execute("SELECT PG_DROP_REPLICATION_SLOT('" + slotName + "')");
+            conn.createStatement().execute("SELECT PG_DROP_REPLICATION_SLOT('" + runnerName + "')");
             conn.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void run() {
-        startCdcRunner();
     }
 }

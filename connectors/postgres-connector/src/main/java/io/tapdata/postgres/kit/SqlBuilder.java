@@ -107,26 +107,32 @@ public class SqlBuilder {
         preparedStatement.addBatch();
     }
 
+    /**
+     * build subSql after where for advance query
+     *
+     * @param filter condition of advance query
+     * @return where substring
+     */
     public static String buildSqlByAdvanceFilter(TapAdvanceFilter filter) {
         StringBuilder builder = new StringBuilder();
         if (SmartKit.isNotEmpty(filter.getMatch()) || SmartKit.isNotEmpty(filter.getOperators())) {
             builder.append("WHERE ");
             builder.append(SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND", "="));
         }
-        if(SmartKit.isNotEmpty(filter.getOperators())) {
-            if(SmartKit.isNotEmpty(filter.getMatch())) {
+        if (SmartKit.isNotEmpty(filter.getOperators())) {
+            if (SmartKit.isNotEmpty(filter.getMatch())) {
                 builder.append("AND ");
             }
             builder.append(filter.getOperators().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new)).append(' ');
         }
-        if(SmartKit.isNotEmpty(filter.getSortOnList())) {
+        if (SmartKit.isNotEmpty(filter.getSortOnList())) {
             builder.append("ORDER BY ");
             builder.append(filter.getSortOnList().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)).append(' ');
         }
-        if(null != filter.getSkip()) {
+        if (null != filter.getSkip()) {
             builder.append("OFFSET ").append(filter.getSkip()).append(' ');
         }
-        if(null != filter.getLimit()) {
+        if (null != filter.getLimit()) {
             builder.append("LIMIT ").append(filter.getLimit()).append(' ');
         }
         return builder.toString();

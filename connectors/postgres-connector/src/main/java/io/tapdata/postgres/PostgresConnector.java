@@ -16,6 +16,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapArrayValue;
 import io.tapdata.entity.schema.value.TapMapValue;
 import io.tapdata.entity.schema.value.TapRawValue;
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
@@ -161,6 +162,9 @@ public class PostgresConnector extends ConnectorBase {
                 conn.close();
                 conn = null;
             }
+            if (cdcRunner != null) {
+                cdcRunner.closeCdcRunner();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -300,6 +304,7 @@ public class PostgresConnector extends ConnectorBase {
         }
     }
 
+    // TODO: 2022/5/13 the same type of event must be dealt with to make this method faster
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
         initConnection(connectorContext.getConnectionConfig());
         AtomicLong inserted = new AtomicLong(0); //number of inserted
@@ -470,9 +475,12 @@ public class PostgresConnector extends ConnectorBase {
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
         initConnection(nodeContext.getConnectionConfig());
         if (cdcRunner == null) {
-            cdcRunner = new PostgresCdcRunner(postgresConfig, tableList).consumeOffset(offsetState, recordSize, consumer);
-            PostgresCdcPool.addRunner(cdcRunner.getSlotName(), cdcRunner);
+            cdcRunner = new PostgresCdcRunner(postgresConfig, tableList).registerConsumer(offsetState, recordSize, consumer);
+//            DebeziumCdcPool.addRunner(cdcRunner.getRunnerName(), cdcRunner);
             cdcRunner.startCdcRunner();
+        }
+        while (cdcRunner.isRunning()) {
+            consumer.streamReadStarted();
         }
     }
 
