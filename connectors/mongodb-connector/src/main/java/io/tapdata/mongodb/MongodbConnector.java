@@ -594,6 +594,8 @@ public class MongodbConnector extends ConnectorBase {
             List<TapEvent> tapEvents = list();
             ChangeStreamIterable<Document> changeStream;
             if (offset != null) {
+                //报错之后， 再watch一遍
+                //如果完全没事件， 就需要从当前时间开始watch
                 changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
             } else {
                 changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
