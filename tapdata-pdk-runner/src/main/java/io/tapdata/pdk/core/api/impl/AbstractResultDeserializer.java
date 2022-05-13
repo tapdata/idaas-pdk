@@ -23,8 +23,13 @@ public class AbstractResultDeserializer implements ObjectDeserializer {
         int begin = ((JSONScanner) parser.lexer).pos()+1;//当前反序列化进行到的位置
         text = text.substring(begin,findEndPoint(text,begin));
         for(JsonParser.AbstractClassDetector detector : abstractClassDetectors) {
-            if(detector.verify() && text.contains(detector.matchingString())) {
-                return parser.getConfig().getDeserializer(detector.getDeserializeClass()).deserialze(parser,type, object);
+            String matchingString = detector.matchingString();
+            int pos = text.indexOf(matchingString);
+            if(detector.verify() && pos >= 0) {
+                char c = text.charAt(pos + matchingString.length());
+                if(c == ' ' || c == ',' || c == '}') {
+                    return parser.getConfig().getDeserializer(detector.getDeserializeClass()).deserialze(parser,type, object);
+                }
             }
         }
         return null;

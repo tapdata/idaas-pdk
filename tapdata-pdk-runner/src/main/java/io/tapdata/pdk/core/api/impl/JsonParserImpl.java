@@ -28,7 +28,8 @@ public class JsonParserImpl implements JsonParser {
 
     @Override
     public String toJsonWithClass(Object obj) {
-        return PREFIX + obj.getClass().getName() + SUFFIX + JSON.toJSONString(obj);
+        return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
+//        return PREFIX + obj.getClass().getName() + SUFFIX + JSON.toJSONString(obj);
     }
     @Override
     public Object fromJsonWithClass(String json) {
@@ -36,22 +37,26 @@ public class JsonParserImpl implements JsonParser {
     }
     @Override
     public Object fromJsonWithClass(String json, ClassLoader classLoader) {
-        if(json.startsWith(PREFIX)) {
-            int pos = json.indexOf(SUFFIX);
-            if(pos > 0) {
-                String classStr = json.substring(PREFIX.length(), pos);
-                if(classLoader != null) {
-                    try {
-                        Class<?> clazz = classLoader.loadClass(classStr);
-                        return JSON.parseObject(json.substring(pos + SUFFIX.length()), clazz);
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-
-        return null;
+        ParserConfig parserConfig = new ParserConfig();
+        if(classLoader != null)
+            parserConfig.setDefaultClassLoader(classLoader);
+        return JSON.parseObject(json, DataMap.class, parserConfig, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
+//        if(json.startsWith(PREFIX)) {
+//            int pos = json.indexOf(SUFFIX);
+//            if(pos > 0) {
+//                String classStr = json.substring(PREFIX.length(), pos);
+//                if(classLoader != null) {
+//                    try {
+//                        Class<?> clazz = classLoader.loadClass(classStr);
+//                        return JSON.parseObject(json.substring(pos + SUFFIX.length()), clazz);
+//                    } catch (ClassNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }
+//
+//        return null;
     }
 
     @Override
