@@ -47,7 +47,7 @@ public abstract class TapType implements Serializable {
     }
 
     public abstract TapType cloneTapType();
-    public abstract Class<? extends TapValue<?, ?>> getTapValueClass();
+    public abstract Class<? extends TapValue<?, ?>> tapValueClass();
 
     public byte getType() {
         return type;

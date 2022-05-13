@@ -154,7 +154,7 @@ public class TapNumber extends TapType {
     }
 
     @Override
-    public Class<? extends TapValue<?, ?>> getTapValueClass() {
+    public Class<? extends TapValue<?, ?>> tapValueClass() {
         return TapNumberValue.class;
     }
 }
