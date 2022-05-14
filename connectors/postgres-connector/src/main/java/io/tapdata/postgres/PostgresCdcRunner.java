@@ -2,6 +2,7 @@ package io.tapdata.postgres;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
+import io.debezium.util.Clock;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -36,6 +37,8 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     public PostgresCdcRunner registerConsumer(Object offsetState, int recordSize, StreamReadConsumer consumer) {
         this.engine = EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
+                .using(this.getClass().getClassLoader())
+                .using(Clock.SYSTEM)
 //                .notifying(this::consumeRecord)
                 .notifying(this::consumeRecords)
                 .build();
@@ -68,8 +71,14 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             Struct before = struct.getStruct("before");
             switch (op) {
                 case "c":
-                case "r":
                     eventList.add(new TapInsertRecordEvent().table(table).after(getMapFromStruct(after)));
+                    break;
+                case "r":
+                    try {
+                        committer.markProcessed(sr);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     break;
                 case "d":
                     eventList.add(new TapDeleteRecordEvent().table(table).before(getMapFromStruct(before)));
@@ -81,12 +90,14 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                     break;
             }
             if (eventList.size() >= recordSize) {
-                consumer.accept(eventList);
+                System.out.println(TapSimplify.toJson(eventList));
+//                consumer.accept(eventList);
                 eventList = TapSimplify.list();
             }
         }
         if(SmartKit.isNotEmpty(eventList)) {
-            consumer.accept(eventList);
+            System.out.println(TapSimplify.toJson(eventList));
+//            consumer.accept(eventList);
         }
 //        consumer.streamReadEnded();
     }

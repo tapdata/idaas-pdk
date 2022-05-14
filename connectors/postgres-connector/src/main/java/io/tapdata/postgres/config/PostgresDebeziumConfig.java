@@ -24,8 +24,8 @@ public class PostgresDebeziumConfig {
         this.postgresConfig = postgresConfig;
         this.observedTableList = observedTableList;
         //unique and can find it
-        this.slotName = "cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig)
-                        + TapSimplify.toJson(observedTableList.stream().sorted().collect(Collectors.toList()))).getBytes())
+        this.slotName = "cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig) + (SmartKit.isNotEmpty(observedTableList) ?
+                        TapSimplify.toJson(observedTableList.stream().sorted().collect(Collectors.toList())) : "null")).getBytes())
                 .toString().replaceAll("-", "_");
     }
 
@@ -45,12 +45,13 @@ public class PostgresDebeziumConfig {
     public Configuration create() {
         Configuration.Builder builder = Configuration.create();
         builder.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
-                .with("offset.storage", "org.apache.kafka.connect.storage.FileOffsetBackingStore")
+//                .with("offset.storage", "org.apache.kafka.connect.storage.FileOffsetBackingStore")
+                .with("offset.storage", "org.apache.kafka.connect.storage.MemoryOffsetBackingStore")
                 .with("slot.name", slotName)
-                .with("offset.storage.file.filename", "d:/cdc/offset/" + slotName + ".dat") //path must be changed with requirement
+//                .with("offset.storage.file.filename", "d:/cdc/offset/" + slotName + ".dat") //path must be changed with requirement
                 .with("offset.flush.interval.ms", 60000)
                 .with("name", slotName + "-postgres-connector")
-                .with("database.server.name", postgresConfig.getHost() + "-" + postgresConfig.getDatabase())
+                .with("database.server.name", postgresConfig.getDatabase())
                 .with("database.hostname", postgresConfig.getHost())
                 .with("database.port", postgresConfig.getPort())
                 .with("database.user", postgresConfig.getUser())

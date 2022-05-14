@@ -484,7 +484,7 @@ public class PostgresConnector extends ConnectorBase {
             cdcRunner.startCdcRunner();
         }
         while (!cdcRunner.isRunning()) {
-            sleep(100L);
+            sleep(500L);
         }
         consumer.streamReadStarted();
         synchronized (this) {

@@ -1,4 +1,3 @@
-import io.tapdata.postgres.DebeziumCdcPool;
 import io.tapdata.postgres.PostgresCdcRunner;
 import io.tapdata.postgres.config.PostgresConfig;
 
@@ -66,9 +65,12 @@ public class Main {
         postgresConfig.setExtParams("");
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
-        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig, Collections.singletonList("Student"));
+        PostgresCdcRunner runner = new PostgresCdcRunner(postgresConfig,
+//                Collections.singletonList("Student")
+                null
+        );
         runner.registerConsumer(null, 0, null);
-        DebeziumCdcPool.addRunner(runner.getRunnerName(), runner);
+//        DebeziumCdcPool.addRunner(runner.getRunnerName(), runner);
         runner.startCdcRunner();
 
 
