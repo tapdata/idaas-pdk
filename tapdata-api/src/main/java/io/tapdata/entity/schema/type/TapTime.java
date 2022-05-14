@@ -9,6 +9,9 @@ import java.time.LocalDateTime;
 import static io.tapdata.entity.simplify.TapSimplify.tapTime;
 
 public class TapTime extends TapType {
+    public TapTime() {
+        type = TYPE_TIME;
+    }
     /**
      * 字段是否有时区信息
      */
@@ -72,7 +75,7 @@ public class TapTime extends TapType {
     }
 
     @Override
-    public Class<? extends TapValue<?, ?>> getTapValueClass() {
+    public Class<? extends TapValue<?, ?>> tapValueClass() {
         return TapTimeValue.class;
     }
 }

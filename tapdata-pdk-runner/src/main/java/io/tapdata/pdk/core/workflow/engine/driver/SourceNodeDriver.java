@@ -52,6 +52,7 @@ public class SourceNodeDriver extends Driver {
 
     private boolean enableBatchRead = true;
     private boolean enableStreamRead = true;
+    private boolean streamReadNeedRetry = true;
     private int batchLimit = 1000;
     private long batchCount;
     private boolean batchCompleted = false;
@@ -298,7 +299,7 @@ public class SourceNodeDriver extends Driver {
             Object finalStreamOffsetObj = streamOffsetObj;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
                 sourceNode.applyClassLoaderContext();
-                while(!shutDown.get()) {
+                while(streamReadNeedRetry && !shutDown.get()) {
                     streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, StreamReadConsumer.create((events) -> {
                         if (events != null) {
                             if(events.size() > batchLimit)
@@ -320,7 +321,12 @@ public class SourceNodeDriver extends Driver {
                             });
                         }
                     }).stateListener((from, to) -> {
-                        if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED) {
+                        if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED || to == StreamReadConsumer.STATE_STREAM_READ_STARTED_ASYNC) {
+                            if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED_ASYNC) {
+                                streamReadNeedRetry = false;
+                            } else {
+                                streamReadNeedRetry = true;
+                            }
                             CommonUtils.ignoreAnyError(() -> {
                                 if(sourceStateListener != null)
                                     sourceStateListener.stateChanged(STATE_STREAM_STARTED);

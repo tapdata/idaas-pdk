@@ -10,6 +10,9 @@ import java.util.Date;
 import static io.tapdata.entity.simplify.TapSimplify.tapDate;
 
 public class TapDate extends TapType {
+    public TapDate() {
+        type = TYPE_DATE;
+    }
     /**
      * 字段是否有时区信息
      */
@@ -41,7 +44,7 @@ public class TapDate extends TapType {
     }
 
     @Override
-    public Class<? extends TapValue<?, ?>> getTapValueClass() {
+    public Class<? extends TapValue<?, ?>> tapValueClass() {
         return TapDateValue.class;
     }
 

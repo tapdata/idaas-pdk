@@ -83,9 +83,11 @@ public class MysqlConnector extends ConnectorBase {
 	@Override
 	public void onStart(TapConnectionContext tapConnectionContext) throws Throwable {
 		this.mysqlJdbcContext = new MysqlJdbcContext(tapConnectionContext);
-		this.mysqlReader = new MysqlReader(mysqlJdbcContext);
-		this.mysqlWriter = new MysqlJdbcOneByOneWriter(mysqlJdbcContext);
-		this.version = mysqlJdbcContext.getMysqlVersion();
+		if (tapConnectionContext instanceof TapConnectorContext) {
+			this.mysqlWriter = new MysqlJdbcOneByOneWriter(mysqlJdbcContext);
+			this.mysqlReader = new MysqlReader(mysqlJdbcContext);
+			this.version = mysqlJdbcContext.getMysqlVersion();
+		}
 	}
 
 	@Override

@@ -12,8 +12,8 @@ public class UnsupportedTypeBackHandlerImpl implements UnsupportedTypeFallbackHa
     public void handle(TapCodecsRegistry codecsRegistry, TapField unsupportedField, String dataType, TapType toTapType) {
         if(codecsRegistry != null) {
             TapType unsupportedTapType = unsupportedField.getTapType();
-            if(unsupportedTapType != null && !codecsRegistry.isRegisteredFromTapValue(unsupportedTapType.getTapValueClass())) {
-                codecsRegistry.registerFromTapValue(unsupportedTapType.getTapValueClass(), dataType, tapValue -> {
+            if(unsupportedTapType != null && !codecsRegistry.isRegisteredFromTapValue(unsupportedTapType.tapValueClass())) {
+                codecsRegistry.registerFromTapValue(unsupportedTapType.tapValueClass(), dataType, tapValue -> {
                     Object value = tapValue.getValue();
                     return value.toString();
                 });

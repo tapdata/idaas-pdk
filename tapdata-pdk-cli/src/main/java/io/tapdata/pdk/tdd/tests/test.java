@@ -4,8 +4,13 @@ import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.value.DateTime;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeUtils;
+import io.tapdata.pdk.core.tapnode.TapNodeContainer;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.Instant;
@@ -16,8 +21,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class test {
-    public static void main(String... args) {
-        BigDecimal bigDecimal = new BigDecimal("-999999999");
+	public static void main(String... args) throws Throwable {
+        /*BigDecimal bigDecimal = new BigDecimal("-999999999");
         System.out.println("value " + bigDecimal + " precision " + bigDecimal.precision() + " scale " + bigDecimal.scale() + " sign " + bigDecimal.signum());
         DecimalFormat decimalFormat = new DecimalFormat();
         BigDecimal theDecimal = new BigDecimal(2);
@@ -51,22 +56,22 @@ public class test {
         String text = date.format(formatter);
         LocalDate parsedDate = LocalDate.parse(text, formatter);
 
-        ZonedDateTime dateTime1 = ZonedDateTime.from(formatter.parse("2011 12 31"));
+        ZonedDateTime dateTime1 = ZonedDateTime.from(formatter.parse("2011 12 31"));*/
+	}
 
-    }
+	public static BigDecimal maxValueForPrecision(int maxPrecision) {
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < maxPrecision; i++) {
+			builder.append("9");
+		}
+		return new BigDecimal(builder.toString());
+	}
 
-    public static BigDecimal maxValueForPrecision(int maxPrecision) {
-        StringBuilder builder = new StringBuilder();
-        for(int i = 0; i < maxPrecision; i++) {
-            builder.append("9");
-        }
-        return new BigDecimal(builder.toString());
-    }
-    public static BigDecimal minValueForPrecision(int maxPrecision) {
-        StringBuilder builder = new StringBuilder("-");
-        for(int i = 0; i < maxPrecision; i++) {
-            builder.append("9");
-        }
-        return new BigDecimal(builder.toString());
-    }
+	public static BigDecimal minValueForPrecision(int maxPrecision) {
+		StringBuilder builder = new StringBuilder("-");
+		for (int i = 0; i < maxPrecision; i++) {
+			builder.append("9");
+		}
+		return new BigDecimal(builder.toString());
+	}
 }

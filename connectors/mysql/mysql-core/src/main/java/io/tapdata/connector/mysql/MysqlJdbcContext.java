@@ -9,10 +9,8 @@ import io.tapdata.pdk.apis.context.TapConnectionContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -89,7 +87,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
 		String type = tapConnectionContext.getSpecification().getId();
 		String host = String.valueOf(connectionConfig.get("host"));
-		Integer port = Integer.parseInt(connectionConfig.get("port").toString());
+		int port = ((Number) connectionConfig.get("port")).intValue();
 		String databaseName = String.valueOf(connectionConfig.get("database"));
 
 		String additionalString = String.valueOf(connectionConfig.get("addtionalString"));
@@ -118,8 +116,12 @@ public class MysqlJdbcContext implements AutoCloseable {
 		}
 		String timezone = connectionConfig.getString("timezone");
 		if (StringUtils.isNotBlank(timezone)) {
-			String serverTimezone = timezone.replace("+", "%2B");
-			properties.put("serverTimezone", serverTimezone);
+			try {
+				ZoneId.of(timezone);
+				String serverTimezone = timezone.replace("+", "%2B");
+				properties.put("serverTimezone", serverTimezone);
+			} catch (Exception ignored) {
+			}
 		}
 		StringBuilder propertiesString = new StringBuilder();
 		properties.forEach((k, v) -> propertiesString.append("&").append(k).append("=").append(v));

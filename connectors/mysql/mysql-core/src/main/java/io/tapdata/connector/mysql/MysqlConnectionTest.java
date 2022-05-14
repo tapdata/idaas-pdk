@@ -43,7 +43,7 @@ public class MysqlConnectionTest {
 	public TestItem testHostPort(TapConnectionContext tapConnectionContext) {
 		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
 		String host = String.valueOf(connectionConfig.get("host"));
-		int port = Integer.parseInt(connectionConfig.get("port").toString());
+		int port = ((Number) connectionConfig.get("port")).intValue();
 		try {
 			NetUtil.validateHostPortWithSocket(host, port);
 			return testItem(MysqlTestItem.HOST_PORT.getContent(), TestItem.RESULT_SUCCESSFULLY);
