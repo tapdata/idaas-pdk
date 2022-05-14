@@ -16,6 +16,7 @@ import io.tapdata.postgres.kit.SmartKit;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
@@ -69,21 +70,15 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             String table = struct.getStruct("source").getString("table");
             Struct after = struct.getStruct("after");
             Struct before = struct.getStruct("before");
-            switch (op) {
-                case "c":
+            switch (op) { //snapshot.mode = 'never'
+                case "c": //after running --insert
+                case "r": //after slot but before running --read
                     eventList.add(new TapInsertRecordEvent().table(table).after(getMapFromStruct(after)));
                     break;
-                case "r":
-                    try {
-                        committer.markProcessed(sr);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    break;
-                case "d":
+                case "d": //after running --delete
                     eventList.add(new TapDeleteRecordEvent().table(table).before(getMapFromStruct(before)));
                     break;
-                case "u":
+                case "u": //after running --update
                     eventList.add(new TapUpdateRecordEvent().table(table).after(getMapFromStruct(after)).before(getMapFromStruct(before)));
                     break;
                 default:
@@ -91,13 +86,13 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             }
             if (eventList.size() >= recordSize) {
                 System.out.println(TapSimplify.toJson(eventList));
-//                consumer.accept(eventList);
+                consumer.accept(eventList);
                 eventList = TapSimplify.list();
             }
         }
-        if(SmartKit.isNotEmpty(eventList)) {
+        if (SmartKit.isNotEmpty(eventList)) {
             System.out.println(TapSimplify.toJson(eventList));
-//            consumer.accept(eventList);
+            consumer.accept(eventList);
         }
 //        consumer.streamReadEnded();
     }
@@ -105,7 +100,11 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     private DataMap getMapFromStruct(Struct struct) {
         DataMap dataMap = new DataMap();
         struct.schema().fields().forEach(field -> {
-            dataMap.put(field.name(), struct.get(field.name()));
+            Object obj = struct.get(field.name());
+            if (obj instanceof ByteBuffer) {
+                obj = struct.getBytes(field.name());
+            }
+            dataMap.put(field.name(), obj);
         });
         return dataMap;
     }

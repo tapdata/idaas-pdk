@@ -47,6 +47,7 @@ public class PostgresDebeziumConfig {
         builder.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
 //                .with("offset.storage", "org.apache.kafka.connect.storage.FileOffsetBackingStore")
                 .with("offset.storage", "org.apache.kafka.connect.storage.MemoryOffsetBackingStore")
+                .with("snapshot.mode", "never")
                 .with("slot.name", slotName)
 //                .with("offset.storage.file.filename", "d:/cdc/offset/" + slotName + ".dat") //path must be changed with requirement
                 .with("offset.flush.interval.ms", 60000)
