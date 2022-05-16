@@ -46,7 +46,7 @@ public class TableFieldTypesGeneratorImpl implements TableFieldTypesGenerator {
             }
         } else {
             tapField.setTapType(tapRaw());
-            TapLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, TapRaw will be used for this dataType. ", tapField.getDataType());
+            TapLogger.warn(TAG, "Field originType {} didn't match corresponding TapMapping, TapRaw will be used for this dataType. ", tapField.getDataType());
         }
     }
 }
