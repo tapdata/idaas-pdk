@@ -6,6 +6,9 @@ import io.tapdata.entity.schema.value.TapValue;
 import static io.tapdata.entity.simplify.TapSimplify.tapBinary;
 
 public class TapBinary extends TapType {
+    public TapBinary() {
+        type = TYPE_BINARY;
+    }
     /**
      * 字段的字节长度最大值
      */
