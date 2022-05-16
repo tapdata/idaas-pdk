@@ -8,12 +8,6 @@
 	"connection": {
 	  "type": "object",
 	  "properties": {
-		"name": {
-		  "type": "string",
-		  "title": "Connection name",
-		  "x-decorator": "FormItem",
-		  "x-component": "Input"
-		},
 		"host": {
 		  "type": "string",
 		  "title": "Host",
@@ -52,16 +46,11 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input"
 		},
-		"isShareCdc": {
-		  "type": "boolean",
-		  "title": "Open Share CDC",
-		  "x-visible": false,
-		  "x-reactions": "{{isShareCdc}}"
-		},
 		"timezone": {
 		  "type": "string",
 		  "title": "Timezone",
 		  "default": "Database Timezone",
+		  "x-component": "Select",
 		  "enum": [
 			{
 			  "label": "Database Timezone",
@@ -264,6 +253,9 @@
 	  ],
 	  "unsigned": "unsigned"
 	},
+	"tinyint(1)": {
+	  "to": "TapBoolean"
+	},
 	"smallint": {
 	  "to": "TapNumber",
 	  "bit": 16,
@@ -451,6 +443,46 @@
 	  ],
 	  "defaultFraction": 0,
 	  "withTimeZone": true
+	},
+	"enum($enums)": {
+	  "to": "TapString",
+	  "queryOnly": true
+	},
+	"set($sets)": {
+	  "to": "TapString",
+	  "queryOnly": true
+	},
+	"point": {
+	  "to": "TapBinary",
+	  "queryOnly": true
+	},
+	"linestring": {
+	  "to": "TapBinary",
+	  "queryOnly": true
+	},
+	"polygon": {
+	  "to": "TapBinary",
+	  "queryOnly": true
+	},
+	"geometry": {
+	  "to": "TapBinary",
+	  "queryOnly": true
+	},
+	"multipoint": {
+	  "to": "TapBinary",
+	  "queryOnly": true
+	},
+	"multilinestring": {
+	  "to": "TapBinary",
+	  "queryOnly": true
+	},
+	"multipolygon": {
+	  "to": "TapBinary",
+	  "queryOnly": true
+	},
+	"geometrycollection": {
+	  "to": "TapBinary",
+	  "queryOnly": true
 	}
   }
 }
