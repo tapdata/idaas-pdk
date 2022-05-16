@@ -480,7 +480,7 @@
 	  "to": "TapBinary",
 	  "queryOnly": true
 	},
-	"geometrycollection": {
+	"geomcollection": {
 	  "to": "TapBinary",
 	  "queryOnly": true
 	}
