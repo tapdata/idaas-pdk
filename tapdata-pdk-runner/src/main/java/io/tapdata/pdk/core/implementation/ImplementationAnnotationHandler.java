@@ -2,7 +2,7 @@ package io.tapdata.pdk.core.implementation;
 
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.annotations.Implementation;
-import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.entity.error.CoreException;
 import io.tapdata.pdk.core.reflection.ClassAnnotationHandler;
 
 import java.lang.annotation.Annotation;

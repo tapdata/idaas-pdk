@@ -26,8 +26,8 @@ import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.core.api.*;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.error.QuiteException;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
@@ -241,7 +241,7 @@ public class PDKTestBase {
             testConfigJson = FileUtils.readFileToString(testConfigFile, "utf8");
         } catch (IOException e) {
             e.printStackTrace();
-            throw new CoreException(ErrorCodes.TDD_READ_TEST_CONFIG_FAILED, "Test config file " + testConfigJson + " read failed, " + e.getMessage());
+            throw new CoreException(PDKRunnerErrorCodes.TDD_READ_TEST_CONFIG_FAILED, "Test config file " + testConfigJson + " read failed, " + e.getMessage());
         }
         JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
         return jsonParser.fromJson(testConfigJson, new TypeHolder<Map<String, DataMap>>() {
@@ -307,7 +307,7 @@ public class PDKTestBase {
     public void consumeQualifiedTapNodeInfo(Consumer<TapNodeInfo> consumer) {
         Collection<TapNodeInfo> tapNodeInfoCollection = testConnector.getTapNodeClassFactory().getConnectorTapNodeInfos();
         if (tapNodeInfoCollection.isEmpty())
-            throw new CoreException(ErrorCodes.TDD_TAPNODEINFO_NOT_FOUND, "No connector or processor is found in jar " + jarFile);
+            throw new CoreException(PDKRunnerErrorCodes.TDD_TAPNODEINFO_NOT_FOUND, "No connector or processor is found in jar " + jarFile);
 
         String pdkId = null;
         if (testOptions != null) {

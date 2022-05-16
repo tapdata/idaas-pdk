@@ -1,4 +1,6 @@
-package io.tapdata.pdk.core.error;
+package io.tapdata.entity.error;
+
+import io.tapdata.entity.utils.FormatUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,9 +34,8 @@ public class CoreException extends RuntimeException {
         this.logLevel = logLevel;
     }
 
-    public CoreException(int code, String[] parameters, String message) {
-        this(code, message);
-        this.parameters = parameters;
+    public CoreException(int code, String message, Object... params) {
+        this(code, FormatUtils.format(message, params));
     }
 
     public CoreException(int code, Object data, String message) {
@@ -76,17 +77,8 @@ public class CoreException extends RuntimeException {
         this.logLevel = logLevel;
     }
 
-    public String[] getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(String[] parameters) {
-        this.parameters = parameters;
-    }
-
     private int code;
     private String logLevel = LEVEL_ERROR;
-    private String[] parameters;
 
     /**
      *

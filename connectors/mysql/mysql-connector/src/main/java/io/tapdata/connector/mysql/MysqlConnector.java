@@ -51,7 +51,7 @@ public class MysqlConnector extends ConnectorBase {
 	public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 		codecRegistry.registerFromTapValue(TapMapValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapArrayValue.class, "json", tapValue -> toJson(tapValue.getValue()));
-		codecRegistry.registerFromTapValue(TapBooleanValue.class, "bool", TapValue::getValue);
+		codecRegistry.registerFromTapValue(TapBooleanValue.class, "tinyint(1)", TapValue::getValue);
 		codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> tapTimeValue.getValue().toDate());
 		codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
 		codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toDate());
@@ -67,8 +67,8 @@ public class MysqlConnector extends ConnectorBase {
 		connectorFunctions.supportWriteRecord(this::writeRecord);
 	}
 
-    @Override
-    public int tableCount(TapConnectionContext connectionContext) throws Throwable {
+	@Override
+	public int tableCount(TapConnectionContext connectionContext) throws Throwable {
 		DataMap connectionConfig = connectionContext.getConnectionConfig();
 		String database = connectionConfig.getString("database");
 		AtomicInteger count = new AtomicInteger(0);

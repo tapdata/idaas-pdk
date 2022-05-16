@@ -1,8 +1,8 @@
 package io.tapdata.pdk.core.utils;
 
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.error.QuiteException;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 
@@ -42,7 +42,7 @@ public class CommonUtils {
                 if(throwable instanceof CoreException) {
                     throw (CoreException) throwable;
                 }
-                throw new CoreException(ErrorCodes.COMMON_UNKNOWN, message + " execute failed, " + throwable.getMessage());
+                throw new CoreException(PDKRunnerErrorCodes.COMMON_UNKNOWN, message + " execute failed, " + throwable.getMessage());
             }
         }
     }
@@ -81,7 +81,7 @@ public class CommonUtils {
         } catch(CoreException coreException) {
             throw coreException;
         } catch(Throwable throwable) {
-            throw new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
         }
     }
 
@@ -116,7 +116,7 @@ public class CommonUtils {
                 return (CoreException) cause;
             }
         }
-        return new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
+        return new CoreException(PDKRunnerErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
     }
 
     public static String getProperty(String key, String defaultValue) {

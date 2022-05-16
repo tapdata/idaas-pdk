@@ -17,8 +17,8 @@ import io.tapdata.pdk.apis.functions.ProcessorFunctions;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.dag.TapDAGNode;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
@@ -95,7 +95,7 @@ public class PDKIntegration {
         protected void checkParams() {
             String result = verify();
             if(result != null)
-                throw new CoreException(ErrorCodes.PDK_ILLEGAL_PARAMETER, "Illegal parameter, " + result);
+                throw new CoreException(PDKRunnerErrorCodes.PDK_ILLEGAL_PARAMETER, "Illegal parameter, " + result);
         }
 
         public abstract T build();
@@ -179,7 +179,7 @@ public class PDKIntegration {
         protected void checkParams() {
             String result = verify();
             if(result != null)
-                throw new CoreException(ErrorCodes.PDK_ILLEGAL_PARAMETER, "Illegal parameter, " + result);
+                throw new CoreException(PDKRunnerErrorCodes.PDK_ILLEGAL_PARAMETER, "Illegal parameter, " + result);
         }
 
         public abstract T build();
@@ -295,7 +295,7 @@ public class PDKIntegration {
         protected void checkParams() {
             String result = verify();
             if(result != null)
-                throw new CoreException(ErrorCodes.PDK_ILLEGAL_PARAMETER, "Illegal parameter, " + result);
+                throw new CoreException(PDKRunnerErrorCodes.PDK_ILLEGAL_PARAMETER, "Illegal parameter, " + result);
         }
 
         public abstract T build();
@@ -306,7 +306,7 @@ public class PDKIntegration {
             checkParams();
             TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
             if(nodeInstance == null)
-                throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
             ConnectionNode connectionNode = new ConnectionNode();
             connectionNode.connectorNode = (TapConnectorNode) nodeInstance.getTapNode();
             connectionNode.associateId = associateId;
@@ -321,7 +321,7 @@ public class PDKIntegration {
             checkParams();
             TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
             if(nodeInstance == null)
-                throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
             SourceNode sourceNode = new SourceNode();
             sourceNode.init((TapConnector) nodeInstance.getTapNode());
             sourceNode.dagId = dagId;
@@ -345,7 +345,7 @@ public class PDKIntegration {
             checkParams();
             TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
             if(nodeInstance == null)
-                throw new CoreException(ErrorCodes.PDK_TARGET_NOTFOUND, MessageFormat.format("Target not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+                throw new CoreException(PDKRunnerErrorCodes.PDK_TARGET_NOTFOUND, MessageFormat.format("Target not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
             TargetNode targetNode = new TargetNode();
             targetNode.dagId = dagId;
             targetNode.associateId = associateId;
@@ -369,7 +369,7 @@ public class PDKIntegration {
             checkParams();
             TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createProcessorInstance(associateId, pdkId, group, version);
             if(nodeInstance == null)
-                throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Processor not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Processor not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
             ProcessorNode processorNode = new ProcessorNode();
             processorNode.dagId = dagId;
             processorNode.associateId = associateId;
@@ -389,7 +389,7 @@ public class PDKIntegration {
             checkParams();
             TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
             if(nodeInstance == null)
-                throw new CoreException(ErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("SourceAndTarget not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("SourceAndTarget not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
 
             TapConnectorContext nodeContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
             nodeContext.setTableMap(tableMap);
