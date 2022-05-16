@@ -3,8 +3,10 @@ package io.tapdata.entity.mapping;
 import io.tapdata.entity.mapping.type.TapBinaryMapping;
 import io.tapdata.entity.mapping.type.TapMapping;
 import io.tapdata.entity.mapping.type.TapNumberMapping;
+import io.tapdata.entity.mapping.type.TapStringMapping;
 import io.tapdata.entity.schema.type.TapBinary;
 import io.tapdata.entity.schema.type.TapNumber;
+import io.tapdata.entity.schema.type.TapString;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
@@ -150,6 +152,34 @@ class ExpressionMatchingMapTest {
                     assertEquals(tapNumber.getScale(), 20);
                 });
     }
+
+    @Test
+    void testEnumSet() {
+        String str = "{\n" +
+                "    \"enum($values)\": {\"byte\": \"64\", \"to\": \"TapString\"},\n" +
+                "    \"set($values)\": {\"byte\": \"32\", \"to\": \"TapString\"},\n" +
+                "}";
+
+        DefaultExpressionMatchingMap matchingMap = DefaultExpressionMatchingMap.map(str);
+
+        validateTapMapping(matchingMap, "enum('1','2','3')", TapStringMapping.class, TapString.class, exprResult -> {
+            assertNotNull(exprResult, "Expression is not matched");
+            assertEquals(exprResult.getParams().get("values"), "'1','2','3'");
+        }, tapStringMapping -> {
+            assertEquals(tapStringMapping.getBytes(), 64 );
+        }, tapString -> {
+            assertEquals(tapString.getBytes(), 64);
+        });
+        validateTapMapping(matchingMap, "set('a','b','c')", TapStringMapping.class, TapString.class, exprResult -> {
+            assertNotNull(exprResult, "Expression is not matched");
+            assertEquals(exprResult.getParams().get("values"), "'a','b','c'");
+        }, tapStringMapping -> {
+            assertEquals(tapStringMapping.getBytes(), 32 );
+        }, tapString -> {
+            assertEquals(tapString.getBytes(), 32);
+        });
+    }
+
     private <T extends TapMapping, R extends TapType> void validateTapMapping(DefaultExpressionMatchingMap matchingMap, String dataType, Class<T> tapMappingClass, Class<R> tapTypeClass, Consumer<TypeExprResult<DataMap>> paramValidator, Consumer<T> tapMappingValidator, Consumer<R> tapTypeValidator) {
         TypeExprResult<DataMap> exprResult = matchingMap.get(dataType);
         if(paramValidator != null)
