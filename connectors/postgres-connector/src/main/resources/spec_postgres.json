@@ -1,7 +1,7 @@
 {
   "properties": {
     "name": "PostgreSQL",
-    "icon": "icons/icon.png",
+    "icon": "icons/icon.svg",
     "id": "postgres"
   },
   "configOptions": {
