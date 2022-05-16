@@ -108,9 +108,17 @@ public class PostgresConnector extends ConnectorBase {
 
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
-        initConnection(connectionContext.getConnectionConfig());
-        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
-        consumer.accept(testItem(TestItem.ITEM_LOGIN, TestItem.RESULT_SUCCESSFULLY));
+        PostgresTest postgresTest = new PostgresTest(connectionContext);
+        TestItem testHostPort = postgresTest.testHostPort();
+        consumer.accept(testHostPort);
+        if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
+            return;
+        }
+        TestItem testConnect = postgresTest.testConnect();
+        consumer.accept(testConnect);
+        if (testConnect.getResult() == TestItem.RESULT_FAILED) {
+            return;
+        }
         // TODO: 2022/5/7 add rights control
         consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
         consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));

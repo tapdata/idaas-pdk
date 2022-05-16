@@ -6,7 +6,6 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
-import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
@@ -168,11 +167,11 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             String tableName = resultSet.getString("tablename");
             if (hasUnique == 1 && "n,i".contains(relReplident)) {
                 tableD.add(tableName);
-            }
-            else if (hasUnique == 0 && !"f".equals(relReplident)) {
+            } else if (hasUnique == 0 && !"f".equals(relReplident)) {
                 tableF.add(tableName);
             }
         }
+
     }
 
 }
