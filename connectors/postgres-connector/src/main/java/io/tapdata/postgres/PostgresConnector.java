@@ -132,8 +132,8 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
+//        connectorFunctions.supportStreamRead(this::streamRead);
+//        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {

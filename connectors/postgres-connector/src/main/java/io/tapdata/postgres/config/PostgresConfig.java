@@ -20,7 +20,7 @@ public class PostgresConfig implements Serializable {
 
     private String jdbcDriver = "org.postgresql.Driver";
     private String databaseUrlPattern = "jdbc:postgresql://%s:%d/%s%s"; // last %s reserved for extend params
-    private String extParams;
+    private String extParams = "";
     private String host;
     private int port;
     private String database;
