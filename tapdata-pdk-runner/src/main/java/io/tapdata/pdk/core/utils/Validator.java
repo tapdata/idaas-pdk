@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.utils;
 
-import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.entity.error.CoreException;
 
 import java.util.Arrays;
 import java.util.List;

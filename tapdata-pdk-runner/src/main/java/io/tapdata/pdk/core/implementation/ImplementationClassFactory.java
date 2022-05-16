@@ -1,8 +1,8 @@
 package io.tapdata.pdk.core.implementation;
 
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.reflection.ClassAnnotationHandler;
 import io.tapdata.pdk.core.utils.AnnotationUtils;
 import org.reflections.Reflections;
@@ -121,7 +121,7 @@ public class ImplementationClassFactory {
             }
         }
 
-        throw new CoreException(ErrorCodes.IMPL_CREATE_FAILED, "Create failed, no implementation for interfaceClass " + interfaceClass);
+        throw new CoreException(PDKRunnerErrorCodes.IMPL_CREATE_FAILED, "Create failed, no implementation for interfaceClass " + interfaceClass);
     }
 
     public <T> T create(Class<T> interfaceClass, String type) {
@@ -137,6 +137,6 @@ public class ImplementationClassFactory {
             }
         }
 
-        throw new CoreException(ErrorCodes.IMPL_CREATE_TYPE_FAILED, "Create failed, no implementation for interfaceClass " + interfaceClass + " type " + type);
+        throw new CoreException(PDKRunnerErrorCodes.IMPL_CREATE_TYPE_FAILED, "Create failed, no implementation for interfaceClass " + interfaceClass + " type " + type);
     }
 }

@@ -2,7 +2,7 @@ package io.tapdata.pdk.core.workflow.engine;
 
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.Validator;
 import io.tapdata.pdk.core.utils.state.StateListener;
@@ -41,8 +41,8 @@ public class DataFlowEngine {
         startDataFlow(dag, jobOptions, null);
     }
     public DataFlowWorker startDataFlow(TapDAG dag, JobOptions jobOptions, StateListener<String, DataFlowWorker> stateListener) {
-        Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dag);
-        Validator.checkAllNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dag.getId());
+        Validator.checkNotNull(PDKRunnerErrorCodes.MAIN_DAG_IS_ILLEGAL, dag);
+        Validator.checkAllNotNull(PDKRunnerErrorCodes.MAIN_DAG_IS_ILLEGAL, dag.getId());
 
         if(!idDataFlowWorkerMap.containsKey(dag.getId())) {
             DataFlowWorker dataFlowWorker = new DataFlowWorker();
@@ -76,7 +76,7 @@ public class DataFlowEngine {
     }
 
     public boolean stopDataFlow(String dagId) {
-        Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, dagId);
+        Validator.checkNotNull(PDKRunnerErrorCodes.MAIN_DAG_IS_ILLEGAL, dagId);
 
         DataFlowWorker dataFlowWorker = idDataFlowWorkerMap.remove(dagId);
         if(dataFlowWorker == null)

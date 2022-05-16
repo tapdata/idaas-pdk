@@ -1,13 +1,12 @@
 package io.tapdata.pdk.core.tapnode;
 
-import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.apis.TapProcessor;
 import io.tapdata.pdk.apis.annotations.TapProcessorClass;
-import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.entity.error.CoreException;
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;

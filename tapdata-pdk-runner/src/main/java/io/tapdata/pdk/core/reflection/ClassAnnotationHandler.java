@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.reflection;
 
-import io.tapdata.pdk.core.error.CoreException;
+import io.tapdata.entity.error.CoreException;
 
 import java.lang.annotation.Annotation;
 import java.util.Set;

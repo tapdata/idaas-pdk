@@ -1,6 +1,6 @@
 package io.tapdata.pdk.core.error;
 
-public interface ErrorCodes {
+public interface PDKRunnerErrorCodes {
     int COMMON_ILLEGAL_PARAMETERS = 10000;
     int COMMON_UNKNOWN = 10001;
     int COMMON_SINGLE_THREAD_QUEUE_STOPPED = 10002;

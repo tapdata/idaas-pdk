@@ -3,8 +3,8 @@ package io.tapdata.pdk.core.tapnode;
 import io.tapdata.pdk.apis.TapNode;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.classloader.DependencyURLClassLoader;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.reflection.ClassAnnotationHandler;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
@@ -49,7 +49,7 @@ public class TapNodeClassFactory {
         if(instance != null) {
             return instance;
         }
-        throw new CoreException(ErrorCodes.NODE_CREATE_CONNECTOR_NOT_EXISTS, "Connector TapNodeId " + pdkId + " not found for associateId " + associateId);
+        throw new CoreException(PDKRunnerErrorCodes.NODE_CREATE_CONNECTOR_NOT_EXISTS, "Connector TapNodeId " + pdkId + " not found for associateId " + associateId);
     }
 
     public TapNodeInstance createTapProcessor(String associateId, String tapNodeId, String group, String version) {
@@ -58,7 +58,7 @@ public class TapNodeClassFactory {
         if(instance != null) {
             return instance;
         }
-        throw new CoreException(ErrorCodes.NODE_CREATE_PROCESSOR_NOT_EXISTS, "Processor TapNodeId " + tapNodeId + " not found for associateId " + associateId);
+        throw new CoreException(PDKRunnerErrorCodes.NODE_CREATE_PROCESSOR_NOT_EXISTS, "Processor TapNodeId " + tapNodeId + " not found for associateId " + associateId);
     }
 
     private TapNodeInstance create(TapNodeInfo tapNodeInfo, String associateId, String tapNodeId) {
@@ -76,7 +76,7 @@ public class TapNodeClassFactory {
                                 associateIdTapNodeIdMap.put(associateId, tapNodeInstance);
                                 return tapNodeInstance;
                             } catch (Throwable e) {
-                                throw new CoreException(ErrorCodes.NODE_CREATE_OPENAPI_CONNECTOR, "New instance node class " + nodeClass + " tapNodeId " +  tapNodeId + " associateId " + associateId + " failed, " + e.getMessage());
+                                throw new CoreException(PDKRunnerErrorCodes.NODE_CREATE_OPENAPI_CONNECTOR, "New instance node class " + nodeClass + " tapNodeId " +  tapNodeId + " associateId " + associateId + " failed, " + e.getMessage());
                             }
                         }
                     }

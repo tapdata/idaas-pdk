@@ -28,8 +28,8 @@ import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.api.SourceNode;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -153,7 +153,7 @@ public class SourceNodeDriver extends Driver {
                     finalTargetTables.add(table.getId());
                 }
                 if(!checkTableList.isEmpty()) {
-                    throw new CoreException(ErrorCodes.SOURCE_TABLE_NOT_DISCOVERED, "Missing table(s) " + Arrays.toString(checkTableList.toArray()) + " after invoked discoverSchema method.");
+                    throw new CoreException(PDKRunnerErrorCodes.SOURCE_TABLE_NOT_DISCOVERED, "Missing table(s) " + Arrays.toString(checkTableList.toArray()) + " after invoked discoverSchema method.");
                 }
                 if(!forerunnerEvents.isEmpty()) {
 //                    lastOne.patrolListener(new PatrolListener() {
@@ -181,7 +181,7 @@ public class SourceNodeDriver extends Driver {
             for(String table : finalTargetTables) {
                 TapTable tapTable = tableKVMap.get(table);
                 if(tapTable == null)
-                    throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + table + " while batchCount");
+                    throw new CoreException(PDKRunnerErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + table + " while batchCount");
                 pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_COUNT, () -> {
                     //TODO batchOffset is not used yet.
                     batchCount += batchCountFunction.count(sourceNode.getConnectorContext(), tapTable);
@@ -241,7 +241,7 @@ public class SourceNodeDriver extends Driver {
                 }
                 TapTable tapTable = tableKVMap.get(table);
                 if(tapTable == null)
-                    throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + table + " while batchRead");
+                    throw new CoreException(PDKRunnerErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + table + " while batchRead");
                 Object offsetObj = null;
                 if(batchOffsetBytes != null) {
                     offsetObj = InstanceFactory.instance(ObjectSerializable.class).toObject(batchOffsetBytes, new ObjectSerializable.ToObjectOptions().classLoader(sourceNode.getConnector().getClass().getClassLoader()));
@@ -251,7 +251,7 @@ public class SourceNodeDriver extends Driver {
                         () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), tapTable, finalOffsetObj, batchLimit, (events, batchOffset) -> {
                             if (events != null && !events.isEmpty()) {
                                 if(events.size() > batchLimit)
-                                    throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
+                                    throw new CoreException(PDKRunnerErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
                                 TapLogger.debug(TAG, "Batch read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                                 offerToQueue(events);
 
@@ -303,7 +303,7 @@ public class SourceNodeDriver extends Driver {
                     streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, StreamReadConsumer.create((events) -> {
                         if (events != null) {
                             if(events.size() > batchLimit)
-                                throw new CoreException(ErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
+                                throw new CoreException(PDKRunnerErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
                             TapLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
                             offerToQueue(events);
                         }
@@ -469,7 +469,7 @@ public class SourceNodeDriver extends Driver {
     private Map<String, TapField> getNameFieldMap(TapRecordEvent recordEvent) {
         TapTable table = tableKVMap.get(recordEvent.getTableId());
         if(table == null)
-            throw new CoreException(ErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + recordEvent.getTableId() + " when send event " + recordEvent);
+            throw new CoreException(PDKRunnerErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + recordEvent.getTableId() + " when send event " + recordEvent);
         return table.getNameFieldMap();
     }
 
@@ -481,7 +481,7 @@ public class SourceNodeDriver extends Driver {
             DefaultExpressionMatchingMap expressionMatchingMap = sourceNode.getTapNodeInfo().getTapNodeSpecification().getDataTypesMap();
             TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
             if(tableFieldTypesGenerator == null)
-                throw new CoreException(ErrorCodes.SOURCE_TABLE_FIELD_TYPES_GENERATOR_NOT_FOUND, "TableFieldTypesGenerator's implementation is not found in current classloader");
+                throw new CoreException(PDKRunnerErrorCodes.SOURCE_TABLE_FIELD_TYPES_GENERATOR_NOT_FOUND, "TableFieldTypesGenerator's implementation is not found in current classloader");
 
             tableFieldTypesGenerator.autoFill(nameFieldMap, expressionMatchingMap);
         } else {
@@ -510,7 +510,7 @@ public class SourceNodeDriver extends Driver {
                 builder.append("Or implement queryByAdvanceFilterFunction for incremental engine to construct fields by sampling several records. ");
             else
                 builder.append("Or provide initial records for incremental engine to construst fields by sample several records. ");
-            throw new CoreException(ErrorCodes.SOURCE_MISSING_FIELDS_IN_TABLE, builder.toString());
+            throw new CoreException(PDKRunnerErrorCodes.SOURCE_MISSING_FIELDS_IN_TABLE, builder.toString());
         }
         return nameFieldMap;
     }
