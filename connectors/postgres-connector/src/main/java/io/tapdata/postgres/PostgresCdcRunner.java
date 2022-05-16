@@ -2,11 +2,12 @@ package io.tapdata.postgres;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
-import io.debezium.util.Clock;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
@@ -17,36 +18,64 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
-
+/**
+ * CDC runner for Postgresql
+ *
+ * @author Jarad
+ * @date 2022/5/13
+ */
 public class PostgresCdcRunner extends DebeziumCdcRunner {
 
+    private Statement stmt;
+    private Connection conn;
     private final PostgresConfig postgresConfig;
+    private final PostgresDebeziumConfig postgresDebeziumConfig;
+    private final List<TapTable> observedTableList;
+    private HashMap<String, String> replicaMarks;
     private Object offsetState;
     private int recordSize;
     private StreamReadConsumer consumer;
 
-    public PostgresCdcRunner(PostgresConfig postgresConfig, List<String> observedTableList) {
+    public PostgresCdcRunner(PostgresConfig postgresConfig, List<TapTable> observedTableList) {
+        //initial postgres db connection
         this.postgresConfig = postgresConfig;
-        postgresDebeziumConfig = new PostgresDebeziumConfig(postgresConfig, observedTableList);
+        try {
+            String dbUrl = postgresConfig.getDatabaseUrl();
+            Class.forName(postgresConfig.getJdbcDriver());
+            conn = DriverManager.getConnection(dbUrl, postgresConfig.getUser(), postgresConfig.getPassword());
+            stmt = conn.createStatement();
+        } catch (SQLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        //initial debezium config for postgres
+        this.observedTableList = observedTableList;
+        postgresDebeziumConfig = new PostgresDebeziumConfig(postgresConfig, SmartKit.isNotEmpty(observedTableList) ?
+                observedTableList.stream().map(TapTable::getId).collect(Collectors.toList()) : null);
         this.runnerName = postgresDebeziumConfig.getSlotName();
     }
 
     public PostgresCdcRunner registerConsumer(Object offsetState, int recordSize, StreamReadConsumer consumer) {
+        //build debezium engine
         this.engine = EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
-                .using(this.getClass().getClassLoader())
-                .using(Clock.SYSTEM)
+//                .using(this.getClass().getClassLoader())
+//                .using(Clock.SYSTEM)
 //                .notifying(this::consumeRecord)
                 .notifying(this::consumeRecords)
                 .build();
-        // TODO: 2022/5/13 observed tables must have unique key or index, otherwise need to open <REPLICA IDENTITY> 
         this.offsetState = offsetState;
         this.recordSize = recordSize;
         this.consumer = consumer;
+//        try {
+//            makeReplicaMarks();
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
         return this;
     }
 
@@ -112,13 +141,38 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     @Override
     public void releaseResource() {
         try {
-            String dbUrl = postgresConfig.getDatabaseUrl();
-            Class.forName(postgresConfig.getJdbcDriver());
-            Connection conn = DriverManager.getConnection(dbUrl, postgresConfig.getUser(), postgresConfig.getPassword());
-            conn.createStatement().execute("SELECT PG_DROP_REPLICATION_SLOT('" + runnerName + "')");
+            stmt.execute("SELECT PG_DROP_REPLICATION_SLOT('" + runnerName + "')");
+            stmt.close();
             conn.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
+    //make these tables ready for REPLICA IDENTITY
+    private void makeReplicaMarks() throws SQLException {
+        String tableSql = SmartKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN (" +
+                observedTableList.stream().map(TapTable::getId).reduce((v1, v2) -> "'" + v1 + "','" + v2 + "'").orElseGet(String::new) + ")";
+        ResultSet resultSet = stmt.executeQuery("SELECT " +
+                "tab.tablename,cls.relreplident," +
+                "(CASE WHEN EXISTS (SELECT 1 FROM pg_index WHERE indrelid IN " +
+                "(SELECT oid FROM pg_class WHERE relname = tab.tablename)) THEN 1 ELSE 0 END) hasunique " +
+                "FROM pg_tables tab \n" +
+                "JOIN pg_class cls ON cls.relname = tab.tablename\n" +
+                "WHERE tab.schemaname = 'public'" + tableSql);
+        List<String> tableD = TapSimplify.list(); //to make table IDENTITY 'D'
+        List<String> tableF = TapSimplify.list(); //to make table IDENTITY 'F'
+        while (resultSet.next()) {
+            int hasUnique = resultSet.getInt("hasunique");
+            String relReplident = resultSet.getString("relreplident");
+            String tableName = resultSet.getString("tablename");
+            if (hasUnique == 1 && "n,i".contains(relReplident)) {
+                tableD.add(tableName);
+            }
+            else if (hasUnique == 0 && !"f".equals(relReplident)) {
+                tableF.add(tableName);
+            }
+        }
+    }
+
 }

@@ -132,8 +132,8 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
+//        connectorFunctions.supportStreamRead(this::streamRead);
+//        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
@@ -163,6 +163,7 @@ public class PostgresConnector extends ConnectorBase {
             }
             if (cdcRunner != null) {
                 cdcRunner.closeCdcRunner();
+                cdcRunner = null;
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -474,7 +475,11 @@ public class PostgresConnector extends ConnectorBase {
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
         initConnection(nodeContext.getConnectionConfig());
         if (cdcRunner == null) {
-            cdcRunner = new PostgresCdcRunner(postgresConfig, tableList).registerConsumer(offsetState, recordSize, consumer);
+            List<TapTable> tapTableList = null;
+            if (SmartKit.isNotEmpty(tableList)) {
+                tapTableList = tableList.stream().map(v -> nodeContext.getTableMap().get(v)).collect(Collectors.toList());
+            }
+            cdcRunner = new PostgresCdcRunner(postgresConfig, tapTableList).registerConsumer(offsetState, recordSize, consumer);
 //            DebeziumCdcPool.addRunner(cdcRunner.getRunnerName(), cdcRunner);
             cdcRunner.startCdcRunner();
         }

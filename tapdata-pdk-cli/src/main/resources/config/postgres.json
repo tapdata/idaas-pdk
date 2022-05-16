@@ -4,7 +4,6 @@
     "port": "5432",
     "database": "COOLGJ",
     "schema": "public",
-    "extParams": "",
     "user": "postgres",
     "password": "gj0628"
   },

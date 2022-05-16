@@ -1,8 +1,6 @@
 import io.tapdata.postgres.PostgresCdcRunner;
 import io.tapdata.postgres.config.PostgresConfig;
 
-import java.util.Collections;
-
 /**
  * @author Administrator
  * @date 2022/4/29
@@ -74,8 +72,8 @@ public class Main {
         runner.startCdcRunner();
 
 
-//        Thread.sleep(20000);
-//        runner.closeCdc();
+        Thread.sleep(30000);
+        runner.closeCdcRunner();
 //        new Thread(() -> PostgresCdcPool.removeRunner(runner.getSlotName())).start();
 
 //        runner.closeCdc();
