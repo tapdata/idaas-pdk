@@ -36,25 +36,26 @@ public class TapCodecsFilterManager {
             Object theValue = entry.getValue();
             String fieldName = entry.getKey();
             if(theValue != null && fieldName != null) {
-                ToTapValueCodec<?> valueCodec = this.codecsRegistry.getToTapValueCodec(theValue.getClass());
+
+                String dataType = null;
+                TapType typeFromSchema = null;
+                ToTapValueCodec<?> valueCodec = null;
+                if(nameFieldMap != null) {
+                    valueCodec = this.codecsRegistry.getCustomToTapValueCodec(theValue.getClass());
+
+                    TapField field = nameFieldMap.get(fieldName);
+                    if(field != null) {
+                        dataType = field.getDataType();
+                        typeFromSchema = field.getTapType();
+                        if(typeFromSchema != null && valueCodec == null)
+                            valueCodec = typeFromSchema.toTapValueCodec();
+                    }
+                }
+                if(valueCodec == null)
+                    valueCodec = this.codecsRegistry.getToTapValueCodec(theValue.getClass());
 //                if(valueCodec == null)
 //                    throw new UnknownCodecException("toTapValueMap codec not found for value class " + theValue.getClass());
                 if(valueCodec != null) {
-                    String dataType = null;
-                    TapType typeFromSchema = null;
-                    if(nameFieldMap != null) {
-                        TapField field = nameFieldMap.get(fieldName);
-                        if(field != null) {
-                            dataType = field.getDataType();
-                            typeFromSchema = field.getTapType();
-//                            Type[] types = valueCodec.getClass().getGenericInterfaces();
-//                            ((ParameterizedTypeImpl) valueCodec.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0]
-//                            if(types != null && types.length > 0) {
-//
-//                            }
-//                            if(typeFromSchema.getTapValueClass() )
-                        }
-                    }
                     TapValue tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
                     tapValue.setOriginType(dataType);
                     if(typeFromSchema == null)
