@@ -1,13 +1,11 @@
-package io.tapdata.postgres.kit;
+package io.tapdata.connector.postgres.kit;
 
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

@@ -17,7 +17,7 @@ public class TDDPostgresMain {
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/empty-connector-v1.1-SNAPSHOT.jar",
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/file-connector-v1.0-SNAPSHOT.jar",
 
-                "connectors/postgres-connector",};
+                "connectors/postgres/postgres-connector",};
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
     }

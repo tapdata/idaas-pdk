@@ -1,4 +1,4 @@
-package io.tapdata.postgres.config;
+package io.tapdata.connector.postgres.config;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;

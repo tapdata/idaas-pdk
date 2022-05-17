@@ -1,9 +1,9 @@
-package io.tapdata.postgres;
+package io.tapdata.connector.postgres;
 
+import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.postgres.config.PostgresConfig;
 import io.tapdata.util.NetUtil;
 
 import java.io.IOException;

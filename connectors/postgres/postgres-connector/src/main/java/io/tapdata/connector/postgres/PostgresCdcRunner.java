@@ -1,7 +1,10 @@
-package io.tapdata.postgres;
+package io.tapdata.connector.postgres;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
+import io.tapdata.connector.postgres.config.PostgresConfig;
+import io.tapdata.connector.postgres.config.PostgresDebeziumConfig;
+import io.tapdata.connector.postgres.kit.SmartKit;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -10,9 +13,6 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
-import io.tapdata.postgres.config.PostgresConfig;
-import io.tapdata.postgres.config.PostgresDebeziumConfig;
-import io.tapdata.postgres.kit.SmartKit;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 

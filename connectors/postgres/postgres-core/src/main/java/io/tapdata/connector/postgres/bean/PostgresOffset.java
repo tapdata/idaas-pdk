@@ -1,4 +1,4 @@
-package io.tapdata.postgres.bean;
+package io.tapdata.connector.postgres.bean;
 
 /**
  * offset for batch read
