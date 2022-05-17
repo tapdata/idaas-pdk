@@ -74,7 +74,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                 }
             }
 
-            targetFieldMap.put(field.getName(), dataType == null ? largestStringMappingField : field.clone().dataType(dataType));
+            targetFieldMap.put(field.getName(), dataType == null ? field.clone().dataType(largestStringMappingField.getDataType()) : field.clone().dataType(dataType));
         }
         if(finalResult.getResultItems() != null && !finalResult.getResultItems().isEmpty()) {
             finalResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);
