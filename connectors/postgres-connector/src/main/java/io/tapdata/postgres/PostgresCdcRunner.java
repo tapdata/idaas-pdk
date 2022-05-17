@@ -6,7 +6,6 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
-import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
@@ -71,11 +70,11 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         this.offsetState = offsetState;
         this.recordSize = recordSize;
         this.consumer = consumer;
-//        try {
-//            makeReplicaMarks();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            makeReplicaIdentity();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return this;
     }
 
@@ -150,7 +149,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     }
 
     //make these tables ready for REPLICA IDENTITY
-    private void makeReplicaMarks() throws SQLException {
+    private void makeReplicaIdentity() throws SQLException {
         String tableSql = SmartKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN (" +
                 observedTableList.stream().map(TapTable::getId).reduce((v1, v2) -> "'" + v1 + "','" + v2 + "'").orElseGet(String::new) + ")";
         ResultSet resultSet = stmt.executeQuery("SELECT " +
@@ -168,10 +167,15 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             String tableName = resultSet.getString("tablename");
             if (hasUnique == 1 && "n,i".contains(relReplident)) {
                 tableD.add(tableName);
-            }
-            else if (hasUnique == 0 && !"f".equals(relReplident)) {
+            } else if (hasUnique == 0 && !"f".equals(relReplident)) {
                 tableF.add(tableName);
             }
+        }
+        for (String d : tableD) {
+            stmt.execute("ALTER TABLE \"" + d + "\" REPLICA IDENTITY DEFAULT");
+        }
+        for (String f : tableF) {
+            stmt.execute("ALTER TABLE \"" + f + "\" REPLICA IDENTITY FULL");
         }
     }
 

@@ -188,12 +188,12 @@ public class SqlBuilder {
      */
 
     private static Object getFieldOriginValue(Object tapValue) {
-        if (tapValue instanceof DateTime) {
-            DateTime dateTime = (DateTime) tapValue;
-            return new java.sql.Date(dateTime.getSeconds() * 1000L + dateTime.getNano() / 1000000L);
-        } else if (tapValue instanceof Date) {
-            return new java.sql.Date(((Date) tapValue).getTime());
-        }
+//        if (tapValue instanceof DateTime) {
+//            DateTime dateTime = (DateTime) tapValue;
+//            return new java.sql.Date(dateTime.getSeconds() * 1000L + dateTime.getNano() / 1000000L);
+//        } else if (tapValue instanceof Date) {
+//            return new java.sql.Date(((Date) tapValue).getTime());
+//        }
         return tapValue;
     }
 }

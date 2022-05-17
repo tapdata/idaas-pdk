@@ -13,9 +13,7 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.schema.value.TapArrayValue;
-import io.tapdata.entity.schema.value.TapMapValue;
-import io.tapdata.entity.schema.value.TapRawValue;
+import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
@@ -108,17 +106,28 @@ public class PostgresConnector extends ConnectorBase {
 
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
-        initConnection(connectionContext.getConnectionConfig());
-        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
-        consumer.accept(testItem(TestItem.ITEM_LOGIN, TestItem.RESULT_SUCCESSFULLY));
-        // TODO: 2022/5/7 add rights control
-        consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
-        consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
+        PostgresTest postgresTest = new PostgresTest(connectionContext);
+        TestItem testHostPort = postgresTest.testHostPort();
+        consumer.accept(testHostPort);
+        if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
+            return;
+        }
+        TestItem testConnect = postgresTest.testConnect();
+        consumer.accept(testConnect);
+        if (testConnect.getResult() == TestItem.RESULT_FAILED) {
+            return;
+        }
+        consumer.accept(postgresTest.testPrivilege());
+        consumer.accept(postgresTest.testReplication());
     }
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) throws Throwable {
-        return 0;
+        initConnection(connectionContext.getConnectionConfig());
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{"TABLE"});
+        tableResult.last();
+        return tableResult.getRow();
     }
 
     @Override
@@ -136,10 +145,10 @@ public class PostgresConnector extends ConnectorBase {
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
-        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
-            return "null";
-        });
+//        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+//            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
+//            return "null";
+//        });
         codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
             if (tapMapValue != null && tapMapValue.getValue() != null) return toJson(tapMapValue.getValue());
             return "null";
@@ -148,6 +157,10 @@ public class PostgresConnector extends ConnectorBase {
             if (tapValue != null && tapValue.getValue() != null) return toJson(tapValue.getValue());
             return "null";
         });
+        //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
+        codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> tapTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toDate());
     }
 
     @Override
@@ -237,15 +250,30 @@ public class PostgresConnector extends ConnectorBase {
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
         Collection<String> primaryKeys = tapTable.primaryKeys();
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
-        String sql = "CREATE TABLE \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " PRIMARY KEY (\"" + SmartKit.combineString(primaryKeys, "\",\"") + "\" ) )";
+        String sql = "CREATE TABLE IF NOT EXISTS \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable);
+        if (SmartKit.isNotEmpty(tapTable.primaryKeys())) {
+            sql += "," + " PRIMARY KEY (\"" + SmartKit.combineString(primaryKeys, "\",\"") + "\" )";
+        }
+        sql += ")";
         try {
             stmt = conn.createStatement();
             stmt.execute(sql);
+            //comment on table and column
+            if (null != tapTable.getComment()) {
+                stmt.execute("COMMENT ON TABLE \"" + tapTable.getId() + "\" IS '" + tapTable.getComment() + "'");
+            }
+            Map<String, TapField> fieldMap = tapTable.getNameFieldMap();
+            for (String fieldName : fieldMap.keySet()) {
+                String fieldComment = fieldMap.get(fieldName).getComment();
+                if (null != fieldComment) {
+                    stmt.execute("COMMENT ON COLUMN \"" + tapTable.getId() + "\".\"" + fieldName + "\" IS '" + fieldComment + "'");
+                }
+            }
+            // TODO: 2022/5/16 how to deal with table index
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Create Table " + tapTable.getId() + " Failed! " + e.getMessage());
         }
-        // TODO: 2022/5/9 column comments
     }
 
 //    private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent)
