@@ -91,7 +91,6 @@ public class PostgresConnector extends ConnectorBase {
                 TapIndex index = new TapIndex();
                 index.setName(key);
                 index.setUnique(value.stream().anyMatch(v -> !(boolean) v.get("NON_UNIQUE")));
-
                 index.setIndexFields(value.stream().map(v -> {
                     TapIndexField field = new TapIndexField();
                     field.setName((String) v.get("COLUMN_NAME"));
