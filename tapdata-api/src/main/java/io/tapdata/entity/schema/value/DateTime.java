@@ -1,5 +1,6 @@
 package io.tapdata.entity.schema.value;
 
+import java.sql.Timestamp;
 import java.time.*;
 import java.util.Date;
 import java.util.Objects;
@@ -79,6 +80,19 @@ public class DateTime {
             return null;
         }
         return new Date(milliseconds);
+    }
+
+    public Timestamp toTimestamp() {
+        long milliseconds;
+        if(seconds != null) {
+            milliseconds = seconds * 1000;
+            if(nano != null) {
+                milliseconds = milliseconds + (nano / 1000 / 1000);
+            }
+        } else {
+            return null;
+        }
+        return new Timestamp(milliseconds);
     }
 
     @Override
