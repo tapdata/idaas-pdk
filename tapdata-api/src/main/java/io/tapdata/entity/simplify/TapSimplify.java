@@ -1,5 +1,8 @@
 package io.tapdata.entity.simplify;
 
+import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
+import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
@@ -128,6 +131,28 @@ public class TapSimplify {
             }
         }
         return map;
+    }
+
+    public static TapDropTableEvent dropTableEvent(String tableId) {
+        TapDropTableEvent dropTableEvent = new TapDropTableEvent();
+        dropTableEvent.setTime(System.currentTimeMillis());
+        dropTableEvent.setTableId(tableId);
+        return dropTableEvent;
+    }
+
+    public static TapCreateTableEvent createTableEvent(TapTable table) {
+        TapCreateTableEvent createTableEvent = new TapCreateTableEvent();
+        createTableEvent.setTime(System.currentTimeMillis());
+        createTableEvent.setTable(table);
+        createTableEvent.setTableId(table.getId());
+        return createTableEvent;
+    }
+
+    public static TapAlterTableEvent alterTableEvent(String tableId) {
+        TapAlterTableEvent alterTableEvent = new TapAlterTableEvent();
+        alterTableEvent.setTime(System.currentTimeMillis());
+        alterTableEvent.setTableId(tableId);
+        return alterTableEvent;
     }
 
     public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, String table) {
