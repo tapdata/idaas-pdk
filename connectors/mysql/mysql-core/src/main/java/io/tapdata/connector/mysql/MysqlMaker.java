@@ -4,6 +4,8 @@ import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -153,9 +155,42 @@ public class MysqlMaker implements SqlMaker {
 		return sql;
 	}
 
+	@Override
+	public String createIndex(TapConnectorContext tapConnectorContext, TapTable tapTable, TapIndex tapIndex) {
+		if (null == tapConnectorContext)
+			throw new IllegalArgumentException("Input parameter tapConnectorContext is null");
+		if (null == tapTable) throw new IllegalArgumentException("Input parameter tapTable is null");
+		if (null == tapIndex) throw new IllegalArgumentException("Input parameter tableIndex is null");
+		String sql = "CREATE";
+		if (tapIndex.isUnique()) {
+			sql += " UNIQUE INDEX";
+		} else {
+			sql += " INDEX";
+		}
+		if (StringUtils.isNotBlank(tapIndex.getName())) {
+			sql += " " + tapIndex.getName();
+		}
+		String database = tapConnectorContext.getConnectionConfig().getString("database");
+		if (StringUtils.isBlank(database)) throw new IllegalArgumentException("Database is blank");
+		sql += " ON `" + database + "`";
+		String tableId = tapTable.getId();
+		if (StringUtils.isBlank(tableId)) throw new IllegalArgumentException("Table id is blank");
+		sql += ".`" + tableId + "`(%s)";
+		List<TapIndexField> indexFields = tapIndex.getIndexFields();
+		List<String> fields = indexFields.stream().map(indexField -> {
+			String fieldName = indexField.getName();
+			Boolean fieldAsc = indexField.getFieldAsc();
+			if (null != fieldAsc && !fieldAsc) {
+				fieldName += " DESC";
+			}
+			return fieldName;
+		}).collect(Collectors.toList());
+		sql = String.format(sql, String.join(",", fields));
+		return sql;
+	}
+
 	protected String createTableAppendField(TapField tapField) {
-		String fieldSql = "  `" + tapField.getName() + "`"
-				+ " " + tapField.getDataType().toUpperCase();
+		String fieldSql = "  `" + tapField.getName() + "`" + " " + tapField.getDataType().toUpperCase();
 
 		// auto increment
 		// mysql a table can only create one auto-increment column, and must be the primary key
@@ -204,9 +239,7 @@ public class MysqlMaker implements SqlMaker {
 		}
 
 		// pk fields
-		String pkFieldString = nameFieldMap.values().stream().filter(f -> f.getPrimaryKeyPos() > 0)
-				.map(f -> "`" + f.getName() + "`")
-				.collect(Collectors.joining(","));
+		String pkFieldString = nameFieldMap.values().stream().filter(f -> f.getPrimaryKeyPos() > 0).map(f -> "`" + f.getName() + "`").collect(Collectors.joining(","));
 
 		pkSql += pkFieldString + ")";
 		return pkSql;
@@ -224,10 +257,7 @@ public class MysqlMaker implements SqlMaker {
 	}
 
 	private enum QueryOperatorEnum {
-		GT(QueryOperator.GT, ">"),
-		GTE(QueryOperator.GTE, ">="),
-		LE(QueryOperator.LT, "<"),
-		LTE(QueryOperator.LTE, "<="),
+		GT(QueryOperator.GT, ">"), GTE(QueryOperator.GTE, ">="), LE(QueryOperator.LT, "<"), LTE(QueryOperator.LTE, "<="),
 		;
 
 		private int op;
