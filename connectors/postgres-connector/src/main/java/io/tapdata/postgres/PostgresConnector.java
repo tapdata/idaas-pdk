@@ -454,7 +454,7 @@ public class PostgresConnector extends ConnectorBase {
         if (SmartKit.isNotEmpty(indexList) && indexList.stream().anyMatch(TapIndex::isUnique)) {
             orderBy.append(" ORDER BY ");
             TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
-            for (int i = 0; i < uniqueIndex.getFields().size(); i++) {
+            for (int i = 0; i < uniqueIndex.getIndexFields().size(); i++) {
                 String ascOrDesc = uniqueIndex.getFieldAscList().get(i) ? "ASC" : "DESC";
                 orderBy.append('\"').append(uniqueIndex.getFields().get(i)).append("\" ").append(ascOrDesc).append(',');
             }
@@ -518,7 +518,7 @@ public class PostgresConnector extends ConnectorBase {
         consumer.streamReadStarted(true);
     }
 
-    // TODO: 2022/5/14 implement with offset 
+    // TODO: 2022/5/14 implement with offset
     private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) throws Throwable {
         return null;
     }
