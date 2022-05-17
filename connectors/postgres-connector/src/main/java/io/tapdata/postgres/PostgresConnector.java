@@ -13,9 +13,7 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.schema.value.TapArrayValue;
-import io.tapdata.entity.schema.value.TapMapValue;
-import io.tapdata.entity.schema.value.TapRawValue;
+import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
@@ -147,10 +145,10 @@ public class PostgresConnector extends ConnectorBase {
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
-        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
-            return "null";
-        });
+//        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+//            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
+//            return "null";
+//        });
         codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
             if (tapMapValue != null && tapMapValue.getValue() != null) return toJson(tapMapValue.getValue());
             return "null";
@@ -159,6 +157,10 @@ public class PostgresConnector extends ConnectorBase {
             if (tapValue != null && tapValue.getValue() != null) return toJson(tapValue.getValue());
             return "null";
         });
+        //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
+        codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> tapTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toDate());
     }
 
     @Override
@@ -248,7 +250,11 @@ public class PostgresConnector extends ConnectorBase {
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
         Collection<String> primaryKeys = tapTable.primaryKeys();
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
-        String sql = "CREATE TABLE \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable) + "," + " PRIMARY KEY (\"" + SmartKit.combineString(primaryKeys, "\",\"") + "\" ) )";
+        String sql = "CREATE TABLE IF NOT EXISTS \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable);
+        if (SmartKit.isNotEmpty(tapTable.primaryKeys())) {
+            sql += "," + " PRIMARY KEY (\"" + SmartKit.combineString(primaryKeys, "\",\"") + "\" )";
+        }
+        sql += ")";
         try {
             stmt = conn.createStatement();
             stmt.execute(sql);
