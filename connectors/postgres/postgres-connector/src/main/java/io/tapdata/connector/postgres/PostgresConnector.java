@@ -150,10 +150,10 @@ public class PostgresConnector extends ConnectorBase {
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
-//        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
-//            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
-//            return "null";
-//        });
+        codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
+            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
+            return "null";
+        });
         codecRegistry.registerFromTapValue(TapMapValue.class, "text", tapMapValue -> {
             if (tapMapValue != null && tapMapValue.getValue() != null) return toJson(tapMapValue.getValue());
             return "null";
@@ -163,9 +163,12 @@ public class PostgresConnector extends ConnectorBase {
             return "null";
         });
         //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
-        codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> tapTimeValue.getValue().toDate());
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
-        codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toDate());
+//        codecRegistry.registerFromTapValue(TapTimeValue.class, "text", tapTimeValue -> formatTapDateTime(tapTimeValue.getValue(), "HH:mm:ss"));
+//        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toTimestamp());
+//        codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> formatTapDateTime(tapDateValue.getValue(), "yyyy-MM-dd HH:mm:ss"));
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "text", tapTimeValue -> tapTimeValue.getValue().toString());
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toTimestamp());
+        codecRegistry.registerFromTapValue(TapDateValue.class, "text", tapDateValue -> tapDateValue.getValue().toString());
     }
 
     @Override

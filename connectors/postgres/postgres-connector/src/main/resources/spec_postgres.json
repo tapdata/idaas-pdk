@@ -147,7 +147,7 @@
       ],
       "priority": 3,
       "queryOnly": true,
-      "to": "TapTime"
+      "to": "TapDateTime"
     },
     "timestamp[($fsp)]": {
       "range": [
