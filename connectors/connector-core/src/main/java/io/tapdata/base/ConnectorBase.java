@@ -4,6 +4,7 @@ import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
@@ -22,6 +23,10 @@ import io.tapdata.pdk.apis.utils.TypeConverter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
     private static final SimpleDateFormat tapDateTimeFormat = new SimpleDateFormat();
+    private static final String TAG = ConnectorBase.class.getSimpleName();
 
     public static void interval(Runnable runnable, int seconds) {
         TapSimplify.interval(runnable, seconds);
@@ -191,9 +197,14 @@ public abstract class ConnectorBase implements TapConnector {
     }
 
     public static String formatTapDateTime(DateTime dateTime, String pattern) {
-        if (dateTime.getTimeZone() != null) dateTime.setTimeZone(dateTime.getTimeZone());
-        tapDateTimeFormat.applyPattern(pattern);
-        return tapDateTimeFormat.format(new Date(dateTime.getSeconds() * 1000L));
+        try {
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(pattern);
+            return dateTimeFormatter.format(dateTime.toInstant());
+        } catch (Throwable e) {
+            e.printStackTrace();
+            TapLogger.error(TAG, "Parse date time {} pattern {}, failed, {}", dateTime, pattern, e.getMessage());
+        }
+        return null;
     }
 
     public static Object convertDateTimeToDate(DateTime dateTime) {
