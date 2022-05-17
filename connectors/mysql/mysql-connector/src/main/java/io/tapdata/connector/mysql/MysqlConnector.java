@@ -4,11 +4,13 @@ import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
@@ -65,6 +67,25 @@ public class MysqlConnector extends ConnectorBase {
 //		connectorFunctions.supportStreamOffset(this::streamOffset);
 		connectorFunctions.supportQueryByAdvanceFilter(this::query);
 		connectorFunctions.supportWriteRecord(this::writeRecord);
+		connectorFunctions.supportCreateIndex(this::createIndex);
+	}
+
+	private void createIndex(TapConnectorContext tapConnectorContext, TapTable tapTable, TapCreateIndexEvent tapCreateIndexEvent) throws Throwable {
+		List<TapIndex> indexList = tapCreateIndexEvent.getIndexList();
+		SqlMaker sqlMaker = new MysqlMaker();
+		for (TapIndex tapIndex : indexList) {
+			String createIndexSql;
+			try {
+				createIndexSql = sqlMaker.createIndex(tapConnectorContext, tapTable, tapIndex);
+			} catch (Throwable e) {
+				throw new RuntimeException("Get create index sql failed, message: " + e.getMessage(), e);
+			}
+			try {
+				this.mysqlJdbcContext.execute(createIndexSql);
+			} catch (Throwable e) {
+				throw new RuntimeException("Execute create index failed, sql: " + createIndexSql + ", message: " + e.getMessage(), e);
+			}
+		}
 	}
 
 	@Override

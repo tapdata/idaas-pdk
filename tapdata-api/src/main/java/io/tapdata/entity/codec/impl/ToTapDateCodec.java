@@ -3,6 +3,7 @@ package io.tapdata.entity.codec.impl;
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.codec.impl.utils.AnyTimeToDateTime;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.schema.value.TapDateValue;
@@ -13,16 +14,7 @@ import java.util.Date;
 public class ToTapDateCodec implements ToTapValueCodec<TapDateValue> {
     @Override
     public TapDateValue toTapValue(Object value, TapType typeFromSchema) {
-
-        DateTime dateTime = null;
-        if(value instanceof DateTime) {
-            dateTime = (DateTime) value;
-        } else if(value instanceof Date) {
-            Date date = (Date) value;
-            dateTime = new DateTime();
-            dateTime.setNano((int) ((date.getTime() % 1000) * 1000 * 1000));
-            dateTime.setSeconds(date.getTime() / 1000);
-        }
+        DateTime dateTime = AnyTimeToDateTime.toDateTime(value);
         TapDateValue tapDateValue = null;
         if(dateTime != null) {
             tapDateValue = new TapDateValue(dateTime);

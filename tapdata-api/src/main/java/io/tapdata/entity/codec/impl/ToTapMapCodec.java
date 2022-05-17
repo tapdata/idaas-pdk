@@ -13,8 +13,10 @@ public class ToTapMapCodec implements ToTapValueCodec<TapMapValue> {
     @Override
     public TapMapValue toTapValue(Object value, TapType typeFromSchema) {
 
-        TapMapValue arrayValue = new TapMapValue((Map<?, ?>) value);
+        if(value instanceof Map) {
+            return new TapMapValue((Map<?, ?>) value);
+        }
 
-        return arrayValue;
+        return null;
     }
 }

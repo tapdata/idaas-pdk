@@ -226,13 +226,8 @@
 	  "byte": "4g"
 	},
 	"bit[($bit)]": {
-	  "to": "TapNumber",
-	  "bit": 64,
-	  "precision": 20,
-	  "value": [
-		0,
-		18446744073709552000
-	  ]
+	  "to": "TapBinary",
+	  "queryOnly": true
 	},
 	"tinyint": {
 	  "to": "TapNumber",
@@ -254,6 +249,9 @@
 	  "unsigned": "unsigned"
 	},
 	"tinyint(1)": {
+	  "to": "TapBoolean"
+	},
+	"bit(1)": {
 	  "to": "TapBoolean"
 	},
 	"smallint": {
