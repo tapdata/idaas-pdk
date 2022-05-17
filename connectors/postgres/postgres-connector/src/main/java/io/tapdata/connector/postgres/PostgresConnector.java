@@ -1,6 +1,11 @@
-package io.tapdata.postgres;
+package io.tapdata.connector.postgres;
 
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.connector.postgres.bean.PostgresColumn;
+import io.tapdata.connector.postgres.bean.PostgresOffset;
+import io.tapdata.connector.postgres.config.PostgresConfig;
+import io.tapdata.connector.postgres.kit.SmartKit;
+import io.tapdata.connector.postgres.kit.SqlBuilder;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
@@ -22,11 +27,6 @@ import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
-import io.tapdata.postgres.bean.PostgresColumn;
-import io.tapdata.postgres.bean.PostgresOffset;
-import io.tapdata.postgres.config.PostgresConfig;
-import io.tapdata.postgres.kit.SmartKit;
-import io.tapdata.postgres.kit.SqlBuilder;
 
 import java.sql.*;
 import java.util.*;

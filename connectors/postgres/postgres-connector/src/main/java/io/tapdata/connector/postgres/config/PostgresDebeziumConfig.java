@@ -1,8 +1,8 @@
-package io.tapdata.postgres.config;
+package io.tapdata.connector.postgres.config;
 
 import io.debezium.config.Configuration;
+import io.tapdata.connector.postgres.kit.SmartKit;
 import io.tapdata.entity.simplify.TapSimplify;
-import io.tapdata.postgres.kit.SmartKit;
 
 import java.util.List;
 import java.util.UUID;

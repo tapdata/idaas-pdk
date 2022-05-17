@@ -1,4 +1,4 @@
-package io.tapdata.postgres.bean;
+package io.tapdata.connector.postgres.bean;
 
 import io.tapdata.entity.schema.TapField;
 
