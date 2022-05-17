@@ -10,9 +10,9 @@ import io.tapdata.entity.schema.value.TapBinaryValue;
 public class ToTapBinaryCodec implements ToTapValueCodec<TapBinaryValue> {
     @Override
     public TapBinaryValue toTapValue(Object value, TapType typeFromSchema) {
-
-        TapBinaryValue arrayValue = new TapBinaryValue((byte[]) value);
-
-        return arrayValue;
+        if(value instanceof byte[]) {
+            return new TapBinaryValue((byte[]) value);
+        }
+        return null;
     }
 }
