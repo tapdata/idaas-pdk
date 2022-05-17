@@ -40,17 +40,23 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 		try {
 			for (TapRecordEvent tapRecordEvent : tapRecordEvents) {
 				if (tapRecordEvent instanceof TapInsertRecordEvent) {
-					doInsertOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+					int insertRow = doInsertOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+					writeListResult.incrementInserted(insertRow);
 				} else if (tapRecordEvent instanceof TapUpdateRecordEvent) {
-					doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+					int updateRow = doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+					writeListResult.incrementModified(updateRow);
 				} else if (tapRecordEvent instanceof TapDeleteRecordEvent) {
-					doDeleteOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+					int deleteRow = doDeleteOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+					writeListResult.incrementRemove(deleteRow);
 				} else {
 					writeListResult.addError(tapRecordEvent, new Exception("Event type \"" + tapRecordEvent.getClass().getSimpleName() + "\" not support: " + tapRecordEvent));
 				}
 			}
 			MysqlJdbcContext.tryCommit(connection);
 		} catch (Throwable e) {
+			writeListResult.setInsertedCount(0);
+			writeListResult.setModifiedCount(0);
+			writeListResult.setRemovedCount(0);
 			MysqlJdbcContext.tryRollBack(connection);
 			throw e;
 		}
@@ -65,43 +71,48 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 		this.checkExistsMap.clear();
 	}
 
-	private void doInsertOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
+	private int doInsertOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
 		PreparedStatement insertPreparedStatement = getInsertPreparedStatement(tapConnectorContext, tapTable, tapRecordEvent, insertMap);
 		setPreparedStatementValues(tapTable, tapRecordEvent, insertPreparedStatement);
+		int row = 0;
 		try {
-			int row = insertPreparedStatement.executeUpdate();
+			row = insertPreparedStatement.executeUpdate();
 			writeListResult.incrementInserted(row);
 		} catch (Exception e) {
 			TapLogger.warn(TAG, "Execute insert failed, will retry update or insert after check record exists");
 			if (rowExists(tapConnectorContext, tapTable, tapRecordEvent)) {
-				doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+				row = doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
 			} else {
 				writeListResult.addError(tapRecordEvent, new Exception("Insert data failed, message: " + e.getMessage(), e));
 			}
 		}
+		return row;
 	}
 
-	private void doUpdateOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
+	private int doUpdateOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
 		PreparedStatement updatePreparedStatement = getUpdatePreparedStatement(tapConnectorContext, tapTable, tapRecordEvent, updateMap);
 		int parameterIndex = setPreparedStatementValues(tapTable, tapRecordEvent, updatePreparedStatement);
 		setPreparedStatementWhere(tapTable, tapRecordEvent, updatePreparedStatement, parameterIndex);
+		int row = 0;
 		try {
-			int row = updatePreparedStatement.executeUpdate();
-			writeListResult.incrementModified(row);
+			row = updatePreparedStatement.executeUpdate();
 		} catch (Exception e) {
 			writeListResult.addError(tapRecordEvent, new Exception("Update data failed, message: " + e.getMessage(), e));
 		}
+		return row;
 	}
 
-	private void doDeleteOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
+	private int doDeleteOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
 		PreparedStatement deletePreparedStatement = getDeletePreparedStatement(tapConnectorContext, tapTable, tapRecordEvent, deleteMap);
 		setPreparedStatementWhere(tapTable, tapRecordEvent, deletePreparedStatement, 1);
+		int row = 0;
 		try {
-			int row = deletePreparedStatement.executeUpdate();
+			row = deletePreparedStatement.executeUpdate();
 			writeListResult.incrementRemove(row);
 		} catch (SQLException e) {
 			writeListResult.addError(tapRecordEvent, new Exception("Delete data failed, message: " + e.getMessage(), e));
 		}
+		return row;
 	}
 
 	private boolean rowExists(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent) throws Throwable {
