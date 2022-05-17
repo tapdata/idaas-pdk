@@ -12,6 +12,7 @@ import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.utils.DataMap;
@@ -90,8 +91,13 @@ public class PostgresConnector extends ConnectorBase {
                 TapIndex index = new TapIndex();
                 index.setName(key);
                 index.setUnique(value.stream().anyMatch(v -> !(boolean) v.get("NON_UNIQUE")));
-                index.setFields(value.stream().map(v -> (String) v.get("COLUMN_NAME")).collect(Collectors.toList()));
-                index.setFieldAscList(value.stream().map(v -> "A".equals(v.get("ASC_OR_DESC"))).collect(Collectors.toList()));
+
+                index.setIndexFields(value.stream().map(v -> {
+                    TapIndexField field = new TapIndexField();
+                    field.setName((String) v.get("COLUMN_NAME"));
+                    field.setFieldAsc("A".equals(v.get("ASC_OR_DESC")));
+                    return field;
+                }).collect(Collectors.toList()));
                 table.add(index);
             });
             tapTableList.add(table);
@@ -455,8 +461,8 @@ public class PostgresConnector extends ConnectorBase {
             orderBy.append(" ORDER BY ");
             TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
             for (int i = 0; i < uniqueIndex.getIndexFields().size(); i++) {
-                String ascOrDesc = uniqueIndex.getFieldAscList().get(i) ? "ASC" : "DESC";
-                orderBy.append('\"').append(uniqueIndex.getFields().get(i)).append("\" ").append(ascOrDesc).append(',');
+                String ascOrDesc = uniqueIndex.getIndexFields().get(i).getFieldAsc() ? "ASC" : "DESC";
+                orderBy.append('\"').append(uniqueIndex.getIndexFields().get(i).getName()).append("\" ").append(ascOrDesc).append(',');
             }
         }
         // TODO: 2022/5/7 how to deal with which without unique key
