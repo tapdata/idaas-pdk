@@ -70,11 +70,11 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         this.offsetState = offsetState;
         this.recordSize = recordSize;
         this.consumer = consumer;
-//        try {
-//            makeReplicaMarks();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            makeReplicaIdentity();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return this;
     }
 
@@ -149,7 +149,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     }
 
     //make these tables ready for REPLICA IDENTITY
-    private void makeReplicaMarks() throws SQLException {
+    private void makeReplicaIdentity() throws SQLException {
         String tableSql = SmartKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN (" +
                 observedTableList.stream().map(TapTable::getId).reduce((v1, v2) -> "'" + v1 + "','" + v2 + "'").orElseGet(String::new) + ")";
         ResultSet resultSet = stmt.executeQuery("SELECT " +
@@ -171,7 +171,12 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                 tableF.add(tableName);
             }
         }
-
+        for (String d : tableD) {
+            stmt.execute("ALTER TABLE \"" + d + "\" REPLICA IDENTITY DEFAULT");
+        }
+        for (String f : tableF) {
+            stmt.execute("ALTER TABLE \"" + f + "\" REPLICA IDENTITY FULL");
+        }
     }
 
 }

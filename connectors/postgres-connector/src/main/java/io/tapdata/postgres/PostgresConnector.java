@@ -119,14 +119,17 @@ public class PostgresConnector extends ConnectorBase {
         if (testConnect.getResult() == TestItem.RESULT_FAILED) {
             return;
         }
-        // TODO: 2022/5/7 add rights control
-        consumer.accept(testItem(TestItem.ITEM_READ, TestItem.RESULT_SUCCESSFULLY));
-        consumer.accept(testItem(TestItem.ITEM_WRITE, TestItem.RESULT_SUCCESSFULLY));
+        consumer.accept(postgresTest.testPrivilege());
+        consumer.accept(postgresTest.testReplication());
     }
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) throws Throwable {
-        return 0;
+        initConnection(connectionContext.getConnectionConfig());
+        DatabaseMetaData databaseMetaData = conn.getMetaData();
+        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{"TABLE"});
+        tableResult.last();
+        return tableResult.getRow();
     }
 
     @Override
@@ -249,11 +252,22 @@ public class PostgresConnector extends ConnectorBase {
         try {
             stmt = conn.createStatement();
             stmt.execute(sql);
+            //comment on table and column
+            if (null != tapTable.getComment()) {
+                stmt.execute("COMMENT ON TABLE \"" + tapTable.getId() + "\" IS '" + tapTable.getComment() + "'");
+            }
+            Map<String, TapField> fieldMap = tapTable.getNameFieldMap();
+            for (String fieldName : fieldMap.keySet()) {
+                String fieldComment = fieldMap.get(fieldName).getComment();
+                if (null != fieldComment) {
+                    stmt.execute("COMMENT ON COLUMN \"" + tapTable.getId() + "\".\"" + fieldName + "\" IS '" + fieldComment + "'");
+                }
+            }
+            // TODO: 2022/5/16 how to deal with table index
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Create Table " + tapTable.getId() + " Failed! " + e.getMessage());
         }
-        // TODO: 2022/5/9 column comments
     }
 
 //    private void alterTable(TapConnectorContext tapConnectorContext, TapAlterTableEvent tapAlterTableEvent)
