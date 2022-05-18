@@ -299,34 +299,30 @@ public class SourceNodeDriver extends Driver {
             Object finalStreamOffsetObj = streamOffsetObj;
             pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
                 sourceNode.applyClassLoaderContext();
-                while(streamReadNeedRetry && !shutDown.get()) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, StreamReadConsumer.create((events) -> {
-                        if (events != null) {
-                            if(events.size() > batchLimit)
-                                throw new CoreException(PDKRunnerErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
-                            TapLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                            offerToQueue(events);
-                        }
+                StreamReadConsumer streamReadConsumer = StreamReadConsumer.create((events) -> {
+                    if (events != null) {
+                        if(events.size() > batchLimit)
+                            throw new CoreException(PDKRunnerErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
+                        TapLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                        offerToQueue(events);
+                    }
 
-                        StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
-                        if(streamOffsetFunction != null) {
-                            pdkInvocationMonitor.invokePDKMethod(PDKMethod.STREAM_OFFSET, () -> {
-                                Object offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), finalTargetTables, null);
-                                if (offsetState != null) {
-                                    TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetBytes, offsetState);
-                                    this.streamOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(offsetState);
-                                }
-                            }, "Stream read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
-                                TapLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
-                            });
-                        }
-                    }).stateListener((from, to) -> {
-                        if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED || to == StreamReadConsumer.STATE_STREAM_READ_STARTED_ASYNC) {
-                            if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED_ASYNC) {
-                                streamReadNeedRetry = false;
-                            } else {
-                                streamReadNeedRetry = true;
+                    StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
+                    if(streamOffsetFunction != null) {
+                        pdkInvocationMonitor.invokePDKMethod(PDKMethod.STREAM_OFFSET, () -> {
+                            Object offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), finalTargetTables, null);
+                            if (offsetState != null) {
+                                TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetBytes, offsetState);
+                                this.streamOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(offsetState);
                             }
+                        }, "Stream read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
+                            TapLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
+                        });
+                    }
+                });
+                while(streamReadNeedRetry && !shutDown.get()) {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, streamReadConsumer.stateListener((from, to) -> {
+                        if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED) {
                             CommonUtils.ignoreAnyError(() -> {
                                 if(sourceStateListener != null)
                                     sourceStateListener.stateChanged(STATE_STREAM_STARTED);
@@ -339,6 +335,7 @@ public class SourceNodeDriver extends Driver {
                         }
 
                     }));
+                    streamReadNeedRetry = !streamReadConsumer.isAsyncMethodAndNoRetry();
                 }
             }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
         }
