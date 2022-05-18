@@ -1,17 +1,10 @@
 package io.tapdata.mongodb;
 
 import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoNamespace;
 import com.mongodb.client.*;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import com.mongodb.client.model.changestream.FullDocument;
-import com.mongodb.client.model.changestream.OperationType;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecsRegistry;
@@ -24,7 +17,10 @@ import io.tapdata.entity.schema.TapTable;
 
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.mongodb.bean.MongoDBConfig;
+import io.tapdata.mongodb.bean.MongodbConfig;
+import io.tapdata.mongodb.reader.v3.MongodbStreamReader;
+import io.tapdata.mongodb.reader.MongodbV4StreamReader;
+import io.tapdata.mongodb.writer.MongodbWriter;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -45,7 +41,6 @@ import static java.util.Collections.singletonList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,61 +53,28 @@ import java.util.function.Consumer;
  */
 @TapConnectorClass("spec.json")
 public class MongodbConnector extends ConnectorBase {
+
+		private static final String COLLECTION_ID_FIELD = "_id";
     public static final String TAG = MongodbConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
-    private MongoDBConfig mongoConfig;
+    private MongodbConfig mongoConfig;
     private MongoClient mongoClient;
     private MongoDatabase mongoDatabase;
     private final int[] lock = new int[0];
     MongoCollection<Document> mongoCollection;
     private MongoOffset batchOffset = null;
-    private Long documentCount = null;
-    //TODO need replace, deleteEvent and insertEvent.
-//    private final List<Bson> pipeline = singletonList(match(in("operationType", asList("insert", "update", "delete"))));
-    private BsonDocument resumeToken = null;
-//    private Collection<String> primaryKeys;
-//    private String firstPrimaryKey;
 
-    MongoChangeStreamCursor<ChangeStreamDocument<Document>> streamCursor;
+		private MongodbStreamReader mongodbStreamReader;
 
-    private void initConnection(DataMap config) throws IOException {
-        mongoConfig = MongoDBConfig.load(config);
-        if (mongoClient == null) {
-            //TODO watch database from MongoClientFactory.
-            mongoClient = MongoClientFactory.getMongoClient(mongoConfig.getUri());
-            CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-                    fromProviders(PojoCodecProvider.builder().automatic(true).build()));
-            mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase()).withCodecRegistry(pojoCodecRegistry);
-        }
-    }
+		private MongodbWriter mongodbWriter;
 
     private Bson queryCondition(String firstPrimaryKey, Object value) {
         return gte(firstPrimaryKey, value);
     }
 
-    //TODO support multi keys.
-    private String getFirstPrimaryKey(TapTable table) {
-        Collection<String> primaryKeys = table.primaryKeys();
-        String firstPrimaryKey = null;
-        if(primaryKeys != null && !primaryKeys.isEmpty()) {
-            for (String primaryKey : primaryKeys) {
-                firstPrimaryKey = primaryKey;
-                break;
-            }
-        }
-        return firstPrimaryKey;
-    }
-
     private MongoCollection<Document> getMongoCollection(String table) {
-        if(mongoCollection == null) {
-            synchronized (lock) {
-                if(mongoCollection == null) {
-                    mongoCollection = mongoDatabase.getCollection(table);
-                }
-            }
-        }
-        return mongoCollection;
+        return mongoDatabase.getCollection(table);
     }
     /**
      * The method invocation life circle is below,
@@ -129,7 +91,6 @@ public class MongodbConnector extends ConnectorBase {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
-        initConnection(connectionContext.getConnectionConfig());
         MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
         //List all the tables under the database.
         List<TapTable> list = list();
@@ -166,7 +127,6 @@ public class MongodbConnector extends ConnectorBase {
      */
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
-        initConnection(connectionContext.getConnectionConfig());
         try {
             mongoDatabase.listCollectionNames();
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
@@ -178,7 +138,6 @@ public class MongodbConnector extends ConnectorBase {
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) throws Throwable {
-        initConnection(connectionContext.getConnectionConfig());
         MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
         int index = 0;
         for (String collectionName : collectionNames) {
@@ -268,21 +227,24 @@ public class MongodbConnector extends ConnectorBase {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
+//        connectorFunctions.supportStreamOffset(this::streamOffset);
     }
 
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
-        initConnection(connectionContext.getConnectionConfig());
+				final DataMap connectionConfig = connectionContext.getConnectionConfig();
+				mongoConfig = MongodbConfig.load(connectionConfig);
+
+				if (mongoClient == null) {
+						mongoClient = MongoClients.create(mongoConfig.getUri());
+						CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
+										fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+						mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase()).withCodecRegistry(pojoCodecRegistry);
+				}
     }
 
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
-        initConnection(connectorContext.getConnectionConfig());
         getMongoCollection(dropTableEvent.getTableId()).drop();
 
-        if(streamCursor != null) {
-            streamCursor.close();
-            TapLogger.info(TAG, "dropTable is called for " + dropTableEvent.getTableId() + " streamCursor has been closed " + streamCursor);
-        }
     }
 
 //    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
@@ -311,77 +273,12 @@ public class MongodbConnector extends ConnectorBase {
      * @param writeListResultConsumer
      */
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
-        initConnection(connectorContext.getConnectionConfig());
-        AtomicLong inserted = new AtomicLong(0); //insert count
-        AtomicLong updated = new AtomicLong(0); //update count
-        AtomicLong deleted = new AtomicLong(0); //delete count
+				if(mongodbWriter == null){
+						mongodbWriter = new MongodbWriter();
+						mongodbWriter.onStart(mongoConfig);
+				}
 
-        Map<String, List<Document>> insertMap = new HashMap<>();
-        Map<String, List<TapRecordEvent>> insertEventMap = new HashMap<>();
-        UpdateOptions options = new UpdateOptions().upsert(true);
-
-        WriteListResult<TapRecordEvent> writeListResult = writeListResult();
-
-        MongoCollection<Document> collection = getMongoCollection(table.getId());
-
-        for (TapRecordEvent recordEvent : tapRecordEvents) {
-            if (recordEvent instanceof TapInsertRecordEvent) {
-                TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-                insertMap.computeIfAbsent(insertRecordEvent.getTableId(), s -> new ArrayList<>()).add(new Document(insertRecordEvent.getAfter()));
-//                insertMap.put(insertRecordEvent.getTableName(), new Document(insertRecordEvent.getAfter()));
-                insertEventMap.computeIfAbsent(insertRecordEvent.getTableId(), s -> new ArrayList<>()).add(insertRecordEvent);
-                inserted.incrementAndGet();
-            } else if (recordEvent instanceof TapUpdateRecordEvent) {
-                if (!insertMap.isEmpty()) {
-                    insertMany(insertMap, insertEventMap, writeListResult);
-                }
-                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
-                Map<String, Object> after = updateRecordEvent.getAfter();
-                Map<String, Object> before = updateRecordEvent.getBefore();
-
-
-                UpdateResult updateResult = collection.updateOne(new Document(before), new Document().append("$set", after), options);
-                if(updateResult.getModifiedCount() > 0)
-                    updated.incrementAndGet();
-                else
-                    TapLogger.warn("Update record by filter {} is missed. ", toJson(before));
-            } else if (recordEvent instanceof TapDeleteRecordEvent) {
-                if (!insertMap.isEmpty()) {
-                    insertMany(insertMap, insertEventMap, writeListResult);
-                }
-                TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
-                Map<String, Object> before = deleteRecordEvent.getBefore();
-
-                DeleteResult deleteResult = collection.deleteOne(new Document(before));
-                if(deleteResult.getDeletedCount() > 0)
-                    deleted.incrementAndGet();
-                else
-                    TapLogger.warn(TAG, "Delete record by filter {} is missed. ", toJson(before));
-            }
-        }
-        if (!insertMap.isEmpty()) {
-            insertMany(insertMap, insertEventMap, writeListResult);
-        }
-        //Need to tell incremental engine the write result
-        writeListResultConsumer.accept(writeListResult
-                .insertedCount(inserted.get())
-                .modifiedCount(updated.get())
-                .removedCount(deleted.get()));
-    }
-
-    private void insertMany(Map<String, List<Document>> insertMap, Map<String, List<TapRecordEvent>> insertEventMap, WriteListResult<TapRecordEvent> writeListResult) {
-        for(Map.Entry<String, List<Document>> entry : insertMap.entrySet()) {
-            List<TapRecordEvent> insertEventList = insertEventMap.get(entry.getKey());
-            InsertManyResult insertManyResult = getMongoCollection(entry.getKey()).insertMany(entry.getValue());
-            Map<Integer, BsonValue> insertedIds = insertManyResult.getInsertedIds();
-            Exception error = new Exception("Insert failed");
-            //Tell incremental engine which event insert failed. incremental engine will try update event.
-            for (int i = 0; i < insertMap.size(); i++) {
-                if(!insertedIds.containsKey(i))
-                    writeListResult.addError(insertEventList.get(i), error);
-            }
-        }
-
+				mongodbWriter.writeRecord(tapRecordEvents, table, writeListResultConsumer);
     }
 
     private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, TapTable table, Consumer<FilterResults> consumer) {
@@ -444,9 +341,11 @@ public class MongodbConnector extends ConnectorBase {
                 }
             }
         }
-        for (Document document : iterable) {
-            filterResults.add(document);
-        }
+				try (final MongoCursor<Document> mongoCursor = iterable.iterator()) {
+						while (mongoCursor.hasNext()) {
+								filterResults.add(mongoCursor.next());
+						}
+				}
         consumer.accept(filterResults);
     }
 
@@ -508,19 +407,17 @@ public class MongodbConnector extends ConnectorBase {
         List<TapEvent> tapEvents = list();
         MongoCursor<Document> mongoCursor;
         MongoCollection<Document> collection = getMongoCollection(table.getId());
-        String firstPrimaryKey = getFirstPrimaryKey(table);
-        //TODO sort multi primary keys, close to exactly once.
-        final int batchSize = 5000;
+        final int batchSize = eventBatchSize > 0 ? eventBatchSize : 5000;
         if (offset == null) {
-            mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
+            mongoCursor = collection.find().sort(Sorts.ascending(COLLECTION_ID_FIELD)).batchSize(batchSize).iterator();
         } else {
             MongoOffset mongoOffset = (MongoOffset) offset;//fromJson(offset, MongoOffset.class);
             Object offsetValue = mongoOffset.value();
             if(offsetValue != null) {
-                mongoCursor = collection.find(queryCondition(firstPrimaryKey, offsetValue)).sort(Sorts.ascending(firstPrimaryKey))
+                mongoCursor = collection.find(queryCondition(COLLECTION_ID_FIELD, offsetValue)).sort(Sorts.ascending(COLLECTION_ID_FIELD))
                         .batchSize(batchSize).iterator();
             } else {
-                mongoCursor = collection.find().sort(Sorts.ascending(firstPrimaryKey)).batchSize(batchSize).iterator();
+                mongoCursor = collection.find().sort(Sorts.ascending(COLLECTION_ID_FIELD)).batchSize(batchSize).iterator();
                 TapLogger.warn(TAG, "Offset format is illegal {}, no offset value has been found. Final offset will be null to do the batchRead", offset);
             }
         }
@@ -532,10 +429,8 @@ public class MongodbConnector extends ConnectorBase {
             tapEvents.add(insertRecordEvent(lastDocument, table.getId()));
 
             if(tapEvents.size() == eventBatchSize) {
-                if(firstPrimaryKey != null) {
-                    Object value = lastDocument.get(firstPrimaryKey);
-                    batchOffset = new MongoOffset(firstPrimaryKey, value);
-                }
+								Object value = lastDocument.get(COLLECTION_ID_FIELD);
+								batchOffset = new MongoOffset(COLLECTION_ID_FIELD, value);
                 tapReadOffsetConsumer.accept(tapEvents, batchOffset);
                 tapEvents = list();
             }
@@ -546,24 +441,11 @@ public class MongodbConnector extends ConnectorBase {
     }
 
     private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) {
-        if(offsetStartTime != null) {
-            List<Bson> pipeline = singletonList(Aggregates.match(
-                    Filters.in("ns.coll", tableList)
-            ));
-            // Unix timestamp in seconds, with increment 1
-            ChangeStreamIterable<Document> changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
-            changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 1));
-            MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
-            BsonDocument theResumeToken = cursor.getResumeToken();
 
-            if(theResumeToken != null) {
-                cursor.close();
-                return theResumeToken;
-            }
-        } else if(resumeToken != null) {
-            return resumeToken;
-        }
-        return null;
+				if (mongodbStreamReader == null) {
+						mongodbStreamReader = createStreamReader();
+				}
+				return mongodbStreamReader.streamOffset(tableList, offsetStartTime);
     }
 
     /**
@@ -583,154 +465,12 @@ public class MongodbConnector extends ConnectorBase {
      *                         //     * @param consumer
      */
     private void streamRead(TapConnectorContext connectorContext, List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer) {
-        List<Bson> pipeline = singletonList(Aggregates.match(
-                Filters.in("ns.coll", tableList)
-        ));
-//        pipeline = new ArrayList<>();
-//        List<Bson> collList = tableList.stream().map(t -> Filters.eq("ns.coll", t)).collect(Collectors.toList());
-//        List<Bson> pipeline1 = asList(Aggregates.match(Filters.or(collList)));
+				if (mongodbStreamReader == null){
+						mongodbStreamReader = createStreamReader();
+				}
 
-        while (!isShutDown.get()) {
-            List<TapEvent> tapEvents = list();
-            ChangeStreamIterable<Document> changeStream;
-            if (offset != null) {
-                //报错之后， 再watch一遍
-                //如果完全没事件， 就需要从当前时间开始watch
-                changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
-            } else {
-                changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
-            }
+				mongodbStreamReader.read(tableList, offset, eventBatchSize, consumer);
 
-            if(streamCursor != null) {
-                streamCursor.close();
-            }
-            streamCursor = changeStream.cursor();
-            consumer.streamReadStarted();
-            while (!isShutDown.get()) {
-                ChangeStreamDocument<Document> event = streamCursor.tryNext();
-                if(event == null) {
-                    if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
-                    tapEvents = list();
-                    boolean cursorClosed = false;
-                    String errorMessage = "null";
-                    try {
-                        if (!streamCursor.hasNext()) {
-                            cursorClosed = true;
-                        }
-                    } catch(Throwable throwable) {
-                        throwable.printStackTrace();
-                        if(throwable.getMessage().contains("closed")) {
-                            cursorClosed = true;
-                        }
-                        errorMessage = throwable.getMessage();
-                    }
-                    if(cursorClosed) {
-                        TapLogger.warn(TAG, "streamCursor is not alive anymore or error occurred {}, sleep 10 seconds to avoid cpu consumption. This connector should be stopped by incremental engine.", errorMessage);
-                        sleep(10000);
-                    }
-                    continue;
-                }
-                if(tapEvents.size() >= eventBatchSize) {
-                    if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
-                    tapEvents = list();
-                }
-
-                MongoNamespace mongoNamespace = event.getNamespace();
-
-                String collectionName = null;
-                if(mongoNamespace != null) {
-                    collectionName = mongoNamespace.getCollectionName();
-                }
-                if(collectionName == null)
-                    continue;
-                resumeToken = event.getResumeToken();
-                OperationType operationType = event.getOperationType();
-                Document fullDocument = event.getFullDocument();
-                if (operationType == OperationType.INSERT) {
-                    DataMap after = new DataMap();
-                    after.putAll(fullDocument);
-                    TapInsertRecordEvent recordEvent = insertRecordEvent(after, collectionName);
-                    tapEvents.add(recordEvent);
-                } else if (operationType == OperationType.DELETE) {
-                    DataMap before = new DataMap();
-                    if (event.getDocumentKey() != null) {
-                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
-                        TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, collectionName);
-                        tapEvents.add(recordEvent);
-                    } else {
-                        TapLogger.error(TAG, "Document key is null, failed to delete. {}", event);
-                    }
-                } else if (operationType == OperationType.UPDATE) {
-                    DataMap before = new DataMap();
-                    if (event.getDocumentKey() != null) {
-                        before.put("_id", getIdValue(event.getDocumentKey().get("_id")));
-                        DataMap after = new DataMap();
-                        after.putAll(fullDocument);
-                        after.remove("_id");
-
-                        TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, collectionName);
-                        tapEvents.add(recordEvent);
-                    } else {
-                        TapLogger.error(TAG, "Document key is null, failed to update. {}", event);
-                    }
-                } else {
-                    TapLogger.error(TAG, "Unsupported operationType {}, {}", operationType, event);
-                }
-            }
-        }
-    }
-
-    private Object getIdValue(BsonValue id) {
-        BsonType bsonType = id.getBsonType();
-        if(bsonType == null)
-            return null;
-        switch (bsonType) {
-//            case NULL:
-//                break;
-//            case ARRAY:
-//                break;
-            case INT32:
-                return id.asInt32().getValue();
-            case INT64:
-                return id.asInt64().getValue();
-            case BINARY:
-                return id.asBinary().getData();
-            case DOUBLE:
-                return id.asDouble().getValue();
-            case STRING:
-                return id.asString().getValue();
-            case SYMBOL:
-                return id.asSymbol().getSymbol();
-            case BOOLEAN:
-                return id.asBoolean().getValue();
-//            case MAX_KEY:
-//                break;
-//            case MIN_KEY:
-//                break;
-//            case DOCUMENT:
-//                break;
-            case DATE_TIME:
-                return id.asDateTime().getValue();
-            case OBJECT_ID:
-                return id.asObjectId().getValue();
-            case TIMESTAMP:
-                return id.asTimestamp().getValue();
-//            case UNDEFINED:
-//                break;
-//            case DB_POINTER:
-//                break;
-            case DECIMAL128:
-                return id.asDecimal128().getValue();
-//            case JAVASCRIPT:
-//                break;
-//            case END_OF_DOCUMENT:
-//                break;
-//            case REGULAR_EXPRESSION:
-//                break;
-//            case JAVASCRIPT_WITH_SCOPE:
-//                break;
-        }
-        return null;
     }
     /**
      * The method invocation life circle is below,
@@ -746,8 +486,22 @@ public class MongodbConnector extends ConnectorBase {
 //            mongoClient.close();
 //        }
         isShutDown.set(true);
-        if(streamCursor != null) {
-            streamCursor.close();
+        if(mongodbStreamReader != null) {
+						mongodbStreamReader.onDestroy();
         }
+
+				if (mongoClient != null) {
+						mongoClient.close();
+				}
+
+				if (mongodbWriter != null) {
+						mongodbWriter.onDestroy();
+				}
     }
+
+		private MongodbStreamReader createStreamReader(){
+				final MongodbV4StreamReader mongodb4StreamReader = new MongodbV4StreamReader();
+				mongodb4StreamReader.onStart(mongoConfig);
+				return mongodb4StreamReader;
+		}
 }

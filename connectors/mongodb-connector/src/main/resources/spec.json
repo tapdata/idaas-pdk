@@ -1,7 +1,7 @@
 {
   "properties": {
     "name": "MongoDB",
-    "icon": "icons/icon.png",
+    "icon": "icons/mongodb.svg",
     "id": "mongodb"
   },
   "configOptions": {
