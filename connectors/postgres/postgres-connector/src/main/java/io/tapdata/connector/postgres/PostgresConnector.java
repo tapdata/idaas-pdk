@@ -70,7 +70,7 @@ public class PostgresConnector extends ConnectorBase {
         while (tableResult.next()) {
             String tableName = tableResult.getString("TABLE_NAME");
             //1、filter by tableList
-            if (tables != null && tables.stream().noneMatch(tableName::equals)) {
+            if (SmartKit.isNotEmpty(tables) && tables.stream().noneMatch(tableName::equals)) {
                 continue;
             }
             //2、table name
