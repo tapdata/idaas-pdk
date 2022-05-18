@@ -1,7 +1,10 @@
 package io.tapdata.entity.schema.value;
 
 import java.sql.Timestamp;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -80,6 +83,23 @@ public class DateTime {
             return null;
         }
         return new Date(milliseconds);
+    }
+
+    public java.sql.Date toSqlDate() {
+        long milliseconds;
+        if(seconds != null) {
+            milliseconds = seconds * 1000;
+            if(nano != null) {
+                milliseconds = milliseconds + (nano / 1000 / 1000);
+            }
+        } else {
+            return null;
+        }
+        return new java.sql.Date(milliseconds);
+    }
+
+    public java.sql.Time toTime() {
+        return null;
     }
 
     public Timestamp toTimestamp() {

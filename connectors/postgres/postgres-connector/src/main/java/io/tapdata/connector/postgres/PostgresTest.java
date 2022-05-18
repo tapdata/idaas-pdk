@@ -8,21 +8,18 @@ import io.tapdata.util.NetUtil;
 
 import java.io.IOException;
 import java.sql.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.tapdata.base.ConnectorBase.testItem;
 
-public class PostgresTest {
+public class PostgresTest implements AutoCloseable {
 
     private final PostgresConfig postgresConfig;
     private Connection conn;
 
     public PostgresTest(TapConnectionContext tapConnectionContext) {
         DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
-        try {
-            postgresConfig = PostgresConfig.load(connectionConfig);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        postgresConfig = PostgresConfig.load(connectionConfig);
     }
 
     //Test host and port
@@ -48,22 +45,29 @@ public class PostgresTest {
 
     //Test number of tables and privileges
     public TestItem testPrivilege() {
-        try {
+        try (
+                PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+        ) {
+            AtomicInteger tablePrivileges = new AtomicInteger();
             PreparedStatement ps = conn.prepareStatement(
-                    "SELECT * FROM information_schema.table_privileges " +
+                    "SELECT count(*) FROM information_schema.table_privileges " +
                             "WHERE grantee=? AND table_catalog=? AND table_schema=? ");
             ps.setObject(1, postgresConfig.getUser());
             ps.setObject(2, postgresConfig.getDatabase());
             ps.setObject(3, postgresConfig.getSchema());
+            postgresJdbcContext.query(ps, resultSet -> {
+                resultSet.next();
+                tablePrivileges.set(resultSet.getInt(1));
+            });
             ResultSet privilegeResult = ps.executeQuery();
-            privilegeResult.last();
-            if (privilegeResult.getRow() >= 7 * tableCount()) {
+            privilegeResult.next();
+            if (tablePrivileges.get() >= 7 * tableCount()) {
                 return testItem(PostgresTestItem.CHECK_TABLE_PRIVILEGE.getContent(), TestItem.RESULT_SUCCESSFULLY);
             } else {
                 return testItem(PostgresTestItem.CHECK_TABLE_PRIVILEGE.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
                         "Current user may have no all privileges for some tables, Check it!");
             }
-        } catch (SQLException e) {
+        } catch (Throwable e) {
             return testItem(PostgresTestItem.CHECK_TABLE_PRIVILEGE.getContent(), TestItem.RESULT_FAILED, e.getMessage());
         }
     }
@@ -72,7 +76,7 @@ public class PostgresTest {
         try {
             ResultSet resultSet = conn.createStatement().executeQuery(
                     "SELECT * FROM  pg_roles WHERE rolname='" + postgresConfig.getUser() + "'");
-            resultSet.last();
+            resultSet.next();
             if (resultSet.getBoolean("rolreplication")) {
                 return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY);
             } else {
@@ -89,6 +93,13 @@ public class PostgresTest {
         ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{"TABLE"});
         tableResult.last();
         return tableResult.getRow();
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (conn != null) {
+            conn.close();
+        }
     }
 }
 

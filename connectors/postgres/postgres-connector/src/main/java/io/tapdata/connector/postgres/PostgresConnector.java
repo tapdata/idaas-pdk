@@ -70,7 +70,7 @@ public class PostgresConnector extends ConnectorBase {
         while (tableResult.next()) {
             String tableName = tableResult.getString("TABLE_NAME");
             //1、filter by tableList
-            if (tables != null && tables.stream().noneMatch(tableName::equals)) {
+            if (SmartKit.isNotEmpty(tables) && tables.stream().noneMatch(tableName::equals)) {
                 continue;
             }
             //2、table name
@@ -163,12 +163,12 @@ public class PostgresConnector extends ConnectorBase {
             return "null";
         });
         //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
-//        codecRegistry.registerFromTapValue(TapTimeValue.class, "text", tapTimeValue -> formatTapDateTime(tapTimeValue.getValue(), "HH:mm:ss"));
-//        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toTimestamp());
-//        codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> formatTapDateTime(tapDateValue.getValue(), "yyyy-MM-dd HH:mm:ss"));
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "text", tapTimeValue -> tapTimeValue.getValue().toString());
+        codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> formatTapDateTime(tapTimeValue.getValue(), "HH:mm:ss"));
         codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toTimestamp());
-        codecRegistry.registerFromTapValue(TapDateValue.class, "text", tapDateValue -> tapDateValue.getValue().toString());
+        codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toSqlDate());
+//        codecRegistry.registerFromTapValue(TapTimeValue.class, "text", tapTimeValue -> tapTimeValue.getValue().toString());
+//        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toTimestamp());
+//        codecRegistry.registerFromTapValue(TapDateValue.class, "text", tapDateValue -> tapDateValue.getValue().toString());
     }
 
     @Override

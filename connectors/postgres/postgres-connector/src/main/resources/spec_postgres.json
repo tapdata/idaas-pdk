@@ -97,6 +97,7 @@
     "char[($byte)]": {
       "byte": 10485760,
       "priority": 2,
+      "fixed": true,
       "to": "TapString"
     },
     "varchar[($byte)]": {
@@ -118,6 +119,7 @@
       "byte": 64,
       "defaultByte": 1,
       "priority": 3,
+      "fixed": true,
       "queryOnly": true,
       "to": "TapBinary"
     },

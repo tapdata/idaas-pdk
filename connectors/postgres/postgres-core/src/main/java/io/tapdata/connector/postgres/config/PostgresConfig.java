@@ -2,6 +2,7 @@ package io.tapdata.connector.postgres.config;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.tapdata.entity.logger.TapLogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class PostgresConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final String TAG = PostgresConfig.class.getSimpleName();
 
     private String jdbcDriver = "org.postgresql.Driver";
     private String databaseUrlPattern = "jdbc:postgresql://%s:%d/%s%s"; // last %s reserved for extend params
@@ -29,9 +31,15 @@ public class PostgresConfig implements Serializable {
     private String password;
     private int insertBatchSize = 1000;
 
-    public static PostgresConfig load(String jsonFile) throws IOException {
-        ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-        return mapper.readValue(new File(jsonFile), PostgresConfig.class);
+    public static PostgresConfig load(String jsonFile) {
+        try {
+            ObjectMapper mapper = new ObjectMapper(new JsonFactory());
+            return mapper.readValue(new File(jsonFile), PostgresConfig.class);
+        } catch (IOException e) {
+            TapLogger.error(TAG, "postgres config file is invalid!");
+            e.printStackTrace();
+            return new PostgresConfig();
+        }
     }
 
     /**
@@ -39,11 +47,16 @@ public class PostgresConfig implements Serializable {
      *
      * @param map config attributes in Map
      * @return Config
-     * @throws IOException IO exception
      */
-    public static PostgresConfig load(Map<String, Object> map) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue((new ObjectMapper()).writeValueAsString(map), PostgresConfig.class);
+    public static PostgresConfig load(Map<String, Object> map) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue((new ObjectMapper()).writeValueAsString(map), PostgresConfig.class);
+        } catch (IOException e) {
+            TapLogger.error(TAG, "postgres config map is invalid!");
+            e.printStackTrace();
+            return new PostgresConfig();
+        }
     }
 
     /**
