@@ -1,11 +1,13 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.codec.TapDefaultCodecs;
+import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.codec.impl.ToTapDateCodec;
 import io.tapdata.entity.schema.value.TapDateValue;
 import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.utils.InstanceFactory;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Date;
 
 import static io.tapdata.entity.simplify.TapSimplify.tapDate;
 
@@ -46,6 +48,11 @@ public class TapDate extends TapType {
     @Override
     public Class<? extends TapValue<?, ?>> tapValueClass() {
         return TapDateValue.class;
+    }
+
+    @Override
+    public ToTapValueCodec<?> toTapValueCodec() {
+        return InstanceFactory.instance(ToTapValueCodec.class, TapDefaultCodecs.TAP_DATE_VALUE);
     }
 
     public Boolean getWithTimeZone() {

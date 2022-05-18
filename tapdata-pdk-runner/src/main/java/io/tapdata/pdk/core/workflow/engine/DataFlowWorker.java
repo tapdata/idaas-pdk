@@ -3,8 +3,8 @@ package io.tapdata.pdk.core.workflow.engine;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.api.PDKIntegration;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.utils.Validator;
 import io.tapdata.pdk.core.utils.state.StateListener;
@@ -199,7 +199,7 @@ public class DataFlowWorker {
                 stateMachine.gotoState(STATE_INITIALIZING, "Dataflow " + dag.getId() + " start initializing");
             }
         } else {
-            throw new CoreException(ErrorCodes.MAIN_DATAFLOW_WORKER_ILLEGAL_STATE, "Dataflow worker state is illegal to init, current state is " + stateMachine.getCurrentState() + " expect state " + STATE_NONE);
+            throw new CoreException(PDKRunnerErrorCodes.MAIN_DATAFLOW_WORKER_ILLEGAL_STATE, "Dataflow worker state is illegal to init, current state is " + stateMachine.getCurrentState() + " expect state " + STATE_NONE);
         }
     }
 
@@ -241,13 +241,13 @@ public class DataFlowWorker {
     }
 
     public synchronized void init(TapDAG newDag, JobOptions jobOptions) {
-        Validator.checkNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, newDag);
-        Validator.checkAllNotNull(ErrorCodes.MAIN_DAG_IS_ILLEGAL, newDag.getId(), newDag.getHeadNodeIds());
+        Validator.checkNotNull(PDKRunnerErrorCodes.MAIN_DAG_IS_ILLEGAL, newDag);
+        Validator.checkAllNotNull(PDKRunnerErrorCodes.MAIN_DAG_IS_ILLEGAL, newDag.getId(), newDag.getHeadNodeIds());
 
         if(this.dag == null)
             this.dag = newDag;
         else
-            throw new CoreException(ErrorCodes.MAIN_DAG_WORKER_STARTED_ALREADY, "DAG worker has started for data flow " + this.dag.getId() + ", the data flow " + newDag.getId() + " can not start again");
+            throw new CoreException(PDKRunnerErrorCodes.MAIN_DAG_WORKER_STARTED_ALREADY, "DAG worker has started for data flow " + this.dag.getId() + ", the data flow " + newDag.getId() + " can not start again");
 
         if(jobOptions == null)
             jobOptions = new JobOptions();

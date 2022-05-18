@@ -1,7 +1,11 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.codec.TapDefaultCodecs;
+import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.codec.impl.ToTapStringCodec;
 import io.tapdata.entity.schema.value.TapStringValue;
 import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.utils.InstanceFactory;
 
 import static io.tapdata.entity.simplify.TapSimplify.tapString;
 
@@ -83,5 +87,10 @@ public class TapString extends TapType {
     @Override
     public Class<? extends TapValue<?, ?>> tapValueClass() {
         return TapStringValue.class;
+    }
+
+    @Override
+    public ToTapValueCodec<?> toTapValueCodec() {
+        return InstanceFactory.instance(ToTapValueCodec.class, TapDefaultCodecs.TAP_STRING_VALUE);
     }
 }

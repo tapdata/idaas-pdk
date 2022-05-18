@@ -98,7 +98,7 @@ public class TapTable extends TapItem<TapField> {
     private void indexCheck(TapIndex index) {
         if(index == null)
             throw new IllegalArgumentException("index is null when add into table " + name);
-        if(index.getFields() == null || index.getFields().isEmpty())
+        if(index.getIndexFields() == null || index.getIndexFields().isEmpty())
             throw new IllegalArgumentException("index fields is null or empty when add into table " + name);
     }
 
@@ -223,7 +223,7 @@ public class TapTable extends TapItem<TapField> {
     public void setComment(String comment) {
         this.comment = comment;
     }
-    
+
     public Long getLastUpdate() {
         return lastUpdate;
     }

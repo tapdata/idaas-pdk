@@ -4,6 +4,8 @@ import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
 import io.tapdata.entity.conversion.UnsupportedTypeFallbackHandler;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.entity.error.TapAPIErrorCodes;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.type.TapMapping;
@@ -33,6 +35,9 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
 
         for(Map.Entry<String, TapField> entry : sourceFields.entrySet()) {
             TapField field = entry.getValue();
+
+            if(field.getTapType() == null)
+                throw new CoreException(TapAPIErrorCodes.ERROR_TAP_TYPE_MISSING_ON_FIELD, "Tap type is missing for field {}", field);
 
             String dataType = null;
             //User custom codec
@@ -68,8 +73,9 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
                     }
                 }
             }
-
-            targetFieldMap.put(field.getName(), dataType == null ? largestStringMappingField : field.clone().dataType(dataType));
+            String largestStringDataType = largestStringMappingField != null ? largestStringMappingField.getDataType() : null;
+            targetFieldMap.put(field.getName(), dataType == null ? field.clone().dataType(largestStringDataType)
+                    : field.clone().dataType(dataType));
         }
         if(finalResult.getResultItems() != null && !finalResult.getResultItems().isEmpty()) {
             finalResult.result(TapResult.RESULT_SUCCESSFULLY_WITH_WARN);

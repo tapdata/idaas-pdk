@@ -1,8 +1,8 @@
 package io.tapdata.pdk.core.monitor;
 
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
 import java.util.Map;
@@ -106,7 +106,7 @@ public class PDKInvocationMonitor {
             throwable.printStackTrace();
             theError = throwable;
 
-            CoreException coreException = new CoreException(ErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
+            CoreException coreException = new CoreException(PDKRunnerErrorCodes.COMMON_UNKNOWN, throwable.getMessage(), throwable);
             if(errorConsumer != null) {
                 errorConsumer.accept(coreException);
             } else {

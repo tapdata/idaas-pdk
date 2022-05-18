@@ -94,7 +94,24 @@ public class RegisterCli extends CommonCli {
                     }
 
                     JSONObject o = (JSONObject) JSON.toJSON(specification);
-                    o.put("type", nodeInfo.getNodeType());
+                    String nodeType = null;
+                    switch (nodeInfo.getNodeType()) {
+                        case TapNodeInfo.NODE_TYPE_SOURCE:
+                            nodeType = "source";
+                            break;
+                        case TapNodeInfo.NODE_TYPE_SOURCE_TARGET:
+                            nodeType = "source_and_target";
+                            break;
+                        case TapNodeInfo.NODE_TYPE_TARGET:
+                            nodeType = "target";
+                            break;
+                        case TapNodeInfo.NODE_TYPE_PROCESSOR:
+                            nodeType = "processor";
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unknown node type " + nodeInfo.getNodeType());
+                    }
+                    o.put("type", nodeType);
                     // get the version info and group info from jar
                     o.put("version", nodeInfo.getNodeClass().getPackage().getImplementationVersion());
                     o.put("group", nodeInfo.getNodeClass().getPackage().getImplementationVendor());

@@ -1,7 +1,7 @@
 package io.tapdata.pdk.core.utils.queue;
 
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -39,7 +39,7 @@ public class SingleThreadQueue<T> implements Runnable {
 
     public void start(){
         if(isStopping.get())
-            throw new CoreException(ErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadQueue is stopped");
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadQueue is stopped");
         if(isRunning.compareAndSet(false, true)){
             threadPoolExecutor.execute(this);
         }
@@ -81,7 +81,7 @@ public class SingleThreadQueue<T> implements Runnable {
 
     public void offer(T t){
         if(isStopping.get())
-            throw new CoreException(ErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadQueue is stopped");
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadQueue is stopped");
         if(queue.isEmpty()){
             synchronized (this){
                 queue.add(t);

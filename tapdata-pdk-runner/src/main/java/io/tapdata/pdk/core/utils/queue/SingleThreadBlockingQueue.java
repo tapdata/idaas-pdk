@@ -1,8 +1,8 @@
 package io.tapdata.pdk.core.utils.queue;
 
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.pdk.core.error.CoreException;
-import io.tapdata.pdk.core.error.ErrorCodes;
+import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.DataFlowEngine;
@@ -96,16 +96,16 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
     }
     private void startPrivate(){
         if(isStopping.get())
-            throw new CoreException(ErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadBlockingQueue is stopped");
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadBlockingQueue is stopped");
         if(isRunning.compareAndSet(false, true)){
             threadPoolExecutor.execute(this);
         }
     }
     public SingleThreadBlockingQueue<T> start(){
         if(isStopping.get())
-            throw new CoreException(ErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadBlockingQueue is stopped");
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadBlockingQueue is stopped");
         if(threadPoolExecutor == null)
-            throw new CoreException(ErrorCodes.COMMON_SINGLE_THREAD_BLOCKING_QUEUE_NO_EXECUTOR, "SingleThreadBlockingQueue " + name + " no threadPoolExecutor");
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_SINGLE_THREAD_BLOCKING_QUEUE_NO_EXECUTOR, "SingleThreadBlockingQueue " + name + " no threadPoolExecutor");
 
         if(queue == null) {
             queue = new LinkedBlockingQueue<>(maxSize);
@@ -202,9 +202,9 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
 
     public void offer(T t) {
         if(queue == null)
-            throw new CoreException(ErrorCodes.COMMON_ILLEGAL_PARAMETERS, "Queue is not initialized");
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_ILLEGAL_PARAMETERS, "Queue is not initialized");
         if(isStopping.get())
-            throw new CoreException(ErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadQueue is stopped");
+            throw new CoreException(PDKRunnerErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadQueue is stopped");
 
 //        ensureSingleThreadInputQueue.offerAndStart(t);
         input(t);

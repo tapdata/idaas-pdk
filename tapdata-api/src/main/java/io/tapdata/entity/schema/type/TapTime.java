@@ -1,10 +1,13 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.codec.TapDefaultCodecs;
+import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.codec.impl.ToTapTimeCodec;
 import io.tapdata.entity.schema.value.TapTimeValue;
 import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.utils.InstanceFactory;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 import static io.tapdata.entity.simplify.TapSimplify.tapTime;
 
@@ -77,5 +80,10 @@ public class TapTime extends TapType {
     @Override
     public Class<? extends TapValue<?, ?>> tapValueClass() {
         return TapTimeValue.class;
+    }
+
+    @Override
+    public ToTapValueCodec<?> toTapValueCodec() {
+        return InstanceFactory.instance(ToTapValueCodec.class, TapDefaultCodecs.TAP_TIME_VALUE);
     }
 }

@@ -12,6 +12,8 @@ import io.tapdata.entity.utils.DataMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static io.tapdata.entity.simplify.TapSimplify.tapRaw;
+
 @Implementation(value = TableFieldTypesGenerator.class, buildNumber = 0)
 public class TableFieldTypesGeneratorImpl implements TableFieldTypesGenerator {
     private static final String TAG = TableFieldTypesGenerator.class.getSimpleName();
@@ -26,7 +28,8 @@ public class TableFieldTypesGeneratorImpl implements TableFieldTypesGenerator {
                         entry.getValue().setTapType(tapMapping.toTapType(entry.getValue().getDataType(), result.getParams()));
                     }
                 } else {
-                    TapLogger.error(TAG, "Field dataType {} didn't match corresponding TapMapping, please check your dataTypes json definition.", entry.getValue().getDataType());
+                    entry.getValue().setTapType(tapRaw());
+                    TapLogger.warn(TAG, "Field dataType {} didn't match corresponding TapMapping, TapRaw will be used for this dataType. ", entry.getValue().getDataType());
                 }
             }
         }
@@ -42,7 +45,8 @@ public class TableFieldTypesGeneratorImpl implements TableFieldTypesGenerator {
                 tapField.setTapType(tapMapping.toTapType(tapField.getDataType(), result.getParams()));
             }
         } else {
-            TapLogger.error(TAG, "Field originType {} didn't match corresponding TapMapping, please check your dataTypes json definition.", tapField.getDataType());
+            tapField.setTapType(tapRaw());
+            TapLogger.warn(TAG, "Field originType {} didn't match corresponding TapMapping, TapRaw will be used for this dataType. ", tapField.getDataType());
         }
     }
 }
