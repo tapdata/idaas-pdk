@@ -91,6 +91,7 @@ The "to" means the data type expression will be converted to the specified TapTy
 Common fields
 ```text
 {
+  "name" : "typeName", //Optional, name of data type, will display to users. 
   "queryOnly" : true, //Optional, default is false. The type is only for query, will not be used for table creation. 
   "priority" : 1 //Optional, default is Integer.MAX_VALUE. If source type matches multiple target types which is the same score (bit or bytes), then the target type will be selected when the priority is the smallest.
   "pkEnablement" : true //Optional, default is true. Whether the data type can be primary key or not. 
