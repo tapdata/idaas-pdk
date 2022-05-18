@@ -4,8 +4,8 @@ package io.tapdata.entity.verification;
  * The difference for each map key.
  */
 public class DiffEntry {
-    public static DiffEntry create() {
-        return new DiffEntry();
+    public static DiffEntry create(String key) {
+        return new DiffEntry().key(key);
     }
 
     /**
