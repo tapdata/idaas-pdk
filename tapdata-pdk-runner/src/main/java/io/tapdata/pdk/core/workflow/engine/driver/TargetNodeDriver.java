@@ -22,6 +22,7 @@ import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.simplify.pretty.ClassHandlers;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
@@ -42,7 +43,7 @@ import static io.tapdata.entity.simplify.TapSimplify.table;
 public class TargetNodeDriver extends Driver implements ListHandler<List<TapEvent>> {
     private static final String TAG = TargetNodeDriver.class.getSimpleName();
 
-    private TargetNode targetNode;
+    private ConnectorNode targetNode;
 
     private List<String> actionsBeforeStart;
 
@@ -412,11 +413,11 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         return null;
     }
 
-    public TargetNode getTargetNode() {
+    public ConnectorNode getTargetNode() {
         return targetNode;
     }
 
-    public void setTargetNode(TargetNode targetNode) {
+    public void setTargetNode(ConnectorNode targetNode) {
         this.targetNode = targetNode;
     }
 
