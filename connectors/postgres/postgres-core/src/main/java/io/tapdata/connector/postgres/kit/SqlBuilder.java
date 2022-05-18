@@ -98,7 +98,7 @@ public class SqlBuilder {
                     preparedStatement.setObject(pos, null);
                 }
             } else {
-                preparedStatement.setObject(pos, getFieldOriginValue(tapValue));
+                preparedStatement.setObject(pos, tapValue);
             }
             pos += 1;
         }
@@ -151,9 +151,9 @@ public class SqlBuilder {
             record.forEach((fieldName, value) -> {
                 builder.append('\"').append(fieldName).append('\"').append(operator);
                 if (!(value instanceof Number)) {
-                    builder.append('\'').append(getFieldOriginValue(value)).append('\'');
+                    builder.append('\'').append(value).append('\'');
                 } else {
-                    builder.append(getFieldOriginValue(value));
+                    builder.append(value);
                 }
                 builder.append(' ').append(splitSymbol).append(' ');
             });
@@ -184,14 +184,4 @@ public class SqlBuilder {
      * return builder.toString();
      * }
      */
-
-    private static Object getFieldOriginValue(Object tapValue) {
-//        if (tapValue instanceof DateTime) {
-//            DateTime dateTime = (DateTime) tapValue;
-//            return new java.sql.Date(dateTime.getSeconds() * 1000L + dateTime.getNano() / 1000000L);
-//        } else if (tapValue instanceof Date) {
-//            return new java.sql.Date(((Date) tapValue).getTime());
-//        }
-        return tapValue;
-    }
 }
