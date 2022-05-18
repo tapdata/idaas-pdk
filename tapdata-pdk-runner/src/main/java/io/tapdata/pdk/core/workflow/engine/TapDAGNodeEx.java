@@ -5,6 +5,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.api.SourceAndTargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
@@ -77,7 +78,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                     sourceNodeDriver = new SourceNodeDriver();
                 }
                 if(sourceNodeDriver.getSourceNode() == null) {
-                    sourceNodeDriver.setSourceNode(PDKIntegration.createSourceBuilder()
+                    sourceNodeDriver.setSourceNode(PDKIntegration.createConnectorBuilder()
                             .withTapDAGNode(this)
                             .withDagId(dag.getId())
                             .build());
@@ -96,7 +97,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                 }
                 break;
             case TapDAGNode.TYPE_SOURCE_TARGET:
-                SourceAndTargetNode sourceAndTargetNode = PDKIntegration.createSourceAndTargetBuilder()
+                ConnectorNode sourceAndTargetNode = PDKIntegration.createConnectorBuilder()
                         .withTapDAGNode(this)
                         .withDagId(dag.getId())
                         .build();
@@ -104,7 +105,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                     sourceNodeDriver = new SourceNodeDriver();
                 }
                 if(sourceNodeDriver.getSourceNode() == null) {
-                    sourceNodeDriver.setSourceNode(sourceAndTargetNode.getSourceNode());
+                    sourceNodeDriver.setSourceNode(sourceAndTargetNode);
                 }
                 configSourceNodeDriver(sourceNodeDriver, jobOptions);
 
@@ -112,7 +113,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                     targetNodeDriver = new TargetNodeDriver();
                 }
                 if(targetNodeDriver.getTargetNode() == null) {
-                    targetNodeDriver.setTargetNode(sourceAndTargetNode.getTargetNode());
+                    targetNodeDriver.setTargetNode(sourceAndTargetNode);
                 }
                 configTargetNodeDriver(targetNodeDriver, jobOptions);
                 break;
@@ -121,7 +122,7 @@ public class TapDAGNodeEx extends TapDAGNode {
                     targetNodeDriver = new TargetNodeDriver();
                 }
                 if(targetNodeDriver.getTargetNode() == null) {
-                    targetNodeDriver.setTargetNode(PDKIntegration.createTargetBuilder()
+                    targetNodeDriver.setTargetNode(PDKIntegration.createConnectorBuilder()
                             .withTapDAGNode(this)
                             .withDagId(dag.getId())
                             .build());

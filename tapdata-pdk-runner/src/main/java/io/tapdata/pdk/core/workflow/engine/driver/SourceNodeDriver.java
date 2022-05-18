@@ -27,6 +27,7 @@ import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
@@ -42,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
 
-    private SourceNode sourceNode;
+    private ConnectorNode sourceNode;
 
     private byte[] streamOffsetBytes;
     private byte[] batchOffsetBytes;
@@ -60,11 +61,11 @@ public class SourceNodeDriver extends Driver {
     private final AtomicBoolean firstBatchRecordsOffered = new AtomicBoolean(false);
     private final AtomicBoolean shutDown = new AtomicBoolean(false);
 
-    public SourceNode getSourceNode() {
+    public ConnectorNode getSourceNode() {
         return sourceNode;
     }
 
-    public void setSourceNode(SourceNode sourceNode) {
+    public void setSourceNode(ConnectorNode sourceNode) {
         this.sourceNode = sourceNode;
     }
 
