@@ -64,6 +64,10 @@ public class TapCodecsRegistry {
 //        fieldToTapValueCodecMap.remove(fieldName);
 //    }
 
+    public ToTapValueCodec<?> getCustomToTapValueCodec(Class<?> clazz) {
+        ToTapValueCodec<?> codec = classToTapValueCodecMap.get(clazz);
+        return codec;
+    }
 
     public ToTapValueCodec<?> getToTapValueCodec(Class<?> clazz) {
         ToTapValueCodec<?> codec = classToTapValueCodecMap.get(clazz);
@@ -102,6 +106,11 @@ public class TapCodecsRegistry {
             this.tapTypeDataTypeMap.clear();
             this.tapTypeDataTypeMap.putAll(tapTypeDataTypeMap);
         }
+    }
+
+    public TapCodecsRegistry withTapTypeDataTypeMap(Map<Class<?>, String> tapTypeDataTypeMap) {
+        setTapTypeDataTypeMap(tapTypeDataTypeMap);
+        return this;
     }
 
     //    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {

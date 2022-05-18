@@ -11,9 +11,6 @@ public class ToTapRawCodec implements ToTapValueCodec<TapRawValue> {
 
     @Override
     public TapRawValue toTapValue(Object value, TapType typeFromSchema) {
-
-        TapRawValue arrayValue = new TapRawValue(value);
-
-        return arrayValue;
+        return new TapRawValue(value);
     }
 }

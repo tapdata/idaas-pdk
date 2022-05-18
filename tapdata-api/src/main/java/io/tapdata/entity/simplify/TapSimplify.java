@@ -1,9 +1,16 @@
 package io.tapdata.entity.simplify;
 
+import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
+import io.tapdata.entity.event.ddl.index.TapDeleteIndexEvent;
+import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
+import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
+import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
+import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.schema.value.DateTime;
@@ -128,6 +135,51 @@ public class TapSimplify {
             }
         }
         return map;
+    }
+
+    public static TapDropTableEvent dropTableEvent(String tableId) {
+        TapDropTableEvent dropTableEvent = new TapDropTableEvent();
+        dropTableEvent.setTime(System.currentTimeMillis());
+        dropTableEvent.setTableId(tableId);
+        return dropTableEvent;
+    }
+
+    public static TapCreateTableEvent createTableEvent(TapTable table) {
+        TapCreateTableEvent createTableEvent = new TapCreateTableEvent();
+        createTableEvent.setTime(System.currentTimeMillis());
+        createTableEvent.setTable(table);
+        createTableEvent.setTableId(table.getId());
+        return createTableEvent;
+    }
+
+    public static TapClearTableEvent clearTableEvent(String tableId) {
+        TapClearTableEvent clearTableEvent = new TapClearTableEvent();
+        clearTableEvent.setTime(System.currentTimeMillis());
+        clearTableEvent.setTableId(tableId);
+        return clearTableEvent;
+    }
+
+    public static TapAlterTableEvent alterTableEvent(String tableId) {
+        TapAlterTableEvent alterTableEvent = new TapAlterTableEvent();
+        alterTableEvent.setTime(System.currentTimeMillis());
+        alterTableEvent.setTableId(tableId);
+        return alterTableEvent;
+    }
+
+    public static TapCreateIndexEvent createIndexEvent(String tableId, List<TapIndex> indexList) {
+        TapCreateIndexEvent createIndexEvent = new TapCreateIndexEvent();
+        createIndexEvent.setTime(System.currentTimeMillis());
+        createIndexEvent.setTableId(tableId);
+        createIndexEvent.setIndexList(indexList);
+        return createIndexEvent;
+    }
+
+    public static TapDeleteIndexEvent deleteIndexEvent(String tableId, List<String> indexNames) {
+        TapDeleteIndexEvent deleteIndexEvent = new TapDeleteIndexEvent();
+        deleteIndexEvent.setTableId(tableId);
+        deleteIndexEvent.setTime(System.currentTimeMillis());
+        deleteIndexEvent.setIndexNames(indexNames);
+        return deleteIndexEvent;
     }
 
     public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, String table) {

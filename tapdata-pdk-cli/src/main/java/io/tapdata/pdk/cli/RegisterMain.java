@@ -21,6 +21,7 @@ public class RegisterMain {
 
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/empty-connector-v1.1-SNAPSHOT.jar",
                 "/Users/samuel/IdeaProjects/tapdata/idaas-pdk/dist/mysql-connector-v1.0-SNAPSHOT.jar",
+                "/Users/samuel/IdeaProjects/tapdata/idaas-pdk/dist/postgres-connector-v1.0-SNAPSHOT.jar",
         };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);

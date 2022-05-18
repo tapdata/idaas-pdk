@@ -11,29 +11,16 @@ public class TapIndex implements Serializable {
     /**
      * Index fields
      */
-    private List<String> fields;
-    /**
-     * Asc list should be the same size of fields. or null.
-     * Each item stand for each field is asc or not.
-     */
-    private List<Boolean> fieldAscList;
+    private List<TapIndexField> indexFields;
 
     private boolean unique;
 
-    public List<String> getFields() {
-        return fields;
+    public List<TapIndexField> getIndexFields() {
+        return indexFields;
     }
 
-    public void setFields(List<String> fields) {
-        this.fields = fields;
-    }
-
-    public List<Boolean> getFieldAscList() {
-        return fieldAscList;
-    }
-
-    public void setFieldAscList(List<Boolean> fieldAscList) {
-        this.fieldAscList = fieldAscList;
+    public void setIndexFields(List<TapIndexField> indexFields) {
+        this.indexFields = indexFields;
     }
 
     public boolean isUnique() {

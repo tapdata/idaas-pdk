@@ -26,7 +26,7 @@ public class NetUtil {
 	 */
 	public static void validateHostPortWithSocket(String host, int port, int timeoutMs) throws IOException, IllegalArgumentException {
 		if (StringUtils.isBlank(host)) throw new IllegalArgumentException("Host cannot be empty");
-		if (port <= 0) throw new IllegalArgumentException("Port must greater than 0");
+		if (port <= 0 || port >= 65536) throw new IllegalArgumentException("Port must greater than 0 and smaller then 65536");
 		timeoutMs = timeoutMs <= 1000 ? DEFAULT_SOCKET_TIMEOUT_MS : timeoutMs;
 		try {
 			Socket s = new Socket();

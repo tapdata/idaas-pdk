@@ -1,7 +1,11 @@
 package io.tapdata.entity.schema.type;
 
+import io.tapdata.entity.codec.TapDefaultCodecs;
+import io.tapdata.entity.codec.ToTapValueCodec;
+import io.tapdata.entity.codec.impl.ToTapNumberCodec;
 import io.tapdata.entity.schema.value.TapNumberValue;
 import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.utils.InstanceFactory;
 
 import java.math.BigDecimal;
 
@@ -156,5 +160,10 @@ public class TapNumber extends TapType {
     @Override
     public Class<? extends TapValue<?, ?>> tapValueClass() {
         return TapNumberValue.class;
+    }
+
+    @Override
+    public ToTapValueCodec<?> toTapValueCodec() {
+        return InstanceFactory.instance(ToTapValueCodec.class, TapDefaultCodecs.TAP_NUMBER_VALUE);
     }
 }

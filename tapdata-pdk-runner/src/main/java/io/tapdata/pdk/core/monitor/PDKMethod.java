@@ -34,7 +34,9 @@ public enum PDKMethod {
     TARGET_CLEAR_TABLE,
     TARGET_CREATE_TABLE,
     TARGET_ALTER_TABLE,
-    SOURCE_STREAM_READ;
+    SOURCE_STREAM_READ,
+    TARGET_CREATE_INDEX,
+    ;
 
     PDKMethod() {
 

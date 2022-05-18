@@ -2,20 +2,25 @@ package io.tapdata.entity.codec.filter;
 
 import io.tapdata.entity.codec.FromTapValueCodec;
 import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.codec.filter.impl.FirstLayerMapIterator;
 import io.tapdata.entity.error.UnknownCodecException;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapValue;
+import io.tapdata.entity.utils.InstanceFactory;
 
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static io.tapdata.entity.simplify.TapSimplify.field;
+import static io.tapdata.entity.simplify.TapSimplify.tapRaw;
 
 public class TapCodecsFilterManager {
+    private static final String TAG = TapCodecsFilterManager.class.getSimpleName();
     private MapIterator mapIterator;
     private final TapCodecsRegistry codecsRegistry;
 
@@ -36,26 +41,44 @@ public class TapCodecsFilterManager {
             Object theValue = entry.getValue();
             String fieldName = entry.getKey();
             if(theValue != null && fieldName != null) {
-                ToTapValueCodec<?> valueCodec = this.codecsRegistry.getToTapValueCodec(theValue.getClass());
+
+                String dataType = null;
+                TapType typeFromSchema = null;
+                ToTapValueCodec<?> valueCodec = null;
+                if(nameFieldMap != null) {
+                    valueCodec = this.codecsRegistry.getCustomToTapValueCodec(theValue.getClass());
+
+                    TapField field = nameFieldMap.get(fieldName);
+                    if(field != null) {
+                        dataType = field.getDataType();
+                        typeFromSchema = field.getTapType();
+                        if(typeFromSchema != null && valueCodec == null)
+                            valueCodec = typeFromSchema.toTapValueCodec();
+                    }
+                }
+                boolean handleByTypeCodec = false;
+                if(valueCodec == null) {
+                    valueCodec = this.codecsRegistry.getToTapValueCodec(theValue.getClass());
+                    handleByTypeCodec = true;
+                }
 //                if(valueCodec == null)
 //                    throw new UnknownCodecException("toTapValueMap codec not found for value class " + theValue.getClass());
                 if(valueCodec != null) {
-                    String dataType = null;
-                    TapType typeFromSchema = null;
-                    if(nameFieldMap != null) {
-                        TapField field = nameFieldMap.get(fieldName);
-                        if(field != null) {
-                            dataType = field.getDataType();
-                            typeFromSchema = field.getTapType();
-//                            Type[] types = valueCodec.getClass().getGenericInterfaces();
-//                            ((ParameterizedTypeImpl) valueCodec.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0]
-//                            if(types != null && types.length > 0) {
-//
-//                            }
-//                            if(typeFromSchema.getTapValueClass() )
+                    TapValue tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
+                    if(tapValue == null && !handleByTypeCodec) {
+                        TapLogger.warn(TAG, "Value Codec {} from model convert TapValue failed, value {}", valueCodec.getClass().getSimpleName(), theValue);
+                        valueCodec = this.codecsRegistry.getToTapValueCodec(theValue.getClass());
+                        if(valueCodec != null) {
+                            tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
+                            if(tapValue == null) {
+                                TapLogger.warn(TAG, "Value Codec {} from type convert TapValue failed, value {}", valueCodec.getClass().getSimpleName(), theValue);
+                            }
                         }
                     }
-                    TapValue tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
+                    if(tapValue == null) {
+                        tapValue = InstanceFactory.instance(ToTapValueCodec.class, TapDefaultCodecs.TAP_RAW_VALUE)
+                                .toTapValue(theValue, typeFromSchema);
+                    }
                     tapValue.setOriginType(dataType);
                     if(typeFromSchema == null)
                         typeFromSchema = tapValue.createDefaultTapType();

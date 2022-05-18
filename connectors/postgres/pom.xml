@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.tapdata.pdk</groupId>
+    <artifactId>connectors</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>io.tapdata</groupId>
+  <artifactId>postgres</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>Postgres</name>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>postgres-core</module>
+    <module>postgres-connector</module>
+  </modules>
+
+  <properties>
+    <java.version>8</java.version>
+    <postgres.driver.version>42.3.4</postgres.driver.version>
+    <fastjson.version>2.13.2</fastjson.version>
+    <hikari.version>4.0.3</hikari.version>
+    <debezium.version>1.5.4.Final</debezium.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${postgres.driver.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>${hikari.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${fastjson.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+</project>

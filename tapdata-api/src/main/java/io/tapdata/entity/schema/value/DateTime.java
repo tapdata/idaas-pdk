@@ -1,7 +1,9 @@
 package io.tapdata.entity.schema.value;
 
+import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Objects;
@@ -25,7 +27,6 @@ public class DateTime {
     private TimeZone timeZone;
 
     public DateTime() {
-
     }
 
     public DateTime(ZonedDateTime zonedDateTime) {
@@ -34,14 +35,33 @@ public class DateTime {
     }
 
     public DateTime(Instant instant) {
+        if(instant == null)
+            throw new IllegalArgumentException("DateTime constructor instant is null");
         seconds = instant.getEpochSecond();
         nano = instant.getNano();
     }
 
     public DateTime(Date date) {
+        if(date == null)
+            throw new IllegalArgumentException("DateTime constructor date is null");
         long time = date.getTime();
         seconds = time / 1000;
         nano = (int)((time % 1000) * 1000000);
+    }
+
+    public DateTime(Long time) {
+        if(time == null)
+            throw new IllegalArgumentException("DateTime constructor time is null");
+        seconds = time / 1000;
+        nano = (int)((time % 1000) * 1000000);
+    }
+
+    public DateTime(LocalDateTime localDateTime) {
+        if(localDateTime == null)
+            throw new IllegalArgumentException("DateTime constructor localDateTime is null");
+        Instant instant = localDateTime.toInstant(ZoneOffset.UTC);
+        seconds = instant.getEpochSecond();
+        nano = instant.getNano();
     }
 
     public Instant toInstant() {
@@ -63,6 +83,36 @@ public class DateTime {
             return null;
         }
         return new Date(milliseconds);
+    }
+
+    public java.sql.Date toSqlDate() {
+        long milliseconds;
+        if(seconds != null) {
+            milliseconds = seconds * 1000;
+            if(nano != null) {
+                milliseconds = milliseconds + (nano / 1000 / 1000);
+            }
+        } else {
+            return null;
+        }
+        return new java.sql.Date(milliseconds);
+    }
+
+    public java.sql.Time toTime() {
+        return null;
+    }
+
+    public Timestamp toTimestamp() {
+        long milliseconds;
+        if(seconds != null) {
+            milliseconds = seconds * 1000;
+            if(nano != null) {
+                milliseconds = milliseconds + (nano / 1000 / 1000);
+            }
+        } else {
+            return null;
+        }
+        return new Timestamp(milliseconds);
     }
 
     @Override
