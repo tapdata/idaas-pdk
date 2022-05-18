@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 public class PostgresConnector extends ConnectorBase {
 
     private PostgresConfig postgresConfig;
+    private PostgresJdbcContext postgresJdbcContext;
     private Connection conn;
     private Statement stmt;
     private PostgresCdcRunner cdcRunner;
@@ -111,7 +112,7 @@ public class PostgresConnector extends ConnectorBase {
 
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
-        PostgresTest postgresTest = new PostgresTest(connectionContext);
+        PostgresTest postgresTest = new PostgresTest(postgresConfig);
         TestItem testHostPort = postgresTest.testHostPort();
         consumer.accept(testHostPort);
         if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
@@ -124,6 +125,7 @@ public class PostgresConnector extends ConnectorBase {
         }
         consumer.accept(postgresTest.testPrivilege());
         consumer.accept(postgresTest.testReplication());
+        postgresTest.close();
     }
 
     @Override

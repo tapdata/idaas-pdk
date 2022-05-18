@@ -55,6 +55,7 @@ public class PostgresJdbcContext implements AutoCloseable {
                 ResultSet resultSet = statement.executeQuery(sql)
         ) {
             if (null != resultSet) {
+                resultSet.next();
                 resultSetConsumer.accept(resultSet);
             }
         } catch (SQLException e) {
@@ -68,6 +69,7 @@ public class PostgresJdbcContext implements AutoCloseable {
                 ResultSet resultSet = preparedStatement.executeQuery()
         ) {
             if (null != resultSet) {
+                resultSet.next();
                 resultSetConsumer.accept(resultSet);
             }
         } catch (SQLException e) {

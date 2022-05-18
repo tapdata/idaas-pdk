@@ -1,4 +1,5 @@
 import io.tapdata.connector.postgres.PostgresJdbcContext;
+import io.tapdata.connector.postgres.PostgresTest;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 
 import java.sql.*;
@@ -15,22 +16,12 @@ public class Main {
         postgresConfig.setExtParams("");
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
-        PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
-        Connection conn = postgresJdbcContext.getConnection();
-//        DatabaseMetaData databaseMetaData = postgresJdbcContext.getConnection().getMetaData();
-//        ResultSet tableResult = databaseMetaData.getTables(postgresConfig.getDatabase(), postgresConfig.getSchema(), null, new String[]{"TABLE"});
-//        tableResult.last();
-        PreparedStatement ps = conn.prepareStatement(
-                "SELECT count(*) FROM information_schema.table_privileges " +
-                        "WHERE grantee=? AND table_catalog=? AND table_schema=? ");
-        ps.setObject(1, postgresConfig.getUser());
-        ps.setObject(2, postgresConfig.getDatabase());
-        ps.setObject(3, postgresConfig.getSchema());
-        postgresJdbcContext.query(ps, rs -> {
-            rs.next();
-            System.out.println(rs.getInt(1));
-        });
-
+        PostgresTest postgresTest = new PostgresTest(postgresConfig);
+        System.out.println(postgresTest.testHostPort().toString());
+        System.out.println(postgresTest.testConnect().toString());
+        System.out.println(postgresTest.testPrivilege().toString());
+        System.out.println(postgresTest.testReplication().toString());
+        postgresTest.close();
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {
 //            rs.last();
