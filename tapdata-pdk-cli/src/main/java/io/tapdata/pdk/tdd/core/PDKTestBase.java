@@ -531,7 +531,7 @@ public class PDKTestBase {
         dataFlowEngine.sendExternalTapEvent(dag.getId(), patrolEvent);
     }
 
-    protected void verifyUpdateOneRecord(TargetNode targetNode, DataMap before, DataMap verifyRecord) {
+    protected void verifyUpdateOneRecord(ConnectorNode targetNode, DataMap before, DataMap verifyRecord) {
         TapFilter filter = new TapFilter();
         filter.setMatch(before);
 //        filter.setTableId(targetNode.getTable());
@@ -546,7 +546,7 @@ public class PDKTestBase {
         }
     }
 
-    private FilterResult filterResults(TargetNode targetNode, TapFilter filter, TapTable targetTable) {
+    private FilterResult filterResults(ConnectorNode targetNode, TapFilter filter, TapTable targetTable) {
         QueryByFilterFunction queryByFilterFunction = targetNode.getConnectorFunctions().getQueryByFilterFunction();
         if(queryByFilterFunction != null) {
             List<FilterResult> results = new ArrayList<>();
@@ -575,12 +575,12 @@ public class PDKTestBase {
         return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime);
     }
 
-    protected long getBatchCount(SourceNode sourceNode, TapTable table) throws Throwable {
+    protected long getBatchCount(ConnectorNode sourceNode, TapTable table) throws Throwable {
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();
         return batchCountFunction.count(sourceNode.getConnectorContext(), table);
     }
 
-    protected void verifyTableNotExists(TargetNode targetNode, DataMap filterMap) {
+    protected void verifyTableNotExists(ConnectorNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
 //        filter.setTableId(targetNode.getTable());
@@ -596,7 +596,7 @@ public class PDKTestBase {
         }
     }
 
-    protected void verifyRecordNotExists(TargetNode targetNode, DataMap filterMap) {
+    protected void verifyRecordNotExists(ConnectorNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
 //        filter.setTableId(targetNode.getTable());
@@ -612,7 +612,7 @@ public class PDKTestBase {
         }
     }
 
-    protected void verifyBatchRecordExists(SourceNode sourceNode, TargetNode targetNode, DataMap filterMap) {
+    protected void verifyBatchRecordExists(ConnectorNode sourceNode, ConnectorNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
         TapTable sourceTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId(), TapTable.class).get(sourceNode.getTable());

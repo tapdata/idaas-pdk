@@ -340,6 +340,30 @@ public class PDKIntegration {
         }
     }
 
+    public static class ConnectorBuilderEx extends ConnectorBuilder<ConnectorNode> {
+        public ConnectorNode build() {
+            checkParams();
+            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
+            if(nodeInstance == null)
+                throw new CoreException(PDKRunnerErrorCodes.PDK_CONNECTOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
+            ConnectorNode connectorNode = new ConnectorNode();
+            connectorNode.init((TapConnector) nodeInstance.getTapNode());
+            connectorNode.dagId = dagId;
+            connectorNode.associateId = associateId;
+            connectorNode.tasks = tasks;
+            connectorNode.table = table;
+            connectorNode.tables = tables;
+            connectorNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
+            connectorNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
+            connectorNode.connectorContext.setTableMap(tableMap);
+
+            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+                    connectorNode::registerCapabilities,
+                    MessageFormat.format("call source functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
+            return connectorNode;
+        }
+    }
+
     public static class TargetConnectorBuilder extends ConnectorBuilder<TargetNode> {
         public TargetNode build() {
             checkParams();
@@ -447,16 +471,34 @@ public class PDKIntegration {
         tapConnectorManager.refreshJars();
     }
 
+    /**
+     * use createConnectorBuilder please
+     *
+     * @return
+     */
+    @Deprecated
     public static ConnectorBuilder<SourceAndTargetNode> createSourceAndTargetBuilder() {
         init();
         return new SourceAndTargetConnectorBuilder();
     }
 
+    /**
+     * use createConnectorBuilder please
+     *
+     * @return
+     */
+    @Deprecated
     public static ConnectorBuilder<SourceNode> createSourceBuilder() {
         init();
         return new SourceConnectorBuilder();
     }
 
+    /**
+     * use createConnectorBuilder please
+     *
+     * @return
+     */
+    @Deprecated
     public static ConnectorBuilder<TargetNode> createTargetBuilder() {
         init();
         return new TargetConnectorBuilder();
@@ -470,5 +512,10 @@ public class PDKIntegration {
     public static ConnectionConnectorBuilder createConnectionConnectorBuilder() {
         init();
         return new ConnectionConnectorBuilder();
+    }
+
+    public static ConnectorBuilder<ConnectorNode> createConnectorBuilder() {
+        init();
+        return new ConnectorBuilderEx();
     }
 }

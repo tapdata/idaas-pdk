@@ -1,5 +1,6 @@
 package io.tapdata.entity.mapping.type;
 
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.type.TapType;
@@ -11,7 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class TapMapping {
     public static final String FIELD_TYPE_MAPPING = "_tapMapping";
+    private static final String TAG = TapMapping.class.getSimpleName();
 
+    protected String name;
     protected String to;
     protected Boolean queryOnly = false;
     protected Integer priority = Integer.MAX_VALUE;
@@ -53,6 +56,12 @@ public abstract class TapMapping {
         Object toObj = info.get("to");
         if(toObj instanceof String)
             to = (String) toObj;
+
+        String name = null;
+        Object nameObj = info.get("name");
+        if(nameObj instanceof String)
+            name = (String) nameObj;
+
         Boolean queryOnly = null;
         Object queryOnlyObj = info.get("queryOnly");
         if(queryOnlyObj instanceof Boolean)
@@ -94,6 +103,7 @@ public abstract class TapMapping {
         try {
             TapMapping tapMapping = (TapMapping) mappingClass.getConstructor().newInstance();
             tapMapping.to = to;
+            tapMapping.name = name;
             if(priority != null)
                 tapMapping.priority = priority;
             if(pkEnablement != null)
@@ -103,8 +113,17 @@ public abstract class TapMapping {
             return tapMapping;
         } catch (Throwable e) {
             e.printStackTrace();
+            TapLogger.error(TAG, "TapMapping name {} to {} from info {} failed, {}", name, to, info, e.getMessage());
         }
         return null;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getTo() {

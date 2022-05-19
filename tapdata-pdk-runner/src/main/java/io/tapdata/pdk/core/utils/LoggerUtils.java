@@ -1,5 +1,6 @@
 package io.tapdata.pdk.core.utils;
 
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.ProcessorNode;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
@@ -10,11 +11,11 @@ public class LoggerUtils {
         return "dagId " + dagId + " associateId " + associateId + " pkdIdGroup " + pdkIdGroup + " version " + pdkVersion;
     }
 
-    public static String sourceNodeMessage(SourceNode sourceNode) {
+    public static String sourceNodeMessage(ConnectorNode sourceNode) {
         return "Source " + nodePrefix(sourceNode.getDagId(), sourceNode.getAssociateId(), sourceNode.getTapNodeInfo().getTapNodeSpecification().idAndGroup(), sourceNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
     }
 
-    public static String targetNodeMessage(TargetNode targetNode) {
+    public static String targetNodeMessage(ConnectorNode targetNode) {
         return "Target " + nodePrefix(targetNode.getDagId(), targetNode.getAssociateId(), targetNode.getTapNodeInfo().getTapNodeSpecification().idAndGroup(), targetNode.getTapNodeInfo().getTapNodeSpecification().getVersion());
     }
 

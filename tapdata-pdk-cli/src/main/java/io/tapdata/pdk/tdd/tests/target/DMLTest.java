@@ -11,6 +11,7 @@ import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
@@ -33,8 +34,8 @@ import static java.util.Arrays.asList;
 @DisplayName("Tests for target beginner test")
 public class DMLTest extends PDKTestBase {
     private static final String TAG = DMLTest.class.getSimpleName();
-    TargetNode targetNode;
-    SourceNode tddSourceNode;
+    ConnectorNode targetNode;
+    ConnectorNode tddSourceNode;
     PatrolEvent firstPatrolEvent;
     DataMap firstRecord;
     DataFlowWorker dataFlowWorker;

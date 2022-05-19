@@ -12,6 +12,7 @@ import io.tapdata.pdk.apis.functions.connector.target.WriteRecordFunction;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
@@ -44,8 +45,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests for source beginner test")
 public class BatchReadTest extends PDKTestBase {
     private static final String TAG = DMLTest.class.getSimpleName();
-    TargetNode tddTargetNode;
-    SourceNode sourceNode;
+    ConnectorNode tddTargetNode;
+    ConnectorNode sourceNode;
     DataFlowWorker dataFlowWorker;
     String targetNodeId = "t2";
     String testTargetNodeId = "tt1";

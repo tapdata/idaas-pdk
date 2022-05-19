@@ -108,6 +108,11 @@ public class TapCodecsRegistry {
         }
     }
 
+    public TapCodecsRegistry withTapTypeDataTypeMap(Map<Class<?>, String> tapTypeDataTypeMap) {
+        setTapTypeDataTypeMap(tapTypeDataTypeMap);
+        return this;
+    }
+
     //    public ToTapValueCodec<?> getFieldToTapValueCodec(String fieldName) {
 //        ToTapValueCodec<?> codec = fieldToTapValueCodecMap.get(fieldName);
 //        return codec;

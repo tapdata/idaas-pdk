@@ -10,6 +10,7 @@ import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
@@ -29,8 +30,8 @@ import static java.util.Arrays.asList;
 @DisplayName("Tests for target intermediate test")
 public class CreateTableTest extends PDKTestBase {
     private static final String TAG = CreateTableTest.class.getSimpleName();
-    TargetNode targetNode;
-    SourceNode tddSourceNode;
+    ConnectorNode targetNode;
+    ConnectorNode tddSourceNode;
     PatrolEvent firstPatrolEvent;
     Map<String, Object> firstRecord;
     DataFlowWorker dataFlowWorker;
