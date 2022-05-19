@@ -7,6 +7,7 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
+import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.SourceNode;
 import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
@@ -30,8 +31,8 @@ import java.util.UUID;
 @DisplayName("Tests for target intermediate test")
 public class BenchmarkNoTableTest extends PDKTestBase {
     private static final String TAG = BenchmarkNoTableTest.class.getSimpleName();
-    TargetNode targetNode;
-    SourceNode tddSourceNode;
+    ConnectorNode targetNode;
+    ConnectorNode tddSourceNode;
     DataFlowWorker dataFlowWorker;
     String targetNodeId = "t2";
     String sourceNodeId = "s1";

@@ -216,8 +216,8 @@ public class MysqlConnector extends ConnectorBase {
 
 	}
 
-	private String streamOffset(TapConnectorContext tapConnectorContext, List<String> tableList, Long offsetStartTime) {
-		return null;
+	private void streamOffset(TapConnectorContext tapConnectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
+
 	}
 
 	private long batchCount(TapConnectorContext tapConnectorContext, TapTable tapTable) throws Throwable {

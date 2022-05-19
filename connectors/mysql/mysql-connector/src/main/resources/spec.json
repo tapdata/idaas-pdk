@@ -174,8 +174,9 @@
 	},
 	"varchar($byte)": {
 	  "to": "TapString",
-	  "byte": 65535,
-	  "defaultByte": 1
+	  "byte": 16383,
+	  "defaultByte": 1,
+	  "byteRatio": 4
 	},
 	"tinytext": {
 	  "to": "TapString",
@@ -206,7 +207,7 @@
 	},
 	"varbinary[($byte)]": {
 	  "to": "TapBinary",
-	  "byte": 65535,
+	  "byte": 65532,
 	  "defaultByte": 1
 	},
 	"tinyblob": {
@@ -444,11 +445,13 @@
 	},
 	"enum($enums)": {
 	  "to": "TapString",
-	  "queryOnly": true
+	  "queryOnly": true,
+	  "byte": 16383
 	},
 	"set($sets)": {
 	  "to": "TapString",
-	  "queryOnly": true
+	  "queryOnly": true,
+	  "byte": 16383
 	},
 	"point": {
 	  "to": "TapBinary",

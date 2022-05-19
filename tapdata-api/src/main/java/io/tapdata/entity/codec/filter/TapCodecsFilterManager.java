@@ -41,6 +41,10 @@ public class TapCodecsFilterManager {
             Object theValue = entry.getValue();
             String fieldName = entry.getKey();
             if(theValue != null && fieldName != null) {
+                if((theValue instanceof TapValue)) {
+                    TapLogger.warn(TAG, "Value {} for field {} already in TapValue format, no need do ToTapValue conversion. ", theValue, fieldName);
+                   return;
+                }
 
                 String dataType = null;
                 TapType typeFromSchema = null;

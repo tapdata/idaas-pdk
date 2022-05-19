@@ -9,29 +9,23 @@ import java.util.function.Consumer;
 public class StreamReadConsumer implements Consumer<List<TapEvent>> {
     public static final int STATE_STREAM_READ_PENDING = 1;
     public static final int STATE_STREAM_READ_STARTED = 10;
-    public static final int STATE_STREAM_READ_STARTED_ASYNC = 20;
     public static final int STATE_STREAM_READ_ENDED = 100;
     private int state = STATE_STREAM_READ_PENDING;
 
     private Consumer<List<TapEvent>> consumer;
     private StateListener<Integer> stateListener;
-    private boolean asyncMethodAndNoRetry;
+    private boolean asyncMethodAndNoRetry = false;
 
-    public synchronized void streamReadStarted() {
-        streamReadStarted(false);
+    public void asyncMethodAndNoRetry() {
+        asyncMethodAndNoRetry = true;
     }
 
-    public synchronized void streamReadStarted(boolean asyncMethodAndNoRetry) {
+    public synchronized void streamReadStarted() {
         if(state == STATE_STREAM_READ_STARTED)
             return;
-        this.asyncMethodAndNoRetry = asyncMethodAndNoRetry;
 
         int old = state;
-        if(this.asyncMethodAndNoRetry) {
-            state = STATE_STREAM_READ_STARTED_ASYNC;
-        } else {
-            state = STATE_STREAM_READ_STARTED;
-        }
+        state = STATE_STREAM_READ_STARTED;
         if(stateListener != null) {
             stateListener.stateChanged(old, state);
         }
@@ -50,6 +44,10 @@ public class StreamReadConsumer implements Consumer<List<TapEvent>> {
 
     public int getState() {
         return state;
+    }
+
+    public boolean isAsyncMethodAndNoRetry() {
+        return asyncMethodAndNoRetry;
     }
 
     public static StreamReadConsumer create(Consumer<List<TapEvent>> consumer) {

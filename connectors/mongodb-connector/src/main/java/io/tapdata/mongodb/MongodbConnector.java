@@ -268,7 +268,7 @@ public class MongodbConnector extends ConnectorBase {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
+        connectorFunctions.supportStreamOffset((connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer) -> streamOffset(connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer));
     }
 
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
@@ -545,7 +545,7 @@ public class MongodbConnector extends ConnectorBase {
         }
     }
 
-    private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) {
+    private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
         if(offsetStartTime != null) {
             List<Bson> pipeline = singletonList(Aggregates.match(
                     Filters.in("ns.coll", tableList)
@@ -558,12 +558,14 @@ public class MongodbConnector extends ConnectorBase {
 
             if(theResumeToken != null) {
                 cursor.close();
-                return theResumeToken;
+//                return theResumeToken;
+                offsetOffsetTimeConsumer.accept(theResumeToken, null);
             }
         } else if(resumeToken != null) {
-            return resumeToken;
+//            return resumeToken;
+            offsetOffsetTimeConsumer.accept(resumeToken, null);
         }
-        return null;
+//        return null;
     }
 
     /**
