@@ -446,7 +446,8 @@ public class PostgresConnector extends ConnectorBase {
             sleep(100L);
         }
         sleep(5000);
-        consumer.streamReadStarted(true);
+        consumer.asyncMethodAndNoRetry();
+        consumer.streamReadStarted();
     }
 
     // TODO: 2022/5/14 implement with offset
