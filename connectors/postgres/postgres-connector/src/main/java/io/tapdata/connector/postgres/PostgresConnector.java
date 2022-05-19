@@ -528,8 +528,8 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     // TODO: 2022/5/14 implement with offset
-    private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) throws Throwable {
-        return null;
+    private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) throws Throwable {
+
     }
 
 }

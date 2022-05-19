@@ -49,6 +49,7 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static io.tapdata.entity.simplify.TapSimplify.*;
@@ -572,7 +573,9 @@ public class PDKTestBase {
 
     protected Object getStreamOffset(SourceNode sourceNode, List<String> tableList, Long offsetStartTime) throws Throwable {
         StreamOffsetFunction queryByFilterFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
-        return queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime);
+        final Object[] offset = {null};
+        queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime, (o, aLong) -> offset[0] = o);
+        return offset[0];
     }
 
     protected long getBatchCount(ConnectorNode sourceNode, TapTable table) throws Throwable {
