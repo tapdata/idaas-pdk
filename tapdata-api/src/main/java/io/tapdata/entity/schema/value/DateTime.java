@@ -99,7 +99,16 @@ public class DateTime {
     }
 
     public java.sql.Time toTime() {
-        return null;
+        long milliseconds;
+        if(seconds != null) {
+            milliseconds = seconds * 1000;
+            if(nano != null) {
+                milliseconds = milliseconds + (nano / 1000 / 1000);
+            }
+        } else {
+            return null;
+        }
+        return new java.sql.Time(milliseconds);
     }
 
     public Timestamp toTimestamp() {
