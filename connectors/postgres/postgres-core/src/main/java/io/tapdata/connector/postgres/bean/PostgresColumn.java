@@ -1,8 +1,6 @@
 package io.tapdata.connector.postgres.bean;
 
-import java.sql.JDBCType;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import io.tapdata.entity.utils.DataMap;
 
 /**
  * @author Jarad
@@ -10,11 +8,11 @@ import java.sql.SQLException;
  */
 public class PostgresColumn extends CommonColumn {
 
-    public PostgresColumn(ResultSet resultSet) throws SQLException {
-        this.columnName = resultSet.getString("COLUMN_NAME");
-        this.dataType = JDBCType.valueOf(resultSet.getInt("DATA_TYPE")).getName();
-        this.nullable = resultSet.getString("NULLABLE");
-        this.remarks = resultSet.getString("REMARKS");
-        this.columnDefaultValue = resultSet.getString("COLUMN_DEF");
+    public PostgresColumn(DataMap dataMap) {
+        this.columnName = dataMap.getString("column_name");
+        this.dataType = dataMap.getString("data_type");
+        this.nullable = dataMap.getString("is_nullable");
+        this.remarks = dataMap.getString("remark");
+        this.columnDefaultValue = dataMap.getString("column_default");
     }
 }

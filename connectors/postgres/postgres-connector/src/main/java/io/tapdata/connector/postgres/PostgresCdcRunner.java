@@ -4,7 +4,7 @@ import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.connector.postgres.config.PostgresDebeziumConfig;
-import io.tapdata.connector.postgres.kit.SmartKit;
+import io.tapdata.connector.postgres.kit.EmptyKit;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -53,7 +53,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         }
         //initial debezium config for postgres
         this.observedTableList = observedTableList;
-        postgresDebeziumConfig = new PostgresDebeziumConfig(postgresConfig, SmartKit.isNotEmpty(observedTableList) ?
+        postgresDebeziumConfig = new PostgresDebeziumConfig(postgresConfig, EmptyKit.isNotEmpty(observedTableList) ?
                 observedTableList.stream().map(TapTable::getId).collect(Collectors.toList()) : null);
         this.runnerName = postgresDebeziumConfig.getSlotName();
     }
@@ -118,7 +118,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                 eventList = TapSimplify.list();
             }
         }
-        if (SmartKit.isNotEmpty(eventList)) {
+        if (EmptyKit.isNotEmpty(eventList)) {
             System.out.println(TapSimplify.toJson(eventList));
             consumer.accept(eventList);
         }
@@ -150,7 +150,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     //make these tables ready for REPLICA IDENTITY
     private void makeReplicaIdentity() throws SQLException {
-        String tableSql = SmartKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN (" +
+        String tableSql = EmptyKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN (" +
                 observedTableList.stream().map(TapTable::getId).reduce((v1, v2) -> "'" + v1 + "','" + v2 + "'").orElseGet(String::new) + ")";
         ResultSet resultSet = stmt.executeQuery("SELECT " +
                 "tab.tablename,cls.relreplident," +

@@ -1,6 +1,7 @@
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.PostgresTest;
 import io.tapdata.connector.postgres.config.PostgresConfig;
+import io.tapdata.connector.postgres.kit.DbKit;
 
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -16,12 +17,12 @@ public class Main {
         postgresConfig.setExtParams("");
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
-        PostgresTest postgresTest = new PostgresTest(postgresConfig);
-        System.out.println(postgresTest.testHostPort().toString());
-        System.out.println(postgresTest.testConnect().toString());
-        System.out.println(postgresTest.testPrivilege().toString());
-        System.out.println(postgresTest.testReplication().toString());
-        postgresTest.close();
+        PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+        postgresJdbcContext.query("SELECT * FROM information_schema.tables WHERE table_catalog='COOLGJ' AND table_schema='public' AND table_name='DMLTest_postgres_BSwgs' ORDER BY table_name",
+                resultSet-> {
+            System.out.println(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
+                });
+        postgresJdbcContext.close();
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {
 //            rs.last();

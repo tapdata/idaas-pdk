@@ -37,19 +37,19 @@ public abstract class DebeziumCdcRunner implements Runnable {
      * start cdc async
      */
     public void startCdcRunner() {
-        if (engine != null && !engine.isRunning()) {
+        if (null != engine && !engine.isRunning()) {
             new Thread(() -> engine.run()).start();
         }
     }
 
     public void stopCdcRunner() {
-        if (engine != null && engine.isRunning()) {
+        if (null != engine && engine.isRunning()) {
             engine.stop();
         }
     }
 
     public boolean isRunning() {
-        return engine != null && engine.isRunning();
+        return null != engine && engine.isRunning();
     }
 
     /**

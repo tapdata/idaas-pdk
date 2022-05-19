@@ -1,7 +1,7 @@
 package io.tapdata.connector.postgres.config;
 
 import io.debezium.config.Configuration;
-import io.tapdata.connector.postgres.kit.SmartKit;
+import io.tapdata.connector.postgres.kit.EmptyKit;
 import io.tapdata.entity.simplify.TapSimplify;
 
 import java.util.List;
@@ -24,7 +24,7 @@ public class PostgresDebeziumConfig {
         this.postgresConfig = postgresConfig;
         this.observedTableList = observedTableList;
         //unique and can find it
-        this.slotName = "cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig) + (SmartKit.isNotEmpty(observedTableList) ?
+        this.slotName = "cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig) + (EmptyKit.isNotEmpty(observedTableList) ?
                         TapSimplify.toJson(observedTableList.stream().sorted().collect(Collectors.toList())) : "null")).getBytes())
                 .toString().replaceAll("-", "_");
     }
@@ -58,7 +58,7 @@ public class PostgresDebeziumConfig {
                 .with("database.user", postgresConfig.getUser())
                 .with("database.password", postgresConfig.getPassword())
                 .with("database.dbname", postgresConfig.getDatabase());
-        if (SmartKit.isNotEmpty(observedTableList)) {
+        if (EmptyKit.isNotEmpty(observedTableList)) {
             //construct tableWhiteList with schema.table(,) as <public.Student,postgres.test>
             String tableWhiteList = observedTableList.stream().map(v -> postgresConfig.getSchema() + "." + v).reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new);
             builder.with("table.whitelist", tableWhiteList);
