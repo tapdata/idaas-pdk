@@ -10,7 +10,7 @@ public class PostgresColumn extends CommonColumn {
 
     public PostgresColumn(DataMap dataMap) {
         this.columnName = dataMap.getString("column_name");
-        this.dataType = dataMap.getString("data_type");
+        this.dataType = dataMap.getString("dataType");
         this.nullable = dataMap.getString("is_nullable");
         this.remarks = dataMap.getString("remark");
         this.columnDefaultValue = dataMap.getString("column_default");

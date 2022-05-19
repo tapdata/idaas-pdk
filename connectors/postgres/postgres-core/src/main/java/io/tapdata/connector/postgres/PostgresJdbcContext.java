@@ -168,10 +168,21 @@ public class PostgresJdbcContext implements AutoCloseable {
     private final static String PG_ALL_TABLE =
             "SELECT * FROM information_schema.tables WHERE table_catalog='%s' AND table_schema='%s' %s ORDER BY table_name";
     private final static String PG_ALL_COLUMN =
-            "SELECT col.*, d.description AS remark\n" +
-                    "    FROM information_schema.columns col\n" +
-                    "    JOIN pg_class c ON c.relname = col.table_name\n" +
-                    "    LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = col.ordinal_position\n" +
+            "select col.*,\n" +
+                    "       d.description,\n" +
+                    "       (select pg_catalog.format_type(a.atttypid, a.atttypmod) as \"dataType\"\n" +
+                    "        from pg_catalog.pg_attribute a\n" +
+                    "        where a.attnum > 0\n" +
+                    "          and a.attname = col.column_name\n" +
+                    "          and not a.attisdropped\n" +
+                    "          and a.attrelid = (select cl.oid\n" +
+                    "                            from pg_catalog.pg_class cl\n" +
+                    "                                     left join pg_catalog.pg_namespace n on n.oid = cl.relnamespace\n" +
+                    "                            where cl.relname = col.table_name\n" +
+                    "                              and pg_catalog.pg_table_is_visible(cl.oid)))\n" +
+                    "from information_schema.columns col\n" +
+                    "         join pg_class c on c.relname = col.table_name\n" +
+                    "         left join pg_description d on d.objoid = c.oid and d.objsubid = col.ordinal_position\n" +
                     "    WHERE col.table_catalog='%s' AND col.table_schema='%s' %s ORDER BY col.table_name,col.ordinal_position";
     private final static String PG_ALL_INDEX =
             "SELECT\n" +

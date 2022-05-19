@@ -35,6 +35,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -77,10 +78,7 @@ public class PostgresConnector extends ConnectorBase {
         tableList.forEach(table -> {
             //2、table name
             TapTable tapTable = table(table);
-            //3、table columns info
-            columnList.stream().filter(col -> table.equals(col.getString("table_name")))
-                    .forEach(col -> tapTable.add(new PostgresColumn(col).getTapField()));
-            //4、primary key and table index
+            //3、primary key and table index
             List<String> primaryKey = TapSimplify.list();
             List<TapIndex> tapIndexList = TapSimplify.list();
             Map<String, List<DataMap>> indexMap = indexList.stream().filter(idx -> table.equals(idx.getString("table_name")))
@@ -101,7 +99,16 @@ public class PostgresConnector extends ConnectorBase {
                 index.setIndexFields(fieldList);
                 tapIndexList.add(index);
             });
-            tapTable.setDefaultPrimaryKeys(primaryKey);
+            //4、table columns info
+            AtomicInteger keyPos = new AtomicInteger(0);
+            columnList.stream().filter(col -> table.equals(col.getString("table_name")))
+                    .forEach(col -> {
+                        TapField tapField = new PostgresColumn(col).getTapField();
+                        tapField.setPos(keyPos.incrementAndGet());
+                        tapField.setPrimaryKey(primaryKey.contains(tapField.getName()));
+                        tapField.setPrimaryKeyPos(primaryKey.indexOf(tapField.getName()) + 1);
+                        tapTable.add(tapField);
+                    });
             tapTable.setIndexList(tapIndexList);
             tapTableList.add(tapTable);
             if (tapTableList.size() == tableSize) {
@@ -304,7 +311,7 @@ public class PostgresConnector extends ConnectorBase {
     // TODO: 2022/5/13 the same type of event must be dealt with to make this method faster
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
         initConnection(connectorContext);
-        AtomicLong inserted = new AtomicLong(0); //number of inserted
+        AtomicLong inserted = new AtomicLong(0); //number of insertedtapTable = {TapTable@10447} "TapTable id BatchReadTest_postgresToTddTarget_ISfJVJ name BatchReadTest_postgresToTddTarget_ISfJVJ storageEngine null charset null number of fields 21"
         AtomicLong updated = new AtomicLong(0); //number of updated
         AtomicLong deleted = new AtomicLong(0); //number of deleted
         WriteListResult<TapRecordEvent> listResult = writeListResult(); //result of these events

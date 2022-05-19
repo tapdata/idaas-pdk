@@ -35,11 +35,12 @@ public class DbKit {
                 for (String col : columnNames) {
                     map.put(col, resultSet.getObject(col));
                 }
+                return map;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return map;
+        return null;
     }
 
     public static List<String> getColumnsFromResultSet(ResultSet resultSet) {
