@@ -177,8 +177,7 @@ public class PostgresJdbcContext implements AutoCloseable {
                     "          and a.attrelid = (select cl.oid\n" +
                     "                            from pg_catalog.pg_class cl\n" +
                     "                                     left join pg_catalog.pg_namespace n on n.oid = cl.relnamespace\n" +
-                    "                            where cl.relname = col.table_name\n" +
-                    "                              and pg_catalog.pg_table_is_visible(cl.oid)))\n" +
+                    "                            where cl.relname = col.table_name))\n" +
                     "from information_schema.columns col\n" +
                     "         join pg_class c on c.relname = col.table_name\n" +
                     "         left join pg_description d on d.objoid = c.oid and d.objsubid = col.ordinal_position\n" +
