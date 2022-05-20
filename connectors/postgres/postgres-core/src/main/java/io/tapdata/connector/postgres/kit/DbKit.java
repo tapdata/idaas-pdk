@@ -17,7 +17,7 @@ public class DbKit {
         try {
             if (EmptyKit.isNotNull(resultSet)) {
                 List<String> columnNames = getColumnsFromResultSet(resultSet);
-                while (!resultSet.isAfterLast()) {
+                while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
                     list.add(getRowFromResultSet(resultSet, columnNames));
                     resultSet.next();
                 }

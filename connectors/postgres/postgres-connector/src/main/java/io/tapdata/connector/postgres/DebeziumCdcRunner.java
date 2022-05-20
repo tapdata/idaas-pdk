@@ -34,12 +34,10 @@ public abstract class DebeziumCdcRunner implements Runnable {
     }
 
     /**
-     * start cdc async
+     * start cdc sync
      */
     public void startCdcRunner() {
-        if (null != engine && !engine.isRunning()) {
-            new Thread(() -> engine.run()).start();
-        }
+        engine.run();
     }
 
     public void stopCdcRunner() {
@@ -53,17 +51,11 @@ public abstract class DebeziumCdcRunner implements Runnable {
     }
 
     /**
-     * close cdc async
+     * close cdc sync
      */
-    public void closeCdcRunner() {
-        new Thread(() -> {
-            try {
-                engine.close();
-                releaseResource();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
+    public void closeCdcRunner() throws IOException {
+        engine.close();
+        releaseResource();
     }
 
     protected void releaseResource() {

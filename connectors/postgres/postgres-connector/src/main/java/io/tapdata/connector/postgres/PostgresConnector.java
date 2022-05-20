@@ -31,6 +31,7 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
+import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -153,8 +154,8 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
-//        connectorFunctions.supportStreamRead(this::streamRead);
-//        connectorFunctions.supportStreamOffset(this::streamOffset);
+        connectorFunctions.supportStreamRead(this::streamRead);
+        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
@@ -179,7 +180,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     @Override
-    public void onDestroy() {
+    public void onDestroy() throws IOException {
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
             postgresJdbcContext.close();
         }
@@ -218,7 +219,7 @@ public class PostgresConnector extends ConnectorBase {
         FilterResults filterResults = new FilterResults();
         String sql = "SELECT * FROM \"" + table.getId() + "\" " + SqlBuilder.buildSqlByAdvanceFilter(filter);
         postgresJdbcContext.query(sql, resultSet -> {
-            while (!resultSet.isAfterLast()) {
+            while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
                 filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
                 if (filterResults.getResults().size() == BATCH_ADVANCE_READ_LIMIT) {
                     consumer.accept(filterResults);
@@ -405,7 +406,7 @@ public class PostgresConnector extends ConnectorBase {
         postgresJdbcContext.query(sql, resultSet -> {
             //get all column names
             List<String> columnNames = DbKit.getColumnsFromResultSet(resultSet);
-            while (!resultSet.isAfterLast()) {
+            while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
                 tapEvents.add(insertRecordEvent(DbKit.getRowFromResultSet(resultSet, columnNames), tapTable.getId()));
                 if (tapEvents.size() == eventBatchSize) {
                     postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + eventBatchSize);
@@ -446,19 +447,12 @@ public class PostgresConnector extends ConnectorBase {
                 tapTableList = tableList.stream().map(v -> nodeContext.getTableMap().get(v)).collect(Collectors.toList());
             }
             cdcRunner = new PostgresCdcRunner(postgresConfig, tapTableList).registerConsumer(offsetState, recordSize, consumer);
-//            DebeziumCdcPool.addRunner(cdcRunner.getRunnerName(), cdcRunner);
             cdcRunner.startCdcRunner();
         }
-        while (!cdcRunner.isRunning()) {
-            sleep(100L);
-        }
-        sleep(5000);
-        consumer.asyncMethodAndNoRetry();
-        consumer.streamReadStarted();
     }
 
     // TODO: 2022/5/14 implement with offset
-    private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) {
+    private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
         return null;
     }
 

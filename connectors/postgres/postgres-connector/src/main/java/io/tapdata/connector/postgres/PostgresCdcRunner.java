@@ -17,7 +17,6 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.nio.ByteBuffer;
-import java.sql.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,8 +29,7 @@ import java.util.stream.Collectors;
  */
 public class PostgresCdcRunner extends DebeziumCdcRunner {
 
-    private Statement stmt;
-    private Connection conn;
+    private final PostgresJdbcContext postgresJdbcContext;
     private final PostgresConfig postgresConfig;
     private final PostgresDebeziumConfig postgresDebeziumConfig;
     private final List<TapTable> observedTableList;
@@ -43,14 +41,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     public PostgresCdcRunner(PostgresConfig postgresConfig, List<TapTable> observedTableList) {
         //initial postgres db connection
         this.postgresConfig = postgresConfig;
-        try {
-            String dbUrl = postgresConfig.getDatabaseUrl();
-            Class.forName(postgresConfig.getJdbcDriver());
-            conn = DriverManager.getConnection(dbUrl, postgresConfig.getUser(), postgresConfig.getPassword());
-            stmt = conn.createStatement();
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
         //initial debezium config for postgres
         this.observedTableList = observedTableList;
         postgresDebeziumConfig = new PostgresDebeziumConfig(postgresConfig, EmptyKit.isNotEmpty(observedTableList) ?
@@ -60,8 +51,21 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     public PostgresCdcRunner registerConsumer(Object offsetState, int recordSize, StreamReadConsumer consumer) {
         //build debezium engine
-        this.engine = EmbeddedEngine.create()
+        this.engine = (EmbeddedEngine) EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
+                .using(new DebeziumEngine.ConnectorCallback() {
+                    @Override
+                    public void taskStarted() {
+                        DebeziumEngine.ConnectorCallback.super.taskStarted();
+                        consumer.streamReadStarted();
+                    }
+
+                    @Override
+                    public void taskStopped() {
+                        DebeziumEngine.ConnectorCallback.super.taskStopped();
+                        consumer.streamReadEnded();
+                    }
+                })
 //                .using(this.getClass().getClassLoader())
 //                .using(Clock.SYSTEM)
 //                .notifying(this::consumeRecord)
@@ -72,7 +76,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         this.consumer = consumer;
         try {
             makeReplicaIdentity();
-        } catch (SQLException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         return this;
@@ -139,43 +143,39 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     @Override
     public void releaseResource() {
-        try {
-            stmt.execute("SELECT PG_DROP_REPLICATION_SLOT('" + runnerName + "')");
-            stmt.close();
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        postgresJdbcContext.close();
     }
 
     //make these tables ready for REPLICA IDENTITY
-    private void makeReplicaIdentity() throws SQLException {
-        String tableSql = EmptyKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN (" +
-                observedTableList.stream().map(TapTable::getId).reduce((v1, v2) -> "'" + v1 + "','" + v2 + "'").orElseGet(String::new) + ")";
-        ResultSet resultSet = stmt.executeQuery("SELECT " +
+    private void makeReplicaIdentity() throws Throwable {
+        String tableSql = EmptyKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN ('" +
+                observedTableList.stream().map(TapTable::getId).
+                        reduce((v1, v2) -> v1 + "','" + v2).orElseGet(String::new) + "')";
+        List<String> tableD = TapSimplify.list(); //to make table IDENTITY 'D'
+        List<String> tableF = TapSimplify.list(); //to make table IDENTITY 'F'
+        postgresJdbcContext.query("SELECT " +
                 "tab.tablename,cls.relreplident," +
                 "(CASE WHEN EXISTS (SELECT 1 FROM pg_index WHERE indrelid IN " +
                 "(SELECT oid FROM pg_class WHERE relname = tab.tablename)) THEN 1 ELSE 0 END) hasunique " +
                 "FROM pg_tables tab \n" +
                 "JOIN pg_class cls ON cls.relname = tab.tablename\n" +
-                "WHERE tab.schemaname = 'public'" + tableSql);
-        List<String> tableD = TapSimplify.list(); //to make table IDENTITY 'D'
-        List<String> tableF = TapSimplify.list(); //to make table IDENTITY 'F'
-        while (resultSet.next()) {
-            int hasUnique = resultSet.getInt("hasunique");
-            String relReplident = resultSet.getString("relreplident");
-            String tableName = resultSet.getString("tablename");
-            if (hasUnique == 1 && "n,i".contains(relReplident)) {
-                tableD.add(tableName);
-            } else if (hasUnique == 0 && !"f".equals(relReplident)) {
-                tableF.add(tableName);
+                "WHERE tab.schemaname = 'public'" + tableSql, resultSet -> {
+            while (resultSet.next()) {
+                int hasUnique = resultSet.getInt("hasunique");
+                String relReplident = resultSet.getString("relreplident");
+                String tableName = resultSet.getString("tablename");
+                if (hasUnique == 1 && "n,i".contains(relReplident)) {
+                    tableD.add(tableName);
+                } else if (hasUnique == 0 && !"f".equals(relReplident)) {
+                    tableF.add(tableName);
+                }
             }
-        }
+        });
         for (String d : tableD) {
-            stmt.execute("ALTER TABLE \"" + d + "\" REPLICA IDENTITY DEFAULT");
+            postgresJdbcContext.execute("ALTER TABLE \"" + d + "\" REPLICA IDENTITY DEFAULT");
         }
         for (String f : tableF) {
-            stmt.execute("ALTER TABLE \"" + f + "\" REPLICA IDENTITY FULL");
+            postgresJdbcContext.execute("ALTER TABLE \"" + f + "\" REPLICA IDENTITY FULL");
         }
     }
 

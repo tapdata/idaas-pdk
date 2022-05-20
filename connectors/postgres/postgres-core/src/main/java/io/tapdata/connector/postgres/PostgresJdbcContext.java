@@ -57,8 +57,7 @@ public class PostgresJdbcContext implements AutoCloseable {
         String tableSql = EmptyKit.isNotNull(tableName) ? "AND table_name='" + tableName + "'" : "";
         try {
             query(String.format(PG_ALL_TABLE, postgresConfig.getDatabase(), postgresConfig.getSchema(), tableSql), resultSet -> {
-
-                while (!resultSet.isAfterLast()) {
+                while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
                     tableList.add(resultSet.getString("table_name"));
                     resultSet.next();
                 }
