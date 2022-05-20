@@ -94,13 +94,13 @@
       "queryOnly": true,
       "to": "TapNumber"
     },
-    "char[($byte)]": {
+    "character[($byte)]": {
       "byte": 10485760,
       "priority": 2,
       "fixed": true,
       "to": "TapString"
     },
-    "varchar[($byte)]": {
+    "character varying[($byte)]": {
       "byte": 10485760,
       "priority": 1,
       "to": "TapString"
@@ -123,7 +123,7 @@
       "queryOnly": true,
       "to": "TapBinary"
     },
-    "bit varying": {
+    "bit varying[($byte)]": {
       "byte": 64,
       "priority": 3,
       "queryOnly": true,
@@ -142,16 +142,15 @@
       "priority": 1,
       "to": "TapDate"
     },
-    "interval($rangeType)": {
+    "interval": {
       "range": [
         "-99:59:59",
         "99:59:59"
       ],
       "priority": 3,
-      "queryOnly": true,
       "to": "TapDateTime"
     },
-    "timestamp[($fsp)]": {
+    "timestamp[($fsp)] without time zone": {
       "range": [
         "1000-01-01 00:00:00",
         "9999-12-31 23:59:59"

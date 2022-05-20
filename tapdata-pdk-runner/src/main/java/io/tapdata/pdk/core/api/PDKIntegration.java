@@ -4,6 +4,7 @@ import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.pdk.apis.TapConnector;
@@ -197,6 +198,7 @@ public class PDKIntegration {
         protected String table;
         protected List<String> tables;
         protected KVReadOnlyMap<TapTable> tableMap;
+        protected KVMap<Object> stateMap;
 
         public String verify() {
             if(associateId == null)
@@ -213,6 +215,8 @@ public class PDKIntegration {
                 return "missing tables or table";*/
             if(tableMap == null)
                 return "missing tableMap";
+            if(stateMap == null)
+                return "missing stateMap";
             return null;
         }
 
@@ -241,6 +245,11 @@ public class PDKIntegration {
             return this;
         }
 
+        public ConnectorBuilder<T> withStateMap(KVMap<Object> stateMap) {
+            this.stateMap = stateMap;
+            return this;
+        }
+
         public ConnectorBuilder<T> withVersion(String version) {
             this.version = version;
             return this;
@@ -262,8 +271,9 @@ public class PDKIntegration {
             this.table = node.getTable();
             this.tables = node.getTables();
             KVMapFactory mapFactory = InstanceFactory.instance(KVMapFactory.class);
-            mapFactory.getCacheMap(this.associateId, TapTable.class);
-            this.tableMap = mapFactory.createKVReadOnlyMap(this.associateId);
+            mapFactory.getCacheMap("tableMap_" + this.associateId, TapTable.class);
+            this.tableMap = mapFactory.createKVReadOnlyMap("tableMap_" + this.associateId);
+            this.stateMap = mapFactory.getCacheMap("stateMap_" + this.associateId, Object.class);
             return this;
         }
 
@@ -332,6 +342,7 @@ public class PDKIntegration {
             sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             sourceNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
             sourceNode.connectorContext.setTableMap(tableMap);
+            sourceNode.connectorContext.setStateMap(stateMap);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
                     sourceNode::registerCapabilities,
@@ -356,6 +367,7 @@ public class PDKIntegration {
             connectorNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             connectorNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
             connectorNode.connectorContext.setTableMap(tableMap);
+            connectorNode.connectorContext.setStateMap(stateMap);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
                     connectorNode::registerCapabilities,
@@ -380,6 +392,7 @@ public class PDKIntegration {
             targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             targetNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
             targetNode.connectorContext.setTableMap(tableMap);
+            targetNode.connectorContext.setStateMap(stateMap);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
                     targetNode::registerCapabilities,
@@ -417,6 +430,7 @@ public class PDKIntegration {
 
             TapConnectorContext nodeContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
             nodeContext.setTableMap(tableMap);
+            nodeContext.setStateMap(stateMap);
 
             ConnectorFunctions connectorFunctions = new ConnectorFunctions();
             TapCodecsRegistry codecRegistry = new TapCodecsRegistry();

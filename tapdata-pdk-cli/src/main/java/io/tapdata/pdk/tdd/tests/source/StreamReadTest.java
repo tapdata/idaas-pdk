@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static io.tapdata.entity.simplify.TapSimplify.sleep;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -131,6 +132,7 @@ public class StreamReadTest extends PDKTestBase {
                                 sendPatrolEvent(dataFlowEngine, tddToSourceDag, new PatrolEvent().patrolListener((innerNodeId, innerState) -> {
                                     if (innerNodeId.equals(testSourceAsTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                                         //Start source to tddTarget connector
+                                        sleep(3000L);
                                         startDag();
                                     }
                                 }));

@@ -31,6 +31,7 @@ public class MysqlMaker implements SqlMaker {
 	private static final String CREATE_TABLE_TEMPLATE = "CREATE TABLE `%s`.`%s`(\n%s) %s";
 	private static final String MYSQL_TABLE_TEMPLATE = "`%s`.`%s`";
 	private static final String MYSQL_FIELD_TEMPLATE = "`%s`";
+	private static final String MYSQL_ADD_INDEX = "ALTER TABLE `%s`.`%s` ADD %s %s (%s)";
 	private boolean hasAutoIncrement;
 	protected static final int DEFAULT_CONSTRAINT_NAME_MAX_LENGTH = 30;
 
@@ -161,32 +162,29 @@ public class MysqlMaker implements SqlMaker {
 			throw new IllegalArgumentException("Input parameter tapConnectorContext is null");
 		if (null == tapTable) throw new IllegalArgumentException("Input parameter tapTable is null");
 		if (null == tapIndex) throw new IllegalArgumentException("Input parameter tableIndex is null");
-		String sql = "CREATE";
-		if (tapIndex.isUnique()) {
-			sql += " UNIQUE INDEX";
-		} else {
-			sql += " INDEX";
-		}
-		if (StringUtils.isNotBlank(tapIndex.getName())) {
-			sql += " " + tapIndex.getName();
-		}
 		String database = tapConnectorContext.getConnectionConfig().getString("database");
 		if (StringUtils.isBlank(database)) throw new IllegalArgumentException("Database is blank");
-		sql += " ON `" + database + "`";
 		String tableId = tapTable.getId();
 		if (StringUtils.isBlank(tableId)) throw new IllegalArgumentException("Table id is blank");
-		sql += ".`" + tableId + "`(%s)";
+		String indexType;
+		if (tapIndex.isUnique()) {
+			indexType = "UNIQUE INDEX";
+		} else {
+			indexType = "INDEX";
+		}
+		String indexName = StringUtils.isNotBlank(tapIndex.getName()) ? tapIndex.getName() : "";
 		List<TapIndexField> indexFields = tapIndex.getIndexFields();
 		List<String> fields = indexFields.stream().map(indexField -> {
 			String fieldName = indexField.getName();
 			Boolean fieldAsc = indexField.getFieldAsc();
 			if (null != fieldAsc && !fieldAsc) {
-				fieldName += " DESC";
+				fieldName = "`" + fieldName + "` DESC";
+			} else {
+				fieldName = "`" + fieldName + "` ASC";
 			}
 			return fieldName;
 		}).collect(Collectors.toList());
-		sql = String.format(sql, String.join(",", fields));
-		return sql;
+		return String.format(MYSQL_ADD_INDEX, database, tableId, indexType, indexName, String.join(",", fields));
 	}
 
 	protected String createTableAppendField(TapField tapField) {

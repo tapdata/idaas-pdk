@@ -80,7 +80,7 @@ public class SqlBuilder {
      */
     public static void addBatchInsertRecord(TapTable tapTable, Map<String, Object> insertRecord, PreparedStatement preparedStatement) throws SQLException {
         preparedStatement.clearParameters();
-        if (SmartKit.isEmpty(insertRecord)) {
+        if (EmptyKit.isEmpty(insertRecord)) {
             return;
         }
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
@@ -113,17 +113,17 @@ public class SqlBuilder {
      */
     public static String buildSqlByAdvanceFilter(TapAdvanceFilter filter) {
         StringBuilder builder = new StringBuilder();
-        if (SmartKit.isNotEmpty(filter.getMatch()) || SmartKit.isNotEmpty(filter.getOperators())) {
+        if (EmptyKit.isNotEmpty(filter.getMatch()) || EmptyKit.isNotEmpty(filter.getOperators())) {
             builder.append("WHERE ");
             builder.append(SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND", "="));
         }
-        if (SmartKit.isNotEmpty(filter.getOperators())) {
-            if (SmartKit.isNotEmpty(filter.getMatch())) {
+        if (EmptyKit.isNotEmpty(filter.getOperators())) {
+            if (EmptyKit.isNotEmpty(filter.getMatch())) {
                 builder.append("AND ");
             }
             builder.append(filter.getOperators().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new)).append(' ');
         }
-        if (SmartKit.isNotEmpty(filter.getSortOnList())) {
+        if (EmptyKit.isNotEmpty(filter.getSortOnList())) {
             builder.append("ORDER BY ");
             builder.append(filter.getSortOnList().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)).append(' ');
         }
@@ -147,7 +147,7 @@ public class SqlBuilder {
      */
     public static String buildKeyAndValue(Map<String, Object> record, String splitSymbol, String operator) {
         StringBuilder builder = new StringBuilder();
-        if (SmartKit.isNotEmpty(record)) {
+        if (EmptyKit.isNotEmpty(record)) {
             record.forEach((fieldName, value) -> {
                 builder.append('\"').append(fieldName).append('\"').append(operator);
                 if (!(value instanceof Number)) {

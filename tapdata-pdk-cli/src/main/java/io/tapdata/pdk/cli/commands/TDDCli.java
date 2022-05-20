@@ -50,7 +50,7 @@ public class TDDCli extends CommonCli {
     @CommandLine.Option(names = { "-m", "--mavenHome" }, required = false, description = "Specify the maven home")
     private String mavenHome;
     @CommandLine.Option(names = { "-t", "--testCase" }, required = false, description = "Specify the test class simple name to test")
-    private String testClass;
+    private String[] testClass;
     @CommandLine.Option(names = { "-c", "--testConfig" }, required = true, description = "Specify the test json configuration file")
     private String testConfig;
     @CommandLine.Option(names = { "-v", "--verbose" }, required = false, description = "Enable debug log")
@@ -274,8 +274,10 @@ public class TDDCli extends CommonCli {
 //        builder.append("             Node class " + tapNodeInfo.getNodeClass() + " run ");
         List<DiscoverySelector> selectors = new ArrayList<>();
         if(testClass != null) {
-            Class<?> theClass = Class.forName(testClass);
-            selectorsAddClass(selectors, theClass, testResultSummary);
+            for(String clazz : testClass) {
+                Class<?> theClass = Class.forName(clazz);
+                selectorsAddClass(selectors, theClass, testResultSummary);
+            }
         } else {
             selectorsAddClass(selectors, BasicTest.class, testResultSummary);
 
