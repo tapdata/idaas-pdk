@@ -222,6 +222,7 @@ public abstract class ConnectorBase implements TapConnector {
     }
 
     private final AtomicBoolean isAlive = new AtomicBoolean(false);
+    private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
     public boolean isAlive() {
         return isAlive.get() && !Thread.currentThread().isInterrupted();
@@ -236,12 +237,20 @@ public abstract class ConnectorBase implements TapConnector {
 
     public abstract void onStart(TapConnectionContext connectionContext) throws Throwable;
     public abstract void onDestroy() throws Throwable;
+    public abstract void onPause() throws Throwable;
 
     @Override
     public final void destroy() throws Throwable {
-        if(isAlive.compareAndSet(true, false)) {
+        if(isDestroyed.compareAndSet(true, false)) {
+            pause();
             onDestroy();
         }
     }
 
+    @Override
+    public void pause() throws Throwable {
+        if(isAlive.compareAndSet(true, false)) {
+            onPause();
+        }
+    }
 }

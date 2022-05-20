@@ -752,4 +752,9 @@ public class MongodbConnector extends ConnectorBase {
             streamCursor.close();
         }
     }
+
+    @Override
+    public void onPause() throws Throwable {
+
+    }
 }

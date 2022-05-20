@@ -190,6 +190,11 @@ public class PostgresConnector extends ConnectorBase {
         }
     }
 
+    @Override
+    public void onPause() throws Throwable {
+
+    }
+
     private void initConnection(TapConnectionContext connectorContext) {
         postgresConfig = PostgresConfig.load(connectorContext.getConnectionConfig());
         if (EmptyKit.isNull(postgresJdbcContext)) {

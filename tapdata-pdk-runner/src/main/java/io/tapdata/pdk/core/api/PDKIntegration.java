@@ -273,7 +273,7 @@ public class PDKIntegration {
             KVMapFactory mapFactory = InstanceFactory.instance(KVMapFactory.class);
             mapFactory.getCacheMap("tableMap_" + this.associateId, TapTable.class);
             this.tableMap = mapFactory.createKVReadOnlyMap("tableMap_" + this.associateId);
-            this.stateMap = mapFactory.getCacheMap("stateMap_" + this.associateId, Object.class);
+            this.stateMap = mapFactory.getPersistentMap("stateMap_" + this.associateId, Object.class);
             return this;
         }
 
