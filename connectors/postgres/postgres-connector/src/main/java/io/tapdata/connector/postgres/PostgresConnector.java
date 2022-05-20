@@ -2,11 +2,9 @@ package io.tapdata.connector.postgres;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.postgres.bean.PostgresColumn;
-import io.tapdata.connector.postgres.bean.PostgresOffset;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.connector.postgres.kit.DbKit;
 import io.tapdata.connector.postgres.kit.EmptyKit;
-import io.tapdata.connector.postgres.kit.SqlBuilder;
 import io.tapdata.connector.postgres.kit.StringKit;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
@@ -202,7 +200,7 @@ public class PostgresConnector extends ConnectorBase {
         Set<String> columnNames = tapTable.getNameFieldMap().keySet();
         List<FilterResult> filterResults = new LinkedList<>();
         for (TapFilter filter : filters) {
-            String sql = "SELECT * FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(filter.getMatch(), "AND", "=");
+            String sql = "SELECT * FROM \"" + tapTable.getId() + "\" WHERE " + PostgresSqlMaker.buildKeyAndValue(filter.getMatch(), "AND", "=");
             FilterResult filterResult = new FilterResult();
             try {
                 postgresJdbcContext.query(sql, resultSet -> filterResult.setResult(DbKit.getRowFromResultSet(resultSet, columnNames)));
@@ -217,7 +215,7 @@ public class PostgresConnector extends ConnectorBase {
 
     private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<FilterResults> consumer) throws Throwable {
         FilterResults filterResults = new FilterResults();
-        String sql = "SELECT * FROM \"" + table.getId() + "\" " + SqlBuilder.buildSqlByAdvanceFilter(filter);
+        String sql = "SELECT * FROM \"" + table.getId() + "\" " + PostgresSqlMaker.buildSqlByAdvanceFilter(filter);
         postgresJdbcContext.query(sql, resultSet -> {
             while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
                 filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
@@ -235,7 +233,7 @@ public class PostgresConnector extends ConnectorBase {
         TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
         Collection<String> primaryKeys = tapTable.primaryKeys();
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
-        String sql = "CREATE TABLE IF NOT EXISTS \"" + tapTable.getId() + "\"(" + SqlBuilder.buildColumnDefinition(tapTable);
+        String sql = "CREATE TABLE IF NOT EXISTS \"" + tapTable.getId() + "\"(" + PostgresSqlMaker.buildColumnDefinition(tapTable);
         if (EmptyKit.isNotEmpty(tapTable.primaryKeys())) {
             sql += "," + " PRIMARY KEY (\"" + StringKit.combineString(primaryKeys, "\",\"") + "\" )";
         }
@@ -318,7 +316,7 @@ public class PostgresConnector extends ConnectorBase {
         WriteListResult<TapRecordEvent> listResult = writeListResult(); //result of these events
         List<TapRecordEvent> batchInsertCache = list(); //records in batch cache
 
-        PreparedStatement preparedStatement = postgresJdbcContext.getConnection().prepareStatement(SqlBuilder.buildPrepareInsertSQL(tapTable));
+        PreparedStatement preparedStatement = postgresJdbcContext.getConnection().prepareStatement(PostgresSqlMaker.buildPrepareInsertSQL(tapTable));
         Statement stmt = postgresJdbcContext.getConnection().createStatement();
         if (postgresJdbcContext.queryAllTables(tapTable.getId()).size() < 1) {
             throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
@@ -327,7 +325,7 @@ public class PostgresConnector extends ConnectorBase {
             if (recordEvent instanceof TapInsertRecordEvent) {
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> after = insertRecordEvent.getAfter();
-                SqlBuilder.addBatchInsertRecord(tapTable, after, preparedStatement);
+                PostgresSqlMaker.addBatchInsertRecord(tapTable, after, preparedStatement);
                 batchInsertCache.add(recordEvent);
                 if (batchInsertCache.size() >= 1000) {
                     inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
@@ -340,7 +338,7 @@ public class PostgresConnector extends ConnectorBase {
                 for (Map.Entry<String, Object> entry : before.entrySet()) {
                     after.remove(entry.getKey(), entry.getValue());
                 }
-                String sql = "UPDATE \"" + tapTable.getId() + "\" SET " + SqlBuilder.buildKeyAndValue(after, ",", "=") + " WHERE " + SqlBuilder.buildKeyAndValue(before, "AND", "=");
+                String sql = "UPDATE \"" + tapTable.getId() + "\" SET " + PostgresSqlMaker.buildKeyAndValue(after, ",", "=") + " WHERE " + PostgresSqlMaker.buildKeyAndValue(before, "AND", "=");
                 try {
                     stmt.execute(sql);
                     updated.incrementAndGet();
@@ -352,7 +350,7 @@ public class PostgresConnector extends ConnectorBase {
                 inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
-                String sql = "DELETE FROM \"" + tapTable.getId() + "\" WHERE " + SqlBuilder.buildKeyAndValue(before, "AND", "=");
+                String sql = "DELETE FROM \"" + tapTable.getId() + "\" WHERE " + PostgresSqlMaker.buildKeyAndValue(before, "AND", "=");
                 try {
                     stmt.execute(sql);
                     deleted.incrementAndGet();
