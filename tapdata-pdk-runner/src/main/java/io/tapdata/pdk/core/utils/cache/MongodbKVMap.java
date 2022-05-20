@@ -17,40 +17,6 @@ import java.io.File;
 import static io.tapdata.entity.simplify.TapSimplify.*;
 
 @Implementation(value = KVMap.class, buildNumber = 0, type = "mongodb")
-public class MongodbKVMap<T> implements KVMap<T> {
+public class MongodbKVMap<T> extends EhcacheKVMap<T> {
 
-    @Override
-    public void init(String mapKey, Class<T> valueClass) {
-
-    }
-
-    @Override
-    public void put(String key, T t) {
-
-    }
-
-    @Override
-    public T putIfAbsent(String key, T t) {
-        return null;
-    }
-
-    @Override
-    public T remove(String key) {
-        return null;
-    }
-
-    @Override
-    public void clear() {
-
-    }
-
-    @Override
-    public void reset() {
-
-    }
-
-    @Override
-    public T get(String key) {
-        return null;
-    }
 }
