@@ -121,7 +121,12 @@ public class MysqlConnector extends ConnectorBase {
 		Optional.ofNullable(this.mysqlWriter).ifPresent(MysqlWriter::onDestroy);
 	}
 
-	private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) throws Throwable {
+    @Override
+    public void onPause() throws Throwable {
+
+    }
+
+    private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) throws Throwable {
 		String tableId = tapClearTableEvent.getTableId();
 		if (mysqlJdbcContext.tableExists(tableId)) {
 			mysqlJdbcContext.clearTable(tableId);

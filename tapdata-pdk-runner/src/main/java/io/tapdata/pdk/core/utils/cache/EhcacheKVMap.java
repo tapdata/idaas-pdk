@@ -2,6 +2,8 @@ package io.tapdata.pdk.core.utils.cache;
 
 import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.ObjectSerializable;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.ehcache.Cache;
@@ -12,8 +14,12 @@ import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.config.units.EntryUnit;
 import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.spi.serialization.Serializer;
+import org.ehcache.spi.serialization.SerializerException;
 
 import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import static io.tapdata.entity.simplify.TapSimplify.*;
 
@@ -33,6 +39,7 @@ public class EhcacheKVMap<T> implements KVMap<T> {
 
                     PersistentCacheManager persistentCacheManager = CacheManagerBuilder.newCacheManagerBuilder()
                             .with(CacheManagerBuilder.persistence(new File(getStoragePath(), cacheFolder)))
+                            .withSerializer(Object.class, ObjectSerializer.class)
 //                            .withCache(mapKey,
 //                                    CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, (Class<?>) valueClass,
 //                                            ResourcePoolsBuilder.newResourcePoolsBuilder()
@@ -67,6 +74,8 @@ public class EhcacheKVMap<T> implements KVMap<T> {
             }
         }
     }
+
+
 
     public static void main(String... args) {
         EhcacheKVMap<TapTable> tableMap = new EhcacheKVMap<>();

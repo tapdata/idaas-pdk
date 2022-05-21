@@ -53,13 +53,8 @@ public abstract class DebeziumCdcRunner implements Runnable {
     /**
      * close cdc sync
      */
-    public void closeCdcRunner() throws IOException {
+    public void closeCdcRunner(Object param) throws IOException {
         engine.close();
-        releaseResource();
-    }
-
-    protected void releaseResource() {
-
     }
 
     public void run() {

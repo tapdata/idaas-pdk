@@ -13,4 +13,5 @@ public interface TapNode {
 
     void init(TapConnectionContext connectionContext) throws Throwable;
 
+    void pause() throws Throwable;
 }
