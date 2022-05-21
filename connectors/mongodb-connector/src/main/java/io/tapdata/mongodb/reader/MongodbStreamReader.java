@@ -1,9 +1,11 @@
-package io.tapdata.mongodb.reader.v3;
+package io.tapdata.mongodb.reader;
 
 import io.tapdata.mongodb.bean.MongodbConfig;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  *
@@ -14,7 +16,7 @@ public interface MongodbStreamReader {
 
 		void read(List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer);
 
-		Object streamOffset(List<String> tableList, Long offsetStartTime);
+		void streamOffset(List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer);
 
 		void onDestroy();
 }

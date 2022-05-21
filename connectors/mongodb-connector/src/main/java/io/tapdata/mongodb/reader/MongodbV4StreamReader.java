@@ -15,7 +15,6 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.mongodb.bean.MongodbConfig;
-import io.tapdata.mongodb.reader.v3.MongodbStreamReader;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
@@ -26,6 +25,7 @@ import org.bson.conversions.Bson;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 import static io.tapdata.base.ConnectorBase.*;
 import static java.util.Collections.singletonList;
@@ -151,7 +151,7 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 		}
 
 		@Override
-		public Object streamOffset(List<String> tableList, Long offsetStartTime) {
+		public void streamOffset(List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
 				if(offsetStartTime != null) {
 						List<Bson> pipeline = singletonList(Aggregates.match(
 										Filters.in("ns.coll", tableList)
@@ -164,12 +164,12 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 
 						if(theResumeToken != null) {
 								cursor.close();
-								return theResumeToken;
+								offsetOffsetTimeConsumer.accept(theResumeToken, null);
 						}
 				} else if(resumeToken != null) {
-						return resumeToken;
+						offsetOffsetTimeConsumer.accept(resumeToken, null);
 				}
-				return null;
+				offsetOffsetTimeConsumer.accept(null, null);
 		}
 
 		@Override

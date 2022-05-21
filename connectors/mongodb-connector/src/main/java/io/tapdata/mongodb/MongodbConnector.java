@@ -2,28 +2,21 @@ package io.tapdata.mongodb;
 
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import com.mongodb.client.model.changestream.FullDocument;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
-import io.tapdata.entity.event.dml.*;
-import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 
 import io.tapdata.entity.schema.value.*;
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.mongodb.bean.MongodbConfig;
-import io.tapdata.mongodb.reader.v3.MongodbStreamReader;
+import io.tapdata.mongodb.reader.MongodbStreamReader;
 import io.tapdata.mongodb.reader.MongodbV4StreamReader;
+import io.tapdata.mongodb.reader.v3.MongodbV3StreamReader;
 import io.tapdata.mongodb.writer.MongodbWriter;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -32,6 +25,7 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
+import org.apache.commons.collections4.MapUtils;
 import org.bson.*;
 
 import org.bson.codecs.configuration.CodecRegistry;
@@ -58,6 +52,7 @@ import java.util.function.Consumer;
 @TapConnectorClass("spec.json")
 public class MongodbConnector extends ConnectorBase {
 
+		private static final int SAMPLE_SIZE_BATCH_SIZE = 100;
 		private static final String COLLECTION_ID_FIELD = "_id";
     public static final String TAG = MongodbConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
@@ -95,7 +90,8 @@ public class MongodbConnector extends ConnectorBase {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
-        MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+				final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
+				MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
         //List all the tables under the database.
         List<TapTable> list = list();
         for (String collectionName : collectionNames) {
@@ -106,7 +102,34 @@ public class MongodbConnector extends ConnectorBase {
                     continue;
                 }
             }
-            table = table(collectionName).defaultPrimaryKeys(singletonList("_id"));
+						table = table(collectionName).defaultPrimaryKeys(singletonList("_id"));
+						if (version.compareTo("3.2") >= 0) {
+								try {
+										MongodbUtil.sampleDataRow(mongoDatabase.getCollection(collectionName), SAMPLE_SIZE_BATCH_SIZE, (dataRow) -> {
+												Set<String> fieldNames = dataRow.keySet();
+												for (String fieldName : fieldNames) {
+														BsonValue value = dataRow.get(fieldName);
+														getRelateDatabaseField(value, fieldName, table);
+												}
+										});
+								} catch (Exception e) {
+										TapLogger.error(TAG, "Use $sample load mongo connection {}'s {} schema failed {}, will use first row as data schema.",
+														MongodbUtil.maskUriPassword(mongoConfig.getUri()), collectionName, e.getMessage(), e);
+								}
+						} else {
+								try (MongoCursor<BsonDocument> cursor = mongoDatabase.getCollection(collectionName, BsonDocument.class).find().iterator()){
+										while (cursor.hasNext()) {
+												final BsonDocument document = cursor.next();
+												for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
+														final String fieldName = entry.getKey();
+														final BsonValue value = entry.getValue();
+														getRelateDatabaseField(value, fieldName, table);
+												}
+												break;
+										}
+								}
+						}
+
             list.add(table);
             if(list.size() >= tableSize) {
                 consumer.accept(list);
@@ -116,6 +139,35 @@ public class MongodbConnector extends ConnectorBase {
         if(!list.isEmpty())
             consumer.accept(list);
     }
+
+		public static void getRelateDatabaseField(BsonValue value, String fieldName, TapTable table) {
+
+				if (value instanceof BsonDocument) {
+						BsonDocument bsonDocument = (BsonDocument) value;
+						for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
+								getRelateDatabaseField(entry.getValue(), fieldName + "." + entry.getKey(), table);
+						}
+				} else if (value instanceof BsonArray) {
+						BsonArray bsonArray = (BsonArray) value;
+						BsonDocument bsonDocument = new BsonDocument();
+						for (BsonValue bsonValue : bsonArray) {
+								if (bsonValue instanceof BsonDocument) {
+										bsonDocument.putAll((BsonDocument) bsonValue);
+								}
+						}
+						if (MapUtils.isNotEmpty(bsonDocument)) {
+								for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
+										getRelateDatabaseField(entry.getValue(), fieldName + "." + entry.getKey(), table);
+								}
+						}
+				}
+
+				if (value != null) {
+						table.add(TapSimplify.field(fieldName, value.getBsonType().name()));
+				} else {
+						table.add(TapSimplify.field(fieldName, BsonType.NULL.name()));
+				}
+		}
 
     /**
      * The method invocation life circle is below,
@@ -444,36 +496,13 @@ public class MongodbConnector extends ConnectorBase {
         }
     }
 
-    private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime) {
+    private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
 
 				if (mongodbStreamReader == null) {
 						mongodbStreamReader = createStreamReader();
 				}
-				return mongodbStreamReader.streamOffset(tableList, offsetStartTime);
+				mongodbStreamReader.streamOffset(tableList, offsetStartTime, offsetOffsetTimeConsumer);
     }
-
-		private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
-				if(offsetStartTime != null) {
-						List<Bson> pipeline = singletonList(Aggregates.match(
-										Filters.in("ns.coll", tableList)
-						));
-						// Unix timestamp in seconds, with increment 1
-						ChangeStreamIterable<Document> changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
-						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 1));
-						MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
-						BsonDocument theResumeToken = cursor.getResumeToken();
-
-						if(theResumeToken != null) {
-								cursor.close();
-//                return theResumeToken;
-								offsetOffsetTimeConsumer.accept(theResumeToken, null);
-						}
-				} else if(resumeToken != null) {
-//            return resumeToken;
-						offsetOffsetTimeConsumer.accept(resumeToken, null);
-				}
-//        return null;
-		}
 
     /**
      * The method invocation life circle is below,
@@ -495,9 +524,9 @@ public class MongodbConnector extends ConnectorBase {
 				if (mongodbStreamReader == null){
 						mongodbStreamReader = createStreamReader();
 				}
-
 				mongodbStreamReader.read(tableList, offset, eventBatchSize, consumer);
 
+//				consumer.asyncMethodAndNoRetry();
     }
     /**
      * The method invocation life circle is below,
@@ -527,9 +556,15 @@ public class MongodbConnector extends ConnectorBase {
     }
 
 		private MongodbStreamReader createStreamReader(){
-				final MongodbV4StreamReader mongodb4StreamReader = new MongodbV4StreamReader();
-				mongodb4StreamReader.onStart(mongoConfig);
-				return mongodb4StreamReader;
+				final int version = MongodbUtil.getVersion(mongoClient, mongoConfig.getDatabase());
+				MongodbStreamReader mongodbStreamReader = null;
+				if (version >= 4) {
+						mongodbStreamReader = new MongodbV4StreamReader();
+				} else {
+						mongodbStreamReader = new MongodbV3StreamReader();
+				}
+				mongodbStreamReader.onStart(mongoConfig);
+				return mongodbStreamReader;
 		}
 
     @Override
