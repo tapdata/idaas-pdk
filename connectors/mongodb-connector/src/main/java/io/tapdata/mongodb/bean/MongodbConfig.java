@@ -8,19 +8,19 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 
-public class MongoDBConfig implements Serializable {
+public class MongodbConfig implements Serializable {
     private String database;
     private String collection;
     private String uri;
 
-    public static MongoDBConfig load(String jsonFile) throws IOException {
+    public static MongodbConfig load(String jsonFile) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new JsonFactory());
-        return mapper.readValue(new File(jsonFile), MongoDBConfig.class);
+        return mapper.readValue(new File(jsonFile), MongodbConfig.class);
     }
 
-    public static MongoDBConfig load(Map<String, Object> map) throws IOException {
+    public static MongodbConfig load(Map<String, Object> map) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue((new ObjectMapper()).writeValueAsString(map), MongoDBConfig.class);
+        return mapper.readValue((new ObjectMapper()).writeValueAsString(map), MongodbConfig.class);
     }
 
     public String getUri() {

@@ -1,7 +1,7 @@
 {
   "properties": {
     "name": "MongoDB",
-    "icon": "icons/icon.png",
+    "icon": "icons/mongodb.svg",
     "id": "mongodb"
   },
   "configOptions": {
@@ -25,6 +25,94 @@
     }
   },
   "dataTypes": {
+    "DOUBLE": {
+      "to": "TapNumber",
+      "bit": 64,
+      "value": [
+        -9223372036854775808,
+        9223372036854775807
+      ],
+      "scale": 17,
+      "precision": 309
 
+    },
+    "STRING": {
+      "to": "TapString",
+      "byte": "16m"
+    },
+    "DOCUMENT": {
+      "to": "TapMap",
+      "byte": "16m"
+    },
+    "ARRAY": {
+      "to": "TapArray",
+      "byte": "16m"
+    },
+    "BINARY": {
+      "to": "TapBinary",
+      "byte": "16m"
+    },
+    "OBJECT_ID": {
+      "to": "TapString",
+      "byte": "16m"
+    },
+    "BOOLEAN": {
+      "to": "TapBoolean",
+    },
+    "DATE_TIME": {
+      "to": "TapDateTime",
+      "range": [
+        "1000-01-01T00:00:00.001Z",
+        "9999-12-31T23:59:59.999Z"
+      ],
+      "pattern": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+      "fraction": [
+        0,
+        3
+      ],
+      "defaultFraction": 0
+    },
+    "JAVASCRIPT": {
+      "to": "TapString",
+      "byte": "16m"
+    },
+    "SYMBOL": {
+      "to": "TapString"
+    },
+    "INT32": {
+      "to": "TapNumber",
+      "bit": 32,
+      "precision": 10,
+      "value": [
+        -2147483648,
+        2147483647
+      ]
+    },
+    "TIMESTAMP": {
+      "to": "TapString"
+    },
+    "INT64": {
+      "to": "TapNumber",
+      "bit": 64,
+      "value": [
+        -9223372036854775808,
+        9223372036854775807
+      ]
+    },
+    "DECIMAL128": {
+      "to": "TapNumber",
+      "precision": 3,
+      "bit": 128,
+      "value": [
+        1E+6145,
+        -1E+6145
+      ]
+    },
+    "MIN_KEY": {
+      "to": "TapString"
+    },
+    "MAX_KEY": {
+      "to": "TapString"
+    }
   }
 }

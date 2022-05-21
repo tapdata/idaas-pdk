@@ -221,4 +221,9 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
         //TODO release resources
         isShutDown.set(true);
     }
+
+    @Override
+    public void onPause() throws Throwable {
+
+    }
 }
