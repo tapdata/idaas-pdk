@@ -538,21 +538,6 @@ public class MongodbConnector extends ConnectorBase {
      */
     @Override
     public void onDestroy() {
-//        if (mongoClient != null) {
-//            mongoClient.close();
-//        }
-        isShutDown.set(true);
-        if(mongodbStreamReader != null) {
-						mongodbStreamReader.onDestroy();
-        }
-
-				if (mongoClient != null) {
-						mongoClient.close();
-				}
-
-				if (mongodbWriter != null) {
-						mongodbWriter.onDestroy();
-				}
     }
 
 		private MongodbStreamReader createStreamReader(){
@@ -569,6 +554,20 @@ public class MongodbConnector extends ConnectorBase {
 
     @Override
     public void onPause() throws Throwable {
+//        if (mongoClient != null) {
+//            mongoClient.close();
+//        }
+				isShutDown.set(true);
+				if(mongodbStreamReader != null) {
+						mongodbStreamReader.onDestroy();
+				}
 
-    }
+				if (mongoClient != null) {
+						mongoClient.close();
+				}
+
+				if (mongodbWriter != null) {
+						mongodbWriter.onDestroy();
+				}
+		}
 }

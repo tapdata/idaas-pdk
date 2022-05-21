@@ -62,7 +62,7 @@
     "DATE_TIME": {
       "to": "TapDateTime",
       "range": [
-        "0000-01-01T00:00:00.001Z",
+        "1000-01-01T00:00:00.001Z",
         "9999-12-31T23:59:59.999Z"
       ],
       "pattern": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
