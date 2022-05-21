@@ -22,6 +22,7 @@
         <java.version>8</java.version>
         <mysql.driver.version>8.0.28</mysql.driver.version>
         <hikari.version>4.0.3</hikari.version>
+        <debezium.version>1.5.4.Final</debezium.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -39,6 +40,22 @@
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
                 <version>${hikari.version}</version>
+            </dependency>
+            <!-- Debezium -->
+            <dependency>
+                <groupId>io.debezium</groupId>
+                <artifactId>debezium-api</artifactId>
+                <version>${debezium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.debezium</groupId>
+                <artifactId>debezium-embedded</artifactId>
+                <version>${debezium.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.debezium</groupId>
+                <artifactId>debezium-connector-mysql</artifactId>
+                <version>${debezium.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
