@@ -40,3 +40,4 @@ dist/
 cacheData/
 **.puml
 
+*.xlsx

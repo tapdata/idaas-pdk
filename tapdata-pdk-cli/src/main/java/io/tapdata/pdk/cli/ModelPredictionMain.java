@@ -21,6 +21,7 @@ public class ModelPredictionMain {
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/file-connector-v1.0-SNAPSHOT.jar",
 
                 "connectors/mysql/mysql-connector",
+                "connectors/postgres/postgres-connector",
         };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
