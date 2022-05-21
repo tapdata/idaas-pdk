@@ -1,4 +1,6 @@
-package io.tapdata.connector.postgres.bean;
+package io.tapdata.connector.postgres;
+
+import java.util.List;
 
 /**
  * offset for batch read
@@ -10,6 +12,7 @@ public class PostgresOffset {
 
     private String sortString;
     private Long offsetValue;
+    private List<String> addTables;
 
     public PostgresOffset() {
     }
