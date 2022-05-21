@@ -39,6 +39,7 @@ import io.tapdata.pdk.core.workflow.engine.driver.task.TaskManager;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
@@ -310,11 +311,12 @@ public class SourceNodeDriver extends Driver {
 
                     StreamOffsetFunction streamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
                     if(streamOffsetFunction != null) {
+                        final Object[] streamOffset = {null};
                         pdkInvocationMonitor.invokePDKMethod(PDKMethod.STREAM_OFFSET, () -> {
-                            Object offsetState = streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), finalTargetTables, null);
-                            if (offsetState != null) {
-                                TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetBytes, offsetState);
-                                this.streamOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(offsetState);
+                            streamOffsetFunction.streamOffset(sourceNode.getConnectorContext(), finalTargetTables, null, (o, aLong) -> streamOffset[0] = o);
+                            if (streamOffset[0] != null) {
+                                TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetBytes, streamOffset[0]);
+                                this.streamOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(streamOffset[0]);
                             }
                         }, "Stream read sourceNode " + sourceNode.getConnectorContext(), TAG, error -> {
                             TapLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());

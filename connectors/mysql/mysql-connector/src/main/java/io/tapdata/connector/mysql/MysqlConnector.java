@@ -121,7 +121,12 @@ public class MysqlConnector extends ConnectorBase {
 		Optional.ofNullable(this.mysqlWriter).ifPresent(MysqlWriter::onDestroy);
 	}
 
-	private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) throws Throwable {
+    @Override
+    public void onPause() throws Throwable {
+
+    }
+
+    private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) throws Throwable {
 		String tableId = tapClearTableEvent.getTableId();
 		if (mysqlJdbcContext.tableExists(tableId)) {
 			mysqlJdbcContext.clearTable(tableId);
@@ -216,8 +221,8 @@ public class MysqlConnector extends ConnectorBase {
 
 	}
 
-	private String streamOffset(TapConnectorContext tapConnectorContext, List<String> tableList, Long offsetStartTime) {
-		return null;
+	private void streamOffset(TapConnectorContext tapConnectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
+
 	}
 
 	private long batchCount(TapConnectorContext tapConnectorContext, TapTable tapTable) throws Throwable {

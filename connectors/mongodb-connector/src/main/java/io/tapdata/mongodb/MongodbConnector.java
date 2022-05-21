@@ -2,8 +2,12 @@ package io.tapdata.mongodb;
 
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import io.tapdata.base.ConnectorBase;
@@ -227,7 +231,7 @@ public class MongodbConnector extends ConnectorBase {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportStreamRead(this::streamRead);
-//        connectorFunctions.supportStreamOffset(this::streamOffset);
+        connectorFunctions.supportStreamOffset((connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer) -> streamOffset(connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer));
     }
 
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
@@ -448,6 +452,29 @@ public class MongodbConnector extends ConnectorBase {
 				return mongodbStreamReader.streamOffset(tableList, offsetStartTime);
     }
 
+		private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
+				if(offsetStartTime != null) {
+						List<Bson> pipeline = singletonList(Aggregates.match(
+										Filters.in("ns.coll", tableList)
+						));
+						// Unix timestamp in seconds, with increment 1
+						ChangeStreamIterable<Document> changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
+						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 1));
+						MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
+						BsonDocument theResumeToken = cursor.getResumeToken();
+
+						if(theResumeToken != null) {
+								cursor.close();
+//                return theResumeToken;
+								offsetOffsetTimeConsumer.accept(theResumeToken, null);
+						}
+				} else if(resumeToken != null) {
+//            return resumeToken;
+						offsetOffsetTimeConsumer.accept(resumeToken, null);
+				}
+//        return null;
+		}
+
     /**
      * The method invocation life circle is below,
      * initiated ->
@@ -504,4 +531,9 @@ public class MongodbConnector extends ConnectorBase {
 				mongodb4StreamReader.onStart(mongoConfig);
 				return mongodb4StreamReader;
 		}
+
+    @Override
+    public void onPause() throws Throwable {
+
+    }
 }

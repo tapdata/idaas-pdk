@@ -88,6 +88,12 @@ public class ConnectorNode extends Node {
         applyClassLoaderContext();
         connector.destroy();
     }
+
+    public void connectorPause() throws Throwable {
+        applyClassLoaderContext();
+        connector.pause();
+    }
+
     public TapConnectorContext getConnectorContext() {
         return connectorContext;
     }

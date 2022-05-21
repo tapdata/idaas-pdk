@@ -1,13 +1,13 @@
 package io.tapdata.connector.postgres;
 
 import io.tapdata.connector.postgres.config.PostgresConfig;
-import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.util.NetUtil;
 
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.tapdata.base.ConnectorBase.testItem;
@@ -15,11 +15,14 @@ import static io.tapdata.base.ConnectorBase.testItem;
 public class PostgresTest implements AutoCloseable {
 
     private final PostgresConfig postgresConfig;
-    private Connection conn;
+    private final PostgresJdbcContext postgresJdbcContext;
 
-    public PostgresTest(TapConnectionContext tapConnectionContext) {
-        DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
-        postgresConfig = PostgresConfig.load(connectionConfig);
+    private final static String PG_ROLE_INFO = "SELECT * FROM pg_roles WHERE rolname='%s'";
+    private final static String PG_TABLE_NUM = "SELECT COUNT(*) FROM pg_tables WHERE schemaname='%s'";
+
+    public PostgresTest(PostgresConfig postgresConfig) {
+        this.postgresConfig = postgresConfig;
+        postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
     }
 
     //Test host and port
@@ -34,9 +37,9 @@ public class PostgresTest implements AutoCloseable {
 
     //Test pg connect and log in
     public TestItem testConnect() {
-        try {
-            Class.forName("org.postgresql.Driver");
-            conn = DriverManager.getConnection(postgresConfig.getDatabaseUrl(), postgresConfig.getUser(), postgresConfig.getPassword());
+        try (
+                Connection connection = postgresJdbcContext.getConnection();
+        ) {
             return testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY);
         } catch (Exception e) {
             return testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, e.getMessage());
@@ -46,21 +49,18 @@ public class PostgresTest implements AutoCloseable {
     //Test number of tables and privileges
     public TestItem testPrivilege() {
         try (
-                PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+                Connection conn = postgresJdbcContext.getConnection();
+                PreparedStatement ps = conn.prepareStatement(
+                        "SELECT count(*) FROM information_schema.table_privileges " +
+                                "WHERE grantee=? AND table_catalog=? AND table_schema=? ");
         ) {
             AtomicInteger tablePrivileges = new AtomicInteger();
-            PreparedStatement ps = conn.prepareStatement(
-                    "SELECT count(*) FROM information_schema.table_privileges " +
-                            "WHERE grantee=? AND table_catalog=? AND table_schema=? ");
             ps.setObject(1, postgresConfig.getUser());
             ps.setObject(2, postgresConfig.getDatabase());
             ps.setObject(3, postgresConfig.getSchema());
             postgresJdbcContext.query(ps, resultSet -> {
-                resultSet.next();
                 tablePrivileges.set(resultSet.getInt(1));
             });
-            ResultSet privilegeResult = ps.executeQuery();
-            privilegeResult.next();
             if (tablePrivileges.get() >= 7 * tableCount()) {
                 return testItem(PostgresTestItem.CHECK_TABLE_PRIVILEGE.getContent(), TestItem.RESULT_SUCCESSFULLY);
             } else {
@@ -74,31 +74,34 @@ public class PostgresTest implements AutoCloseable {
 
     public TestItem testReplication() {
         try {
-            ResultSet resultSet = conn.createStatement().executeQuery(
-                    "SELECT * FROM  pg_roles WHERE rolname='" + postgresConfig.getUser() + "'");
-            resultSet.next();
-            if (resultSet.getBoolean("rolreplication")) {
+            AtomicBoolean rolReplication = new AtomicBoolean();
+            postgresJdbcContext.query(String.format(PG_ROLE_INFO, postgresConfig.getUser()), resultSet -> {
+                rolReplication.set(resultSet.getBoolean("rolreplication"));
+            });
+            if (rolReplication.get()) {
                 return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY);
             } else {
                 return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
                         "Current user have no privileges to create Replication Slot!");
             }
-        } catch (SQLException e) {
+        } catch (Throwable e) {
             return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_FAILED, e.getMessage());
         }
     }
 
-    private int tableCount() throws SQLException {
-        DatabaseMetaData databaseMetaData = conn.getMetaData();
-        ResultSet tableResult = databaseMetaData.getTables(conn.getCatalog(), postgresConfig.getSchema(), null, new String[]{"TABLE"});
-        tableResult.last();
-        return tableResult.getRow();
+    private int tableCount() throws Throwable {
+        AtomicInteger tableCount = new AtomicInteger();
+        postgresJdbcContext.query(PG_TABLE_NUM, resultSet -> {
+            tableCount.set(resultSet.getInt(1));
+        });
+        return tableCount.get();
     }
 
     @Override
-    public void close() throws Exception {
-        if (conn != null) {
-            conn.close();
+    public void close() {
+        try {
+            postgresJdbcContext.close();
+        } catch (Exception ignored) {
         }
     }
 }
