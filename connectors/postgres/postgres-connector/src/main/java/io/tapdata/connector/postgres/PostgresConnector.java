@@ -183,14 +183,20 @@ public class PostgresConnector extends ConnectorBase {
             postgresJdbcContext.close();
         }
         if (EmptyKit.isNotNull(cdcRunner)) {
-            cdcRunner.closeCdcRunner();
+            cdcRunner.closeCdcRunner(true);
             cdcRunner = null;
         }
     }
 
     @Override
     public void onPause() throws Throwable {
-
+        if (EmptyKit.isNotNull(postgresJdbcContext)) {
+            postgresJdbcContext.close();
+        }
+        if (EmptyKit.isNotNull(cdcRunner)) {
+            cdcRunner.closeCdcRunner(false);
+            cdcRunner = null;
+        }
     }
 
     private void initConnection(TapConnectionContext connectorContext) {
@@ -235,7 +241,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void createTable(TapConnectorContext tapConnectorContext, TapCreateTableEvent tapCreateTableEvent) {
-        TapTable tapTable = tapConnectorContext.getTableMap().get(tapCreateTableEvent.getTableId());
+        TapTable tapTable = tapCreateTableEvent.getTable();
         Collection<String> primaryKeys = tapTable.primaryKeys();
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
         String sql = "CREATE TABLE IF NOT EXISTS \"" + tapTable.getId() + "\"(" + PostgresSqlMaker.buildColumnDefinition(tapTable);
@@ -314,7 +320,6 @@ public class PostgresConnector extends ConnectorBase {
 
     // TODO: 2022/5/13 the same type of event must be dealt with to make this method faster
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
-        initConnection(connectorContext);
         AtomicLong inserted = new AtomicLong(0); //number of insertedtapTable = {TapTable@10447} "TapTable id BatchReadTest_postgresToTddTarget_ISfJVJ name BatchReadTest_postgresToTddTarget_ISfJVJ storageEngine null charset null number of fields 21"
         AtomicLong updated = new AtomicLong(0); //number of updated
         AtomicLong deleted = new AtomicLong(0); //number of deleted
@@ -445,11 +450,7 @@ public class PostgresConnector extends ConnectorBase {
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) {
         if (cdcRunner == null) {
-            List<TapTable> tapTableList = null;
-            if (EmptyKit.isNotEmpty(tableList)) {
-                tapTableList = tableList.stream().map(v -> nodeContext.getTableMap().get(v)).collect(Collectors.toList());
-            }
-            cdcRunner = new PostgresCdcRunner(postgresConfig, tapTableList).registerConsumer(offsetState, recordSize, consumer);
+            cdcRunner = new PostgresCdcRunner(postgresConfig, tableList).registerConsumer(offsetState, recordSize, consumer);
             cdcRunner.startCdcRunner();
         }
     }
