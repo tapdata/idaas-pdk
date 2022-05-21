@@ -95,8 +95,23 @@ public class ExpressionMatchingMap<T> {
         return exactlyMatchMap.isEmpty() && prefixTypeExprListMap.isEmpty();
     }
 
+    public static final int ITERATE_TYPE_ALL = 1;
+    public static final int ITERATE_TYPE_EXACTLY_ONLY = 2;
+    public static final int ITERATE_TYPE_PREFIX_ONLY = 3;
     public void iterate(TapIterator<Map.Entry<String, T>> iterator) {
-        if(exactlyMatchMap != null) {
+        iterate(iterator, ITERATE_TYPE_ALL);
+    }
+    public void iterate(TapIterator<Map.Entry<String, T>> iterator, int type) {
+        switch (type) {
+            case ITERATE_TYPE_ALL:
+            case ITERATE_TYPE_EXACTLY_ONLY:
+            case ITERATE_TYPE_PREFIX_ONLY:
+                break;
+            default:
+                type = ITERATE_TYPE_ALL;
+                break;
+        }
+        if(exactlyMatchMap != null && (type == ITERATE_TYPE_ALL || type == ITERATE_TYPE_EXACTLY_ONLY)) {
             for(Map.Entry<String, T> entry : exactlyMatchMap.entrySet()) {
                 valueFilter(entry.getValue());
                 if(iterator.iterate(entry)) {
@@ -104,7 +119,7 @@ public class ExpressionMatchingMap<T> {
                 }
             }
         }
-        if(prefixTypeExprListMap != null) {
+        if(prefixTypeExprListMap != null && (type == ITERATE_TYPE_ALL || type == ITERATE_TYPE_PREFIX_ONLY)) {
             for(Map.Entry<String, List<TypeExpr<T>>> entry : prefixTypeExprListMap.entrySet()) {
                 List<TypeExpr<T>> list = entry.getValue();
                 for(TypeExpr<T> typeExpr : list) {
