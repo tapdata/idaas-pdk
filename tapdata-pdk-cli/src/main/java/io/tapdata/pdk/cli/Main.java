@@ -23,6 +23,7 @@ public class Main {
         commandLine.addSubcommand("connectionTest", new ConnectionTestCli());
         commandLine.addSubcommand("template", new ConnectorProjectBootCli());
         commandLine.addSubcommand("test", new TDDCli());
+        commandLine.addSubcommand("modelPrediction", new ModelPredictionCli());
         return commandLine;
     }
 }

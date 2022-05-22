@@ -43,6 +43,8 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
             //User custom codec
             if(dataType == null && field.getTapType() != null) {
                 dataType = targetCodecFilterManager.getDataTypeByTapType(field.getTapType().getClass());
+                if(dataType != null)
+                    dataType = dataType.toLowerCase();
             }
 
             //Find best codec

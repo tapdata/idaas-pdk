@@ -118,6 +118,8 @@ public class TapCodecsFilterManager {
                     //TODO Handle updated tapType field?
                     //TODO Handle deleted field?
                 }
+            } else if(object != null) {
+                TapLogger.warn(TAG, "transformFromTapValueMap failed as object is not TapValue, but type {} value {}", object.getClass(), object);
             }
         });
         return nameFieldMap;

@@ -3,6 +3,7 @@ package io.tapdata.pdk.core.monitor;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
+import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
 import java.util.Map;
@@ -71,7 +72,7 @@ public class PDKInvocationMonitor {
     }
     public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
         if(async) {
-            new Thread(() -> {
+            ExecutorsManager.getInstance().getExecutorService().execute(() -> {
                 if(contextClassLoader != null)
                     Thread.currentThread().setContextClassLoader(contextClassLoader);
                 if(retryTimes > 0) {
@@ -81,7 +82,7 @@ public class PDKInvocationMonitor {
                 } else {
                     invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
                 }
-            }, "async invoke method " + method.name()).start();
+            });
         } else {
             invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
         }

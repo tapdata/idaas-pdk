@@ -173,6 +173,7 @@
 	  "fixed": true
 	},
 	"varchar($byte)": {
+      "name": "varchar",
 	  "to": "TapString",
 	  "byte": 16383,
 	  "defaultByte": 1,
@@ -444,11 +445,13 @@
 	  "withTimeZone": true
 	},
 	"enum($enums)": {
+      "name": "enum",
 	  "to": "TapString",
 	  "queryOnly": true,
 	  "byte": 16383
 	},
 	"set($sets)": {
+      "name": "set",
 	  "to": "TapString",
 	  "queryOnly": true,
 	  "byte": 16383

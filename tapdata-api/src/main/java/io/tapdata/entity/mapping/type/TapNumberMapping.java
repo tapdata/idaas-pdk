@@ -571,4 +571,52 @@ public class TapNumberMapping extends TapMapping {
     public void setDefaultScale(Integer defaultScale) {
         this.defaultScale = defaultScale;
     }
+
+    public Boolean getFixed() {
+        return fixed;
+    }
+
+    public void setFixed(Boolean fixed) {
+        this.fixed = fixed;
+    }
+
+    public int getBitRatio() {
+        return bitRatio;
+    }
+
+    public void setBitRatio(int bitRatio) {
+        this.bitRatio = bitRatio;
+    }
+
+    public BigDecimal getMinValue() {
+        return minValue;
+    }
+
+    public void setMinValue(BigDecimal minValue) {
+        this.minValue = minValue;
+    }
+
+    public BigDecimal getMaxValue() {
+        return maxValue;
+    }
+
+    public void setMaxValue(BigDecimal maxValue) {
+        this.maxValue = maxValue;
+    }
+
+    public BigDecimal getUnsignedMinValue() {
+        return unsignedMinValue;
+    }
+
+    public void setUnsignedMinValue(BigDecimal unsignedMinValue) {
+        this.unsignedMinValue = unsignedMinValue;
+    }
+
+    public BigDecimal getUnsignedMaxValue() {
+        return unsignedMaxValue;
+    }
+
+    public void setUnsignedMaxValue(BigDecimal unsignedMaxValue) {
+        this.unsignedMaxValue = unsignedMaxValue;
+    }
 }

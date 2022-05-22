@@ -63,13 +63,13 @@ public abstract class TapBytesBase extends TapMapping {
         bytes = objectToNumber(byteObj);
     }
 
-    protected Long actualBytes() {
+    public Long actualBytes() {
         if(bytes != null)
             return bytes * byteRatio;
         return null;
     }
 
-    protected Long actualDefaultBytes() {
+    public Long actualDefaultBytes() {
         if(defaultBytes != null)
             return defaultBytes * byteRatio;
         return null;
@@ -91,5 +91,21 @@ public abstract class TapBytesBase extends TapMapping {
 
     public void setBytes(Long bytes) {
         this.bytes = bytes;
+    }
+
+    public Long getDefaultBytes() {
+        return defaultBytes;
+    }
+
+    public void setDefaultBytes(Long defaultBytes) {
+        this.defaultBytes = defaultBytes;
+    }
+
+    public int getByteRatio() {
+        return byteRatio;
+    }
+
+    public void setByteRatio(int byteRatio) {
+        this.byteRatio = byteRatio;
     }
 }
