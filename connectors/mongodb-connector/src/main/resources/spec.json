@@ -113,6 +113,9 @@
     },
     "MAX_KEY": {
       "to": "TapString"
+    },
+    "NULL": {
+      "to": "TapRaw"
     }
   }
 }
