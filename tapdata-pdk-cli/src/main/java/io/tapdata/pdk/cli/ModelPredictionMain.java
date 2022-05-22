@@ -22,6 +22,7 @@ public class ModelPredictionMain {
 
                 "connectors/mysql/mysql-connector",
                 "connectors/postgres/postgres-connector",
+                "connectors/mongodb-connector"
         };
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);

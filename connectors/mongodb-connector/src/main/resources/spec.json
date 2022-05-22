@@ -54,7 +54,8 @@
     },
     "OBJECT_ID": {
       "to": "TapString",
-      "byte": "16m"
+      "byte": "24",
+      "queryOnly": true
     },
     "BOOLEAN": {
       "to": "TapBoolean",
@@ -74,10 +75,13 @@
     },
     "JAVASCRIPT": {
       "to": "TapString",
-      "byte": "16m"
+      "byte": "16m",
+      "queryOnly": true
     },
     "SYMBOL": {
-      "to": "TapString"
+      "to": "TapString",
+      "byte": "16m",
+      "queryOnly": true
     },
     "INT32": {
       "to": "TapNumber",
@@ -109,10 +113,14 @@
       ]
     },
     "MIN_KEY": {
-      "to": "TapString"
+      "to": "TapString",
+      "byte": "16m",
+      "queryOnly": true
     },
     "MAX_KEY": {
-      "to": "TapString"
+      "to": "TapString",
+      "byte": "16m",
+      "queryOnly": true
     }
   }
 }

@@ -83,6 +83,8 @@ public class test {
 
 
                 CellStyle cellStyle = workbook.createCellStyle();
+                cellStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+                cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
                 cell.setCellStyle(cellStyle);
                 if(obj instanceof String)
                     cell.setCellValue((String)obj);

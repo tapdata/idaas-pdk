@@ -1,24 +1,21 @@
 package io.tapdata.pdk.cli.commands;
 
-import com.google.common.collect.Multiset;
-import io.tapdata.entity.codec.TapCodecsRegistry;
-import io.tapdata.entity.codec.filter.TapCodecsFilterManager;
+import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
-import io.tapdata.entity.mapping.TapIterator;
+import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.mapping.type.*;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.simplify.pretty.BiClassHandlers;
+import io.tapdata.entity.simplify.pretty.ClassHandlers;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.entity.utils.cache.KVMapFactory;
-import io.tapdata.pdk.apis.annotations.TapConnectorClass;
-import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.CommonCli;
 import io.tapdata.pdk.core.api.ConnectorNode;
@@ -26,16 +23,12 @@ import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
-import io.tapdata.pdk.core.utils.CommonUtils;
-import io.tapdata.pdk.tdd.core.PDKTestBase;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.shared.invoker.*;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFCreationHelper;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -43,14 +36,13 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
-import static io.tapdata.entity.simplify.TapSimplify.field;
-import static io.tapdata.entity.simplify.TapSimplify.table;
+import static io.tapdata.entity.simplify.TapSimplify.*;
 
 @CommandLine.Command(
         description = "Model prediction method",
@@ -84,6 +76,7 @@ public class ModelPredictionCli extends CommonCli {
         List<File> jarFiles = new ArrayList<>();
 
         initBiClassHandlers();
+        initDataNameClassHandlers();
 
         for(File file : files) {
             String jarFile = null;
@@ -180,7 +173,7 @@ public class ModelPredictionCli extends CommonCli {
         try
         {
             //Write the workbook in file system
-            FileOutputStream out = FileUtils.openOutputStream(new File(output + "report_" + dateTime() + ".xlsx"));
+            FileOutputStream out = FileUtils.openOutputStream(new File(output + "TypesMappingReport_" + dateTime() + ".xlsx"));
             workbook.write(out);
             out.close();
         }
@@ -203,20 +196,24 @@ public class ModelPredictionCli extends CommonCli {
 
         //Create a blank sheet
         XSSFSheet sheet = workbook.createSheet(sourceNode.getConnectorContext().getSpecification().getName() + " -> " + targetNode.getConnectorContext().getSpecification().getName());
+        Drawing drawing = sheet.createDrawingPatriarch();
         //This data needs to be written (Object[])
         Map<String, Object[]> data = new LinkedHashMap<>();
-        data.put("1", new Object[] {"No.", "Source type", "Source model", "Target type", "Target model"});
+        String sourceName = sourceNode.getConnectorContext().getSpecification().getName();
+        String targetName = targetNode.getConnectorContext().getSpecification().getName();
+        data.put("1", new Object[] {"No.", sourceName + " type", sourceName + " model", targetName + " type", targetName + " model"});
         Set<Map.Entry<String, TapField>> entries = sourceNameFieldMap.entrySet();
         int index = 0;
         for(Map.Entry<String, TapField> entry : entries) {
             TapField targetField = targetNameFieldMap.get(entry.getKey());
             data.put(String.valueOf(index + 2), new Object[] {index + 1,
-                    entry.getValue().getDataType(), entry.getValue().getDataType(),
-                    targetField.getDataType(), targetField.getDataType()
+                    getDataTypeName(sourceNode, entry.getValue()), entry.getValue().getDataType(),
+                    getDataTypeName(targetNode, targetField), targetField.getDataType()
             });
             index++;
         }
-        int sourceCommendIndex = 1;
+        int sourceCommendIndex = 2;
+        int targetCommendIndex = 4;
 
         //https://www.baeldung.com/apache-poi-change-cell-font
         //Iterate over data and write to sheet
@@ -232,22 +229,23 @@ public class ModelPredictionCli extends CommonCli {
                 Cell cell = row.createCell(cellnum++);
                 sheet.autoSizeColumn(cellnum - 1);
                 if(sourceCommendIndex == cellnum - 1) {
-                    Drawing drawing = sheet.createDrawingPatriarch();
-                    ClientAnchor clientAnchor = drawing.createAnchor(0, 0, 0, 0, 0, 2, 7, 12);
-
-                    Comment comment = drawing.createCellComment(clientAnchor);
-
-                    RichTextString richTextString = creationHelper.createRichTextString(
-                            "We can put a long comment here with \n a new line text followed by another \n new line text");
-
-                    comment.setString(richTextString);
-                    comment.setAuthor("Aplomb");
-
-                    cell.setCellComment(comment);
+                    TypeExprResult<DataMap> result = addCellComment(creationHelper, drawing, cell, sourceNode, (String)obj);
+                }
+                if(targetCommendIndex == cellnum - 1) {
+                    TypeExprResult<DataMap> result = addCellComment(creationHelper, drawing, cell, targetNode, (String)obj);
                 }
 
 
                 CellStyle cellStyle = workbook.createCellStyle();
+                if(sourceCommendIndex == cellnum  - 1 || targetCommendIndex == cellnum  - 1) {
+                    cellStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+                    cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                }
+                if(rownum == 1) {
+                    cellStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+                    cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                    cellStyle.setLocked(true);
+                }
 
                 cell.setCellStyle(cellStyle);
                 if(obj instanceof String)
@@ -257,6 +255,65 @@ public class ModelPredictionCli extends CommonCli {
             }
         }
 
+    }
+
+    private String getDataTypeName(ConnectorNode connectorNode, TapField field) {
+        String dataType = field.getDataType();
+        if(dataType == null)
+            return "";
+        DefaultExpressionMatchingMap expressionMatchingMap = connectorNode.getConnectorContext().getSpecification().getDataTypesMap();
+        TypeExprResult<DataMap> result = expressionMatchingMap.get(dataType);
+        if(result != null) {
+            TapMapping tapMapping = (TapMapping)result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+            return dataNameClassHandlers.handle(tapMapping, result.getExpression());
+        }
+        return "";
+    }
+
+    private TypeExprResult<DataMap> addCellComment(CreationHelper creationHelper, Drawing drawing, Cell cell, ConnectorNode connectorNode, String dataType) {
+        TypeExprResult<DataMap> result = connectorNode.getConnectorContext().getSpecification().getDataTypesMap().get(dataType);
+        if(result == null)
+            return null;
+
+        ClientAnchor clientAnchor = drawing.createAnchor(0, 0, 0, 0, 0, 2, 7, 12);
+        Comment comment = drawing.createCellComment(clientAnchor);
+        RichTextString richTextString = creationHelper.createRichTextString("Expression: " + result.getExpression() + "\r\n" +
+                "TapMapping: "  + JSON.toJSONString(result.getValue().get(TapMapping.FIELD_TYPE_MAPPING), true));
+        comment.setString(richTextString);
+        comment.setAuthor("Aplomb");
+        cell.setCellComment(comment);
+        return result;
+    }
+
+    private BiClassHandlers<TapMapping, String, String> dataNameClassHandlers;
+    private void initDataNameClassHandlers() {
+        if(dataNameClassHandlers == null) {
+            dataNameClassHandlers = new BiClassHandlers<>();
+            dataNameClassHandlers.register(TapStringMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapString()));
+            dataNameClassHandlers.register(TapYearMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapYear()));
+            dataNameClassHandlers.register(TapNumberMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapNumber()));
+            dataNameClassHandlers.register(TapRawMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapRaw()));
+            dataNameClassHandlers.register(TapBooleanMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapBoolean()));
+            dataNameClassHandlers.register(TapDateMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapDate()));
+            dataNameClassHandlers.register(TapDateTimeMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapDateTime()));
+            dataNameClassHandlers.register(TapTimeMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapTime()));
+            dataNameClassHandlers.register(TapMapMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapMap()));
+            dataNameClassHandlers.register(TapArrayMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapArray()));
+            dataNameClassHandlers.register(TapBinaryMapping.class, (tapMapping, expression) -> this.generateDataTypeName(tapMapping, expression, new TapBinary()));
+        }
+    }
+
+    private String generateDataTypeName(TapMapping tapMapping, String expression, TapType tapType) {
+        if(tapMapping.getName() != null)
+            return tapMapping.getName();
+        TapResult<String> result = tapMapping.fromTapType(expression, tapType);
+        if(result != null)
+            return result.getData();
+        return null;
+    }
+
+    private String toStringName(TapStringMapping t) {
+        return null;
     }
 
     private BiClassHandlers<TapMapping, TableExpressionWrapper, Void> biClassHandlers;
