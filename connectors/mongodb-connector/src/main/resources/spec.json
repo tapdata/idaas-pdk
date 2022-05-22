@@ -122,6 +122,9 @@
       "to": "TapString",
       "byte": "16m",
       "queryOnly": true
+    },
+    "NULL": {
+      "to": "TapRaw"
     }
   }
 }

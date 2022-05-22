@@ -212,4 +212,9 @@ public class MongodbUtil {
 
 				return mongodbUri;
 		}
+
+		public static void main(String[] args) {
+				ConnectionString connectionString = new ConnectionString("mongodb://root:Gotapd8@192.168.1.183:23221/target?authSource=admin");
+				System.out.println(connectionString);
+		}
 }
