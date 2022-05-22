@@ -450,14 +450,20 @@ public class PostgresConnector extends ConnectorBase {
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) {
         if (cdcRunner == null) {
-            cdcRunner = new PostgresCdcRunner(postgresConfig, tableList).registerConsumer(offsetState, recordSize, consumer);
+            cdcRunner = new PostgresCdcRunner()
+                    .use(postgresConfig)
+                    .watch(tableList)
+                    .offset(offsetState)
+                    .registerConsumer(consumer, recordSize);
             cdcRunner.startCdcRunner();
         }
     }
 
     // TODO: 2022/5/14 implement with offset
-    private Object streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
-        return null;
+    private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
+        PostgresOffset postgresOffset = PostgresOffsetBackingStore.postgresOffsetMap.get(cdcRunner.getRunnerName());
+
+        offsetOffsetTimeConsumer.accept(postgresOffset, offsetStartTime);
     }
 
 }

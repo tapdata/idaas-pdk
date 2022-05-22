@@ -17,7 +17,6 @@ import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -28,50 +27,74 @@ import java.util.List;
  */
 public class PostgresCdcRunner extends DebeziumCdcRunner {
 
-    private final PostgresJdbcContext postgresJdbcContext;
-    private final PostgresConfig postgresConfig;
-    private final PostgresDebeziumConfig postgresDebeziumConfig;
-    private final List<String> observedTableList;
-    private HashMap<String, String> replicaMarks;
-    private Object offsetState;
+    private PostgresJdbcContext postgresJdbcContext;
+    private PostgresConfig postgresConfig;
+    private PostgresDebeziumConfig postgresDebeziumConfig;
+    private List<String> observedTableList;
+    private PostgresOffset postgresOffset;
     private int recordSize;
     private StreamReadConsumer consumer;
 
-    public PostgresCdcRunner(PostgresConfig postgresConfig, List<String> observedTableList) {
-        //initial postgres db connection
-        this.postgresConfig = postgresConfig;
-        postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
-        //initial debezium config for postgres
-        this.observedTableList = observedTableList;
-        postgresDebeziumConfig = new PostgresDebeziumConfig(postgresConfig, observedTableList);
-        this.runnerName = postgresDebeziumConfig.getSlotName();
+    public PostgresCdcRunner() {
+
     }
 
-    public PostgresCdcRunner registerConsumer(Object offsetState, int recordSize, StreamReadConsumer consumer) {
+    public PostgresOffset getPostgresOffset() {
+        return postgresOffset;
+    }
+
+    public PostgresCdcRunner use(PostgresConfig postgresConfig) {
+        this.postgresConfig = postgresConfig;
+        this.postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+        return this;
+    }
+
+    public PostgresCdcRunner watch(List<String> observedTableList) {
+        this.observedTableList = observedTableList;
+        postgresDebeziumConfig = new PostgresDebeziumConfig()
+                .use(postgresConfig)
+                .watch(observedTableList);
+        this.runnerName = postgresDebeziumConfig.getSlotName();
+        return this;
+    }
+
+    public PostgresCdcRunner offset(Object offsetState) {
+        if (EmptyKit.isNull(offsetState)) {
+            postgresOffset = new PostgresOffset();
+        } else {
+            this.postgresOffset = (PostgresOffset) offsetState;
+        }
+        PostgresOffsetBackingStore.postgresOffsetMap.put(runnerName, postgresOffset);
+        return this;
+    }
+
+    public PostgresCdcRunner registerConsumer(StreamReadConsumer consumer, int recordSize) {
+        this.recordSize = recordSize;
+        this.consumer = consumer;
         //build debezium engine
         this.engine = (EmbeddedEngine) EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
-                .using(new DebeziumEngine.ConnectorCallback() {
-                    @Override
-                    public void taskStarted() {
-                        DebeziumEngine.ConnectorCallback.super.taskStarted();
-                        consumer.streamReadStarted();
-                    }
-
-                    @Override
-                    public void taskStopped() {
-                        DebeziumEngine.ConnectorCallback.super.taskStopped();
-                        consumer.streamReadEnded();
-                    }
-                })
+//                .using(new DebeziumEngine.ConnectorCallback() {
+//                    @Override
+//                    public void taskStarted() {
+//                        DebeziumEngine.ConnectorCallback.super.taskStarted();
+//                        consumer.streamReadStarted();
+//                    }
+//
+//                    @Override
+//                    public void taskStopped() {
+//                        DebeziumEngine.ConnectorCallback.super.taskStopped();
+//                        consumer.streamReadEnded();
+//                    }
+//                })
+//                .using((b, s, throwable) -> {
+//
+//                })
 //                .using(this.getClass().getClassLoader())
 //                .using(Clock.SYSTEM)
 //                .notifying(this::consumeRecord)
-                .notifying(this::consumeRecords)
+                .notifying(this::consumeRecord)
                 .build();
-        this.offsetState = offsetState;
-        this.recordSize = recordSize;
-        this.consumer = consumer;
         //make replica identity for postgres those without unique key
 //        try {
 //            makeReplicaIdentity();
@@ -81,12 +104,11 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         return this;
     }
 
-//    public void consumeRecord(SourceRecord sourceRecord) {
-//        System.out.println(sourceRecord);
-//        System.out.println(offsetState);
-//        System.out.println(recordSize);
-//        DebeziumCdcPool.removeRunner(slotName);
-//    }
+    public void consumeRecord(SourceRecord sourceRecord) {
+        System.out.println(sourceRecord);
+        System.out.println(TapSimplify.toJson(postgresOffset));
+        System.out.println(recordSize);
+    }
 
     @Override
     public void consumeRecords(List<SourceRecord> sourceRecords, DebeziumEngine.RecordCommitter<SourceRecord> committer) {
@@ -123,7 +145,6 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         if (EmptyKit.isNotEmpty(eventList)) {
             consumer.accept(eventList);
         }
-//        consumer.streamReadEnded();
     }
 
     private DataMap getMapFromStruct(Struct struct) {
@@ -141,7 +162,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     @Override
     public void closeCdcRunner(Object needClearSlot) throws IOException {
         super.closeCdcRunner(needClearSlot);
-        if ((boolean) needClearSlot) {
+        if (EmptyKit.isNotNull(needClearSlot) && (boolean) needClearSlot) {
             clearSlot();
         }
         postgresJdbcContext.close();

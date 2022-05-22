@@ -29,6 +29,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>io.tapdata.pdk</groupId>
+            <artifactId>tapdata-pdk-runner</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-embedded</artifactId>
             <version>${debezium.version}</version>

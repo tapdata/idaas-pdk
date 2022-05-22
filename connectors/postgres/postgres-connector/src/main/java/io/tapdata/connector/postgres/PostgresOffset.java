@@ -1,7 +1,5 @@
 package io.tapdata.connector.postgres;
 
-import java.util.List;
-
 /**
  * offset for batch read
  *
@@ -12,7 +10,9 @@ public class PostgresOffset {
 
     private String sortString;
     private Long offsetValue;
-    private List<String> addTables;
+
+    private String streamOffsetKey;
+    private String streamOffsetValue;
 
     public PostgresOffset() {
     }
@@ -36,5 +36,21 @@ public class PostgresOffset {
 
     public void setOffsetValue(Long offsetValue) {
         this.offsetValue = offsetValue;
+    }
+
+    public String getStreamOffsetKey() {
+        return streamOffsetKey;
+    }
+
+    public void setStreamOffsetKey(String streamOffsetKey) {
+        this.streamOffsetKey = streamOffsetKey;
+    }
+
+    public String getStreamOffsetValue() {
+        return streamOffsetValue;
+    }
+
+    public void setStreamOffsetValue(String streamOffsetValue) {
+        this.streamOffsetValue = streamOffsetValue;
     }
 }

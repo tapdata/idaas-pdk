@@ -16,17 +16,26 @@ import java.util.stream.Collectors;
  */
 public class PostgresDebeziumConfig {
 
-    private final PostgresConfig postgresConfig;
-    private final List<String> observedTableList;
-    private final String slotName; //unique for each slot, so create it by postgres config and observed tables
+    private PostgresConfig postgresConfig;
+    private List<String> observedTableList;
+    private String slotName; //unique for each slot, so create it by postgres config and observed tables
 
-    public PostgresDebeziumConfig(PostgresConfig postgresConfig, List<String> observedTableList) {
+    public PostgresDebeziumConfig() {
+
+    }
+
+    public PostgresDebeziumConfig use(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
+        return this;
+    }
+
+    public PostgresDebeziumConfig watch(List<String> observedTableList) {
         this.observedTableList = observedTableList;
         //unique and can find it
         this.slotName = "cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig) + (EmptyKit.isNotEmpty(observedTableList) ?
                         TapSimplify.toJson(observedTableList.stream().sorted().collect(Collectors.toList())) : "null")).getBytes())
                 .toString().replaceAll("-", "_");
+        return this;
     }
 
     public List<String> getObservedTableList() {
@@ -46,7 +55,7 @@ public class PostgresDebeziumConfig {
         Configuration.Builder builder = Configuration.create();
         builder.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
 //                .with("offset.storage", "org.apache.kafka.connect.storage.FileOffsetBackingStore")
-                .with("offset.storage", "org.apache.kafka.connect.storage.MemoryOffsetBackingStore")
+                .with("offset.storage", "io.tapdata.connector.postgres.PostgresOffsetBackingStore") //customize offset store, store in engine
                 .with("snapshot.mode", "never")
                 .with("slot.name", slotName)
 //                .with("offset.storage.file.filename", "d:/cdc/offset/" + slotName + ".dat") //path must be changed with requirement
