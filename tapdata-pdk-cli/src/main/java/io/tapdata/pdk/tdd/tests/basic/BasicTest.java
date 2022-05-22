@@ -33,7 +33,7 @@ public class BasicTest extends PDKTestBase {
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 LinkedHashMap<String, TestItem> testItemMap = new LinkedHashMap<>();
                 PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
+//                pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                 try {
                     connectionNode.connectionTest(testItem -> {
                         Assertions.assertNotNull(testItem, "TestItem is null");
@@ -45,7 +45,7 @@ public class BasicTest extends PDKTestBase {
                     throwable.printStackTrace();
                     Assertions.fail(throwable);
                 } finally {
-                    CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+//                    CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
                 }
             });
         });
