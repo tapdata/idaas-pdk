@@ -93,7 +93,8 @@
       ]
     },
     "TIMESTAMP": {
-      "to": "TapString"
+      "to": "TapString",
+      "queryOnly": true
     },
     "INT64": {
       "to": "TapNumber",
