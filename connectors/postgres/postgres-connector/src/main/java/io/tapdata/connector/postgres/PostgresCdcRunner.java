@@ -5,6 +5,7 @@ import io.debezium.engine.DebeziumEngine;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.connector.postgres.config.PostgresDebeziumConfig;
 import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
@@ -64,7 +65,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         } else {
             this.postgresOffset = (PostgresOffset) offsetState;
         }
-        PostgresOffsetBackingStore.postgresOffsetMap.put(runnerName, postgresOffset);
+        PostgresOffsetStorage.postgresOffsetMap.put(runnerName, postgresOffset);
         return this;
     }
 
@@ -74,26 +75,27 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         //build debezium engine
         this.engine = (EmbeddedEngine) EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
-//                .using(new DebeziumEngine.ConnectorCallback() {
-//                    @Override
-//                    public void taskStarted() {
-//                        DebeziumEngine.ConnectorCallback.super.taskStarted();
-//                        consumer.streamReadStarted();
-//                    }
-//
-//                    @Override
-//                    public void taskStopped() {
-//                        DebeziumEngine.ConnectorCallback.super.taskStopped();
-//                        consumer.streamReadEnded();
-//                    }
-//                })
+                .using(new DebeziumEngine.ConnectorCallback() {
+                    @Override
+                    public void taskStarted() {
+                        DebeziumEngine.ConnectorCallback.super.taskStarted();
+                        consumer.streamReadStarted();
+                    }
+
+                    @Override
+                    public void taskStopped() {
+                        DebeziumEngine.ConnectorCallback.super.taskStopped();
+                        consumer.streamReadEnded();
+                    }
+                })
 //                .using((b, s, throwable) -> {
 //
 //                })
 //                .using(this.getClass().getClassLoader())
 //                .using(Clock.SYSTEM)
 //                .notifying(this::consumeRecord)
-                .notifying(this::consumeRecord)
+                .using((numberOfMessagesSinceLastCommit, timeSinceLastCommit) -> true)
+                .notifying(this::consumeRecords)
                 .build();
         //make replica identity for postgres those without unique key
 //        try {
@@ -104,11 +106,11 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         return this;
     }
 
-    public void consumeRecord(SourceRecord sourceRecord) {
-        System.out.println(sourceRecord);
-        System.out.println(TapSimplify.toJson(postgresOffset));
-        System.out.println(recordSize);
-    }
+//    public void consumeRecord(SourceRecord sourceRecord) {
+//        System.out.println(sourceRecord);
+//        System.out.println(TapSimplify.toJson(postgresOffset));
+//        System.out.println(recordSize);
+//    }
 
     @Override
     public void consumeRecords(List<SourceRecord> sourceRecords, DebeziumEngine.RecordCommitter<SourceRecord> committer) {
@@ -168,6 +170,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         postgresJdbcContext.close();
     }
 
+    // TODO: 2022/5/22 clearSlot
     private void clearSlot() {
 
     }

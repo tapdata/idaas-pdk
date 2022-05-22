@@ -6,6 +6,7 @@ import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.connector.postgres.kit.DbKit;
 import io.tapdata.connector.postgres.kit.EmptyKit;
 import io.tapdata.connector.postgres.kit.StringKit;
+import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
@@ -186,6 +187,7 @@ public class PostgresConnector extends ConnectorBase {
             cdcRunner.closeCdcRunner(true);
             cdcRunner = null;
         }
+        //stateMap will be cleared by engine
     }
 
     @Override
@@ -455,15 +457,36 @@ public class PostgresConnector extends ConnectorBase {
                     .watch(tableList)
                     .offset(offsetState)
                     .registerConsumer(consumer, recordSize);
+            if (EmptyKit.isNotNull(nodeContext.getStateMap().get("manyOffsetMap"))) {
+                PostgresOffsetStorage.manyOffsetMap = (Map) nodeContext.getStateMap().get("manyOffsetMap");
+            }
             cdcRunner.startCdcRunner();
         }
     }
 
     // TODO: 2022/5/14 implement with offset
     private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
-        PostgresOffset postgresOffset = PostgresOffsetBackingStore.postgresOffsetMap.get(cdcRunner.getRunnerName());
-
-        offsetOffsetTimeConsumer.accept(postgresOffset, offsetStartTime);
+        //engine get last offset
+        if (EmptyKit.isNull(offsetStartTime)) {
+            PostgresOffset postgresOffset = PostgresOffsetStorage.postgresOffsetMap.get(cdcRunner.getRunnerName());
+            if (EmptyKit.isNull(postgresOffset)) {
+                offsetOffsetTimeConsumer.accept(null, null);
+            } else {
+                offsetOffsetTimeConsumer.accept(postgresOffset, postgresOffset.getStreamOffsetTime());
+            }
+        }
+        //engine get last offset which is before offsetStartTime
+        else {
+            List<PostgresOffset> list = PostgresOffsetStorage.manyOffsetMap.get(cdcRunner.getRunnerName());
+            list.removeIf(offset -> offset.getStreamOffsetTime() > offsetStartTime);
+            PostgresOffset postgresOffset = list.stream().max(Comparator.comparing(PostgresOffset::getStreamOffsetTime)).orElseGet(PostgresOffset::new);
+            if (EmptyKit.isNull(postgresOffset.getStreamOffsetKey())) {
+                offsetOffsetTimeConsumer.accept(null, null);
+            } else {
+                offsetOffsetTimeConsumer.accept(postgresOffset, postgresOffset.getStreamOffsetTime());
+            }
+        }
+        connectorContext.getStateMap().put("manyOffsetMap", PostgresOffsetStorage.manyOffsetMap);
     }
 
 }
