@@ -132,7 +132,10 @@ public class MongodbConnector extends ConnectorBase {
 								}
 						}
 
-            list.add(table);
+						final LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
+						if (MapUtils.isNotEmpty(nameFieldMap)) {
+								list.add(table);
+						}
             if(list.size() >= tableSize) {
                 consumer.accept(list);
                 list = list();
