@@ -10,14 +10,12 @@ import io.tapdata.entity.logger.TapLogger;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -211,6 +209,21 @@ public class MongodbUtil {
 				}
 
 				return mongodbUri;
+		}
+
+		public static long mongodbServerTimestamp(MongoDatabase mongoDatabase) {
+				Document result = mongoDatabase.runCommand(new Document("isMaster", 1));
+				Date serverDate = result.getDate("localTime");
+				if (result.containsKey("$clusterTime")) {
+						Object clusterTime = result.get("$clusterTime", Document.class).get("clusterTime");
+						if (clusterTime instanceof Date) {
+								serverDate = (Date) clusterTime;
+						} else {
+								BsonTimestamp bsonTimestamp = (BsonTimestamp) clusterTime;
+								serverDate = new Date(bsonTimestamp.getTime() * 1000L);
+						}
+				}
+				return serverDate != null ? serverDate.getTime() : 0;
 		}
 
 		public static void main(String[] args) {

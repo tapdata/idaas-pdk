@@ -14,6 +14,7 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.bean.MongodbConfig;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import org.bson.BsonDocument;
@@ -156,19 +157,25 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 
 		@Override
 		public Object streamOffset(Long offsetStartTime) {
+				Object offset = null;
 				ChangeStreamIterable<Document> changeStream = mongoDatabase.watch();
 				if (offsetStartTime != null) {
 						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 0));
-				}
-				try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();) {
-						BsonDocument theResumeToken = cursor.getResumeToken();
+						try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();) {
+								BsonDocument theResumeToken = cursor.getResumeToken();
 
-						if (theResumeToken != null) {
-								return theResumeToken;
-						} else {
-								return new BsonTimestamp((int) (offsetStartTime / 1000), 0);
+								if (theResumeToken != null) {
+										offset = theResumeToken;
+								}
 						}
 				}
+
+				if (offset == null) {
+						final long serverTimestamp = MongodbUtil.mongodbServerTimestamp(mongoDatabase);
+						offset = new BsonTimestamp((int) (serverTimestamp / 1000), 0);
+				}
+
+				return offset;
 		}
 
 		@Override
