@@ -1,8 +1,10 @@
 package io.tapdata.pdk.core.classloader;
 
 import com.google.common.collect.Lists;
+import io.tapdata.entity.error.CoreException;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.AnnotationUtils;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -106,31 +108,45 @@ public class ExternalJarManager {
 
             ExecutorsManager.getInstance().getScheduledExecutorService().scheduleAtFixedRate(() -> {
                 try {
-                    loadJars(false);
+                    loadJars( false);
                 } catch (Throwable ignored) {}
             }, seconds, seconds, TimeUnit.SECONDS);
         }
     }
 
-    /**
-     * When downloaded new jar, call this method to load new jar immediately
-     */
     public void loadJars() {
         loadJars(false);
     }
+    public void loadJars(boolean firstTime) {
+        loadJars(null, firstTime);
+    }
+    /**
+     * When downloaded new jar, call this method to load new jar immediately
+     */
+    public void loadJars(String oneJarPath) {
+        loadJars(oneJarPath, false);
+    }
 
-    private synchronized boolean loadJars(boolean firstTime) {
+    private synchronized boolean loadJars(String oneJarPath, boolean firstTime) {
         if(jarAnnotationHandlersListener == null) {
-            TapLogger.error(TAG, "Jar annotation handlers listener is not specified");
-            return false;
+            throw new CoreException(PDKRunnerErrorCodes.PDK_JAR_ANNOTAION_HANDLER_NOT_FOUND, "Jar annotation handlers listener is not specified");
         }
         if(jarFoundListener == null) {
-            TapLogger.error(TAG, "Jar found listener is not specified");
-            return false;
+            throw new CoreException(PDKRunnerErrorCodes.PDK_JAR_FOUND_LISTENER_NOT_FOUND, "Jar found listener is not specified");
+        }
+        File oneJarFile = null;
+        if(oneJarPath != null) {
+            oneJarFile = new File(oneJarPath);
+            if(!oneJarFile.isFile()) {
+                throw new CoreException(PDKRunnerErrorCodes.PDK_JAR_FILE_NOT_AVAILABLE_TO_LOAD, "Jar file is not a file or not exists, {}", oneJarFile);
+            }
         }
         Collection<File> jars = null;
         File theRunningFolder = null;
-        if(path != null) {
+        if(oneJarFile != null) {
+            jars = new ArrayList<>();
+            jars.add(oneJarFile);
+        } else if(path != null) {
 //            logger.error("Load jars failed as path is null");
 //            return false;
 //        }
@@ -155,8 +171,7 @@ public class ExternalJarManager {
         } else if(jarFiles != null && !jarFiles.isEmpty()) {
             jars = jarFiles;
         } else {
-            TapLogger.error(TAG, "Load jars failed as path is null or jarFiles are null");
-            return false;
+            throw new CoreException(PDKRunnerErrorCodes.PDK_NO_FILES_FOUND_WHEN_LOAD_JARS, "Load jars failed as path is null or jarFiles are null or oneJarFile is null");
         }
         File finalTheRunningFolder = theRunningFolder;
         jars.forEach(jar -> {

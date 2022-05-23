@@ -481,8 +481,12 @@ public class PDKIntegration {
     }
 
     public static void refreshJars() {
+        refreshJars(null);
+    }
+
+    public static void refreshJars(String oneJarPath) {
         init();
-        tapConnectorManager.refreshJars();
+        tapConnectorManager.refreshJars(oneJarPath);
     }
 
     /**
