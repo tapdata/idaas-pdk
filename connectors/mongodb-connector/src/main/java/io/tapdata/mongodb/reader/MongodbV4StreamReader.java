@@ -125,12 +125,14 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 										DataMap after = new DataMap();
 										after.putAll(fullDocument);
 										TapInsertRecordEvent recordEvent = insertRecordEvent(after, collectionName);
+										recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 										tapEvents.add(recordEvent);
 								} else if (operationType == OperationType.DELETE) {
 										DataMap before = new DataMap();
 										if (event.getDocumentKey() != null) {
 												before.put("_id", event.getDocumentKey().get("_id"));
 												TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, collectionName);
+												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 												tapEvents.add(recordEvent);
 										} else {
 												TapLogger.error(TAG, "Document key is null, failed to delete. {}", event);
@@ -144,6 +146,7 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 												after.remove("_id");
 
 												TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, collectionName);
+												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 												tapEvents.add(recordEvent);
 										} else {
 												TapLogger.error(TAG, "Document key is null, failed to update. {}", event);
