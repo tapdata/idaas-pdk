@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  */
 public class PDKInvocationMonitor {
     private static final String TAG = PDKInvocationMonitor.class.getSimpleName();
-    private static volatile PDKInvocationMonitor instance;
+    private static volatile PDKInvocationMonitor instance = new PDKInvocationMonitor();
     private static final Object lock = new int[0];
 
     private Map<PDKMethod, InvocationCollector> methodInvocationCollectorMap = new ConcurrentHashMap<>();
@@ -33,13 +33,6 @@ public class PDKInvocationMonitor {
     }
 
     public static PDKInvocationMonitor getInstance() {
-        if(instance == null) {
-            synchronized (lock) {
-                if(instance == null) {
-                    instance = new PDKInvocationMonitor();
-                }
-            }
-        }
         return instance;
     }
 
