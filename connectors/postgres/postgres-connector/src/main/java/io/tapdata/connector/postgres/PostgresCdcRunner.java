@@ -18,7 +18,9 @@ import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * CDC runner for Postgresql
@@ -162,7 +164,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     }
 
     @Override
-    public void closeCdcRunner(Object needClearSlot) throws IOException {
+    public void closeCdcRunner(Object needClearSlot) throws IOException, SQLException {
         super.closeCdcRunner(needClearSlot);
         if (EmptyKit.isNotNull(needClearSlot) && (boolean) needClearSlot) {
             clearSlot();
@@ -170,9 +172,8 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         postgresJdbcContext.close();
     }
 
-    // TODO: 2022/5/22 clearSlot
-    private void clearSlot() {
-
+    private void clearSlot() throws SQLException {
+        postgresJdbcContext.execute("SELECT pg_drop_replication_slot('" + runnerName + "')");
     }
 
     //make these tables ready for REPLICA IDENTITY
@@ -193,12 +194,10 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                 }
             }
         });
-        for (String d : tableD) {
-            postgresJdbcContext.execute("ALTER TABLE \"" + d + "\" REPLICA IDENTITY DEFAULT");
-        }
-        for (String f : tableF) {
-            postgresJdbcContext.execute("ALTER TABLE \"" + f + "\" REPLICA IDENTITY FULL");
-        }
+        List<String> sqls = TapSimplify.list();
+        sqls.addAll(tableD.stream().map(d -> "ALTER TABLE \"" + d + "\" REPLICA IDENTITY DEFAULT").collect(Collectors.toList()));
+        sqls.addAll(tableF.stream().map(f -> "ALTER TABLE \"" + f + "\" REPLICA IDENTITY FULL").collect(Collectors.toList()));
+        postgresJdbcContext.batchExecute(sqls);
     }
 
     private final static String PG_ALL_REPLICA_IDENTITY = "SELECT tab.tablename,cls.relreplident,\n" +

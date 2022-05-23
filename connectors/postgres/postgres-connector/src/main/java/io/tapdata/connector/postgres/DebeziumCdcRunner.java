@@ -5,6 +5,7 @@ import io.debezium.engine.DebeziumEngine;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -53,7 +54,7 @@ public abstract class DebeziumCdcRunner implements Runnable {
     /**
      * close cdc sync
      */
-    public void closeCdcRunner(Object param) throws IOException {
+    public void closeCdcRunner(Object param) throws IOException, SQLException {
         engine.close();
     }
 

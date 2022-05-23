@@ -15,6 +15,8 @@ public class TapIndex implements Serializable {
 
     private boolean unique;
 
+    private boolean primary;
+
     public List<TapIndexField> getIndexFields() {
         return indexFields;
     }
@@ -29,6 +31,14 @@ public class TapIndex implements Serializable {
 
     public void setUnique(boolean unique) {
         this.unique = unique;
+    }
+
+    public boolean isPrimary() {
+        return primary;
+    }
+
+    public void setPrimary(boolean primary) {
+        this.primary = primary;
     }
 
     public String getName() {

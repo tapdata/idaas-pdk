@@ -31,6 +31,7 @@ import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -96,6 +97,7 @@ public class PostgresConnector extends ConnectorBase {
                     fieldList.add(field);
                 });
                 index.setUnique(value.stream().anyMatch(v -> (boolean) v.get("is_unique")));
+                index.setPrimary(value.stream().anyMatch(v -> (boolean) v.get("is_primary")));
                 index.setIndexFields(fieldList);
                 tapIndexList.add(index);
             });
@@ -180,7 +182,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     @Override
-    public void onDestroy() throws IOException {
+    public void onDestroy() throws IOException, SQLException {
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
             postgresJdbcContext.close();
         }
@@ -253,19 +255,26 @@ public class PostgresConnector extends ConnectorBase {
         }
         sql += ")";
         try {
-            postgresJdbcContext.execute(sql);
+            List<String> sqls = TapSimplify.list();
+            sqls.add(sql);
             //comment on table and column
             if (EmptyKit.isNotNull(tapTable.getComment())) {
-                postgresJdbcContext.execute("COMMENT ON TABLE \"" + tapTable.getId() + "\" IS '" + tapTable.getComment() + "'");
+                sqls.add("COMMENT ON TABLE \"" + tapTable.getId() + "\" IS '" + tapTable.getComment() + "'");
             }
             Map<String, TapField> fieldMap = tapTable.getNameFieldMap();
             for (String fieldName : fieldMap.keySet()) {
                 String fieldComment = fieldMap.get(fieldName).getComment();
                 if (EmptyKit.isNotNull(fieldComment)) {
-                    postgresJdbcContext.execute("COMMENT ON COLUMN \"" + tapTable.getId() + "\".\"" + fieldName + "\" IS '" + fieldComment + "'");
+                    sqls.add("COMMENT ON COLUMN \"" + tapTable.getId() + "\".\"" + fieldName + "\" IS '" + fieldComment + "'");
                 }
             }
-            // TODO: 2022/5/16 how to deal with table index
+            if (EmptyKit.isNotEmpty(tapTable.getIndexList())) {
+                tapTable.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
+                        sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
+                                i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
+                                        .reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new) + ')'));
+            }
+            postgresJdbcContext.batchExecute(sqls);
         } catch (Throwable e) {
             e.printStackTrace();
             throw new RuntimeException("Create Table " + tapTable.getId() + " Failed! " + e.getMessage());
@@ -328,8 +337,8 @@ public class PostgresConnector extends ConnectorBase {
         AtomicLong deleted = new AtomicLong(0); //number of deleted
         WriteListResult<TapRecordEvent> listResult = writeListResult(); //result of these events
         List<TapRecordEvent> batchInsertCache = list(); //records in batch cache
-
-        PreparedStatement preparedStatement = postgresJdbcContext.getConnection().prepareStatement(PostgresSqlMaker.buildPrepareInsertSQL(tapTable));
+        Connection connection = postgresJdbcContext.getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(PostgresSqlMaker.buildPrepareInsertSQL(tapTable));
         Statement stmt = postgresJdbcContext.getConnection().createStatement();
         if (postgresJdbcContext.queryAllTables(tapTable.getId()).size() < 1) {
             throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
@@ -374,7 +383,9 @@ public class PostgresConnector extends ConnectorBase {
             }
         }
         inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
+        connection.commit();
         preparedStatement.close();
+        connection.close();
         writeListResultConsumer.accept(listResult.insertedCount(inserted.get()).modifiedCount(updated.get()).removedCount(deleted.get()));
     }
 
@@ -437,17 +448,31 @@ public class PostgresConnector extends ConnectorBase {
 
     private String getOrderByUniqueKey(TapTable tapTable) {
         StringBuilder orderBy = new StringBuilder();
+        orderBy.append(" ORDER BY ");
         List<TapIndex> indexList = tapTable.getIndexList();
-        if (EmptyKit.isNotEmpty(indexList) && indexList.stream().anyMatch(TapIndex::isUnique)) {
-            orderBy.append(" ORDER BY ");
-            TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
-            for (int i = 0; i < uniqueIndex.getIndexFields().size(); i++) {
-                String ascOrDesc = uniqueIndex.getIndexFields().get(i).getFieldAsc() ? "ASC" : "DESC";
-                orderBy.append('\"').append(uniqueIndex.getIndexFields().get(i).getName()).append("\" ").append(ascOrDesc).append(',');
+        //has no indexes, need each field
+        if (EmptyKit.isEmpty(indexList)) {
+            orderBy.append(tapTable.getNameFieldMap().keySet().stream().map(field -> "\"" + field + "\"")
+                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
+        }
+        //has indexes but no unique
+        else if (indexList.stream().noneMatch(TapIndex::isUnique)) {
+            TapIndex index = indexList.stream().findFirst().orElseGet(TapIndex::new);
+            orderBy.append(index.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
+                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
+            List<String> indexFields = index.getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
+            if (tapTable.getNameFieldMap().size() > indexFields.size()) {
+                orderBy.append(',');
+                orderBy.append(tapTable.getNameFieldMap().keySet().stream().filter(key -> !indexFields.contains(key)).map(field -> "\"" + field + "\"")
+                        .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
             }
         }
-        // TODO: 2022/5/7 how to deal with which without unique key
-        orderBy.delete(orderBy.length() - 1, orderBy.length());
+        //has unique indexes
+        else {
+            TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
+            orderBy.append(uniqueIndex.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
+                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
+        }
         return orderBy.toString();
     }
 
@@ -465,7 +490,6 @@ public class PostgresConnector extends ConnectorBase {
         }
     }
 
-    // TODO: 2022/5/14 implement with offset
     private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
         //engine get last offset
         if (EmptyKit.isNull(offsetStartTime)) {

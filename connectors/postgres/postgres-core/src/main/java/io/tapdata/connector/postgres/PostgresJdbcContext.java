@@ -106,7 +106,7 @@ public class PostgresJdbcContext implements AutoCloseable {
                 resultSetConsumer.accept(resultSet);
             }
         } catch (SQLException e) {
-            throw new Exception("Execute query failed, sql: " + sql + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
+            throw new SQLException("Execute query failed, sql: " + sql + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
         }
     }
 
@@ -120,20 +120,35 @@ public class PostgresJdbcContext implements AutoCloseable {
                 resultSetConsumer.accept(resultSet);
             }
         } catch (SQLException e) {
-            throw new Exception("Execute query failed, sql: " + preparedStatement + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
+            throw new SQLException("Execute query failed, sql: " + preparedStatement + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
         }
     }
 
-    public void execute(String sql) throws Throwable {
+    public void execute(String sql) throws SQLException {
         TapLogger.debug(TAG, "Execute sql: " + sql);
         try (
                 Connection connection = getConnection();
                 Statement statement = connection.createStatement()
         ) {
-//            connection.setAutoCommit(true);
             statement.execute(sql);
+            connection.commit();
         } catch (SQLException e) {
-            throw new Exception("Execute sql failed, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
+            throw new SQLException("Execute sql failed, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
+        }
+    }
+
+    public void batchExecute(List<String> sqls) throws SQLException {
+        TapLogger.debug(TAG, "batchExecute sqls: " + sqls);
+        try (
+                Connection connection = getConnection();
+                Statement statement = connection.createStatement()
+        ) {
+            for (String sql : sqls) {
+                statement.execute(sql);
+            }
+            connection.commit();
+        } catch (SQLException e) {
+            throw new SQLException("batchExecute sql failed, sqls: " + sqls + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
         }
     }
 
@@ -157,7 +172,7 @@ public class PostgresJdbcContext implements AutoCloseable {
             hikariDataSource.setPassword(postgresConfig.getPassword());
             hikariDataSource.setMinimumIdle(1);
             hikariDataSource.setMaximumPoolSize(20);
-            hikariDataSource.setAutoCommit(true);
+            hikariDataSource.setAutoCommit(false);
             hikariDataSource.setIdleTimeout(60 * 1000L);
             hikariDataSource.setKeepaliveTime(60 * 1000L);
             return hikariDataSource;
