@@ -23,6 +23,7 @@ import io.tapdata.pdk.apis.entity.FilterResults;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -64,7 +65,7 @@ public class MysqlConnector extends ConnectorBase {
 		connectorFunctions.supportBatchCount(this::batchCount);
 		connectorFunctions.supportBatchRead(this::batchRead);
 		connectorFunctions.supportStreamRead(this::streamRead);
-//		connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
+		connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
 		connectorFunctions.supportQueryByAdvanceFilter(this::query);
 		connectorFunctions.supportWriteRecord(this::writeRecord);
 		connectorFunctions.supportCreateIndex(this::createIndex);
@@ -282,7 +283,11 @@ public class MysqlConnector extends ConnectorBase {
 		consumer.accept(mysqlConnectionTest.testCreateTablePrivilege(databaseContext));
 	}
 
-	private Object timestampToStreamOffset(TapConnectorContext tapConnectorContext, Long aLong) {
-		return null;
+	private Object timestampToStreamOffset(TapConnectorContext tapConnectorContext, Long startTime) throws Throwable {
+		if (null == startTime) {
+			return this.mysqlJdbcContext.readBinlogPosition();
+		} else {
+			throw new NotSupportedException();
+		}
 	}
 }

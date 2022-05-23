@@ -104,7 +104,7 @@ public class MysqlReader {
 				.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, Collections.singletonList(connectionConfig.getString("database")))
 				.with("threadName", "Debezium-Mysql-Connector-" + tapConnectorContext.getSpecification().getId())
 				.with("database.history.skip.unparseable.ddl", true)
-				.with("database.history.store.only.monitored.tables.ddl", true)
+				.with("database.history.store.only.captured.tables.ddl", true)
 				.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
 				.with("max.queue.size", batchSize * 8)
 				.with("max.batch.size", batchSize)

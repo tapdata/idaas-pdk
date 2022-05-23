@@ -2,6 +2,7 @@ package io.tapdata.connector.mysql;
 
 import com.mysql.cj.jdbc.StatementImpl;
 import com.zaxxer.hikari.HikariDataSource;
+import io.tapdata.connector.mysql.entity.MysqlBinlogPosition;
 import io.tapdata.connector.mysql.util.JdbcUtil;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
@@ -262,6 +263,23 @@ public class MysqlJdbcContext implements AutoCloseable {
 		String database = connectionConfig.getString("database");
 		String sql = String.format(TRUNCATE_TABLE_SQL, database, tableName);
 		execute(sql);
+	}
+
+	public MysqlBinlogPosition readBinlogPosition() throws Throwable {
+		AtomicReference<MysqlBinlogPosition> mysqlBinlogPositionAtomicReference = new AtomicReference<>();
+		query("SHOW MASTER STATUS", rs -> {
+			if (rs.next()) {
+				String binlogFilename = rs.getString(1);
+				long binlogPosition = rs.getLong(2);
+				mysqlBinlogPositionAtomicReference.set(new MysqlBinlogPosition(binlogFilename, binlogPosition));
+				if (rs.getMetaData().getColumnCount() > 4) {
+					// This column exists only in MySQL 5.6.5 or later ...
+					String gtidSet = rs.getString(5); // GTID set, may be null, blank, or contain a GTID set
+					mysqlBinlogPositionAtomicReference.get().setGtidSet(gtidSet);
+				}
+			}
+		});
+		return mysqlBinlogPositionAtomicReference.get();
 	}
 
 	@Override
