@@ -18,10 +18,19 @@ public class Main {
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
         PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
-        postgresJdbcContext.query("SELECT * FROM information_schema.tables WHERE table_catalog='COOLGJ' AND table_schema='public' AND table_name='DMLTest_postgres_BSwgs' ORDER BY table_name",
-                resultSet-> {
-            System.out.println(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
-                });
+        Connection connection = postgresJdbcContext.getConnection();
+        connection.createStatement().execute("create table cool(aaa varchar)");
+        PreparedStatement preparedStatement = connection.prepareStatement("insert into cool values (?)");
+        preparedStatement.setObject(1, "111");
+        preparedStatement.addBatch();
+        preparedStatement.setObject(1, "222");
+        preparedStatement.addBatch();
+        preparedStatement.executeBatch();
+        preparedStatement = connection.prepareStatement("update cool set aaa=? where aaa=?");
+        preparedStatement.setObject(1, "333");
+        preparedStatement.setObject(2, "111");
+        preparedStatement.execute();
+        connection.commit();
         postgresJdbcContext.close();
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {

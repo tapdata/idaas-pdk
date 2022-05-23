@@ -339,7 +339,7 @@ public class PostgresConnector extends ConnectorBase {
         List<TapRecordEvent> batchInsertCache = list(); //records in batch cache
         Connection connection = postgresJdbcContext.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(PostgresSqlMaker.buildPrepareInsertSQL(tapTable));
-        Statement stmt = postgresJdbcContext.getConnection().createStatement();
+        Statement stmt = connection.createStatement();
         if (postgresJdbcContext.queryAllTables(tapTable.getId()).size() < 1) {
             throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
         }
