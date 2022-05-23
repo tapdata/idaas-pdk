@@ -1,8 +1,5 @@
 package io.tapdata.pdk.cli;
 
-import io.tapdata.pdk.cli.commands.MainCli;
-import io.tapdata.pdk.cli.commands.RegisterCli;
-import io.tapdata.pdk.cli.commands.StartCli;
 import picocli.CommandLine;
 
 /**
