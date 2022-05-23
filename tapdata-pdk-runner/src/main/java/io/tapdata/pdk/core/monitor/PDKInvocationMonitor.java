@@ -2,6 +2,8 @@ package io.tapdata.pdk.core.monitor;
 
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.error.CoreException;
+import io.tapdata.pdk.core.api.ConnectorNode;
+import io.tapdata.pdk.core.api.Node;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
@@ -42,49 +44,49 @@ public class PDKInvocationMonitor {
     }
 
 
-    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String logTag) {
-        instance.invokePDKMethod(method, r, null, logTag);
+    public static void invoke(Node node, PDKMethod method, CommonUtils.AnyError r, String logTag) {
+        instance.invokePDKMethod(node, method, r, null, logTag);
     }
-    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
-        instance.invokePDKMethod(method, r, message, logTag, null, false, 0, 0);
+    public static void invoke(Node node, PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
+        instance.invokePDKMethod(node, method, r, message, logTag, null, false, 0, 0);
     }
-    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
-        instance.invokePDKMethod(method, r, message, logTag, errorConsumer, false, 0, 0);
+    public static void invoke(Node node, PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
+        instance.invokePDKMethod(node, method, r, message, logTag, errorConsumer, false, 0, 0);
     }
-    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
-        instance.invokePDKMethod(method, r, message, logTag, errorConsumer, async, null, retryTimes, retryPeriodSeconds);
+    public static void invoke(Node node, PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
+        instance.invokePDKMethod(node, method, r, message, logTag, errorConsumer, async, null, retryTimes, retryPeriodSeconds);
     }
-    public static void invoke(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
-        instance.invokePDKMethod(method, r, message, logTag, errorConsumer, async, contextClassLoader, retryTimes, retryPeriodSeconds);
+    public static void invoke(Node node, PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
+        instance.invokePDKMethod(node, method, r, message, logTag, errorConsumer, async, contextClassLoader, retryTimes, retryPeriodSeconds);
     }
 
-    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String logTag) {
-        invokePDKMethod(method, r, null, logTag);
+    public void invokePDKMethod(Node node, PDKMethod method, CommonUtils.AnyError r, String logTag) {
+        invokePDKMethod(node, method, r, null, logTag);
     }
-    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
-        invokePDKMethod(method, r, message, logTag, null, false, 0, 0);
+    public void invokePDKMethod(Node node, PDKMethod method, CommonUtils.AnyError r, String message, String logTag) {
+        invokePDKMethod(node, method, r, message, logTag, null, false, 0, 0);
     }
-    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
-        invokePDKMethod(method, r, message, logTag, errorConsumer, false, 0, 0);
+    public void invokePDKMethod(Node node, PDKMethod method, CommonUtils.AnyError r, String message, String logTag, Consumer<CoreException> errorConsumer) {
+        invokePDKMethod(node, method, r, message, logTag, errorConsumer, false, 0, 0);
     }
-    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
-        invokePDKMethod(method, r, message, logTag, errorConsumer, async, null, retryTimes, retryPeriodSeconds);
+    public void invokePDKMethod(Node node, PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, long retryTimes, long retryPeriodSeconds) {
+        invokePDKMethod(node, method, r, message, logTag, errorConsumer, async, null, retryTimes, retryPeriodSeconds);
     }
-    public void invokePDKMethod(PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
+    public void invokePDKMethod(Node node, PDKMethod method, CommonUtils.AnyError r, String message, final String logTag, Consumer<CoreException> errorConsumer, boolean async, ClassLoader contextClassLoader, long retryTimes, long retryPeriodSeconds) {
         if(async) {
             ExecutorsManager.getInstance().getExecutorService().execute(() -> {
                 if(contextClassLoader != null)
                     Thread.currentThread().setContextClassLoader(contextClassLoader);
                 if(retryTimes > 0) {
-                    CommonUtils.autoRetryAsync(() -> {
-                        invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
-                    }, logTag, message, retryTimes, retryPeriodSeconds);
+                    CommonUtils.autoRetryAsync(() ->
+                            node.applyClassLoaderContext(() ->
+                                    invokePDKMethodPrivate(method, r, message, logTag, errorConsumer)), logTag, message, retryTimes, retryPeriodSeconds);
                 } else {
-                    invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
+                    node.applyClassLoaderContext(() -> invokePDKMethodPrivate(method, r, message, logTag, errorConsumer));
                 }
             });
         } else {
-            invokePDKMethodPrivate(method, r, message, logTag, errorConsumer);
+            node.applyClassLoaderContext(() -> invokePDKMethodPrivate(method, r, message, logTag, errorConsumer));
         }
     }
 

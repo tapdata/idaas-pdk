@@ -108,7 +108,7 @@ public class DMLTest extends PDKTestBase {
 
                 prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
                     PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-                    pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
+                    pdkInvocationMonitor.invokePDKMethod(connectionNode, PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                     String targetTable = dag.getNodeMap().get(targetNodeId).getTable();
 
                     List<TapTable> allTables = new ArrayList<>();
@@ -159,7 +159,7 @@ public class DMLTest extends PDKTestBase {
                     if (innerNodeId.equals(targetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                         prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
                             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-                            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
+                            pdkInvocationMonitor.invokePDKMethod(connectionNode, PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                             String targetTable = dag.getNodeMap().get(targetNodeId).getTable();
                             List<TapTable> allTables = new ArrayList<>();
                             try {

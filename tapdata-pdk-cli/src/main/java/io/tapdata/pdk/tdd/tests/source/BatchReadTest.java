@@ -180,7 +180,7 @@ public class BatchReadTest extends PDKTestBase {
                                     if (innerNodeId.equals(testTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                                         prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
                                             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-                                            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
+                                            pdkInvocationMonitor.invokePDKMethod(connectionNode, PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                                             String targetTable = originDag.getNodeMap().get(testTargetNodeId).getTable();
                                             List<TapTable> allTables = new ArrayList<>();
                                             try {

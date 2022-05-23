@@ -38,6 +38,7 @@ import io.tapdata.pdk.core.workflow.engine.driver.task.TaskManager;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SourceNodeDriver extends Driver {
     private static final String TAG = SourceNodeDriver.class.getSimpleName();
@@ -99,7 +100,7 @@ public class SourceNodeDriver extends Driver {
         KVMapFactory mapFactory = InstanceFactory.instance(KVMapFactory.class);
         tableKVMap = mapFactory.getCacheMap(sourceNode.getAssociateId(), TapTable.class);
 
-        pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
+        pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.INIT, () -> {
             sourceNode.connectorInit();
         }, "Init " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
 
@@ -128,7 +129,7 @@ public class SourceNodeDriver extends Driver {
         }
 
         List<String> theFinalTargetTables = targetTables;
-        pdkInvocationMonitor.invokePDKMethod(PDKMethod.DISCOVER_SCHEMA, () -> {
+        pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.DISCOVER_SCHEMA, () -> {
             sourceNode.getConnector().discoverSchema(sourceNode.getConnectorContext(), theFinalTargetTables, 10, (tableList) -> {
                 if(tableList == null) return;
                 List<TapEvent> forerunnerEvents = new ArrayList<>();
@@ -182,7 +183,7 @@ public class SourceNodeDriver extends Driver {
                 TapTable tapTable = tableKVMap.get(table);
                 if(tapTable == null)
                     throw new CoreException(PDKRunnerErrorCodes.SOURCE_UNKNOWN_TABLE, "Unknown table " + table + " while batchCount");
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_COUNT, () -> {
+                pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.SOURCE_BATCH_COUNT, () -> {
                     //TODO batchOffset is not used yet.
                     batchCount += batchCountFunction.count(sourceNode.getConnectorContext(), tapTable);
                 }, "Batch count " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
@@ -247,7 +248,7 @@ public class SourceNodeDriver extends Driver {
                     offsetObj = InstanceFactory.instance(ObjectSerializable.class).toObject(batchOffsetBytes, new ObjectSerializable.ToObjectOptions().classLoader(sourceNode.getConnector().getClass().getClassLoader()));
                 }
                 Object finalOffsetObj = offsetObj;
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_BATCH_READ,
+                pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.SOURCE_BATCH_READ,
                         () -> batchReadFunction.batchRead(sourceNode.getConnectorContext(), tapTable, finalOffsetObj, batchLimit, (events, batchOffset) -> {
                             if (events != null && !events.isEmpty()) {
                                 if(events.size() > batchLimit)
@@ -297,19 +298,20 @@ public class SourceNodeDriver extends Driver {
                 streamOffsetObj = InstanceFactory.instance(ObjectSerializable.class).toObject(streamOffsetBytes, new ObjectSerializable.ToObjectOptions().classLoader(sourceNode.getConnector().getClass().getClassLoader()));
             }
             Object finalStreamOffsetObj = streamOffsetObj;
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_STREAM_READ, () -> {
-                sourceNode.applyClassLoaderContext();
-                StreamReadConsumer streamReadConsumer = StreamReadConsumer.create((events, offset) -> {
-                    if (events != null) {
-                        if(events.size() > batchLimit)
-                            throw new CoreException(PDKRunnerErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
-                        TapLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
-                        offerToQueue(events);
-                    }
-                    if (offset != null) {
-                        TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetBytes, offset);
-                        this.streamOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(offset);
-                    }
+            pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.SOURCE_STREAM_READ, () -> {
+                AtomicReference<StreamReadConsumer> streamReadConsumer = new AtomicReference<>();
+                sourceNode.applyClassLoaderContext(() -> {
+                    streamReadConsumer.set(StreamReadConsumer.create((events, offset) -> {
+                        if (events != null) {
+                            if (events.size() > batchLimit)
+                                throw new CoreException(PDKRunnerErrorCodes.SOURCE_EXCEEDED_BATCH_SIZE, "Batch read exceeded eventBatchSize " + batchLimit + " actual is " + events.size());
+                            TapLogger.debug(TAG, "Stream read {} of events, {}", events.size(), LoggerUtils.sourceNodeMessage(sourceNode));
+                            offerToQueue(events);
+                        }
+                        if (offset != null) {
+                            TapLogger.debug(TAG, "Stream read update offset from {} to {}", this.streamOffsetBytes, offset);
+                            this.streamOffsetBytes = InstanceFactory.instance(ObjectSerializable.class).fromObject(offset);
+                        }
 //                    TimestampToStreamOffsetFunction timestampToStreamOffsetFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
 //                    if(timestampToStreamOffsetFunction != null) {
 //                        final Object[] streamOffset = {null};
@@ -323,9 +325,11 @@ public class SourceNodeDriver extends Driver {
 //                            TapLogger.error("streamOffset failed, {} sourceNode {}", error.getMessage(), sourceNode.getConnectorContext());
 //                        });
 //                    }
+                    }));
                 });
+
                 while(streamReadNeedRetry && !shutDown.get()) {
-                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, streamReadConsumer.stateListener((from, to) -> {
+                    streamReadFunction.streamRead(sourceNode.getConnectorContext(), finalTargetTables, finalStreamOffsetObj, batchLimit, streamReadConsumer.get().stateListener((from, to) -> {
                         if(to == StreamReadConsumer.STATE_STREAM_READ_STARTED) {
                             CommonUtils.ignoreAnyError(() -> {
                                 if(sourceStateListener != null)
@@ -339,7 +343,7 @@ public class SourceNodeDriver extends Driver {
                         }
 
                     }));
-                    streamReadNeedRetry = !streamReadConsumer.isAsyncMethodAndNoRetry();
+                    streamReadNeedRetry = !streamReadConsumer.get().isAsyncMethodAndNoRetry();
                 }
             }, "connect " + LoggerUtils.sourceNodeMessage(sourceNode), TAG, null, true, Long.MAX_VALUE, 5);
         }
@@ -381,7 +385,7 @@ public class SourceNodeDriver extends Driver {
             }
 
             if(controlFunction != null) {
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.CONTROL, () -> {
+                pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.CONTROL, () -> {
                     controlFunction.control(sourceNode.getConnectorContext(), controlEvent);
                 }, "control event " + LoggerUtils.sourceNodeMessage(sourceNode), TAG);
             }
@@ -497,7 +501,7 @@ public class SourceNodeDriver extends Driver {
         QueryByAdvanceFilterFunction queryByAdvanceFilterFunction = sourceNode.getConnectorFunctions().getQueryByAdvanceFilterFunction();
         if (queryByAdvanceFilterFunction != null) {
             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.SOURCE_QUERY_BY_ADVANCE_FILTER,
+            pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.SOURCE_QUERY_BY_ADVANCE_FILTER,
                     () -> queryByAdvanceFilterFunction.query(sourceNode.getConnectorContext(), TapAdvanceFilter.create().limit(sampleSize), table, (filterResults) -> {
                         if (filterResults != null && filterResults.getResults() != null) {
                             TapLogger.debug(TAG, "Batch read {} of events for sample field data types", filterResults.getResults().size());

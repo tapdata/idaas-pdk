@@ -344,7 +344,7 @@ public class PDKIntegration {
             sourceNode.connectorContext.setTableMap(tableMap);
             sourceNode.connectorContext.setStateMap(stateMap);
 
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+            PDKInvocationMonitor.getInstance().invokePDKMethod(sourceNode, PDKMethod.REGISTER_CAPABILITIES,
                     sourceNode::registerCapabilities,
                     MessageFormat.format("call source functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
             return sourceNode;
@@ -369,7 +369,7 @@ public class PDKIntegration {
             connectorNode.connectorContext.setTableMap(tableMap);
             connectorNode.connectorContext.setStateMap(stateMap);
 
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+            PDKInvocationMonitor.getInstance().invokePDKMethod(connectorNode, PDKMethod.REGISTER_CAPABILITIES,
                     connectorNode::registerCapabilities,
                     MessageFormat.format("call source functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
             return connectorNode;
@@ -394,7 +394,7 @@ public class PDKIntegration {
             targetNode.connectorContext.setTableMap(tableMap);
             targetNode.connectorContext.setStateMap(stateMap);
 
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+            PDKInvocationMonitor.getInstance().invokePDKMethod(targetNode, PDKMethod.REGISTER_CAPABILITIES,
                     targetNode::registerCapabilities,
                     MessageFormat.format("call target functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
             return targetNode;
@@ -414,7 +414,7 @@ public class PDKIntegration {
             processorNode.processorFunctions = new ProcessorFunctions();
             processorNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
             processorNode.processorContext = new TapProcessorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig);
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.PROCESSOR_FUNCTIONS,
+            PDKInvocationMonitor.getInstance().invokePDKMethod(processorNode, PDKMethod.PROCESSOR_FUNCTIONS,
                     () -> processorNode.processorFunctions(processorNode.processorFunctions),
                     MessageFormat.format("call processor functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
             return processorNode;
@@ -457,7 +457,7 @@ public class PDKIntegration {
 
             //Source and Target are the same object, will only invoke the method once, no matter source or target, the method is the same.
 
-            PDKInvocationMonitor.getInstance().invokePDKMethod(PDKMethod.REGISTER_CAPABILITIES,
+            PDKInvocationMonitor.getInstance().invokePDKMethod(targetNode, PDKMethod.REGISTER_CAPABILITIES,
                     targetNode::registerCapabilities,
                     MessageFormat.format("call target functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
             SourceAndTargetNode sourceAndTargetNode = new SourceAndTargetNode();

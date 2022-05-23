@@ -11,8 +11,7 @@ public class ProcessorNode extends Node {
 
     ProcessorFunctions processorFunctions;
 
-    void processorFunctions(ProcessorFunctions processorFunctions) {
-        applyClassLoaderContext();
+    void processorFunctions(ProcessorFunctions processorFunctions) throws Throwable {
         processor.processorFunctions(processorFunctions);
     }
 

@@ -76,21 +76,17 @@ public class ConnectorNode extends Node {
     }
 
     public void registerCapabilities() {
-        applyClassLoaderContext();
         connector.registerCapabilities(connectorFunctions, codecsRegistry);
     }
 
     public void connectorInit() throws Throwable {
-        applyClassLoaderContext();
         connector.init(connectorContext);
     }
     public void connectorDestroy() throws Throwable {
-        applyClassLoaderContext();
         connector.destroy();
     }
 
     public void connectorPause() throws Throwable {
-        applyClassLoaderContext();
         connector.pause();
     }
 

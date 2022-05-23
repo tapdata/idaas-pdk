@@ -110,17 +110,21 @@ public class DataFlowWorker {
         for(String nodeId : headNodeIds) {
             TapDAGNodeEx nodeWorker = dag.getNodeMap().get(nodeId);
             if(nodeWorker.sourceNodeDriver != null) {
-                nodeWorker.sourceNodeDriver.getSourceNode().applyClassLoaderContext();
-                nodeWorker.sourceNodeDriver.start(state -> {
-                    if(sourceStateListener != null) {
-                        CommonUtils.ignoreAnyError(() -> {
-                            sourceStateListener.stateChanged(state);
-                        }, TAG);
-                    }
-                    if(state == SourceNodeDriver.STATE_TABLE_PREPARED) {
-                        stateMachine.gotoState(STATE_TABLE_PREPARED, "Target table should have been prepared");
-                    }
-                });
+                try {
+                    nodeWorker.sourceNodeDriver.getSourceNode().applyClassLoaderContext(() -> nodeWorker.sourceNodeDriver.start(state -> {
+                        if(sourceStateListener != null) {
+                            CommonUtils.ignoreAnyError(() -> {
+                                sourceStateListener.stateChanged(state);
+                            }, TAG);
+                        }
+                        if(state == SourceNodeDriver.STATE_TABLE_PREPARED) {
+                            stateMachine.gotoState(STATE_TABLE_PREPARED, "Target table should have been prepared");
+                        }
+                    }));
+                } catch (Throwable throwable) {
+                    throwable.printStackTrace();
+                    //TODO
+                }
             }
         }
     }

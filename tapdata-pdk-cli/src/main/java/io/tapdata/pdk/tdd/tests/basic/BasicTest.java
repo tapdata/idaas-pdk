@@ -35,11 +35,12 @@ public class BasicTest extends PDKTestBase {
                 PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 //                pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                 try {
-                    connectionNode.connectionTest(testItem -> {
+                    pdkInvocationMonitor.invokePDKMethod(connectionNode, PDKMethod.CONNECTION_TEST, () -> connectionNode.connectionTest(testItem -> {
                         Assertions.assertNotNull(testItem, "TestItem is null");
                         TestItem old = testItemMap.put(testItem.getItem(), testItem);
                         Assertions.assertNull(old, "TestItem has duplicated item " + testItem.getItem());
-                    });
+                    }), TAG);
+
                     Assertions.assertFalse(testItemMap.isEmpty(), "TestItem is needed to return at least one from connectionTest method");
                 } catch (Throwable throwable) {
                     throwable.printStackTrace();
@@ -59,7 +60,7 @@ public class BasicTest extends PDKTestBase {
 
             prepareConnectionNode(nodeInfo, connectionOptions, connectionNode -> {
                 PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
+                pdkInvocationMonitor.invokePDKMethod(connectionNode, PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
                 List<TapTable> allTables = new ArrayList<>();
                 try {
                     connectionNode.discoverSchema(null, 10, tables -> allTables.addAll(tables));

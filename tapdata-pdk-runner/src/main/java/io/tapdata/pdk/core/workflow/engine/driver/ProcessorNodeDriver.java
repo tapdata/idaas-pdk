@@ -34,7 +34,7 @@ public class ProcessorNodeDriver extends Driver implements ListHandler<List<TapE
             ProcessRecordFunction processRecordFunction = processorNode.getProcessorFunctions().getProcessRecordFunction();
             if(processRecordFunction != null) {
                 TapLogger.debug(TAG, "Process {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.PROCESSOR_PROCESS_RECORD, () -> {
+                pdkInvocationMonitor.invokePDKMethod(processorNode, PDKMethod.PROCESSOR_PROCESS_RECORD, () -> {
                     processRecordFunction.process(processorNode.getProcessorContext(), recordEvents, (event) -> {
                         TapLogger.debug(TAG, "Processed {} of record events, {}", recordEvents.size(), LoggerUtils.processorNodeMessage(processorNode));
                         //TODO not sure how to do this for processor, do it later.

@@ -72,8 +72,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
             TapLogger.debug(TAG, "Create table {} before start. {}", createTableEvent.getTable(), LoggerUtils.targetNodeMessage(targetNode));
 
 
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CREATE_TABLE, () -> {
-                createTableFunction.createTable(getTargetNode().getConnectorContext(), createTableEvent);
+            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.TARGET_CREATE_TABLE, () -> {
+                createTableFunction.createTable(targetNode.getConnectorContext(), createTableEvent);
             }, "Create table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
         }
         return null;
@@ -84,8 +84,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         AlterTableFunction alterTableFunction = targetNode.getConnectorFunctions().getAlterTableFunction();
         if(alterTableFunction != null) {
             TapLogger.debug(TAG, "Alter table {} before start. {}", alterTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_ALTER_TABLE, () -> {
-                alterTableFunction.alterTable(getTargetNode().getConnectorContext(), alterTableEvent);
+            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.TARGET_ALTER_TABLE, () -> {
+                alterTableFunction.alterTable(targetNode.getConnectorContext(), alterTableEvent);
             }, "Alter table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
         }
         return null;
@@ -96,8 +96,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         ClearTableFunction clearTableFunction = targetNode.getConnectorFunctions().getClearTableFunction();
         if(clearTableFunction != null) {
             TapLogger.debug(TAG, "Clear table {} before start. {}", clearTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_CLEAR_TABLE, () -> {
-                clearTableFunction.clearTable(getTargetNode().getConnectorContext(), clearTableEvent);
+            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.TARGET_CLEAR_TABLE, () -> {
+                clearTableFunction.clearTable(targetNode.getConnectorContext(), clearTableEvent);
             }, "Clear table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
         }
         return null;
@@ -108,8 +108,8 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         DropTableFunction dropTableFunction = targetNode.getConnectorFunctions().getDropTableFunction();
         if(dropTableFunction != null) {
             TapLogger.debug(TAG, "Drop table {} before start. {}", dropTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_DROP_TABLE, () -> {
-                dropTableFunction.dropTable(getTargetNode().getConnectorContext(), dropTableEvent);
+            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.TARGET_DROP_TABLE, () -> {
+                dropTableFunction.dropTable(targetNode.getConnectorContext(), dropTableEvent);
                 //clear the index and fields
 //                TapTable table = targetNode.getConnectorContext().getTable();
 //                if(table != null) {
@@ -124,7 +124,6 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
 
     @Override
     public void execute(List<List<TapEvent>> list) throws Throwable {
-        targetNode.applyClassLoaderContext();
 //        for(List<TapEvent> events : list) {
 //            for (TapEvent event : events) {
 //                TODO split events by tables
@@ -306,7 +305,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         WriteRecordFunction insertRecordFunction = targetNode.getConnectorFunctions().getWriteRecordFunction();
         if(insertRecordFunction != null) {
             TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.TARGET_WRITE_RECORD, () -> {
+            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.TARGET_WRITE_RECORD, () -> {
                 insertRecordFunction.writeRecord(targetNode.getConnectorContext(), recordEvents, targetTable, (event) -> {
                     TapLogger.debug(TAG, "Handled {} of record events, {}", recordEvents.size(), LoggerUtils.targetNodeMessage(targetNode));
                 });
@@ -324,7 +323,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         TapLogger.debug(TAG, "Handled {} of control events, {}", events.size(), LoggerUtils.targetNodeMessage(targetNode));
         for(ControlEvent controlEvent : events) {
             if(controlFunction != null) {
-                pdkInvocationMonitor.invokePDKMethod(PDKMethod.CONTROL, () -> {
+                pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.CONTROL, () -> {
                     controlFunction.control(targetNode.getConnectorContext(), controlEvent);
                 }, "control event " + LoggerUtils.targetNodeMessage(targetNode), TAG);
             }
@@ -356,7 +355,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
             tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class);
 
             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-            pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, () -> {
+            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.INIT, () -> {
                 targetNode.connectorInit();
             }, "Init " + LoggerUtils.targetNodeMessage(targetNode), TAG);
 

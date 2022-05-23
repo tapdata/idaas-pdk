@@ -22,6 +22,8 @@ import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.PDKIntegration;
 import io.tapdata.pdk.core.connector.TapConnector;
 import io.tapdata.pdk.core.connector.TapConnectorManager;
+import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
+import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -36,6 +38,7 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.text.MessageFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -145,7 +148,10 @@ public class ModelPredictionCli extends CommonCli {
                         .withTableMap(kvMap)
                         .withStateMap(stateMap)
                         .build();
-                node.registerCapabilities();
+                PDKInvocationMonitor.getInstance().invokePDKMethod(node, PDKMethod.REGISTER_CAPABILITIES,
+                        node::registerCapabilities,
+                        MessageFormat.format("call registerCapabilities functions {0} associateId {1}", specification.idAndGroup(), "test"), TAG);
+//                node.registerCapabilities();
                 connectorNodes.add(node);
             }
         }

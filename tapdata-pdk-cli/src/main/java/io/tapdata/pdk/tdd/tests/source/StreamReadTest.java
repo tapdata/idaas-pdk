@@ -237,7 +237,7 @@ public class StreamReadTest extends PDKTestBase {
                 if (innerNodeId.equals(testSourceAsTargetNodeId) && innerState == PatrolEvent.STATE_LEAVE) {
                     prepareConnectionNode(tapNodeInfo, connectionOptions, connectionNode -> {
                         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-                        pdkInvocationMonitor.invokePDKMethod(PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
+                        pdkInvocationMonitor.invokePDKMethod(connectionNode, PDKMethod.INIT, connectionNode::connectorInit, "Init", TAG);
 
                         String targetTable = tddToSourceDag.getNodeMap().get(testSourceAsTargetNodeId).getTable();
 

@@ -1,6 +1,7 @@
 package io.tapdata.pdk.core.api;
 
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
+import io.tapdata.pdk.core.utils.CommonUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -12,9 +13,15 @@ public abstract class Node {
     TapNodeInfo tapNodeInfo;
     List<Map<String, Object>> tasks;
 
-    public void applyClassLoaderContext() {
+    public void applyClassLoaderContext(Runnable runnable) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         if(tapNodeInfo != null && tapNodeInfo.getNodeClass() != null) {
             Thread.currentThread().setContextClassLoader(tapNodeInfo.getNodeClass().getClassLoader());
+        }
+        try {
+            runnable.run();
+        } finally {
+            Thread.currentThread().setContextClassLoader(classLoader);
         }
     }
 
