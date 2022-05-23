@@ -29,6 +29,7 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 	private final Map<String, PreparedStatement> updateMap = new LRUOnRemoveMap<>(10, entry -> JdbcUtil.closeQuietly(entry.getValue()));
 	private final Map<String, PreparedStatement> deleteMap = new LRUOnRemoveMap<>(10, entry -> JdbcUtil.closeQuietly(entry.getValue()));
 	private final Map<String, PreparedStatement> checkExistsMap = new LRUOnRemoveMap<>(10, entry -> JdbcUtil.closeQuietly(entry.getValue()));
+	private AtomicBoolean running = new AtomicBoolean(true);
 
 	public MysqlJdbcOneByOneWriter(MysqlJdbcContext mysqlJdbcContext) throws Throwable {
 		super(mysqlJdbcContext);
@@ -39,6 +40,9 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 		WriteListResult<TapRecordEvent> writeListResult = new WriteListResult<>(0L, 0L, 0L, new HashMap<>());
 		try {
 			for (TapRecordEvent tapRecordEvent : tapRecordEvents) {
+				if (!running.get()) {
+					break;
+				}
 				if (tapRecordEvent instanceof TapInsertRecordEvent) {
 					int insertRow = doInsertOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
 					writeListResult.incrementInserted(insertRow);
@@ -65,6 +69,7 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 
 	@Override
 	public void onDestroy() {
+		this.running.set(false);
 		this.insertMap.clear();
 		this.updateMap.clear();
 		this.deleteMap.clear();

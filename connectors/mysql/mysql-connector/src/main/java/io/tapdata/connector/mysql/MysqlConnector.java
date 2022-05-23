@@ -63,8 +63,8 @@ public class MysqlConnector extends ConnectorBase {
 		connectorFunctions.supportClearTable(this::clearTable);
 		connectorFunctions.supportBatchCount(this::batchCount);
 		connectorFunctions.supportBatchRead(this::batchRead);
-//		connectorFunctions.supportStreamRead(this::streamRead);
-//		connectorFunctions.supportStreamOffset(this::streamOffset);
+		connectorFunctions.supportStreamRead(this::streamRead);
+//		connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
 		connectorFunctions.supportQueryByAdvanceFilter(this::query);
 		connectorFunctions.supportWriteRecord(this::writeRecord);
 		connectorFunctions.supportCreateIndex(this::createIndex);
@@ -113,6 +113,11 @@ public class MysqlConnector extends ConnectorBase {
 
 	@Override
 	public void onDestroy() throws Throwable {
+
+	}
+
+	@Override
+	public void onPause() throws Throwable {
 		try {
 			this.mysqlJdbcContext.close();
 		} catch (Exception e) {
@@ -121,12 +126,7 @@ public class MysqlConnector extends ConnectorBase {
 		Optional.ofNullable(this.mysqlWriter).ifPresent(MysqlWriter::onDestroy);
 	}
 
-    @Override
-    public void onPause() throws Throwable {
-
-    }
-
-    private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) throws Throwable {
+	private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) throws Throwable {
 		String tableId = tapClearTableEvent.getTableId();
 		if (mysqlJdbcContext.tableExists(tableId)) {
 			mysqlJdbcContext.clearTable(tableId);
@@ -218,11 +218,7 @@ public class MysqlConnector extends ConnectorBase {
 	}
 
 	private void streamRead(TapConnectorContext tapConnectorContext, List<String> tables, Object offset, int batchSize, StreamReadConsumer consumer) {
-
-	}
-
-	private void streamOffset(TapConnectorContext tapConnectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
-
+		mysqlReader.readBinlog(tapConnectorContext, tables, offset, batchSize, consumer);
 	}
 
 	private long batchCount(TapConnectorContext tapConnectorContext, TapTable tapTable) throws Throwable {
@@ -263,6 +259,7 @@ public class MysqlConnector extends ConnectorBase {
 
 	@Override
 	public void connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer) throws Throwable {
+		onStart(databaseContext);
 		MysqlConnectionTest mysqlConnectionTest = new MysqlConnectionTest(mysqlJdbcContext);
 		TestItem testHostPort = mysqlConnectionTest.testHostPort(databaseContext);
 		consumer.accept(testHostPort);
@@ -285,4 +282,7 @@ public class MysqlConnector extends ConnectorBase {
 		consumer.accept(mysqlConnectionTest.testCreateTablePrivilege(databaseContext));
 	}
 
+	private Object timestampToStreamOffset(TapConnectorContext tapConnectorContext, Long aLong) {
+		return null;
+	}
 }

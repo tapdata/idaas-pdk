@@ -1,6 +1,8 @@
 package io.tapdata.connector.mysql;
 
 import io.debezium.config.Configuration;
+import io.debezium.connector.mysql.MySqlConnectorConfig;
+import io.debezium.embedded.EmbeddedEngine;
 import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.DataMap;
@@ -10,10 +12,7 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
 import java.sql.ResultSetMetaData;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -102,10 +101,27 @@ public class MysqlReader {
 				.with("database.user", connectionConfig.getString("username"))
 				.with("database.password", connectionConfig.getString("password"))
 				.with("database.server.name", tapConnectorContext.getSpecification().getId())
-				.with("database.whitelist", connectionConfig.getString("database"))
+				.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, Collections.singletonList(connectionConfig.getString("database")))
 				.with("threadName", "Debezium-Mysql-Connector-" + tapConnectorContext.getSpecification().getId())
 				.with("database.history.skip.unparseable.ddl", true)
 				.with("database.history.store.only.monitored.tables.ddl", true)
-				.with("snapshot.locking.mode", "none");
+				.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
+				.with("max.queue.size", batchSize * 8)
+				.with("max.batch.size", batchSize)
+				.with(MySqlConnectorConfig.SERVER_ID, randomServerId())
+				.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, tables);
+
+		Configuration configuration = builder.build();
+		EmbeddedEngine embeddedEngine = new EmbeddedEngine.BuilderImpl()
+				.using(configuration)
+				.notifying(System.out::println)
+				.build();
+		embeddedEngine.run();
+	}
+
+	private static int randomServerId() {
+		int lowestServerId = 5400;
+		int highestServerId = Integer.MAX_VALUE;
+		return lowestServerId + new Random().nextInt(highestServerId - lowestServerId);
 	}
 }
