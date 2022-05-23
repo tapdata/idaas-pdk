@@ -79,7 +79,7 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 						while (!running.get()) {
 								ChangeStreamDocument<Document> event = streamCursor.tryNext();
 								if(event == null) {
-										if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
+										if (!tapEvents.isEmpty()) consumer.accept(tapEvents, resumeToken);
 										tapEvents = list();
 										boolean cursorClosed = false;
 										String errorMessage = "null";
@@ -101,7 +101,7 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 										continue;
 								}
 								if(tapEvents.size() >= eventBatchSize) {
-										if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
+										consumer.accept(tapEvents, resumeToken);
 										tapEvents = list();
 								}
 
@@ -151,25 +151,20 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 		}
 
 		@Override
-		public void streamOffset(List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
+		public Object streamOffset(Long offsetStartTime) {
 				if(offsetStartTime != null) {
-						List<Bson> pipeline = singletonList(Aggregates.match(
-										Filters.in("ns.coll", tableList)
-						));
 						// Unix timestamp in seconds, with increment 1
-						ChangeStreamIterable<Document> changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
+						ChangeStreamIterable<Document> changeStream = mongoDatabase.watch();
 						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 1));
 						MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
 						BsonDocument theResumeToken = cursor.getResumeToken();
 
 						if(theResumeToken != null) {
 								cursor.close();
-								offsetOffsetTimeConsumer.accept(theResumeToken, null);
+								return theResumeToken;
 						}
-				} else if(resumeToken != null) {
-						offsetOffsetTimeConsumer.accept(resumeToken, null);
 				}
-				offsetOffsetTimeConsumer.accept(null, null);
+				return null;
 		}
 
 		@Override

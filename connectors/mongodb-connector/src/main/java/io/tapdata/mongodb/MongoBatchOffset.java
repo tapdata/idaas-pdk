@@ -2,13 +2,13 @@ package io.tapdata.mongodb;
 
 import org.bson.types.ObjectId;
 
-public class MongoOffset {
+public class MongoBatchOffset {
     private String sortKey;
     private Object value;
     private Boolean objectId;
 
-    public MongoOffset() {}
-    public MongoOffset(String sortKey, Object value) {
+    public MongoBatchOffset() {}
+    public MongoBatchOffset(String sortKey, Object value) {
         setValue(value);
         this.sortKey = sortKey;
     }

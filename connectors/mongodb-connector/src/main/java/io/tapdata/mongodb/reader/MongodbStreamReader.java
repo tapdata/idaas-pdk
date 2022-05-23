@@ -14,9 +14,9 @@ public interface MongodbStreamReader {
 
 		void onStart(MongodbConfig mongodbConfig);
 
-		void read(List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer);
+		void read(List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer) throws Exception;
 
-		void streamOffset(List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer);
 
+		Object streamOffset(Long offsetStartTime);
 		void onDestroy();
 }
