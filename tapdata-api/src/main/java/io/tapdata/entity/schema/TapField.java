@@ -55,7 +55,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
      */
     private Integer partitionKeyPos;
     public TapField partitionKeyPos(Integer partitionKeyPos) {
-        if(partitionKeyPos != null && partitionKeyPos >= 0) {
+        if(partitionKeyPos != null && partitionKeyPos > 0) {
             this.partitionKeyPos = partitionKeyPos;
             isPartitionKey = true;
         }
@@ -74,7 +74,7 @@ public class TapField extends TapItem<TapField> implements Serializable {
      */
     private Integer primaryKeyPos;
     public TapField primaryKeyPos(Integer primaryKeyPos) {
-        if(primaryKeyPos != null && primaryKeyPos >= 0) {
+        if(primaryKeyPos != null && primaryKeyPos > 0) {
             this.primaryKeyPos = primaryKeyPos;
             isPrimaryKey = true;
         }

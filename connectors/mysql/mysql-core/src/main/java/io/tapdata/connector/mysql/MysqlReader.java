@@ -1,14 +1,18 @@
 package io.tapdata.connector.mysql;
 
+import io.debezium.config.Configuration;
 import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.cache.KVMap;
+import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
-import java.math.BigDecimal;
 import java.sql.ResultSetMetaData;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -85,5 +89,23 @@ public class MysqlReader {
 				consumer.accept(data);
 			}
 		});
+	}
+
+	public void readBinlog(TapConnectorContext tapConnectorContext, List<String> tables, Object offset, int batchSize, StreamReadConsumer consumer) {
+		KVMap<Object> stateMap = tapConnectorContext.getStateMap();
+		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
+		Configuration.Builder builder = Configuration.create()
+				.with("name", tapConnectorContext.getSpecification().getId())
+				.with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
+				.with("database.hostname", connectionConfig.getString("host"))
+				.with("database.port", Integer.parseInt(connectionConfig.getString("port")))
+				.with("database.user", connectionConfig.getString("username"))
+				.with("database.password", connectionConfig.getString("password"))
+				.with("database.server.name", tapConnectorContext.getSpecification().getId())
+				.with("database.whitelist", connectionConfig.getString("database"))
+				.with("threadName", "Debezium-Mysql-Connector-" + tapConnectorContext.getSpecification().getId())
+				.with("database.history.skip.unparseable.ddl", true)
+				.with("database.history.store.only.monitored.tables.ddl", true)
+				.with("snapshot.locking.mode", "none");
 	}
 }

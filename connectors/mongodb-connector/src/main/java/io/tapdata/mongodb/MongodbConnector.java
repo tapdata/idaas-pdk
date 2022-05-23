@@ -1,18 +1,20 @@
 package io.tapdata.mongodb;
 
-import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Sorts;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.mongodb.bean.MongodbConfig;
 import io.tapdata.mongodb.reader.MongodbStreamReader;
 import io.tapdata.mongodb.reader.MongodbV4StreamReader;
@@ -25,11 +27,10 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.*;
 
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 import org.bson.types.*;
 
@@ -92,16 +93,17 @@ public class MongodbConnector extends ConnectorBase {
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
 				final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
 				MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+				TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
         //List all the tables under the database.
-        List<TapTable> list = list();
+				List<TapTable> list = list();
         for (String collectionName : collectionNames) {
             //Mongodb is schema free. There is no way for incremental engine to know the default primary key. So need to specify the defaultPrimaryKeys.
             TapTable table;
-            if(tables != null) {
-                if(!tables.contains(collectionName)) {
-                    continue;
-                }
-            }
+						if (tables != null && CollectionUtils.isNotEmpty(tables)) {
+								if (!tables.contains(collectionName)) {
+										continue;
+								}
+						}
 						table = table(collectionName).defaultPrimaryKeys(singletonList("_id"));
 						if (version.compareTo("3.2") >= 0) {
 								try {
@@ -109,7 +111,7 @@ public class MongodbConnector extends ConnectorBase {
 												Set<String> fieldNames = dataRow.keySet();
 												for (String fieldName : fieldNames) {
 														BsonValue value = dataRow.get(fieldName);
-														getRelateDatabaseField(value, fieldName, table);
+														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
 												}
 										});
 								} catch (Exception e) {
@@ -123,14 +125,17 @@ public class MongodbConnector extends ConnectorBase {
 												for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
 														final String fieldName = entry.getKey();
 														final BsonValue value = entry.getValue();
-														getRelateDatabaseField(value, fieldName, table);
+														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
 												}
 												break;
 										}
 								}
 						}
 
-            list.add(table);
+						final LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
+						if (MapUtils.isNotEmpty(nameFieldMap)) {
+								list.add(table);
+						}
             if(list.size() >= tableSize) {
                 consumer.accept(list);
                 list = list();
@@ -140,12 +145,12 @@ public class MongodbConnector extends ConnectorBase {
             consumer.accept(list);
     }
 
-		public static void getRelateDatabaseField(BsonValue value, String fieldName, TapTable table) {
+		public static void getRelateDatabaseField(TapConnectionContext connectionContext, TableFieldTypesGenerator tableFieldTypesGenerator, BsonValue value, String fieldName, TapTable table) {
 
 				if (value instanceof BsonDocument) {
 						BsonDocument bsonDocument = (BsonDocument) value;
 						for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
-								getRelateDatabaseField(entry.getValue(), fieldName + "." + entry.getKey(), table);
+								getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, entry.getValue(), fieldName + "." + entry.getKey(), table);
 						}
 				} else if (value instanceof BsonArray) {
 						BsonArray bsonArray = (BsonArray) value;
@@ -157,16 +162,22 @@ public class MongodbConnector extends ConnectorBase {
 						}
 						if (MapUtils.isNotEmpty(bsonDocument)) {
 								for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
-										getRelateDatabaseField(entry.getValue(), fieldName + "." + entry.getKey(), table);
+										getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, entry.getValue(), fieldName + "." + entry.getKey(), table);
 								}
 						}
 				}
-
+				TapField field = null;
 				if (value != null) {
-						table.add(TapSimplify.field(fieldName, value.getBsonType().name()));
+						field = TapSimplify.field(fieldName, value.getBsonType().name());
 				} else {
-						table.add(TapSimplify.field(fieldName, BsonType.NULL.name()));
+						field = TapSimplify.field(fieldName, BsonType.NULL.name());
 				}
+
+				if ("_id".equals(fieldName)) {
+						field.primaryKeyPos(1);
+				}
+				tableFieldTypesGenerator.autoFill(field, connectionContext.getSpecification().getDataTypesMap());
+				table.add(field);
 		}
 
     /**
@@ -264,9 +275,9 @@ public class MongodbConnector extends ConnectorBase {
         });
 
         //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "TapTime", tapTimeValue -> tapTimeValue.getValue().toDate());
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "TapDateTime", tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
-        codecRegistry.registerFromTapValue(TapDateValue.class, "TapDate", tapDateValue -> tapDateValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "DATE_TIME", tapTimeValue -> tapTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "DATE_TIME", tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
+        codecRegistry.registerFromTapValue(TapDateValue.class, "DATE_TIME", tapDateValue -> tapDateValue.getValue().toDate());
 
         //Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
         //We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.
@@ -288,13 +299,20 @@ public class MongodbConnector extends ConnectorBase {
 
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
 				final DataMap connectionConfig = connectionContext.getConnectionConfig();
+				if (MapUtils.isEmpty(connectionConfig)) {
+						throw new RuntimeException(String.format("connection config cannot be empty %s", connectionConfig));
+				}
 				mongoConfig = MongodbConfig.load(connectionConfig);
-
+				if (mongoConfig == null) {
+						throw new RuntimeException(String.format("load mongo config failed from connection config %s", connectionConfig));
+				}
 				if (mongoClient == null) {
-						mongoClient = MongoClients.create(mongoConfig.getUri());
-						CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-										fromProviders(PojoCodecProvider.builder().automatic(true).build()));
-						mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase()).withCodecRegistry(pojoCodecRegistry);
+						try {
+								mongoClient = MongoClients.create(mongoConfig.getUri());
+								mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
+						} catch (Throwable e) {
+								throw new RuntimeException(String.format("create mongodb connection failed %s, mongo config %s, connection config %s", e.getMessage(), mongoConfig, connectionConfig), e);
+						}
 				}
     }
 

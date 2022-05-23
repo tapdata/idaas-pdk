@@ -145,7 +145,7 @@ public class TDDCli extends CommonCli {
                 System.setProperty("maven.home", mavenHome);
                 for(String installProject : installProjects) {
                     String pomFile = installProject;
-                    if(!pomFile.equals("pom.xml")) {
+                    if(!pomFile.endsWith("pom.xml")) {
                         pomFile = pomFile + File.separator + "pom.xml";
                     }
 //                    int state = mavenCli.doMain(new String[]{"install", "-f", pomFile}, "./", System.out, System.out);
