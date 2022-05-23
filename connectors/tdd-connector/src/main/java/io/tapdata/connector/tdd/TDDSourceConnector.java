@@ -199,6 +199,7 @@ public class TDDSourceConnector extends ConnectorBase {
                         entry("tapInt", 123123),
                         entry("tapBoolean", true),
                         entry("tapDate", date),
+
                         entry("tapArrayString", list("1", "2", "3")),
                         entry("tapArrayDouble", list(1.1, 2.2, 3.3)),
                         entry("tapArrayTDDUser", list(new TDDUser("a", "n", "d", 1, TDDUser.GENDER_MALE), new TDDUser("b", "a", "b", 2, TDDUser.GENDER_FEMALE))),

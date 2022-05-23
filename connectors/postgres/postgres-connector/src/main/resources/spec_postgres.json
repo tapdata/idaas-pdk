@@ -149,8 +149,9 @@
         "99:59:59"
       ],
       "pattern": "HH:mm:ss",
+      "queryOnly": true,
       "priority": 3,
-      "to": "TapDateTime"
+      "to": "TapTime"
     },
     "timestamp[($fraction)] without time zone": {
       "range": [
