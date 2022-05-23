@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -58,6 +59,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                 .use(postgresConfig)
                 .watch(observedTableList);
         this.runnerName = postgresDebeziumConfig.getSlotName();
+
         return this;
     }
 
@@ -96,7 +98,8 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 //                .using(this.getClass().getClassLoader())
 //                .using(Clock.SYSTEM)
 //                .notifying(this::consumeRecord)
-                .using((numberOfMessagesSinceLastCommit, timeSinceLastCommit) -> true)
+//                .using((numberOfMessagesSinceLastCommit, timeSinceLastCommit) ->
+//                        numberOfMessagesSinceLastCommit >= 1000 || timeSinceLastCommit.getSeconds() >= 60)
                 .notifying(this::consumeRecords)
                 .build();
         //make replica identity for postgres those without unique key
@@ -109,16 +112,16 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     }
 
 //    public void consumeRecord(SourceRecord sourceRecord) {
-//        System.out.println(sourceRecord);
-//        System.out.println(TapSimplify.toJson(postgresOffset));
-//        System.out.println(recordSize);
+//        System.out.println(TapSimplify.toJson(sourceRecord.sourceOffset()));
 //    }
 
     @Override
     public void consumeRecords(List<SourceRecord> sourceRecords, DebeziumEngine.RecordCommitter<SourceRecord> committer) {
         super.consumeRecords(sourceRecords, committer);
         List<TapEvent> eventList = TapSimplify.list();
+        Map<String, ?> offset = null;
         for (SourceRecord sr : sourceRecords) {
+            offset = sr.sourceOffset();
             Struct struct = ((Struct) sr.value());
             if (struct == null) {
                 return;
@@ -142,12 +145,16 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                     break;
             }
             if (eventList.size() >= recordSize) {
-                consumer.accept(eventList);
-                eventList = TapSimplify.list();
+                consumer.accept(eventList, offset);
+                postgresOffset.setSourceOffset(TapSimplify.toJson(offset));
+                PostgresOffsetStorage.postgresOffsetMap.put(runnerName, postgresOffset);
+                eventList.clear();
             }
         }
         if (EmptyKit.isNotEmpty(eventList)) {
-            consumer.accept(eventList);
+            consumer.accept(eventList, offset);
+            postgresOffset.setSourceOffset(TapSimplify.toJson(offset));
+            PostgresOffsetStorage.postgresOffsetMap.put(runnerName, postgresOffset);
         }
     }
 

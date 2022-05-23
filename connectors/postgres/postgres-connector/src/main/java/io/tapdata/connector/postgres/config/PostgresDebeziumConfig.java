@@ -19,6 +19,7 @@ public class PostgresDebeziumConfig {
     private PostgresConfig postgresConfig;
     private List<String> observedTableList;
     private String slotName; //unique for each slot, so create it by postgres config and observed tables
+    private String namespace;
 
     public PostgresDebeziumConfig() {
 
@@ -35,6 +36,7 @@ public class PostgresDebeziumConfig {
         this.slotName = "cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig) + (EmptyKit.isNotEmpty(observedTableList) ?
                         TapSimplify.toJson(observedTableList.stream().sorted().collect(Collectors.toList())) : "null")).getBytes())
                 .toString().replaceAll("-", "_");
+        this.namespace = slotName + "-postgres-connector";
         return this;
     }
 
@@ -44,6 +46,10 @@ public class PostgresDebeziumConfig {
 
     public String getSlotName() {
         return slotName;
+    }
+
+    public String getNamespace() {
+        return namespace;
     }
 
     /**

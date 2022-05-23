@@ -1,24 +1,24 @@
 package io.tapdata.pdk.core.api.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.parser.DefaultJSONParser;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.ParserConfig;
-import com.alibaba.fastjson.parser.deserializer.AbstractDateDeserializer;
 import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.schema.type.*;
+import io.tapdata.entity.schema.type.TapDateTime;
+import io.tapdata.entity.schema.type.TapNumber;
+import io.tapdata.entity.schema.type.TapString;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
-import io.tapdata.entity.annotations.Implementation;
 import io.tapdata.pdk.core.utils.TapConstants;
 
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.List;
 
 @Implementation(JsonParser.class)
@@ -31,14 +31,16 @@ public class JsonParserImpl implements JsonParser {
         return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
 //        return PREFIX + obj.getClass().getName() + SUFFIX + JSON.toJSONString(obj);
     }
+
     @Override
     public Object fromJsonWithClass(String json) {
         return fromJsonWithClass(json, null);
     }
+
     @Override
     public Object fromJsonWithClass(String json, ClassLoader classLoader) {
         ParserConfig parserConfig = new ParserConfig();
-        if(classLoader != null)
+        if (classLoader != null)
             parserConfig.setDefaultClassLoader(classLoader);
         return JSON.parseObject(json, DataMap.class, parserConfig, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
 //        if(json.startsWith(PREFIX)) {
@@ -60,8 +62,12 @@ public class JsonParserImpl implements JsonParser {
     }
 
     @Override
-    public String toJson(Object obj) {
-        return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
+    public String toJson(Object obj, ToJsonFeature... features) {
+        if (features != null && features.length > 0) {
+            return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect, SerializerFeature.WriteMapNullValue/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
+        } else {
+            return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
+        }
     }
 
     @Override
@@ -77,7 +83,7 @@ public class JsonParserImpl implements JsonParser {
     @Override
     public <T> T fromJson(String json, Class<T> clazz, List<AbstractClassDetector> abstractClassDetectors) {
         ParserConfig parserConfig = null;
-        if(abstractClassDetectors != null && !abstractClassDetectors.isEmpty()) {
+        if (abstractClassDetectors != null && !abstractClassDetectors.isEmpty()) {
             parserConfig = new ParserConfig() {
                 @Override
                 public ObjectDeserializer getDeserializer(Type type) {
@@ -99,7 +105,7 @@ public class JsonParserImpl implements JsonParser {
     @Override
     public <T> T fromJson(String json, TypeHolder<T> typeHolder, List<AbstractClassDetector> abstractClassDetectors) {
         ParserConfig parserConfig = null;
-        if(abstractClassDetectors != null && !abstractClassDetectors.isEmpty()) {
+        if (abstractClassDetectors != null && !abstractClassDetectors.isEmpty()) {
             parserConfig = new ParserConfig() {
                 @Override
                 public ObjectDeserializer getDeserializer(Type type) {
@@ -117,8 +123,7 @@ public class JsonParserImpl implements JsonParser {
         TapTable tapTable = new TapTable("aa")
                 .add(new TapField("aaa", "bbb").tapType(new TapString().bytes(123L)))
                 .add(new TapField("aacc", "aaa").tapType(new TapNumber().bit(2334)))
-                .add(new TapField("aaa1", "adsf").tapType(new TapDateTime().fraction(234)))
-                ;
+                .add(new TapField("aaa1", "adsf").tapType(new TapDateTime().fraction(234)));
 
 
 //        String str = JSON.toJSONString(tapTable, SerializerFeature.WriteClassName);

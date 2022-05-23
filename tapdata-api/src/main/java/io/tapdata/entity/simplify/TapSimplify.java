@@ -39,8 +39,8 @@ public class TapSimplify {
     }
 
 
-    public static String toJson(Object obj) {
-        return jsonParser.toJson(obj);
+    public static String toJson(Object obj, JsonParser.ToJsonFeature... features) {
+        return jsonParser.toJson(obj, features);
     }
 
     public static DataMap fromJson(String json) {
@@ -129,9 +129,9 @@ public class TapSimplify {
 
     public static Map<String, Object> map(Entry... entries) {
         Map<String, Object> map = new LinkedHashMap<>();
-        if(entries != null) {
-            for(Entry entry : entries) {
-                if(entry.getKey() != null && entry.getValue() != null)
+        if (entries != null) {
+            for (Entry entry : entries) {
+                if (entry.getKey() != null && entry.getValue() != null)
                     map.put(entry.getKey(), entry.getValue());
             }
         }
@@ -200,7 +200,7 @@ public class TapSimplify {
     }
 
     public static void sleep(long milliseconds) {
-        if(milliseconds < 0)
+        if (milliseconds < 0)
             return;
         try {
             Thread.sleep(milliseconds);
@@ -210,13 +210,13 @@ public class TapSimplify {
     }
 
     public static Object convertDateTimeToDate(DateTime dateTime) {
-        if(dateTime != null) {
+        if (dateTime != null) {
             Long milliseconds;
             Integer nano = dateTime.getNano();
             Long seconds = dateTime.getSeconds();
-            if(seconds != null) {
+            if (seconds != null) {
                 milliseconds = seconds * 1000;
-                if(nano != null) {
+                if (nano != null) {
                     milliseconds += milliseconds + (nano / 1000 / 1000);
                 }
             } else {

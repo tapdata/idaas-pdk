@@ -11,9 +11,7 @@ public class PostgresOffset {
     private String sortString;
     private Long offsetValue;
 
-    private String streamOffsetKey;
-    private String streamOffsetValue;
-    private Long streamOffsetTime;
+    private String sourceOffset;
 
     public PostgresOffset() {
     }
@@ -39,27 +37,11 @@ public class PostgresOffset {
         this.offsetValue = offsetValue;
     }
 
-    public String getStreamOffsetKey() {
-        return streamOffsetKey;
+    public String getSourceOffset() {
+        return sourceOffset;
     }
 
-    public void setStreamOffsetKey(String streamOffsetKey) {
-        this.streamOffsetKey = streamOffsetKey;
-    }
-
-    public String getStreamOffsetValue() {
-        return streamOffsetValue;
-    }
-
-    public void setStreamOffsetValue(String streamOffsetValue) {
-        this.streamOffsetValue = streamOffsetValue;
-    }
-
-    public Long getStreamOffsetTime() {
-        return streamOffsetTime;
-    }
-
-    public void setStreamOffsetTime(Long streamOffsetTime) {
-        this.streamOffsetTime = streamOffsetTime;
+    public void setSourceOffset(String sourceOffset) {
+        this.sourceOffset = sourceOffset;
     }
 }

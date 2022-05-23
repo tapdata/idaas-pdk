@@ -15,15 +15,14 @@ public class Main2 {
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
         PostgresOffset postgresOffset = new PostgresOffset();
-        postgresOffset.setStreamOffsetKey("{\"schema\":null,\"payload\":[\"cdc_77091c94_0d73_3d1d_b4e2_ed6effc535d3-postgres-connector\",{\"server\":\"COOLGJ\"}]}");
-        postgresOffset.setStreamOffsetValue("{\"transaction_id\":null,\"lsn_proc\":181856448,\"lsn_commit\":181856448,\"lsn\":181856448,\"txId\":7266,\"ts_usec\":1553158676829305}");
+        postgresOffset.setSourceOffset("{\"lsn_proc\":186212648,\"lsn\":186212648,\"txId\":7526,\"ts_usec\":1653308485609993}");
         PostgresCdcRunner cdcRunner = new PostgresCdcRunner()
                 .use(postgresConfig)
                 .watch(Collections.singletonList("Student"))
-                .offset(postgresOffset)
+                .offset(null)
                 .registerConsumer(null, 10);
         new Thread(cdcRunner::startCdcRunner).start();
-        Thread.sleep(20000);
+        Thread.sleep(15000);
 
         cdcRunner.closeCdcRunner(null);
     }

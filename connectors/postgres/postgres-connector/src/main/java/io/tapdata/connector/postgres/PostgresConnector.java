@@ -6,7 +6,6 @@ import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.connector.postgres.kit.DbKit;
 import io.tapdata.connector.postgres.kit.EmptyKit;
 import io.tapdata.connector.postgres.kit.StringKit;
-import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
@@ -157,7 +156,7 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportStreamOffset(this::streamOffset);
+//        connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
@@ -483,35 +482,30 @@ public class PostgresConnector extends ConnectorBase {
                     .watch(tableList)
                     .offset(offsetState)
                     .registerConsumer(consumer, recordSize);
-            if (EmptyKit.isNotNull(nodeContext.getStateMap().get("manyOffsetMap"))) {
-                PostgresOffsetStorage.manyOffsetMap = (Map) nodeContext.getStateMap().get("manyOffsetMap");
-            }
+//            if (EmptyKit.isNotNull(nodeContext.getStateMap().get("manyOffsetMap"))) {
+//                PostgresOffsetStorage.manyOffsetMap = (Map) nodeContext.getStateMap().get("manyOffsetMap");
+//            }
             cdcRunner.startCdcRunner();
         }
     }
 
-    private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
-        //engine get last offset
-        if (EmptyKit.isNull(offsetStartTime)) {
-            PostgresOffset postgresOffset = PostgresOffsetStorage.postgresOffsetMap.get(cdcRunner.getRunnerName());
-            if (EmptyKit.isNull(postgresOffset)) {
-                offsetOffsetTimeConsumer.accept(null, null);
-            } else {
-                offsetOffsetTimeConsumer.accept(postgresOffset, postgresOffset.getStreamOffsetTime());
-            }
-        }
-        //engine get last offset which is before offsetStartTime
-        else {
-            List<PostgresOffset> list = PostgresOffsetStorage.manyOffsetMap.get(cdcRunner.getRunnerName());
-            list.removeIf(offset -> offset.getStreamOffsetTime() > offsetStartTime);
-            PostgresOffset postgresOffset = list.stream().max(Comparator.comparing(PostgresOffset::getStreamOffsetTime)).orElseGet(PostgresOffset::new);
-            if (EmptyKit.isNull(postgresOffset.getStreamOffsetKey())) {
-                offsetOffsetTimeConsumer.accept(null, null);
-            } else {
-                offsetOffsetTimeConsumer.accept(postgresOffset, postgresOffset.getStreamOffsetTime());
-            }
-        }
-        connectorContext.getStateMap().put("manyOffsetMap", PostgresOffsetStorage.manyOffsetMap);
-    }
+//    private Object timestampToStreamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+//        //engine get last offset
+//        if (EmptyKit.isNull(offsetStartTime)) {
+//            return null;
+//        }
+//        //engine get last offset which is before offsetStartTime
+//        else {
+//            List<PostgresOffset> list = PostgresOffsetStorage.manyOffsetMap.get(cdcRunner.getRunnerName());
+//            list.removeIf(offset -> offset.getStreamOffsetTime() > offsetStartTime);
+//            PostgresOffset postgresOffset = list.stream().max(Comparator.comparing(PostgresOffset::getStreamOffsetTime)).orElseGet(PostgresOffset::new);
+//            if (EmptyKit.isNull(postgresOffset.getStreamOffsetKey())) {
+//                return null;
+//            } else {
+//                return postgresOffset;
+//            }
+//        }
+////        connectorContext.getStateMap().put("manyOffsetMap", PostgresOffsetStorage.manyOffsetMap);
+//    }
 
 }

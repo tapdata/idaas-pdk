@@ -3,47 +3,65 @@ package io.tapdata.entity.utils;
 import java.util.List;
 
 public interface JsonParser {
-    String toJson(Object obj);
+    String toJson(Object obj, ToJsonFeature... features);
+
     DataMap fromJson(String json);
+
     <T> T fromJson(String json, Class<T> clazz);
+
     <T> T fromJson(String json, Class<T> clazz, List<AbstractClassDetector> abstractClassDetectors);
+
     <T> T fromJson(String json, TypeHolder<T> typeHolder);
+
     <T> T fromJson(String json, TypeHolder<T> typeHolder, List<AbstractClassDetector> abstractClassDetectors);
 
     String toJsonWithClass(Object obj);
+
     Object fromJsonWithClass(String json);
+
     Object fromJsonWithClass(String json, ClassLoader classLoader);
 
+    enum ToJsonFeature {
+        WriteMapNullValue;
+    }
 
 
     class AbstractClassDetector {
         public static AbstractClassDetector create() {
             return new AbstractClassDetector();
         }
+
         private String key;
+
         public AbstractClassDetector key(String key) {
             this.key = key;
             return this;
         }
+
         private Object value;
+
         public AbstractClassDetector value(Object value) {
             this.value = value;
             return this;
         }
+
         private Class<?> deserializeClass;
+
         public AbstractClassDetector deserializeClass(Class<?> deserializeClass) {
             this.deserializeClass = deserializeClass;
             return this;
         }
+
         public String matchingString() {
-            StringBuilder builder= new StringBuilder().append("\"").append(key).append("\"").append(":");
-            if(value instanceof Number) {
+            StringBuilder builder = new StringBuilder().append("\"").append(key).append("\"").append(":");
+            if (value instanceof Number) {
                 builder.append(value);
             } else {
                 builder.append("\"").append(value.toString()).append("\"");
             }
             return builder.toString();
         }
+
         public String getKey() {
             return key;
         }
