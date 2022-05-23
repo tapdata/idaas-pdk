@@ -37,6 +37,7 @@ public enum PDKMethod {
     SOURCE_STREAM_READ,
     TARGET_CREATE_INDEX,
     PAUSED,
+    TIMESTAMP_TO_STREAM_OFFSET,
     ;
 
     PDKMethod() {
