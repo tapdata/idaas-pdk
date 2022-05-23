@@ -7,7 +7,7 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private BatchReadFunction batchReadFunction;
     private StreamReadFunction streamReadFunction;
     private BatchCountFunction batchCountFunction;
-    private StreamOffsetFunction streamOffsetFunction;
+    private TimestampToStreamOffsetFunction timestampToStreamOffsetFunction;
     private WriteRecordFunction writeRecordFunction;
     private QueryByFilterFunction queryByFilterFunction;
     private QueryByAdvanceFilterFunction queryByAdvanceFilterFunction;
@@ -47,8 +47,8 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
      * @param function
      * @return
      */
-    public ConnectorFunctions supportStreamOffset(StreamOffsetFunction function) {
-        streamOffsetFunction = function;
+    public ConnectorFunctions supportTimestampToStreamOffset(TimestampToStreamOffsetFunction function) {
+        timestampToStreamOffsetFunction = function;
         return this;
     }
 
@@ -134,8 +134,8 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return batchCountFunction;
     }
 
-    public StreamOffsetFunction getStreamOffsetFunction() {
-        return streamOffsetFunction;
+    public TimestampToStreamOffsetFunction getTimestampToStreamOffsetFunction() {
+        return timestampToStreamOffsetFunction;
     }
 
     public QueryByFilterFunction getQueryByFilterFunction() {

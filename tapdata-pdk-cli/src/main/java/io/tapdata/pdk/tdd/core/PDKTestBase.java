@@ -18,7 +18,7 @@ import io.tapdata.pdk.apis.entity.TapFilter;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.source.BatchCountFunction;
-import io.tapdata.pdk.apis.functions.connector.source.StreamOffsetFunction;
+import io.tapdata.pdk.apis.functions.connector.source.TimestampToStreamOffsetFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByFilterFunction;
 import io.tapdata.entity.logger.TapLogger;
@@ -49,7 +49,6 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static io.tapdata.entity.simplify.TapSimplify.*;
@@ -571,12 +570,12 @@ public class PDKTestBase {
         return null;
     }
 
-    protected Object getStreamOffset(SourceNode sourceNode, List<String> tableList, Long offsetStartTime) throws Throwable {
-        StreamOffsetFunction queryByFilterFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
-        final Object[] offset = {null};
-        queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime, (o, aLong) -> offset[0] = o);
-        return offset[0];
-    }
+//    protected Object getStreamOffset(SourceNode sourceNode, List<String> tableList, Long offsetStartTime) throws Throwable {
+//        TimestampToStreamOffsetFunction queryByFilterFunction = sourceNode.getConnectorFunctions().getStreamOffsetFunction();
+//        final Object[] offset = {null};
+//        queryByFilterFunction.streamOffset(sourceNode.getConnectorContext(), tableList, offsetStartTime, (o, aLong) -> offset[0] = o);
+//        return offset[0];
+//    }
 
     protected long getBatchCount(ConnectorNode sourceNode, TapTable table) throws Throwable {
         BatchCountFunction batchCountFunction = sourceNode.getConnectorFunctions().getBatchCountFunction();

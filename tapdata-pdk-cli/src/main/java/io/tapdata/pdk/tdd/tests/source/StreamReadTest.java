@@ -12,8 +12,6 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.ConnectorNode;
-import io.tapdata.pdk.core.api.SourceNode;
-import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
@@ -271,7 +269,7 @@ public class StreamReadTest extends PDKTestBase {
         return Arrays.asList(
                 support(WriteRecordFunction.class, "WriteRecord is a must to verify streamRead, please implement it in registerCapabilities method."),
                 support(StreamReadFunction.class, "StreamRead is a must to read incremental records, please implement it in registerCapabilities method."),
-                support(StreamOffsetFunction.class, "StreamOffset is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method."),
+//                support(TimestampToStreamOffsetFunction.class, "StreamOffset is a must for incremental engine to record offset of stream read, please implement it in registerCapabilities method."),
                 support(DropTableFunction.class, "DropTable is needed for TDD to drop the table created by tests, please implement it in registerCapabilities method.")
         );
     }

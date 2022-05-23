@@ -1,5 +1,6 @@
 package io.tapdata.entity.simplify;
 
+import io.tapdata.entity.event.control.HeartbeatEvent;
 import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.index.TapDeleteIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
@@ -192,6 +193,10 @@ public class TapSimplify {
 
     public static TapUpdateRecordEvent updateDMLEvent(Map<String, Object> before, Map<String, Object> after, String table) {
         return new TapUpdateRecordEvent().init().before(before).after(after).table(table);
+    }
+
+    public static HeartbeatEvent heartbeatEvent(Long referenceTime) {
+        return new HeartbeatEvent().init().referenceTime(referenceTime);
     }
 
     public static void sleep(long milliseconds) {
