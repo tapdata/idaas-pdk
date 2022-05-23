@@ -208,12 +208,20 @@ public class MongodbConnector extends ConnectorBase {
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) throws Throwable {
-        MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
-        int index = 0;
-        for (String collectionName : collectionNames) {
-            index++;
-        }
-        return index;
+				int index = 0;
+				try {
+						onStart(connectionContext);
+						MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+						index = 0;
+						for (String collectionName : collectionNames) {
+								index++;
+						}
+				} catch (Exception e) {
+						throw e;
+				} finally {
+						onPause();
+				}
+				return index;
     }
 
     /**
@@ -519,6 +527,9 @@ public class MongodbConnector extends ConnectorBase {
     }
 
     private Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+				if (mongodbStreamReader == null){
+						mongodbStreamReader = createStreamReader();
+				}
 				return mongodbStreamReader.streamOffset(offsetStartTime);
     }
 
@@ -582,14 +593,17 @@ public class MongodbConnector extends ConnectorBase {
 				isShutDown.set(true);
 				if(mongodbStreamReader != null) {
 						mongodbStreamReader.onDestroy();
+						mongodbStreamReader = null;
 				}
 
 				if (mongoClient != null) {
 						mongoClient.close();
+						mongoClient = null;
 				}
 
 				if (mongodbWriter != null) {
 						mongodbWriter.onDestroy();
+						mongodbWriter = null;
 				}
 		}
 }

@@ -152,15 +152,14 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 
 		@Override
 		public Object streamOffset(Long offsetStartTime) {
-				if(offsetStartTime != null) {
-						// Unix timestamp in seconds, with increment 1
-						ChangeStreamIterable<Document> changeStream = mongoDatabase.watch();
-						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 1));
-						MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
+				ChangeStreamIterable<Document> changeStream = mongoDatabase.watch();
+				if (offsetStartTime != null) {
+						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 0));
+				}
+				try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();) {
 						BsonDocument theResumeToken = cursor.getResumeToken();
 
-						if(theResumeToken != null) {
-								cursor.close();
+						if (theResumeToken != null) {
 								return theResumeToken;
 						}
 				}
