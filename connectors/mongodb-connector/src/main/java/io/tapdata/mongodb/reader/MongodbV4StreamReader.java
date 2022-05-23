@@ -70,7 +70,11 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 						if (offset != null) {
 								//报错之后， 再watch一遍
 								//如果完全没事件， 就需要从当前时间开始watch
-								changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+								if (offset instanceof BsonTimestamp) {
+										changeStream = mongoDatabase.watch(pipeline).startAtOperationTime((BsonTimestamp) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+								} else {
+										changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+								}
 						} else {
 								changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
 						}
@@ -161,9 +165,10 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 
 						if (theResumeToken != null) {
 								return theResumeToken;
+						} else {
+								return new BsonTimestamp((int) (offsetStartTime / 1000), 0);
 						}
 				}
-				return null;
 		}
 
 		@Override
