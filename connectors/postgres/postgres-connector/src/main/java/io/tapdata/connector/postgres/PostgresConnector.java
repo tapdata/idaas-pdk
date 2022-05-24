@@ -88,6 +88,7 @@ public class PostgresConnector extends ConnectorBase {
                     primaryKey.addAll(value.stream().map(v -> v.getString("column_name")).collect(Collectors.toList()));
                 }
                 TapIndex index = new TapIndex();
+                index.setName(key);
                 List<TapIndexField> fieldList = TapSimplify.list();
                 value.forEach(v -> {
                     TapIndexField field = new TapIndexField();

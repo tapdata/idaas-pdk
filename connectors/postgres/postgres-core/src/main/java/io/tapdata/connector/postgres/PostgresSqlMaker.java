@@ -7,6 +7,7 @@ import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -32,8 +33,8 @@ public class PostgresSqlMaker {
     public static String buildColumnDefinition(TapTable tapTable) {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
         StringBuilder builder = new StringBuilder();
-        nameFieldMap.keySet().forEach(columnName -> {
-            TapField tapField = nameFieldMap.get(columnName);
+        nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPos())).forEach(v -> {
+            TapField tapField = v.getValue();
             if (tapField.getDataType() == null) {
                 return;
             }
