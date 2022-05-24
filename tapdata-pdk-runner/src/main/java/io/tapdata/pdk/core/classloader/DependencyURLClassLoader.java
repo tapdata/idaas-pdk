@@ -91,34 +91,28 @@ public class DependencyURLClassLoader extends ClassLoader {
             super(urls, null);
 
             this.realParent = realParent;
-            TapLogger.info(TAG, "ChildURLClassLoader created with urls {} parent class loader {}", Arrays.toString(urls), realParent);
+//            TapLogger.info(TAG, "ChildURLClassLoader created with urls {} parent class loader {}", Arrays.toString(urls), realParent);
         }
 
         @Override
         public Class<?> findClass(String name) throws ClassNotFoundException {
+            TapLogger.info(TAG, "Find class {}", name);
+            Class<?> loaded = super.findLoadedClass(name);
+            if( loaded != null ) {
+//                TapLogger.info(TAG, "Found class {} for name {} in loaded classes", loaded, name);
+                return loaded;
+            }
             try {
-                TapLogger.info(TAG, "Find class {}", name);
-                Class<?> loaded = super.findLoadedClass(name);
-                if( loaded != null ) {
-                    TapLogger.info(TAG, "Found class {} for name {} in loaded classes", loaded, name);
-                    return loaded;
-                }
-                try {
-                    // first try to use the URLClassLoader findClass
-                    Class<?> clazz = super.findClass(name);
-                    TapLogger.info(TAG, "Found class {} for name {} in PDK jar", clazz, name);
-                    return clazz;
-                }
-                catch( ClassNotFoundException e ) {
-                    // if that fails, we ask our real parent classloader to load the class (we give up)
-                    Class<?> clazz = realParent.loadClass(name);
-                    TapLogger.info(TAG, "Found class {} for name {} in parent", clazz, name);
-                    return clazz;
-                }
-            } catch(Throwable t) {
-                t.printStackTrace();
-                TapLogger.info(TAG, "Unknown error for name {}, error {}", name, t.getMessage());
-                throw t;
+                // first try to use the URLClassLoader findClass
+                Class<?> clazz = super.findClass(name);
+//                TapLogger.info(TAG, "Found class {} for name {} in PDK jar", clazz, name);
+                return clazz;
+            }
+            catch( ClassNotFoundException e ) {
+                // if that fails, we ask our real parent classloader to load the class (we give up)
+                Class<?> clazz = realParent.loadClass(name);
+//                TapLogger.info(TAG, "Found class {} for name {} in parent", clazz, name);
+                return clazz;
             }
         }
     }
@@ -154,10 +148,10 @@ public class DependencyURLClassLoader extends ClassLoader {
         }
         catch( ClassNotFoundException e ) {
             // didn't find it, try the parent
-            TapLogger.info(TAG, "Class not found for name {} resolve {}", name, resolve);
+//            TapLogger.info(TAG, "Class not found for name {} resolve {}", name, resolve);
             return super.loadClass(name, resolve);
         } catch (Throwable t) {
-            TapLogger.info(TAG, "Unknown error for name {} resolve {} error {}", name, resolve, t.getMessage());
+//            TapLogger.info(TAG, "Unknown error for name {} resolve {} error {}", name, resolve, t.getMessage());
             throw t;
         }
     }
