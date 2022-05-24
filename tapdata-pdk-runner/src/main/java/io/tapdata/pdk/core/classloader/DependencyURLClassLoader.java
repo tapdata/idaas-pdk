@@ -96,7 +96,7 @@ public class DependencyURLClassLoader extends ClassLoader {
 
         @Override
         public Class<?> findClass(String name) throws ClassNotFoundException {
-            TapLogger.info(TAG, "Find class {}", name);
+//            TapLogger.info(TAG, "Find class {}", name);
             Class<?> loaded = super.findLoadedClass(name);
             if( loaded != null ) {
 //                TapLogger.info(TAG, "Found class {} for name {} in loaded classes", loaded, name);
