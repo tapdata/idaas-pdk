@@ -17,13 +17,18 @@ import io.tapdata.entity.utils.DataMap;
 import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.bean.MongodbConfig;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
+import org.apache.commons.collections4.MapUtils;
 import org.bson.BsonDocument;
+import org.bson.BsonDocumentReader;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.DocumentCodec;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
+import javax.print.Doc;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -130,20 +135,24 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 								} else if (operationType == OperationType.DELETE) {
 										DataMap before = new DataMap();
 										if (event.getDocumentKey() != null) {
-												before.put("_id", event.getDocumentKey().get("_id"));
+												final Document documentKey = new DocumentCodec().decode(new BsonDocumentReader(event.getDocumentKey()), DecoderContext.builder().build());
+												before.put("_id", documentKey.get("_id"));
 												TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, collectionName);
 												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 												tapEvents.add(recordEvent);
 										} else {
-												TapLogger.error(TAG, "Document key is null, failed to delete. {}", event);
+												TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
 										}
 								} else if (operationType == OperationType.UPDATE) {
 										DataMap before = new DataMap();
+										DataMap after = new DataMap();
+										if (MapUtils.isEmpty(fullDocument)) {
+												TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
+												continue;
+										}
 										if (event.getDocumentKey() != null) {
-												before.put("_id", event.getDocumentKey().get("_id"));
-												DataMap after = new DataMap();
+												before.put("_id", fullDocument.get("_id"));
 												after.putAll(fullDocument);
-												after.remove("_id");
 
 												TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, collectionName);
 												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
