@@ -141,6 +141,7 @@ public class PostgresConnector extends ConnectorBase {
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) {
+        initConnection(connectionContext);
         return postgresJdbcContext.queryAllTables(null).size();
     }
 
