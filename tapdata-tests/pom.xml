@@ -9,6 +9,7 @@
 
     <properties>
         <java.version>8</java.version>
+        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
     <!--<dependencyManagement>-->
     <dependencies>
