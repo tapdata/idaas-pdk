@@ -7,6 +7,7 @@ import io.tapdata.pdk.core.api.Node;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Map;
 import java.util.UUID;
@@ -136,7 +137,7 @@ public class PDKInvocationMonitor {
                 long takes = System.currentTimeMillis() - time;
                 collector.getTotalTakes().add(takes);
                 if(error != null) {
-                    TapLogger.error(logTag, "methodEnd {} invokeId {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
+                    TapLogger.error(logTag, "methodEnd {} invokeId {} failed, message {} takes {} error {}", method, invokeId, message, takes, ExceptionUtils.getStackTrace(error));
                 } else {
                     TapLogger.info(logTag, "methodEnd {} invokeId {} successfully, message {} takes {}", method, invokeId, message, takes);
                 }

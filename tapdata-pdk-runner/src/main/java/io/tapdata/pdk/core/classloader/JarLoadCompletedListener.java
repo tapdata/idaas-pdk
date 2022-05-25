@@ -8,8 +8,7 @@ public interface JarLoadCompletedListener {
      *
      * @param jarFile
      * @param throwable if failed, throwable is the error information
-     * @param firstTime
      * @return
      */
-    void loadCompleted(File jarFile, ClassLoader classLoader, Throwable throwable, boolean firstTime);
+    void loadCompleted(File jarFile, ClassLoader classLoader, Throwable throwable);
 }

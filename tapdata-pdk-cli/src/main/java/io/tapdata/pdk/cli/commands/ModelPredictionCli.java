@@ -25,6 +25,7 @@ import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInfo;
+import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.model.Model;
@@ -68,6 +69,7 @@ public class ModelPredictionCli extends CommonCli {
     private static final String FIELD_EXACT = "exact_";
 
     public Integer execute() throws Exception {
+        CommonUtils.setProperty("refresh_local_jars", "true");
         File outputFile = new File(output);
         if(outputFile.isFile())
             throw new IllegalArgumentException("");

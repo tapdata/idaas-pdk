@@ -76,6 +76,7 @@ public class RegisterCli extends CommonCli {
     public Integer execute() throws Exception {
 //        runOne();
         try {
+            CommonUtils.setProperty("refresh_local_jars", "true");
             TapConnectorManager.getInstance().start(Arrays.asList(files));
 
             for (File file : files) {
@@ -136,6 +137,7 @@ public class RegisterCli extends CommonCli {
                 UploadFileService.upload(inputStreamMap, file, jsons, latest, tmUrl, authToken);
             }
         } catch (Throwable throwable) {
+            throwable.printStackTrace();
             CommonUtils.logError(TAG, "Start failed", throwable);
         }
         return 0;

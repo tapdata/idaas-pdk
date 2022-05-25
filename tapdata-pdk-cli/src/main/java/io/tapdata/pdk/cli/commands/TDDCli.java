@@ -119,6 +119,7 @@ public class TDDCli extends CommonCli {
     }
 
     public Integer execute() {
+        CommonUtils.setProperty("refresh_local_jars", "true");
         if(verbose)
             CommonUtils.setProperty("tap_verbose", "true");
         try {

@@ -10,8 +10,7 @@ public interface JarAnnotationHandlersListener {
      * If jar file changes, this method may be called.
      *
      * @param jarFile
-     * @param firstTime
      * @return
      */
-    ClassAnnotationHandler[] annotationHandlers(File jarFile, boolean firstTime);
+    ClassAnnotationHandler[] annotationHandlers(File jarFile);
 }
