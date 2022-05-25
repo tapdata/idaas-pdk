@@ -1,5 +1,6 @@
 package io.tapdata.connector.mysql.entity;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,7 +9,7 @@ import java.util.Map;
  * @Description
  * @create 2022-05-05 14:47
  **/
-public class MysqlSnapshotOffset {
+public class MysqlSnapshotOffset implements Serializable {
 	private Map<String, Object> offset;
 
 	public MysqlSnapshotOffset() {

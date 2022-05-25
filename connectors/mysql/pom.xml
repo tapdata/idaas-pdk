@@ -20,7 +20,7 @@
 
     <properties>
         <java.version>8</java.version>
-        <mysql.driver.version>8.0.28</mysql.driver.version>
+        <mysql.driver.version>8.0.21</mysql.driver.version>
         <hikari.version>4.0.3</hikari.version>
         <debezium.version>1.5.4.Final</debezium.version>
     </properties>

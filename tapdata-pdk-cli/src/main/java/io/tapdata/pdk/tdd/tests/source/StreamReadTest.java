@@ -161,7 +161,7 @@ public class StreamReadTest extends PDKTestBase {
                 initConnectorFunctions();
                 checkFunctions(sourceNode.getConnectorFunctions(), StreamReadTest.testFunctions());
 
-                final long maxWaitSeconds = 30;
+                final long maxWaitSeconds = 60;
                 long startTime = System.currentTimeMillis();
                 final ScheduledFuture future = ExecutorsManager.getInstance().getScheduledExecutorService().scheduleAtFixedRate(() -> {
                     if(System.currentTimeMillis() - startTime > TimeUnit.SECONDS.toMillis(maxWaitSeconds)) {
@@ -185,6 +185,7 @@ public class StreamReadTest extends PDKTestBase {
             TapLogger.debug("PATROL STATE_INITIALIZED", "NodeId {} state {}", nodeId, (state == PatrolEvent.STATE_ENTER ? "enter" : "leave"));
             if (nodeId.equals(testSourceAsTargetNodeId) && state == PatrolEvent.STATE_LEAVE) {
                 AtomicInteger cnt = new AtomicInteger();
+                sleep(5 * 1000L);
                 for (int i = 0; i < 10; i++) {
                     DataMap dataMap = buildInsertRecord();
                     dataMap.put("id", "id_" + i);
