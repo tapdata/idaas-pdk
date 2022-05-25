@@ -95,7 +95,7 @@ public class MongodbWriter {
 								final Document pkFilter = getPkFilter(pks, before != null && !before.isEmpty() ? before : after);
 
 								writeModels.add(new UpdateManyModel<>(pkFilter, new Document().append("$set", after), options));
-
+								updated.incrementAndGet();
 						} else if (recordEvent instanceof TapDeleteRecordEvent) {
 
 								TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
