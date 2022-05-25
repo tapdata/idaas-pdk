@@ -26,6 +26,7 @@ public class StartCli extends CommonCli {
     private boolean helpRequested = false;
 
     public Integer execute() throws Exception {
+        CommonUtils.setProperty("refresh_local_jars", "true");
         if(verbose)
             CommonUtils.setProperty("tap_verbose", "true");
         try {

@@ -45,11 +45,17 @@ public class ExternalJarManager {
      */
     private boolean updateJarWhenIdleAtRuntime = false;
 
+    /**
+     * Use for refresh local connector jars
+     */
+    private boolean refreshLocalJars = false;
+
     private AtomicBoolean isStarted = new AtomicBoolean(false);
     private JarFoundListener jarFoundListener;
     private JarLoadCompletedListener jarLoadCompletedListener;
     private JarAnnotationHandlersListener jarAnnotationHandlersListener;
 
+    private AtomicBoolean firstTime = new AtomicBoolean(false);
     private ExternalJarManager() {}
     public static ExternalJarManager build() {
         return new ExternalJarManager();
@@ -82,11 +88,17 @@ public class ExternalJarManager {
         this.updateJarWhenIdleAtRuntime = updateJarWhenIdleAtRuntime;
         return this;
     }
+    public ExternalJarManager withRefreshLocalJars(boolean refreshLocalJars) {
+        this.refreshLocalJars = refreshLocalJars;
+        return this;
+    }
 
     public ExternalJarManager start() {
         if (isStarted.compareAndSet(false, true)) {
-            loadJars(true);
-            loadAtRuntime();
+            if(refreshLocalJars) {
+                loadJars();
+                loadAtRuntime();
+            }
         } else {
             TapLogger.warn(TAG, "Already started");
         }
@@ -108,26 +120,19 @@ public class ExternalJarManager {
 
             ExecutorsManager.getInstance().getScheduledExecutorService().scheduleAtFixedRate(() -> {
                 try {
-                    loadJars( false);
+                    loadJars();
                 } catch (Throwable ignored) {}
             }, seconds, seconds, TimeUnit.SECONDS);
         }
     }
 
-    public void loadJars() {
-        loadJars(false);
-    }
-    public void loadJars(boolean firstTime) {
-        loadJars(null, firstTime);
+    public boolean loadJars() {
+        return loadJars(null);
     }
     /**
      * When downloaded new jar, call this method to load new jar immediately
      */
-    public void loadJars(String oneJarPath) {
-        loadJars(oneJarPath, false);
-    }
-
-    private synchronized boolean loadJars(String oneJarPath, boolean firstTime) {
+    public synchronized boolean loadJars(String oneJarPath) {
         if(jarAnnotationHandlersListener == null) {
             throw new CoreException(PDKRunnerErrorCodes.PDK_JAR_ANNOTAION_HANDLER_NOT_FOUND, "Jar annotation handlers listener is not specified");
         }
@@ -145,16 +150,24 @@ public class ExternalJarManager {
         Collection<File> jars = null;
         File theRunningFolder = null;
 
-        String runningPath = FilenameUtils.concat(path, "../tap-running/");
-        File runningFolder = new File(runningPath);
-        theRunningFolder = runningFolder;
-        if (firstTime) {
-            CommonUtils.ignoreAnyError(() -> {
-                if (runningFolder.exists()) {
-                    FileUtils.forceDelete(runningFolder);
-                    FileUtils.forceMkdir(runningFolder);
-                }
-            }, TAG);
+        AtomicBoolean theFirstTime = new AtomicBoolean(false);
+        if (firstTime.compareAndSet(false, true)) {
+            theFirstTime.set(true);
+        }
+
+        if(path != null) {
+            String runningPath = FilenameUtils.concat(path, "../tap-running/");
+            File runningFolder = new File(runningPath);
+            theRunningFolder = runningFolder;
+
+            if(theFirstTime.get()) {
+                CommonUtils.ignoreAnyError(() -> {
+                    if (runningFolder.exists()) {
+                        FileUtils.forceDelete(runningFolder);
+                        FileUtils.forceMkdir(runningFolder);
+                    }
+                }, TAG);
+            }
         }
 
         if(oneJarFile != null) {
@@ -183,7 +196,7 @@ public class ExternalJarManager {
             DependencyURLClassLoader dependencyURLClassLoader = null;
             boolean ignored = false;
             try {
-                if(jarFoundListener == null || !jarFoundListener.needReloadJar(jar, firstTime)) {
+                if(jarFoundListener == null || !jarFoundListener.needReloadJar(jar, theFirstTime.get())) {
                     ignored = true;
                     return;
                 }
@@ -218,7 +231,7 @@ public class ExternalJarManager {
                         .addClassLoader(dependencyURLClassLoader.getActualClassLoader()));
                 TapLogger.info(TAG, "Analyze jar file {}", targetJarFile.getAbsolutePath());
                 TapLogger.info(TAG, "Tapdata SDK will only scan classes under package 'io' or 'pdk', please ensure your annotated classes are following this rule. ");
-                AnnotationUtils.runClassAnnotationHandlers(reflections, jarAnnotationHandlersListener.annotationHandlers(jar, firstTime), TAG);
+                AnnotationUtils.runClassAnnotationHandlers(reflections, jarAnnotationHandlersListener.annotationHandlers(jar), TAG);
 
 //                Set<Class<?>> connectorClasses = reflections.getTypesAnnotatedWith(OpenAPIConnector.class, true);
             } catch (MalformedURLException e) {
@@ -233,7 +246,7 @@ public class ExternalJarManager {
                     DependencyURLClassLoader finalDependencyURLClassLoader = dependencyURLClassLoader;
                     CommonUtils.ignoreAnyError(() -> {
                         if(jarLoadCompletedListener != null) {
-                            jarLoadCompletedListener.loadCompleted(jar, finalDependencyURLClassLoader, finalError, firstTime);
+                            jarLoadCompletedListener.loadCompleted(jar, finalDependencyURLClassLoader, finalError);
                         }
                     }, TAG);
                 }
@@ -287,5 +300,9 @@ public class ExternalJarManager {
 
     public boolean isUpdateJarWhenIdleAtRuntime() {
         return updateJarWhenIdleAtRuntime;
+    }
+
+    public boolean isRefreshLocalJars() {
+        return refreshLocalJars;
     }
 }

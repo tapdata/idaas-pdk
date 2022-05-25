@@ -488,6 +488,10 @@ public class PDKIntegration {
         init();
         tapConnectorManager.refreshJars(oneJarPath);
     }
+    public static boolean hasJar(String oneJarPath) {
+        init();
+        return tapConnectorManager.checkTapConnectorByJarName(oneJarPath);
+    }
 
     /**
      * use createConnectorBuilder please

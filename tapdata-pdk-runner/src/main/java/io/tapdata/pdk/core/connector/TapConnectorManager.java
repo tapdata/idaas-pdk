@@ -58,6 +58,10 @@ public class TapConnectorManager {
         return jarNameTapConnectorMap.get(jarName);
     }
 
+    public boolean checkTapConnectorByJarName(String jarName) {
+        return jarNameTapConnectorMap.containsKey(convertJarFileName(jarName));
+    }
+
     public TapNodeInstance createConnectorInstance(String associateId, String pdkId, String group, String version) {
         Collection<TapConnector> connectors = jarNameTapConnectorMap.values();
         for(TapConnector connector : connectors) {
@@ -96,16 +100,22 @@ public class TapConnectorManager {
                 String path = CommonUtils.getProperty("pdk_external_jar_path", "./dist");
                 boolean loadNewJarAtRuntime = CommonUtils.getPropertyBool("pdk_load_new_jar_at_runtime", true);
                 boolean updateJarWhenIdleAtRuntime = CommonUtils.getPropertyBool("pdk_update_jar_when_idle_at_runtime", true);
+                boolean refreshLocalJars = CommonUtils.getPropertyBool("refresh_local_jars", false);
                 externalJarManager = ExternalJarManager.build()
                         .withPath(path)
                         .withLoadNewJarAtRuntime(loadNewJarAtRuntime)
+                        .withRefreshLocalJars(refreshLocalJars)
                         .withUpdateJarWhenIdleAtRuntime(updateJarWhenIdleAtRuntime);
             } else {
+                boolean loadNewJarAtRuntime = CommonUtils.getPropertyBool("pdk_load_new_jar_at_runtime", false);
+                boolean updateJarWhenIdleAtRuntime = CommonUtils.getPropertyBool("pdk_update_jar_when_idle_at_runtime", false);
+                boolean refreshLocalJars = CommonUtils.getPropertyBool("refresh_local_jars", false);
                 //Init as TDD purpose.
                 externalJarManager = ExternalJarManager.build()
                         .withJarFiles(jarFiles)
-                        .withLoadNewJarAtRuntime(false)
-                        .withUpdateJarWhenIdleAtRuntime(false);
+                        .withLoadNewJarAtRuntime(loadNewJarAtRuntime)
+                        .withRefreshLocalJars(refreshLocalJars)
+                        .withUpdateJarWhenIdleAtRuntime(updateJarWhenIdleAtRuntime);
             }
 
             externalJarManager.withJarFoundListener((jarFile, firstTime) -> {
@@ -138,13 +148,13 @@ public class TapConnectorManager {
                         }
                         return false;
                     })
-                    .withJarLoadCompletedListener((jarFile, classLoader, throwable, firstTime) -> {
+                    .withJarLoadCompletedListener((jarFile, classLoader, throwable) -> {
                         TapConnector existingTapConnector = jarNameTapConnectorMap.get(convertJarFileName(jarFile.getName()));
                         if(existingTapConnector != null) {
                             existingTapConnector.loadCompleted(jarFile, classLoader, throwable);
                         }
                     })
-                    .withJarAnnotationHandlersListener((jarFile, firstTime) -> {
+                    .withJarAnnotationHandlersListener((jarFile) -> {
                         TapConnector existingTapConnector = jarNameTapConnectorMap.get(convertJarFileName(jarFile.getName()));
                         if(existingTapConnector != null)
                             return existingTapConnector.getTapNodeClassFactory().getClassAnnotationHandlers();
