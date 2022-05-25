@@ -63,7 +63,7 @@ public class MongodbConnector extends ConnectorBase {
     private MongoDatabase mongoDatabase;
     private final int[] lock = new int[0];
     MongoCollection<Document> mongoCollection;
-    private MongoOffset batchOffset = null;
+    private MongoBatchOffset batchOffset = null;
 
 		private MongodbStreamReader mongodbStreamReader;
 
@@ -195,22 +195,33 @@ public class MongodbConnector extends ConnectorBase {
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         try {
+						onStart(connectionContext);
             mongoDatabase.listCollectionNames();
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
         } catch(Throwable throwable) {
             throwable.printStackTrace();
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
-        }
+        } finally {
+						onPause();
+				}
     }
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) throws Throwable {
-        MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
-        int index = 0;
-        for (String collectionName : collectionNames) {
-            index++;
-        }
-        return index;
+				int index = 0;
+				try {
+						onStart(connectionContext);
+						MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+						index = 0;
+						for (String collectionName : collectionNames) {
+								index++;
+						}
+				} catch (Exception e) {
+						throw e;
+				} finally {
+						onPause();
+				}
+				return index;
     }
 
     /**
@@ -294,7 +305,8 @@ public class MongodbConnector extends ConnectorBase {
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportStreamOffset((connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer) -> streamOffset(connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer));
+				connectorFunctions.supportTimestampToStreamOffset(this::streamOffset);
+//        connectorFunctions.supportStreamOffset((connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer) -> streamOffset(connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer));
     }
 
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
@@ -485,7 +497,7 @@ public class MongodbConnector extends ConnectorBase {
         if (offset == null) {
             mongoCursor = collection.find().sort(Sorts.ascending(COLLECTION_ID_FIELD)).batchSize(batchSize).iterator();
         } else {
-            MongoOffset mongoOffset = (MongoOffset) offset;//fromJson(offset, MongoOffset.class);
+            MongoBatchOffset mongoOffset = (MongoBatchOffset) offset;//fromJson(offset, MongoOffset.class);
             Object offsetValue = mongoOffset.value();
             if(offsetValue != null) {
                 mongoCursor = collection.find(queryCondition(COLLECTION_ID_FIELD, offsetValue)).sort(Sorts.ascending(COLLECTION_ID_FIELD))
@@ -504,7 +516,7 @@ public class MongodbConnector extends ConnectorBase {
 
             if(tapEvents.size() == eventBatchSize) {
 								Object value = lastDocument.get(COLLECTION_ID_FIELD);
-								batchOffset = new MongoOffset(COLLECTION_ID_FIELD, value);
+								batchOffset = new MongoBatchOffset(COLLECTION_ID_FIELD, value);
                 tapReadOffsetConsumer.accept(tapEvents, batchOffset);
                 tapEvents = list();
             }
@@ -514,12 +526,11 @@ public class MongodbConnector extends ConnectorBase {
         }
     }
 
-    private void streamOffset(TapConnectorContext connectorContext, List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
-
-				if (mongodbStreamReader == null) {
+    private Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+				if (mongodbStreamReader == null){
 						mongodbStreamReader = createStreamReader();
 				}
-				mongodbStreamReader.streamOffset(tableList, offsetStartTime, offsetOffsetTimeConsumer);
+				return mongodbStreamReader.streamOffset(offsetStartTime);
     }
 
     /**
@@ -542,7 +553,11 @@ public class MongodbConnector extends ConnectorBase {
 				if (mongodbStreamReader == null){
 						mongodbStreamReader = createStreamReader();
 				}
-				mongodbStreamReader.read(tableList, offset, eventBatchSize, consumer);
+				try {
+						mongodbStreamReader.read(tableList, offset, eventBatchSize, consumer);
+				} catch (Exception e) {
+						throw new RuntimeException(e);
+				}
 
 //				consumer.asyncMethodAndNoRetry();
     }
@@ -578,14 +593,17 @@ public class MongodbConnector extends ConnectorBase {
 				isShutDown.set(true);
 				if(mongodbStreamReader != null) {
 						mongodbStreamReader.onDestroy();
+						mongodbStreamReader = null;
 				}
 
 				if (mongoClient != null) {
 						mongoClient.close();
+						mongoClient = null;
 				}
 
 				if (mongodbWriter != null) {
 						mongodbWriter.onDestroy();
+						mongodbWriter = null;
 				}
 		}
 }

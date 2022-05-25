@@ -83,8 +83,9 @@ public class MongodbWriter {
 				for (TapRecordEvent recordEvent : tapRecordEvents) {
 						if (recordEvent instanceof TapInsertRecordEvent) {
 								TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-								writeModels.add(new InsertOneModel<>(new Document(insertRecordEvent.getAfter())));
-
+								final Document pkFilter = getPkFilter(pks, insertRecordEvent.getAfter());
+//								writeModels.add(new InsertOneModel<>(new Document(insertRecordEvent.getAfter())));
+								writeModels.add(new UpdateManyModel<>(pkFilter, new Document().append("$set", insertRecordEvent.getAfter()), options));
 								inserted.incrementAndGet();
 						} else if (recordEvent instanceof TapUpdateRecordEvent) {
 

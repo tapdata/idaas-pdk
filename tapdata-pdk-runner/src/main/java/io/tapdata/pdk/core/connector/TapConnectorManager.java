@@ -155,8 +155,8 @@ public class TapConnectorManager {
     /**
      * Refresh local jars to discovery new or updated jars immediately
      */
-    public void refreshJars() {
-        externalJarManager.loadJars();
+    public void refreshJars(String oneJarPath) {
+        externalJarManager.loadJars(oneJarPath);
     }
 
     public static void main(String... args) {

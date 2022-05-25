@@ -64,6 +64,7 @@ public class JsonParserImpl implements JsonParser {
     @Override
     public String toJson(Object obj, ToJsonFeature... features) {
         if (features != null && features.length > 0) {
+            //XXX to force adding WriteMapNullValue feature as the only one we have.
             return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect, SerializerFeature.WriteMapNullValue/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
         } else {
             return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);

@@ -91,21 +91,31 @@ public class DependencyURLClassLoader extends ClassLoader {
             super(urls, null);
 
             this.realParent = realParent;
+//            TapLogger.info(TAG, "ChildURLClassLoader created with urls {} parent class loader {}", Arrays.toString(urls), realParent);
         }
 
         @Override
         public Class<?> findClass(String name) throws ClassNotFoundException {
-
+//            TapLogger.info(TAG, "Find class {}", name);
             Class<?> loaded = super.findLoadedClass(name);
-            if( loaded != null )
+            if( loaded != null ) {
+                TapLogger.info(TAG, "Found class {} hash {} for name {} in loaded classes", loaded, loaded.hashCode(), name);
                 return loaded;
+            }
             try {
                 // first try to use the URLClassLoader findClass
-                return super.findClass(name);
+                Class<?> clazz = super.findClass(name);
+                TapLogger.info(TAG, "Found class {} hash {} for name {} in PDK jar", clazz, clazz.hashCode(), name);
+                return clazz;
             }
             catch( ClassNotFoundException e ) {
                 // if that fails, we ask our real parent classloader to load the class (we give up)
-                return realParent.loadClass(name);
+                Class<?> clazz = realParent.loadClass(name);
+                TapLogger.info(TAG, "Found class {} hash {} for name {} in parent", clazz, clazz.hashCode(), name);
+                return clazz;
+            } catch (LinkageError linkageError) {
+                TapLogger.info(TAG, "Occurred linkage error for name {}, {}", name, linkageError.getMessage());
+                throw linkageError;
             }
         }
     }
@@ -141,7 +151,11 @@ public class DependencyURLClassLoader extends ClassLoader {
         }
         catch( ClassNotFoundException e ) {
             // didn't find it, try the parent
+//            TapLogger.info(TAG, "Class not found for name {} resolve {}", name, resolve);
             return super.loadClass(name, resolve);
+        } catch (Throwable t) {
+//            TapLogger.info(TAG, "Unknown error for name {} resolve {} error {}", name, resolve, t.getMessage());
+            throw t;
         }
     }
 

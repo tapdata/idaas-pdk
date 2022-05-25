@@ -9,6 +9,10 @@
 
   <name>target-need-table-connector-archetype</name>
 
+  <properties>
+    <maven.deploy.skip>true</maven.deploy.skip>
+  </properties>
+
   <build>
     <extensions>
       <extension>

@@ -14,15 +14,21 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.bean.MongodbConfig;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
+import org.apache.commons.collections4.MapUtils;
 import org.bson.BsonDocument;
+import org.bson.BsonDocumentReader;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.DocumentCodec;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
+import javax.print.Doc;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -70,7 +76,11 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 						if (offset != null) {
 								//报错之后， 再watch一遍
 								//如果完全没事件， 就需要从当前时间开始watch
-								changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+								if (offset instanceof BsonTimestamp) {
+										changeStream = mongoDatabase.watch(pipeline).startAtOperationTime((BsonTimestamp) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+								} else {
+										changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+								}
 						} else {
 								changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
 						}
@@ -79,7 +89,7 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 						while (!running.get()) {
 								ChangeStreamDocument<Document> event = streamCursor.tryNext();
 								if(event == null) {
-										if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
+										if (!tapEvents.isEmpty()) consumer.accept(tapEvents, resumeToken);
 										tapEvents = list();
 										boolean cursorClosed = false;
 										String errorMessage = "null";
@@ -101,7 +111,7 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 										continue;
 								}
 								if(tapEvents.size() >= eventBatchSize) {
-										if (!tapEvents.isEmpty()) consumer.accept(tapEvents);
+										consumer.accept(tapEvents, resumeToken);
 										tapEvents = list();
 								}
 
@@ -120,25 +130,32 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 										DataMap after = new DataMap();
 										after.putAll(fullDocument);
 										TapInsertRecordEvent recordEvent = insertRecordEvent(after, collectionName);
+										recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 										tapEvents.add(recordEvent);
 								} else if (operationType == OperationType.DELETE) {
 										DataMap before = new DataMap();
 										if (event.getDocumentKey() != null) {
-												before.put("_id", event.getDocumentKey().get("_id"));
+												final Document documentKey = new DocumentCodec().decode(new BsonDocumentReader(event.getDocumentKey()), DecoderContext.builder().build());
+												before.put("_id", documentKey.get("_id"));
 												TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, collectionName);
+												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 												tapEvents.add(recordEvent);
 										} else {
-												TapLogger.error(TAG, "Document key is null, failed to delete. {}", event);
+												TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
 										}
 								} else if (operationType == OperationType.UPDATE) {
 										DataMap before = new DataMap();
+										DataMap after = new DataMap();
+										if (MapUtils.isEmpty(fullDocument)) {
+												TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
+												continue;
+										}
 										if (event.getDocumentKey() != null) {
-												before.put("_id", event.getDocumentKey().get("_id"));
-												DataMap after = new DataMap();
+												before.put("_id", fullDocument.get("_id"));
 												after.putAll(fullDocument);
-												after.remove("_id");
 
 												TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, collectionName);
+												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 												tapEvents.add(recordEvent);
 										} else {
 												TapLogger.error(TAG, "Document key is null, failed to update. {}", event);
@@ -151,25 +168,26 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 		}
 
 		@Override
-		public void streamOffset(List<String> tableList, Long offsetStartTime, BiConsumer<Object, Long> offsetOffsetTimeConsumer) {
-				if(offsetStartTime != null) {
-						List<Bson> pipeline = singletonList(Aggregates.match(
-										Filters.in("ns.coll", tableList)
-						));
-						// Unix timestamp in seconds, with increment 1
-						ChangeStreamIterable<Document> changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
-						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 1));
-						MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();
-						BsonDocument theResumeToken = cursor.getResumeToken();
+		public Object streamOffset(Long offsetStartTime) {
+				Object offset = null;
+				ChangeStreamIterable<Document> changeStream = mongoDatabase.watch();
+				if (offsetStartTime != null) {
+						changeStream = changeStream.startAtOperationTime(new BsonTimestamp((int) (offsetStartTime / 1000), 0));
+						try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = changeStream.cursor();) {
+								BsonDocument theResumeToken = cursor.getResumeToken();
 
-						if(theResumeToken != null) {
-								cursor.close();
-								offsetOffsetTimeConsumer.accept(theResumeToken, null);
+								if (theResumeToken != null) {
+										offset = theResumeToken;
+								}
 						}
-				} else if(resumeToken != null) {
-						offsetOffsetTimeConsumer.accept(resumeToken, null);
 				}
-				offsetOffsetTimeConsumer.accept(null, null);
+
+				if (offset == null) {
+						final long serverTimestamp = MongodbUtil.mongodbServerTimestamp(mongoDatabase);
+						offset = new BsonTimestamp((int) (serverTimestamp / 1000), 0);
+				}
+
+				return offset;
 		}
 
 		@Override
