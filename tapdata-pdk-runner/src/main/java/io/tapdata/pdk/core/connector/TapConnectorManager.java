@@ -101,6 +101,7 @@ public class TapConnectorManager {
                         .withLoadNewJarAtRuntime(loadNewJarAtRuntime)
                         .withUpdateJarWhenIdleAtRuntime(updateJarWhenIdleAtRuntime);
             } else {
+                //Init as TDD purpose.
                 externalJarManager = ExternalJarManager.build()
                         .withJarFiles(jarFiles)
                         .withLoadNewJarAtRuntime(false)
@@ -108,12 +109,13 @@ public class TapConnectorManager {
             }
 
             externalJarManager.withJarFoundListener((jarFile, firstTime) -> {
+                String realJarFile = convertJarFileName(jarFile.getName());
                         if(firstTime || externalJarManager.isLoadNewJarAtRuntime()) {
-                            TapConnector existingTapConnector = jarNameTapConnectorMap.get(jarFile.getName());
+                            TapConnector existingTapConnector = jarNameTapConnectorMap.get(realJarFile);
                             if(existingTapConnector == null) {
                                 TapConnector tapConnector = new TapConnector();
                                 tapConnector.setJarFile(jarFile);
-                                TapConnector old = jarNameTapConnectorMap.putIfAbsent(jarFile.getName(), tapConnector);
+                                TapConnector old = jarNameTapConnectorMap.putIfAbsent(realJarFile, tapConnector);
                                 if(old == null) {
                                     tapConnector.start();
                                     tapConnector.startLoadJar();
@@ -137,19 +139,33 @@ public class TapConnectorManager {
                         return false;
                     })
                     .withJarLoadCompletedListener((jarFile, classLoader, throwable, firstTime) -> {
-                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(jarFile.getName());
+                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(convertJarFileName(jarFile.getName()));
                         if(existingTapConnector != null) {
                             existingTapConnector.loadCompleted(jarFile, classLoader, throwable);
                         }
                     })
                     .withJarAnnotationHandlersListener((jarFile, firstTime) -> {
-                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(jarFile.getName());
+                        TapConnector existingTapConnector = jarNameTapConnectorMap.get(convertJarFileName(jarFile.getName()));
                         if(existingTapConnector != null)
                             return existingTapConnector.getTapNodeClassFactory().getClassAnnotationHandlers();
                         return null;
                     }).start();
             ;
         }
+    }
+
+    //mongodb-connector-v1.0-SNAPSHOT__628daf0716419763bbdce3f1__.jar => mongodb-connector-v1.0-SNAPSHOT.jar
+    private String convertJarFileName(String jarFileName) {
+        final String separator = "__";
+        int lastOne = jarFileName.lastIndexOf(separator);
+        if(lastOne >= 0) {
+            lastOne -= 2;
+            int lastLastOne = jarFileName.lastIndexOf(separator, lastOne);
+            if(lastLastOne >= 0) {
+                return jarFileName.substring(0, lastLastOne) + jarFileName.substring(lastOne + 4);
+            }
+        }
+        return jarFileName;
     }
 
     /**

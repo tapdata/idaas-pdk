@@ -123,7 +123,7 @@ public class PDKInvocationMonitor {
         final String invokeId = CommonUtils.processUniqueId();
         InvocationCollector collector = methodInvocationCollectorMap.computeIfAbsent(method, InvocationCollector::new);
         collector.getInvokeIdTimeMap().put(invokeId, System.currentTimeMillis());
-        TapLogger.debug(logTag, "methodStart {} invokeId {}", method, invokeId);
+        TapLogger.info(logTag, "methodStart {} invokeId {}", method, invokeId);
         return invokeId;
     }
 
@@ -136,9 +136,9 @@ public class PDKInvocationMonitor {
                 long takes = System.currentTimeMillis() - time;
                 collector.getTotalTakes().add(takes);
                 if(error != null) {
-                    TapLogger.error(logTag, "methodEnd {} invoke {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
+                    TapLogger.error(logTag, "methodEnd {} invokeId {} failed, {} message {} takes {}", method, invokeId, error.getMessage(), message, takes);
                 } else {
-                    TapLogger.debug(logTag, "methodEnd {} invoke {} successfully, message {} takes {}", method, invokeId, message, takes);
+                    TapLogger.info(logTag, "methodEnd {} invokeId {} successfully, message {} takes {}", method, invokeId, message, takes);
                 }
                 return takes;
             }

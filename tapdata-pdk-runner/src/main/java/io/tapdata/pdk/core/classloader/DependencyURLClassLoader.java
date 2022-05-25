@@ -99,19 +99,19 @@ public class DependencyURLClassLoader extends ClassLoader {
 //            TapLogger.info(TAG, "Find class {}", name);
             Class<?> loaded = super.findLoadedClass(name);
             if( loaded != null ) {
-                TapLogger.info(TAG, "Found class {} hash {} for name {} in loaded classes", loaded, loaded.hashCode(), name);
+//                TapLogger.info(TAG, "Found class {} hash {} for name {} in loaded classes", loaded, loaded.hashCode(), name);
                 return loaded;
             }
             try {
                 // first try to use the URLClassLoader findClass
                 Class<?> clazz = super.findClass(name);
-                TapLogger.info(TAG, "Found class {} hash {} for name {} in PDK jar", clazz, clazz.hashCode(), name);
+//                TapLogger.info(TAG, "Found class {} hash {} for name {} in PDK jar", clazz, clazz.hashCode(), name);
                 return clazz;
             }
             catch( ClassNotFoundException e ) {
                 // if that fails, we ask our real parent classloader to load the class (we give up)
                 Class<?> clazz = realParent.loadClass(name);
-                TapLogger.info(TAG, "Found class {} hash {} for name {} in parent", clazz, clazz.hashCode(), name);
+//                TapLogger.info(TAG, "Found class {} hash {} for name {} in parent", clazz, clazz.hashCode(), name);
                 return clazz;
             } catch (LinkageError linkageError) {
                 TapLogger.info(TAG, "Occurred linkage error for name {}, {}", name, linkageError.getMessage());

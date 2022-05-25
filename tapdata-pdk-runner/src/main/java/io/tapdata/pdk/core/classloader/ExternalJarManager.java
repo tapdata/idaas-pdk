@@ -103,7 +103,7 @@ public class ExternalJarManager {
 
     private void loadAtRuntime() {
         if (loadNewJarAtRuntime || updateJarWhenIdleAtRuntime) {
-            int seconds = CommonUtils.getPropertyInt("pdk_load_jar_interval_seconds", 10);
+            int seconds = CommonUtils.getPropertyInt("pdk_load_jar_interval_seconds", 30);
             TapLogger.info(TAG, "Check jar files every {} seconds for loadNewJarAtRuntime {} updateJarWhenIdleAtRuntime {}", seconds, loadNewJarAtRuntime, updateJarWhenIdleAtRuntime);
 
             ExecutorsManager.getInstance().getScheduledExecutorService().scheduleAtFixedRate(() -> {
@@ -141,8 +141,22 @@ public class ExternalJarManager {
                 throw new CoreException(PDKRunnerErrorCodes.PDK_JAR_FILE_NOT_AVAILABLE_TO_LOAD, "Jar file is not a file or not exists, {}", oneJarFile);
             }
         }
+
         Collection<File> jars = null;
         File theRunningFolder = null;
+
+        String runningPath = FilenameUtils.concat(path, "../tap-running/");
+        File runningFolder = new File(runningPath);
+        theRunningFolder = runningFolder;
+        if (firstTime) {
+            CommonUtils.ignoreAnyError(() -> {
+                if (runningFolder.exists()) {
+                    FileUtils.forceDelete(runningFolder);
+                    FileUtils.forceMkdir(runningFolder);
+                }
+            }, TAG);
+        }
+
         if(oneJarFile != null) {
             jars = new ArrayList<>();
             jars.add(oneJarFile);
@@ -154,17 +168,7 @@ public class ExternalJarManager {
             if (!sourcePath.isDirectory()) {
                 TapLogger.error(TAG, "Path {} is not a directory, external jars suppose to be in the directory", path);
             }
-            String runningPath = FilenameUtils.concat(path, "../tap-running/");
-            File runningFolder = new File(runningPath);
-            theRunningFolder = runningFolder;
-            if (firstTime) {
-                CommonUtils.ignoreAnyError(() -> {
-                    if (runningFolder.exists()) {
-                        FileUtils.forceDelete(runningFolder);
-                        FileUtils.forceMkdir(runningFolder);
-                    }
-                }, TAG);
-            }
+
             jars = new ArrayList<>(FileUtils.listFiles(sourcePath,
                     FileFilterUtils.suffixFileFilter(".jar"),
                     FileFilterUtils.directoryFileFilter()));
