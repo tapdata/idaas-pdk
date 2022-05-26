@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -333,73 +332,109 @@ public class PostgresConnector extends ConnectorBase {
 
     // TODO: 2022/5/13 the same type of event must be dealt with to make this method faster
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
-        AtomicLong inserted = new AtomicLong(0); //number of insertedtapTable = {TapTable@10447} "TapTable id BatchReadTest_postgresToTddTarget_ISfJVJ name BatchReadTest_postgresToTddTarget_ISfJVJ storageEngine null charset null number of fields 21"
-        AtomicLong updated = new AtomicLong(0); //number of updated
-        AtomicLong deleted = new AtomicLong(0); //number of deleted
-        WriteListResult<TapRecordEvent> listResult = writeListResult(); //result of these events
-        List<TapRecordEvent> batchInsertCache = list(); //records in batch cache
-        Connection connection = postgresJdbcContext.getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement(PostgresSqlMaker.buildPrepareInsertSQL(tapTable));
-        Statement stmt = connection.createStatement();
         if (postgresJdbcContext.queryAllTables(tapTable.getId()).size() < 1) {
             throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
         }
+
+        //record numbers
+        AtomicLong inserted = new AtomicLong(0);
+        AtomicLong updated = new AtomicLong(0);
+        AtomicLong deleted = new AtomicLong(0);
+
+        //result of these events
+        WriteListResult<TapRecordEvent> listResult = writeListResult();
+
+        //records in cache
+        List<TapRecordEvent> batchInsertCache = list();
+        List<TapRecordEvent> batchUpdateCache = list();
+        List<TapRecordEvent> batchDeleteCache = list();
+
+        //preparedStatement
+        Connection connection = postgresJdbcContext.getConnection();
+        PreparedStatement insertStatement = null;
+        PreparedStatement updateStatement = null;
+        PreparedStatement deleteStatement = null;
+
         for (TapRecordEvent recordEvent : tapRecordEvents) {
             if (recordEvent instanceof TapInsertRecordEvent) {
+                updated.addAndGet(executeBatch(updateStatement, batchUpdateCache, listResult));
+                deleted.addAndGet(executeBatch(deleteStatement, batchDeleteCache, listResult));
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
                 Map<String, Object> after = insertRecordEvent.getAfter();
-                PostgresSqlMaker.addBatchInsertRecord(tapTable, after, preparedStatement);
+                PostgresSqlMaker.addBatchInsertRecord(connection, tapTable, after, insertStatement);
                 batchInsertCache.add(recordEvent);
                 if (batchInsertCache.size() >= 1000) {
-                    inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
+                    inserted.addAndGet(executeBatch(insertStatement, batchInsertCache, listResult));
                 }
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
-                inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
+                inserted.addAndGet(executeBatch(insertStatement, batchInsertCache, listResult));
+                deleted.addAndGet(executeBatch(deleteStatement, batchDeleteCache, listResult));
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
                 Map<String, Object> after = updateRecordEvent.getAfter();
                 Map<String, Object> before = updateRecordEvent.getBefore();
-                for (Map.Entry<String, Object> entry : before.entrySet()) {
-                    after.remove(entry.getKey(), entry.getValue());
+                PostgresSqlMaker.addBatchUpdateRecord(connection, tapTable, before, after, updateStatement);
+                batchUpdateCache.add(recordEvent);
+                if (batchUpdateCache.size() >= 1000) {
+                    updated.addAndGet(executeBatch(updateStatement, batchUpdateCache, listResult));
                 }
-                String sql = "UPDATE \"" + tapTable.getId() + "\" SET " + PostgresSqlMaker.buildKeyAndValue(after, ",", "=") + " WHERE " + PostgresSqlMaker.buildKeyAndValue(before, "AND", "=");
-                try {
-                    stmt.execute(sql);
-                    updated.incrementAndGet();
-                } catch (SQLException e) {
-                    listResult.addError(recordEvent, e);
-                    e.printStackTrace();
-                }
+//                String sql = "UPDATE \"" + tapTable.getId() + "\" SET " + PostgresSqlMaker.buildKeyAndValue(after, ",", "=") + " WHERE " + PostgresSqlMaker.buildKeyAndValue(before, "AND", "=");
+//                try {
+//                    stmt.execute(sql);
+//                    updated.incrementAndGet();
+//                } catch (SQLException e) {
+//                    listResult.addError(recordEvent, e);
+//                    e.printStackTrace();
+//                }
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
-                inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
+                inserted.addAndGet(executeBatch(insertStatement, batchInsertCache, listResult));
+                updated.addAndGet(executeBatch(updateStatement, batchUpdateCache, listResult));
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
                 Map<String, Object> before = deleteRecordEvent.getBefore();
-                String sql = "DELETE FROM \"" + tapTable.getId() + "\" WHERE " + PostgresSqlMaker.buildKeyAndValue(before, "AND", "=");
-                try {
-                    stmt.execute(sql);
-                    deleted.incrementAndGet();
-                } catch (SQLException e) {
-                    listResult.addError(recordEvent, e);
-                    e.printStackTrace();
+                PostgresSqlMaker.addBatchDeleteRecord(connection, tapTable, before, deleteStatement);
+                batchDeleteCache.add(recordEvent);
+                if (batchDeleteCache.size() >= 1000) {
+                    deleted.addAndGet(executeBatch(deleteStatement, batchDeleteCache, listResult));
                 }
+//                String sql = "DELETE FROM \"" + tapTable.getId() + "\" WHERE " + PostgresSqlMaker.buildKeyAndValue(before, "AND", "=");
+//                try {
+//                    stmt.execute(sql);
+//                    deleted.incrementAndGet();
+//                } catch (SQLException e) {
+//                    listResult.addError(recordEvent, e);
+//                    e.printStackTrace();
+//                }
             }
         }
-        inserted.addAndGet(executeBatchInsert(preparedStatement, batchInsertCache, listResult));
+        inserted.addAndGet(executeBatch(insertStatement, batchInsertCache, listResult));
+        updated.addAndGet(executeBatch(updateStatement, batchUpdateCache, listResult));
+        deleted.addAndGet(executeBatch(deleteStatement, batchDeleteCache, listResult));
         connection.commit();
-        preparedStatement.close();
+        if (EmptyKit.isNotNull(insertStatement)) {
+            insertStatement.close();
+        }
+        if (EmptyKit.isNotNull(updateStatement)) {
+            updateStatement.close();
+        }
+        if (EmptyKit.isNotNull(deleteStatement)) {
+            deleteStatement.close();
+        }
         connection.close();
         writeListResultConsumer.accept(listResult.insertedCount(inserted.get()).modifiedCount(updated.get()).removedCount(deleted.get()));
     }
 
-    private long executeBatchInsert(PreparedStatement preparedStatement, List<TapRecordEvent> batchInsertCache, WriteListResult<TapRecordEvent> listResult) {
-        long succeed = batchInsertCache.size();
+    private long executeBatch(PreparedStatement preparedStatement, List<TapRecordEvent> batchCache, WriteListResult<TapRecordEvent> listResult) {
+        long succeed = batchCache.size();
+        if (succeed <= 0) {
+            return 0;
+        }
         try {
             if (preparedStatement != null) {
                 preparedStatement.executeBatch();
                 preparedStatement.clearBatch();
-                batchInsertCache.clear();
+                batchCache.clear();
             }
         } catch (SQLException e) {
-            Map<TapRecordEvent, Throwable> map = batchInsertCache.stream().collect(Collectors.toMap(Function.identity(), (v) -> e));
+            Map<TapRecordEvent, Throwable> map = batchCache.stream().collect(Collectors.toMap(Function.identity(), (v) -> e));
             listResult.addErrors(map);
             succeed = 0;
             e.printStackTrace();
