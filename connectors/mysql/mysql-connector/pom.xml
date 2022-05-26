@@ -168,7 +168,7 @@
                         <argument>jar</argument>
                         <argument>-m</argument>
                         <argument>connectors/mysql/${artifactId}</argument>
-                        <argument>connectors/mysql/${artifactId}/target/${artifactId}-v${version}.jar</argument>
+                        <argument>dist/${artifactId}-v${version}.jar</argument>
                     </arguments>
                     <environmentVariables>
                         <LANG>en_US</LANG>
