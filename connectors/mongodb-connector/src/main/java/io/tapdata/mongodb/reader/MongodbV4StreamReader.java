@@ -153,14 +153,13 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 												TapLogger.error(TAG, "Unsupported operationType {}, {}", operationType, event);
 										}
 								} catch (Throwable throwable) {
-										if (throwable instanceof MongoException) {
-												final int code = ((MongoException) throwable).getCode();
-												if (code == 0000 && !running.get()) {
-														return;
+										if (!running.get() && throwable instanceof IllegalStateException) {
+												if (throwable.getMessage().contains("state should be: open") || throwable.getMessage().contains("Cursor has been closed")) {
 												}
-												TapLogger.error(TAG, "Read change stream from {}, failed {}", MongodbUtil.maskUriPassword(mongodbConfig.getUri()), throwable.getMessage(), throwable);
-												throw throwable;
+												return;
 										}
+										TapLogger.error(TAG, "Read change stream from {}, failed {}", MongodbUtil.maskUriPassword(mongodbConfig.getUri()), throwable.getMessage(), throwable);
+										throw throwable;
 								}
 						}
 				}
