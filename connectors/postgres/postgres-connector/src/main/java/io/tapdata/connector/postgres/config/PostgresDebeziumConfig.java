@@ -72,7 +72,12 @@ public class PostgresDebeziumConfig {
                 .with("database.port", postgresConfig.getPort())
                 .with("database.user", postgresConfig.getUser())
                 .with("database.password", postgresConfig.getPassword())
-                .with("database.dbname", postgresConfig.getDatabase());
+                .with("database.dbname", postgresConfig.getDatabase())
+                .with("time.precision.mode", "connect")
+                .with("transforms.tsFormat1.type", "org.apache.kafka.connect.transforms.TimestampConverter$Value")
+                .with("transforms.tsFormat1.target.type", "string")
+                .with("transforms.tsFormat1.field", "transaction_time")
+                .with("transforms.tsFormat1.format", "yyyy-MM-dd HH:mm:ss");
         if (EmptyKit.isNotEmpty(observedTableList)) {
             //construct tableWhiteList with schema.table(,) as <public.Student,postgres.test>
             String tableWhiteList = observedTableList.stream().map(v -> postgresConfig.getSchema() + "." + v).reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new);

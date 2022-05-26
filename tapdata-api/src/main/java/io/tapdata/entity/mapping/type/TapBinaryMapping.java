@@ -30,7 +30,7 @@ public class TapBinaryMapping extends TapBytesBase {
 
             Long bytes = tapBinary.getBytes();
             if (bytes != null) {
-                bytes = getFromTapTypeBytes(bytes);
+//                bytes = getFromTapTypeBytes(bytes);
                 if(this.bytes != null && bytes > this.bytes) {
                     tapResult.addItem(new ResultItem("TapBinaryMapping BYTES", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Bytes " + bytes + " from source exceeded the maximum of target bytes " + this.bytes + ", bytes before ratio " + tapBinary.getBytes() + ", expression {}" + typeExpression));
                     bytes = this.bytes;
@@ -46,7 +46,7 @@ public class TapBinaryMapping extends TapBytesBase {
     }
 
     final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(17);
-    final BigDecimal byteRatioValue = BigDecimal.valueOf(10).pow(16);
+//    final BigDecimal byteRatioValue = BigDecimal.valueOf(10).pow(16);
     final BigDecimal defaultByteValue = BigDecimal.valueOf(10).pow(15);
 
     @Override
@@ -59,7 +59,7 @@ public class TapBinaryMapping extends TapBytesBase {
                 return BigDecimal.valueOf(-Double.MAX_VALUE);
             }
             Boolean comingFixed = tapBinary.getFixed();
-            int comingByteRatio = tapBinary.getByteRatio();
+//            int comingByteRatio = tapBinary.getByteRatio();
 
             BigDecimal score = BigDecimal.ZERO;
 
@@ -70,15 +70,15 @@ public class TapBinaryMapping extends TapBytesBase {
                 score = score.subtract(fixedValue);
             }
 
-            if(comingByteRatio == byteRatio) {
-                score = score.add(byteRatioValue);
-            } else {
-                score = score.subtract(byteRatioValue);
-            }
+//            if(comingByteRatio == byteRatio) {
+//                score = score.add(byteRatioValue);
+//            } else {
+//                score = score.subtract(byteRatioValue);
+//            }
 
             Long theBytes = bytes;
-            if(theBytes != null)
-                theBytes = theBytes * byteRatio;
+//            if(theBytes != null)
+//                theBytes = theBytes * byteRatio;
             Long width = tapBinary.getBytes();
             if(width == null && theBytes != null) {
                 return score.add(BigDecimal.valueOf(theBytes));

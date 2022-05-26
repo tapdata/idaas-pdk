@@ -173,7 +173,7 @@ public class TDDCli extends CommonCli {
             System.setProperty("maven.multiModuleProjectDirectory", file.getAbsolutePath());
             System.out.println(file.getName() + " is packaging...");
             MavenCli mavenCli = new MavenCli();
-            int state = mavenCli.doMain(new String[]{"clean", "package", "-DskipTests", "-P", "not_encrypt", "-U"}, file.getAbsolutePath(), System.out, System.out);
+            int state = mavenCli.doMain(new String[]{"clean", "install", "-DskipTests", "-P", "not_encrypt", "-U"}, file.getAbsolutePath(), System.out, System.out);
             if (0 == state){
                 MavenXpp3Reader reader = new MavenXpp3Reader();
                 Model model = reader.read(new FileReader(FilenameUtils.concat(file.getAbsolutePath(), "pom.xml")));

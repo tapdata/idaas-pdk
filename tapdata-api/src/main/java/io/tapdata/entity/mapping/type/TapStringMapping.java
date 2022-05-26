@@ -31,7 +31,7 @@ public class TapStringMapping extends TapBytesBase {
 
             Long bytes = tapString.getBytes();
             if (bytes != null) {
-                bytes = getFromTapTypeBytes(bytes);
+                bytes = getFromTapTypeBytes(bytes, tapString.getByteRatio());
                 if(this.bytes != null && bytes > this.bytes) {
                     tapResult.addItem(new ResultItem("TapStringMapping BYTES", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Bytes " + bytes + " from source exceeded the maximum of target bytes " + this.bytes + ", bytes before ratio " + tapString.getBytes() + ", expression {}" + typeExpression));
                     bytes = this.bytes;
@@ -60,7 +60,7 @@ public class TapStringMapping extends TapBytesBase {
             }
 
             Boolean comingFixed = tapString.getFixed();
-            int comingByteRatio = tapString.getByteRatio();
+            Integer comingByteRatio = tapString.getByteRatio();
 //            Long comingDefaultValue = tapString.getDefaultValue();
 
             BigDecimal score = BigDecimal.ZERO;
@@ -72,14 +72,14 @@ public class TapStringMapping extends TapBytesBase {
                 score = score.subtract(fixedValue);
             }
 
-            if(comingByteRatio == byteRatio) {
+            if(comingByteRatio != null &&  byteRatio != null) {
                 score = score.add(byteRatioValue);
             } else {
                 score = score.subtract(byteRatioValue);
             }
 
             Long theBytes = bytes;
-            if(theBytes != null)
+            if(theBytes != null && byteRatio != null)
                 theBytes = theBytes * byteRatio;
             Long width = tapString.getBytes();
             if(width == null && theBytes != null) {

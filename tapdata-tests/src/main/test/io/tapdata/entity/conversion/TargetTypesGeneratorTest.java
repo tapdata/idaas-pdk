@@ -199,8 +199,8 @@ class TargetTypesGeneratorTest {
         //Source: "    \"varchar[($byte)]\": {\"byte\": \"64k\", \"byteRatio\": 3, \"fixed\": false, \"to\": \"TapString\"},\n" +
         //Target: "    \"char[($byte)]\":{\"byte\":255, \"byteRatio\": 2, \"to\": \"TapString\", \"defaultByte\": 1},\n" +
         TapField varchar10Field = nameFieldMap.get("varchar(10)");
-        assertEquals("char(15)", varchar10Field.getDataType());
-        assertEquals(30, ((TapString)varchar10Field.getTapType()).getBytes());
+        assertEquals("char(10)", varchar10Field.getDataType());
+        assertEquals(10, ((TapString)varchar10Field.getTapType()).getBytes());
 
         //源端scale是负数， 目标端不支持负数的case
         //Source: "    \"decimal($precision,$scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"to\": \"TapNumber\"},\n" +
@@ -718,11 +718,11 @@ class TargetTypesGeneratorTest {
     @Test
     public void ObjectIdTest() {
         String sourceTypeExpression = "{\n" +
-                "\"ObjectId\": {\"byte\" : \"24\", \"to\" : \"TapString\"},\n"
+                "\"ObjectId\": {\"byte\" : \"24\", \"fixed\": true, \"to\" : \"TapString\"},\n"
                 + "}";
         String targetTypeExpression = "{" +
-                "\"char[($byte)]\": {\"to\": \"TapString\",\"byte\": 255, \"byteRatio\": 3, \"defaultByte\": 1,\"fixed\": true},\n" +
-                "\"varchar($byte)\": {\"to\": \"TapString\",\"byte\": 16383,\"defaultByte\": 4},\n" +
+                "\"char[($byte)]\": {\"to\": \"TapString\",\"byte\": 255, \"defaultByte\": 1,\"fixed\": true},\n" +
+                "\"varchar($byte)\": {\"to\": \"TapString\",\"byte\": 16383,\"defaultByte\": 4, \"byteRatio\": 4},\n" +
                 "\"tinytext\": {\"to\": \"TapString\",\"byte\": 255},\n" +
                 "\"text\": {\"to\": \"TapString\",\"byte\": \"64k\"},\n" +
                 "\"mediumtext\": {\"to\": \"TapString\",\"byte\": \"16m\"},\n" +
@@ -762,7 +762,7 @@ class TargetTypesGeneratorTest {
         LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
 
         TapField ObjectIdField = nameFieldMap.get("ObjectId");
-        assertEquals("varchar(24)", ObjectIdField.getDataType());
+        assertEquals("char(24)", ObjectIdField.getDataType());
 
     }
 }
