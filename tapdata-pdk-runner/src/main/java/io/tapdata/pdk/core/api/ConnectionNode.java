@@ -27,7 +27,7 @@ public class ConnectionNode extends Node {
     }
 
     public void connectorDestroy() throws Throwable {
-        connectorNode.destroy();
+        connectorNode.destroy(connectionContext);
     }
     public TapConnectorNode getConnectorNode() {
         return connectorNode;

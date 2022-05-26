@@ -543,11 +543,11 @@ public class ModelPredictionCli extends CommonCli {
         TapStringMapping stringMapping = (TapStringMapping) tapMapping;
         if(stringMapping.getBytes() != null) {
             TapResult<String> result;
-            result = stringMapping.fromTapType(tableExpressionWrapper.expression, new TapString().bytes(stringMapping.actualBytes()).byteRatio(stringMapping.getByteRatio()));
+            result = stringMapping.fromTapType(tableExpressionWrapper.expression, new TapString().bytes(stringMapping.getBytes()).byteRatio(stringMapping.getByteRatio()));
             if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                 fieldDataTypes.add(result.getData());
 
-            result = stringMapping.fromTapType(tableExpressionWrapper.expression, new TapString().bytes(1L * stringMapping.getByteRatio()).byteRatio(stringMapping.getByteRatio()));
+            result = stringMapping.fromTapType(tableExpressionWrapper.expression, new TapString().bytes(1L).byteRatio(stringMapping.getByteRatio()));
             if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                 fieldDataTypes.add(result.getData());
         } else {

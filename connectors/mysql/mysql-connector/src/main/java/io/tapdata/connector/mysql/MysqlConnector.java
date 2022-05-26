@@ -112,12 +112,12 @@ public class MysqlConnector extends ConnectorBase {
 	}
 
 	@Override
-	public void onDestroy() throws Throwable {
+	public void onDestroy(TapConnectionContext connectorContext) throws Throwable {
 
 	}
 
 	@Override
-	public void onPause() throws Throwable {
+	public void onPause(TapConnectionContext connectorContext) throws Throwable {
 		try {
 			this.mysqlJdbcContext.close();
 		} catch (Exception e) {

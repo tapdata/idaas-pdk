@@ -183,7 +183,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     @Override
-    public void onDestroy() throws IOException, SQLException {
+    public void onDestroy(TapConnectionContext connectorContext) throws IOException, SQLException {
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
             postgresJdbcContext.close();
         }
@@ -195,7 +195,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     @Override
-    public void onPause() throws Throwable {
+    public void onPause(TapConnectionContext connectorContext) throws Throwable {
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
             postgresJdbcContext.close();
         }

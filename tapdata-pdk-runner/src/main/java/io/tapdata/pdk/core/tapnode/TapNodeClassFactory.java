@@ -104,9 +104,9 @@ public class TapNodeClassFactory {
         TapNodeInstance instance = associateIdTapNodeIdMap.remove(associateId);
         if(instance != null && instance.getTapNodeInfo() != null && instance.getTapNodeInfo().getTapNodeSpecification() != null) {
             String id = instance.getTapNodeInfo().getTapNodeSpecification().getId();
-            if(instance.getTapNode() != null) {
-                CommonUtils.ignoreAnyError(() -> instance.getTapNode().destroy(), TAG);
-            }
+//            if(instance.getTapNode() != null) {
+//                CommonUtils.ignoreAnyError(() -> instance.getTapNode().destroy(), TAG);
+//            }
             return id;
         }
         return null;

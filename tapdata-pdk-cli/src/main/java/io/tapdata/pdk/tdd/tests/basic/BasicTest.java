@@ -75,7 +75,7 @@ public class BasicTest extends PDKTestBase {
                     throwable.printStackTrace();
                     Assertions.fail(throwable);
                 } finally {
-                    CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                    CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                 }
             });
         });

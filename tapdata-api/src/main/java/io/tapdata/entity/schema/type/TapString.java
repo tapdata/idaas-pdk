@@ -41,8 +41,8 @@ public class TapString extends TapType {
         return this;
     }
 
-    private int byteRatio;
-    public TapString byteRatio(int byteRatio) {
+    private Integer byteRatio;
+    public TapString byteRatio(Integer byteRatio) {
         this.byteRatio = byteRatio;
         return this;
     }
@@ -71,11 +71,11 @@ public class TapString extends TapType {
         this.defaultValue = defaultValue;
     }
 
-    public int getByteRatio() {
+    public Integer getByteRatio() {
         return byteRatio;
     }
 
-    public void setByteRatio(int byteRatio) {
+    public void setByteRatio(Integer byteRatio) {
         this.byteRatio = byteRatio;
     }
 
