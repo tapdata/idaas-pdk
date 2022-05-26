@@ -38,6 +38,7 @@ public class PdkPersistenceOffsetBackingStore extends MemoryOffsetBackingStore {
 
 	private void load() {
 		TapLogger.info(TAG, "Load offset with string: " + offsetStr);
+		if(StringUtils.isBlank(offsetStr)) return;
 		MysqlStreamOffset mysqlStreamOffset = InstanceFactory.instance(JsonParser.class).fromJson(offsetStr, MysqlStreamOffset.class);
 		String name = mysqlStreamOffset.getName();
 		Map<String, String> offset = mysqlStreamOffset.getOffset();
