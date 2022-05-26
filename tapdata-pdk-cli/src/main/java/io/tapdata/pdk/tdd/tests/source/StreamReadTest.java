@@ -251,13 +251,13 @@ public class StreamReadTest extends PDKTestBase {
                                 }
                             }
 
-                            CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                            CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                             completed();
                         } catch (Throwable throwable) {
                             throwable.printStackTrace();
                             Assertions.fail(throwable);
                         } finally {
-                            CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                            CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                         }
                     });
                 }

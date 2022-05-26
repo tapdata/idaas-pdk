@@ -13,6 +13,7 @@ import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.*;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.utils.TypeConverter;
@@ -234,22 +235,22 @@ public abstract class ConnectorBase implements TapConnector {
 
     public abstract void onStart(TapConnectionContext connectionContext) throws Throwable;
 
-    public abstract void onDestroy() throws Throwable;
+    public abstract void onDestroy(TapConnectionContext connectorContext) throws Throwable;
 
-    public abstract void onPause() throws Throwable;
+    public abstract void onPause(TapConnectionContext connectorContext) throws Throwable;
 
     @Override
-    public final void destroy() throws Throwable {
+    public final void destroy(TapConnectionContext connectorContext) throws Throwable {
         if (isDestroyed.compareAndSet(true, false)) {
-            pause();
-            onDestroy();
+            pause(connectorContext);
+            onDestroy(connectorContext);
         }
     }
 
     @Override
-    public void pause() throws Throwable {
+    public void pause(TapConnectionContext connectorContext) throws Throwable {
         if (isAlive.compareAndSet(true, false)) {
-            onPause();
+            onPause(connectorContext);
         }
     }
 }

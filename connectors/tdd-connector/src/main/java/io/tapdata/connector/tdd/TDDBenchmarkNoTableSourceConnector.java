@@ -217,13 +217,13 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void onDestroy() {
+    public void onDestroy(TapConnectionContext connectorContext) {
         //TODO release resources
         isShutDown.set(true);
     }
 
     @Override
-    public void onPause() throws Throwable {
+    public void onPause(TapConnectionContext connectorContext) throws Throwable {
 
     }
 }

@@ -83,11 +83,11 @@ public class ConnectorNode extends Node {
         connector.init(connectorContext);
     }
     public void connectorDestroy() throws Throwable {
-        connector.destroy();
+        connector.destroy(connectorContext);
     }
 
     public void connectorPause() throws Throwable {
-        connector.pause();
+        connector.pause(connectorContext);
     }
 
     public TapConnectorContext getConnectorContext() {

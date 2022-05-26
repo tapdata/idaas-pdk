@@ -204,7 +204,7 @@ public class MongodbConnector extends ConnectorBase {
             throwable.printStackTrace();
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
         } finally {
-						onPause();
+						onPause(connectionContext);
 				}
     }
 
@@ -221,7 +221,7 @@ public class MongodbConnector extends ConnectorBase {
 				} catch (Exception e) {
 						throw e;
 				} finally {
-						onPause();
+						onPause(connectionContext);
 				}
 				return index;
     }
@@ -572,7 +572,7 @@ public class MongodbConnector extends ConnectorBase {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void onDestroy() {
+    public void onDestroy(TapConnectionContext connectorContext) {
     }
 
 		private MongodbStreamReader createStreamReader(){
@@ -588,7 +588,7 @@ public class MongodbConnector extends ConnectorBase {
 		}
 
     @Override
-    public void onPause() throws Throwable {
+    public void onPause(TapConnectionContext connectorContext) throws Throwable {
 //        if (mongoClient != null) {
 //            mongoClient.close();
 //        }

@@ -190,13 +190,13 @@ public class BatchReadTest extends PDKTestBase {
                                                         $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                                     }
                                                 }
-                                                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                                                CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                                                 completed();
                                             } catch (Throwable throwable) {
                                                 throwable.printStackTrace();
                                                 Assertions.fail(throwable);
                                             } finally {
-                                                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                                                CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                                             }
 
 

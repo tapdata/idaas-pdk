@@ -121,7 +121,7 @@ public class DMLTest extends PDKTestBase {
                                 break;
                             }
                         }
-                        CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                        CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                         if(!found)
                             $(() -> Assertions.fail("Target table " + targetTable + " should be found, because already insert one record, please check your writeRecord method whether it has actually inserted a record into the table " + targetTable));
 
@@ -131,7 +131,7 @@ public class DMLTest extends PDKTestBase {
                         throwable.printStackTrace();
                         Assertions.fail(throwable);
                     } finally {
-                        CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                        CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                     }
                 });
             }
@@ -169,13 +169,13 @@ public class DMLTest extends PDKTestBase {
                                         $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                     }
                                 }
-                                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                                CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                                 completed();
                             } catch (Throwable throwable) {
                                 throwable.printStackTrace();
                                 Assertions.fail(throwable);
                             } finally {
-                                CommonUtils.handleAnyError(() -> connectionNode.getConnectorNode().destroy());
+                                CommonUtils.handleAnyError(connectionNode::connectorDestroy);
                             }
                         });
                     }
