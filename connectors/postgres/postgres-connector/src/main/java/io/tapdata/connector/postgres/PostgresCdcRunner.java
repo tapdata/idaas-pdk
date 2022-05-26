@@ -147,15 +147,15 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                     break;
             }
             if (eventList.size() >= recordSize) {
-                consumer.accept(eventList, offset);
                 postgresOffset.setSourceOffset(TapSimplify.toJson(offset));
+                consumer.accept(eventList, postgresOffset);
                 PostgresOffsetStorage.postgresOffsetMap.put(runnerName, postgresOffset);
                 eventList.clear();
             }
         }
         if (EmptyKit.isNotEmpty(eventList)) {
-            consumer.accept(eventList, offset);
             postgresOffset.setSourceOffset(TapSimplify.toJson(offset));
+            consumer.accept(eventList, postgresOffset);
             PostgresOffsetStorage.postgresOffsetMap.put(runnerName, postgresOffset);
         }
     }
