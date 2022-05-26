@@ -1,5 +1,6 @@
 package io.tapdata.connector.mysql.entity;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -7,7 +8,9 @@ import java.util.Map;
  * @Description
  * @create 2022-05-05 14:48
  **/
-public class MysqlStreamOffset {
+public class MysqlStreamOffset implements Serializable {
+
+	private static final long serialVersionUID = 7107575040120294790L;
 	private String name;
 	private Map<String, String> offset;
 

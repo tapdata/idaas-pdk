@@ -282,6 +282,16 @@ public class MysqlJdbcContext implements AutoCloseable {
 		return mysqlBinlogPositionAtomicReference.get();
 	}
 
+	public String getServerId() throws Throwable {
+		AtomicReference<String> serverId = new AtomicReference<>();
+		query("SHOW VARIABLES LIKE 'SERVER_ID'", rs -> {
+			if (rs.next()) {
+				serverId.set(rs.getString("Value"));
+			}
+		});
+		return serverId.get();
+	}
+
 	@Override
 	public void close() throws Exception {
 		JdbcUtil.closeQuietly(hikariDataSource);
