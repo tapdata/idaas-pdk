@@ -507,7 +507,7 @@ public class PostgresConnector extends ConnectorBase {
 //                return postgresOffset;
 //            }
 //        }
-        return null;
+        return new PostgresOffset();
 //        connectorContext.getStateMap().put("manyOffsetMap", PostgresOffsetStorage.manyOffsetMap);
     }
 
