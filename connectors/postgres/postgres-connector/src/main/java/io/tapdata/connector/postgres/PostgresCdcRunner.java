@@ -112,6 +112,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     }
 
 //    public void consumeRecord(SourceRecord sourceRecord) {
+//        System.out.println(TapSimplify.toJson(sourceRecord));
 //        System.out.println(TapSimplify.toJson(sourceRecord.sourceOffset()));
 //    }
 
