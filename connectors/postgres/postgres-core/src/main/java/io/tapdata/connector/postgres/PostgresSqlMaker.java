@@ -5,14 +5,9 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * make sql
@@ -73,83 +68,6 @@ public class PostgresSqlMaker {
         }
         stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
         return "INSERT INTO \"" + tapTable.getId() + "\" VALUES (" + stringBuilder + ")";
-    }
-
-    /**
-     * build prepareStatement with one record
-     *
-     * @param tapTable        table
-     * @param after           one record
-     * @param insertStatement ps
-     * @throws SQLException SQLException
-     */
-    public static void addBatchInsertRecord(Connection connection, TapTable tapTable, Map<String, Object> after, PreparedStatement insertStatement) throws SQLException {
-        if (EmptyKit.isEmpty(after)) {
-            return;
-        }
-        if (EmptyKit.isNull(insertStatement)) {
-            insertStatement = connection.prepareStatement(PostgresSqlMaker.buildPrepareInsertSQL(tapTable));
-        }
-        insertStatement.clearParameters();
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        List<String> columnList = nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPos())).map(Map.Entry::getKey).collect(Collectors.toList());
-        int pos = 1;
-        for (String columnName : columnList) {
-            TapField tapField = nameFieldMap.get(columnName);
-            Object tapValue = after.get(columnName);
-            if (tapField.getDataType() == null) {
-                continue;
-            }
-            if (tapValue == null) {
-                if (tapField.getNullable() != null && !tapField.getNullable()) {
-                    insertStatement.setObject(pos++, tapField.getDefaultValue());
-                } else {
-                    insertStatement.setObject(pos++, null);
-                }
-            } else {
-                insertStatement.setObject(pos++, tapValue);
-            }
-        }
-        insertStatement.addBatch();
-    }
-
-    public static void addBatchUpdateRecord(Connection connection, TapTable tapTable, Map<String, Object> before, Map<String, Object> after, PreparedStatement updateStatement) throws SQLException {
-        if (EmptyKit.isEmpty(before) || EmptyKit.isEmpty(after)) {
-            return;
-        }
-        for (Map.Entry<String, Object> entry : before.entrySet()) {
-            after.remove(entry.getKey(), entry.getValue());
-        }
-        if (EmptyKit.isNull(updateStatement)) {
-            updateStatement = connection.prepareStatement("UPDATE \"" + tapTable.getId() + "\" SET " +
-                    after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new) + " WHERE " +
-                    before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
-        }
-        updateStatement.clearParameters();
-        int pos = 1;
-        for (String key : after.keySet()) {
-            updateStatement.setObject(pos++, after.get(key));
-        }
-        for (String key : before.keySet()) {
-            updateStatement.setObject(pos++, before.get(key));
-        }
-        updateStatement.addBatch();
-    }
-
-    public static void addBatchDeleteRecord(Connection connection, TapTable tapTable, Map<String, Object> before, PreparedStatement deleteStatement) throws SQLException {
-        if (EmptyKit.isEmpty(before)) {
-            return;
-        }
-        if (EmptyKit.isNull(deleteStatement)) {
-            deleteStatement = connection.prepareStatement("DELETE FROM \"" + tapTable.getId() + "\" WHERE " +
-                    before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
-        }
-        deleteStatement.clearParameters();
-        int pos = 1;
-        for (String key : before.keySet()) {
-            deleteStatement.setObject(pos++, before.get(key));
-        }
-        deleteStatement.addBatch();
     }
 
     /**

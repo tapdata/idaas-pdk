@@ -161,7 +161,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <executable>./bin/pdk</executable>
+                    <executable>bin/pdk</executable>
                     <!-- optional -->
                     <workingDirectory>../../../</workingDirectory>
                     <arguments>

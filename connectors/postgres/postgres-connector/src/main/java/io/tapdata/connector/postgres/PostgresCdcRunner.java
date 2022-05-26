@@ -79,19 +79,19 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         //build debezium engine
         this.engine = (EmbeddedEngine) EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
-                .using(new DebeziumEngine.ConnectorCallback() {
-                    @Override
-                    public void taskStarted() {
-                        DebeziumEngine.ConnectorCallback.super.taskStarted();
-                        consumer.streamReadStarted();
-                    }
-
-                    @Override
-                    public void taskStopped() {
-                        DebeziumEngine.ConnectorCallback.super.taskStopped();
-                        consumer.streamReadEnded();
-                    }
-                })
+//                .using(new DebeziumEngine.ConnectorCallback() {
+//                    @Override
+//                    public void taskStarted() {
+//                        DebeziumEngine.ConnectorCallback.super.taskStarted();
+//                        consumer.streamReadStarted();
+//                    }
+//
+//                    @Override
+//                    public void taskStopped() {
+//                        DebeziumEngine.ConnectorCallback.super.taskStopped();
+//                        consumer.streamReadEnded();
+//                    }
+//                })
 //                .using((b, s, throwable) -> {
 //
 //                })
