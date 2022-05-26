@@ -16,6 +16,8 @@ public class AnyTimeToDateTime {
 
     static {
         classHandlers.register(Date.class, DateTime::new);
+        classHandlers.register(java.sql.Date.class, DateTime::new);
+        classHandlers.register(java.sql.Time.class, DateTime::new);
         classHandlers.register(LocalDateTime.class, DateTime::new);
         classHandlers.register(Instant.class, DateTime::new);
         classHandlers.register(Long.class, DateTime::new);
