@@ -158,7 +158,7 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
-//        connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
+        connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
@@ -491,8 +491,8 @@ public class PostgresConnector extends ConnectorBase {
         }
     }
 
-//    private Object timestampToStreamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
-//        //engine get last offset
+    private Object timestampToStreamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+        //engine get last offset
 //        if (EmptyKit.isNull(offsetStartTime)) {
 //            return null;
 //        }
@@ -507,7 +507,8 @@ public class PostgresConnector extends ConnectorBase {
 //                return postgresOffset;
 //            }
 //        }
-////        connectorContext.getStateMap().put("manyOffsetMap", PostgresOffsetStorage.manyOffsetMap);
-//    }
+        return null;
+//        connectorContext.getStateMap().put("manyOffsetMap", PostgresOffsetStorage.manyOffsetMap);
+    }
 
 }
