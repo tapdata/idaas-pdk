@@ -1,5 +1,6 @@
 package io.tapdata.connector.postgres.bean;
 
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.utils.DataMap;
 
 /**
@@ -15,5 +16,14 @@ public class PostgresColumn extends CommonColumn {
         this.nullable = dataMap.getString("is_nullable");
         this.remarks = dataMap.getString("remark");
         this.columnDefaultValue = dataMap.getString("column_default");
+    }
+
+    public TapField getTapField() {
+        return new TapField(this.columnName, this.dataType).nullable(this.isNullable()).
+                defaultValue(columnDefaultValue).comment(this.remarks);
+    }
+
+    private Boolean isNullable() {
+        return "YES".equals(this.nullable);
     }
 }
