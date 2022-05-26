@@ -15,6 +15,7 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -113,7 +114,11 @@ public class MysqlConnector extends ConnectorBase {
 
 	@Override
 	public void onDestroy(TapConnectionContext connectorContext) throws Throwable {
-
+		if (connectorContext instanceof TapConnectorContext) {
+			KVMap<Object> stateMap = ((TapConnectorContext) connectorContext).getStateMap();
+			stateMap.remove(MysqlReader.SERVER_NAME_KEY);
+			stateMap.remove(MysqlReader.MYSQL_SCHEMA_HISTORY);
+		}
 	}
 
 	@Override

@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  **/
 public class MysqlReader implements Closeable {
 	private static final String TAG = MysqlReader.class.getSimpleName();
-	private static final String SERVER_NAME_KEY = "SERVER_NAME";
+	public static final String SERVER_NAME_KEY = "SERVER_NAME";
 	public static final String MYSQL_SCHEMA_HISTORY = "MYSQL_SCHEMA_HISTORY";
 	private String serverName;
 	private AtomicBoolean running;
