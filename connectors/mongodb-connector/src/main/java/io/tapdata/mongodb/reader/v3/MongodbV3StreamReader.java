@@ -111,11 +111,11 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 								tapEvents.add(tapEventOffset.getTapEvent());
 								this.offset.put(tapEventOffset.getReplicaSetName(), tapEventOffset.getOffset());
 								if (tapEvents.size() >= eventBatchSize) {
-										consumer.accept(tapEvents, offset);
+										consumer.accept(tapEvents, this.offset);
 										tapEvents = new ArrayList<>(eventBatchSize);
 								}
 						} else if (tapEvents.size() > 0) {
-								consumer.accept(tapEvents, offset);
+								consumer.accept(tapEvents, this.offset);
 								tapEvents = new ArrayList<>(eventBatchSize);
 						}
 				}
