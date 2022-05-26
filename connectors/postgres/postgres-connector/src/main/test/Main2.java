@@ -22,7 +22,7 @@ public class Main2 {
                 .offset(null)
                 .registerConsumer(null, 10);
         new Thread(cdcRunner::startCdcRunner).start();
-        Thread.sleep(15000);
+        Thread.sleep(150000);
 
         cdcRunner.closeCdcRunner(null);
     }

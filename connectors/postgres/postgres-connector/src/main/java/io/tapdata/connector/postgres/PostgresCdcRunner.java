@@ -126,7 +126,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             Long referenceTime = (Long) offset.get("ts_usec");
             Struct struct = ((Struct) sr.value());
             if (struct == null) {
-                return;
+                continue;
             }
             String op = struct.getString("op");
             String table = struct.getStruct("source").getString("table");
