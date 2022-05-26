@@ -1,6 +1,7 @@
 package io.tapdata.mongodb.reader;
 
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Aggregates;
@@ -50,9 +51,11 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 		private final AtomicBoolean running = new AtomicBoolean(false);
 		private MongoClient mongoClient;
 		private MongoDatabase mongoDatabase;
+		private MongodbConfig mongodbConfig;
 
 		@Override
 		public void onStart(MongodbConfig mongodbConfig) {
+				this.mongodbConfig = mongodbConfig;
 				if (mongoClient == null) {
 						mongoClient = MongoClients.create(mongodbConfig.getUri());
 						CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
@@ -87,81 +90,77 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 						final MongoChangeStreamCursor<ChangeStreamDocument<Document>> streamCursor = changeStream.cursor();
 						consumer.streamReadStarted();
 						while (!running.get()) {
-								ChangeStreamDocument<Document> event = streamCursor.tryNext();
-								if(event == null) {
-										if (!tapEvents.isEmpty()) consumer.accept(tapEvents, resumeToken);
-										tapEvents = list();
-										boolean cursorClosed = false;
-										String errorMessage = "null";
-										try {
-												if (!streamCursor.hasNext()) {
-														cursorClosed = true;
+								try {
+										ChangeStreamDocument<Document> event = streamCursor.tryNext();
+										if(event == null) {
+												if (!tapEvents.isEmpty()) {
+														consumer.accept(tapEvents, resumeToken);
+														tapEvents = list();
 												}
-										} catch(Throwable throwable) {
-												throwable.printStackTrace();
-												if(throwable.getMessage().contains("closed")) {
-														cursorClosed = true;
-												}
-												errorMessage = throwable.getMessage();
-										}
-										if(cursorClosed) {
-												TapLogger.warn(TAG, "streamCursor is not alive anymore or error occurred {}, sleep 10 seconds to avoid cpu consumption. This connector should be stopped by incremental engine.", errorMessage);
-												sleep(10000);
-										}
-										continue;
-								}
-								if(tapEvents.size() >= eventBatchSize) {
-										consumer.accept(tapEvents, resumeToken);
-										tapEvents = list();
-								}
-
-								MongoNamespace mongoNamespace = event.getNamespace();
-
-								String collectionName = null;
-								if(mongoNamespace != null) {
-										collectionName = mongoNamespace.getCollectionName();
-								}
-								if(collectionName == null)
-										continue;
-								resumeToken = event.getResumeToken();
-								OperationType operationType = event.getOperationType();
-								Document fullDocument = event.getFullDocument();
-								if (operationType == OperationType.INSERT) {
-										DataMap after = new DataMap();
-										after.putAll(fullDocument);
-										TapInsertRecordEvent recordEvent = insertRecordEvent(after, collectionName);
-										recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
-										tapEvents.add(recordEvent);
-								} else if (operationType == OperationType.DELETE) {
-										DataMap before = new DataMap();
-										if (event.getDocumentKey() != null) {
-												final Document documentKey = new DocumentCodec().decode(new BsonDocumentReader(event.getDocumentKey()), DecoderContext.builder().build());
-												before.put("_id", documentKey.get("_id"));
-												TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, collectionName);
-												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
-												tapEvents.add(recordEvent);
-										} else {
-												TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
-										}
-								} else if (operationType == OperationType.UPDATE) {
-										DataMap before = new DataMap();
-										DataMap after = new DataMap();
-										if (MapUtils.isEmpty(fullDocument)) {
-												TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
 												continue;
 										}
-										if (event.getDocumentKey() != null) {
-												before.put("_id", fullDocument.get("_id"));
-												after.putAll(fullDocument);
+										if(tapEvents.size() >= eventBatchSize) {
+												consumer.accept(tapEvents, resumeToken);
+												tapEvents = list();
+										}
 
-												TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, collectionName);
+										MongoNamespace mongoNamespace = event.getNamespace();
+
+										String collectionName = null;
+										if(mongoNamespace != null) {
+												collectionName = mongoNamespace.getCollectionName();
+										}
+										if(collectionName == null)
+												continue;
+										resumeToken = event.getResumeToken();
+										OperationType operationType = event.getOperationType();
+										Document fullDocument = event.getFullDocument();
+										if (operationType == OperationType.INSERT) {
+												DataMap after = new DataMap();
+												after.putAll(fullDocument);
+												TapInsertRecordEvent recordEvent = insertRecordEvent(after, collectionName);
 												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 												tapEvents.add(recordEvent);
+										} else if (operationType == OperationType.DELETE) {
+												DataMap before = new DataMap();
+												if (event.getDocumentKey() != null) {
+														final Document documentKey = new DocumentCodec().decode(new BsonDocumentReader(event.getDocumentKey()), DecoderContext.builder().build());
+														before.put("_id", documentKey.get("_id"));
+														TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, collectionName);
+														recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
+														tapEvents.add(recordEvent);
+												} else {
+														TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
+												}
+										} else if (operationType == OperationType.UPDATE) {
+												DataMap before = new DataMap();
+												DataMap after = new DataMap();
+												if (MapUtils.isEmpty(fullDocument)) {
+														TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
+														continue;
+												}
+												if (event.getDocumentKey() != null) {
+														before.put("_id", fullDocument.get("_id"));
+														after.putAll(fullDocument);
+
+														TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, collectionName);
+														recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
+														tapEvents.add(recordEvent);
+												} else {
+														TapLogger.error(TAG, "Document key is null, failed to update. {}", event);
+												}
 										} else {
-												TapLogger.error(TAG, "Document key is null, failed to update. {}", event);
+												TapLogger.error(TAG, "Unsupported operationType {}, {}", operationType, event);
 										}
-								} else {
-										TapLogger.error(TAG, "Unsupported operationType {}, {}", operationType, event);
+								} catch (Throwable throwable) {
+										if (throwable instanceof MongoException) {
+												final int code = ((MongoException) throwable).getCode();
+												if (code == 0000 && !running.get()) {
+														return;
+												}
+												TapLogger.error(TAG, "Read change stream from {}, failed {}", MongodbUtil.maskUriPassword(mongodbConfig.getUri()), throwable.getMessage(), throwable);
+												throw throwable;
+										}
 								}
 						}
 				}

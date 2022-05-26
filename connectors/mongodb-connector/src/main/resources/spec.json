@@ -13,14 +13,7 @@
           "title": "ConnectionUri",
           "x-decorator": "FormItem",
           "x-component": "Input"
-        },
-        "database":{
-          "type": "string",
-          "title": "Database",
-          "x-decorator": "FormItem",
-          "x-component": "Input"
         }
-
       }
     }
   },

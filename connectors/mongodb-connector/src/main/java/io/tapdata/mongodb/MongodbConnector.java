@@ -196,8 +196,10 @@ public class MongodbConnector extends ConnectorBase {
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
         try {
 						onStart(connectionContext);
-            mongoDatabase.listCollectionNames();
-            consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
+						try (final MongoCursor<String> mongoCursor = mongoDatabase.listCollectionNames().iterator();) {
+								mongoCursor.hasNext();
+						}
+						consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
         } catch(Throwable throwable) {
             throwable.printStackTrace();
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
