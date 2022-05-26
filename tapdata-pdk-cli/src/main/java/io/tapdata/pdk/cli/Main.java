@@ -24,6 +24,7 @@ public class Main {
         commandLine.addSubcommand("template", new ConnectorProjectBootCli());
         commandLine.addSubcommand("test", new TDDCli());
         commandLine.addSubcommand("modelPrediction", new ModelPredictionCli());
+        commandLine.addSubcommand("jar", new JarHijackerCli());
         return commandLine;
     }
 }
