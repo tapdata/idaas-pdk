@@ -12,6 +12,7 @@ import org.apache.kafka.connect.storage.MemoryOffsetBackingStore;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -27,7 +28,13 @@ public class PdkPersistenceOffsetBackingStore extends MemoryOffsetBackingStore {
 
 	@Override
 	public void configure(WorkerConfig config) {
+		super.configure(config);
 		this.offsetStr = (String) config.originals().getOrDefault("pdk.offset.string", "");
+		Map<String, String> keyConfigMap = new HashMap<>(0);
+		keyConverter.configure(keyConfigMap, false);
+		Map<String, String> valueConfigMap = new HashMap<>(1);
+		valueConfigMap.put("schemas.enable", "false");
+		valueConverter.configure(valueConfigMap, false);
 	}
 
 	@Override
@@ -38,7 +45,7 @@ public class PdkPersistenceOffsetBackingStore extends MemoryOffsetBackingStore {
 
 	private void load() {
 		TapLogger.info(TAG, "Load offset with string: " + offsetStr);
-		if(StringUtils.isBlank(offsetStr)) return;
+		if (StringUtils.isBlank(offsetStr)) return;
 		MysqlStreamOffset mysqlStreamOffset = InstanceFactory.instance(JsonParser.class).fromJson(offsetStr, MysqlStreamOffset.class);
 		String name = mysqlStreamOffset.getName();
 		Map<String, String> offset = mysqlStreamOffset.getOffset();

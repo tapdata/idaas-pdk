@@ -4,6 +4,7 @@ import io.debezium.config.Configuration;
 import io.debezium.connector.mysql.MySqlConnectorConfig;
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
+import io.tapdata.connector.mysql.entity.MysqlBinlogPosition;
 import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
 import io.tapdata.connector.mysql.entity.MysqlStreamEvent;
 import io.tapdata.connector.mysql.entity.MysqlStreamOffset;
@@ -19,6 +20,7 @@ import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
+import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -26,7 +28,6 @@ import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.runtime.standalone.StandaloneConfig;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.storage.OffsetUtils;
 import org.codehaus.plexus.util.StringUtils;
@@ -53,7 +54,7 @@ import java.util.stream.Collectors;
 public class MysqlReader implements Closeable {
 	private static final String TAG = MysqlReader.class.getSimpleName();
 	private static final String SERVER_NAME_KEY = "SERVER_NAME";
-	private static final String MYSQL_SCHEMA_HISTORY = "MYSQL_SCHEMA_HISTORY";
+	public static final String MYSQL_SCHEMA_HISTORY = "MYSQL_SCHEMA_HISTORY";
 	private String serverName;
 	private AtomicBoolean running;
 	private MysqlJdbcContext mysqlJdbcContext;
@@ -131,8 +132,15 @@ public class MysqlReader implements Closeable {
 		try {
 			initDebeziumServerName(tapConnectorContext);
 			String offsetStr = "";
-			if (null != offset) {
-				offsetStr = InstanceFactory.instance(JsonParser.class).toJson(offset);
+			JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
+			MysqlStreamOffset mysqlStreamOffset = null;
+			if (offset instanceof MysqlStreamOffset) {
+				mysqlStreamOffset = (MysqlStreamOffset) offset;
+			} else if (offset instanceof MysqlBinlogPosition) {
+				mysqlStreamOffset = binlogPosition2MysqlStreamOffset((MysqlBinlogPosition) offset, jsonParser);
+			}
+			if (null != mysqlStreamOffset) {
+				offsetStr = jsonParser.toJson(mysqlStreamOffset);
 			}
 			AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
 			TapLogger.info(TAG, "Starting mysql cdc, server name: " + serverName);
@@ -165,11 +173,13 @@ public class MysqlReader implements Closeable {
 			List<String> dbTableNames = tables.stream().map(t -> database + "." + t).collect(Collectors.toList());
 			builder.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, database);
 			builder.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, String.join(",", dbTableNames));
-			builder.with("snapshot.mode", "schema_only");
-//		builder.with("snapshot.mode", "schema_only_recovery");
+//			builder.with("snapshot.mode", "schema_only");
+			builder.with("snapshot.mode", "schema_only_recovery");
 			builder.with("database.history", "io.tapdata.connector.mysql.StateMapHistoryBackingStore");
 			builder.with(EmbeddedEngine.OFFSET_STORAGE, "io.tapdata.connector.mysql.PdkPersistenceOffsetBackingStore");
-			builder.with("pdk.offset.string", offsetStr);
+			if (StringUtils.isNotBlank(offsetStr)) {
+				builder.with("pdk.offset.string", offsetStr);
+			}
 			Configuration configuration = builder.build();
 			StringBuilder configStr = new StringBuilder("Starting binlog reader with config {\n");
 			configuration.withMaskedPasswords().asMap().forEach((k, v) -> configStr.append("  ")
@@ -214,16 +224,25 @@ public class MysqlReader implements Closeable {
 				throw throwableAtomicReference.get();
 			}
 		} finally {
-			Optional.ofNullable(embeddedEngine).ifPresent(engine -> {
-				try {
-					engine.close();
-				} catch (IOException e) {
-					TapLogger.warn(TAG, "Close CDC engine failed, error: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
-				}
-			});
 			Optional.ofNullable(streamConsumerThreadPool).ifPresent(ExecutorService::shutdownNow);
 			Optional.ofNullable(mysqlSchemaHistoryMonitor).ifPresent(ExecutorService::shutdownNow);
 		}
+	}
+
+	private MysqlStreamOffset binlogPosition2MysqlStreamOffset(MysqlBinlogPosition offset, JsonParser jsonParser) throws Throwable {
+		String serverId = mysqlJdbcContext.getServerId();
+		Map<String, Object> partitionMap = new HashMap<>();
+		partitionMap.put("server", serverName);
+		Map<String, Object> offsetMap = new HashMap<>();
+		offsetMap.put("file", offset.getFilename());
+		offsetMap.put("pos", offset.getPosition());
+		offsetMap.put("server_id", serverId);
+		MysqlStreamOffset mysqlStreamOffset = new MysqlStreamOffset();
+		mysqlStreamOffset.setName(serverName);
+		mysqlStreamOffset.setOffset(new HashMap<String, String>() {{
+			put(jsonParser.toJson(partitionMap), jsonParser.toJson(offsetMap));
+		}});
+		return mysqlStreamOffset;
 	}
 
 	private void initMysqlSchemaHistory(TapConnectorContext tapConnectorContext) {
@@ -235,7 +254,9 @@ public class MysqlReader implements Closeable {
 			} catch (IOException e) {
 				throw new RuntimeException("Uncompress Mysql schema history failed, string: " + mysqlSchemaHistory, e);
 			}
-			mysqlSchemaHistory = InstanceFactory.instance(JsonParser.class).fromJson((String) mysqlSchemaHistory, Map.class);
+			mysqlSchemaHistory = InstanceFactory.instance(JsonParser.class).fromJson((String) mysqlSchemaHistory,
+					new TypeHolder<Map<String, LinkedHashSet<String>>>() {
+					});
 			MysqlSchemaHistoryTransfer.historyMap.putAll((Map) mysqlSchemaHistory);
 		}
 	}
@@ -263,6 +284,8 @@ public class MysqlReader implements Closeable {
 		Object serverNameFromStateMap = stateMap.get(SERVER_NAME_KEY);
 		if (serverNameFromStateMap instanceof String) {
 			this.serverName = String.valueOf(serverNameFromStateMap);
+		} else {
+			stateMap.put(SERVER_NAME_KEY, this.serverName);
 		}
 	}
 
@@ -275,6 +298,13 @@ public class MysqlReader implements Closeable {
 	@Override
 	public void close() {
 		this.running.set(false);
+		Optional.ofNullable(embeddedEngine).ifPresent(engine -> {
+			try {
+				engine.close();
+			} catch (IOException e) {
+				TapLogger.warn(TAG, "Close CDC engine failed, error: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
+			}
+		});
 	}
 
 	private void sourceRecordConsumer(SourceRecord record) {
