@@ -6,7 +6,9 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
+import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.mongodb.MongoStreamOffset;
 import io.tapdata.mongodb.MongodbConnector;
@@ -107,12 +109,14 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 						final TapEventOffset tapEventOffset = tapEventQueue.poll(3, TimeUnit.SECONDS);
 						if (tapEventOffset != null) {
 								tapEvents.add(tapEventOffset.getTapEvent());
-								((Map<String, MongoV3StreamOffset>) offset).put(tapEventOffset.getReplicaSetName(), tapEventOffset.getOffset());
+								this.offset.put(tapEventOffset.getReplicaSetName(), tapEventOffset.getOffset());
 								if (tapEvents.size() >= eventBatchSize) {
 										consumer.accept(tapEvents, offset);
+										tapEvents = new ArrayList<>(eventBatchSize);
 								}
 						} else if (tapEvents.size() > 0) {
 								consumer.accept(tapEvents, offset);
+								tapEvents = new ArrayList<>(eventBatchSize);
 						}
 				}
 
@@ -181,17 +185,18 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 										while (running.get()) {
 												if (mongoCursor.hasNext()) {
 														final Document event = mongoCursor.next();
-														final TapEvent tapEvent = handleOplogEvent(event);
-														if (tapEvent == null) {
+														final TapBaseEvent tapBaseEvent = handleOplogEvent(event);
+														if (tapBaseEvent == null) {
 																continue;
 														}
 
 														final BsonTimestamp bsonTimestamp = event.get("ts", BsonTimestamp.class);
+														tapBaseEvent.setReferenceTime((long) (bsonTimestamp.getTime()) * 1000);
 
 														while (running.get()) {
 																if (tapEventQueue.offer(
 																				new TapEventOffset(
-																								tapEvent,
+																								tapBaseEvent,
 																								new MongoV3StreamOffset(bsonTimestamp.getTime(), bsonTimestamp.getInc()),
 																								replicaSetName
 																				),
@@ -226,7 +231,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 				}
 		}
 
-		protected TapEvent handleOplogEvent(Document event) {
+		protected TapBaseEvent handleOplogEvent(Document event) {
 				TapLogger.debug(TAG, "Found event: {}", event);
 				String ns = event.getString("ns");
 				Document object = event.get("o", Document.class);
@@ -234,7 +239,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 						TapLogger.warn(TAG, "Missing 'o' field in event, so skipping {}", event.toJson());
 						return null;
 				}
-				TapEvent tapEvent = null;
+				TapBaseEvent tapBaseEvent = null;
 				if (ns == null || ns.isEmpty()) {
 						// These are replica set events ...
 //						String msg = object.getString("msg");
@@ -297,11 +302,11 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 												TapLogger.warn(TAG, "Found update event _id {} already deleted in collection {}, event {}", _id, collectionName, event.toJson());
 												return null;
 										}
-										tapEvent = updateDMLEvent(null, after, collectionName);
+										tapBaseEvent = updateDMLEvent(null, after, collectionName);
 								} else if ("i".equalsIgnoreCase(event.getString("op"))) {
-										tapEvent = insertRecordEvent(o, collectionName);
+										tapBaseEvent = insertRecordEvent(o, collectionName);
 								} else if ("d".equalsIgnoreCase(event.getString("op"))) {
-										tapEvent = deleteDMLEvent(o, collectionName);
+										tapBaseEvent = deleteDMLEvent(o, collectionName);
 								}
 //								try {
 //										factory.recordEvent(event, clock.currentTimeInMillis(), true);
@@ -320,6 +325,6 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 //								}
 //						}
 				}
-				return tapEvent;
+				return tapBaseEvent;
 		}
 }
