@@ -20,13 +20,14 @@ public abstract class TapBytesBase extends TapMapping {
      * That's the reason we define the byteRatio, like above case, the database who using char, it byteRatio is 3.
      * byteRatio is 1 by default.
      */
-    protected int byteRatio = 1;
+    protected Integer byteRatio;
 
-    protected Long getFromTapTypeBytes(Long bytes) {
-        if(byteRatio == 1)
-            return bytes;
-        // 14 / 8 = 2, 14 / 7 = 2
-        return (bytes / byteRatio + ((bytes % byteRatio) > 0 ? 1 : 0));
+    protected Long getFromTapTypeBytes(Long comingBytes, Integer comingByteRatio) {
+//        if(this.byteRatio == 1)
+//            return bytes;
+//        // 14 / 8 = 2, 14 / 7 = 2
+//        return (bytes / this.byteRatio + ((bytes % this.byteRatio) > 0 ? 1 : 0));
+        return comingBytes;
     }
 
     protected Long getToTapTypeBytes(Map<String, String> params) {
@@ -39,8 +40,6 @@ public abstract class TapBytesBase extends TapMapping {
             bytes = defaultBytes;
         if(bytes == null)
             bytes = this.bytes;
-        if(bytes != null)
-            bytes = bytes * byteRatio;
         return bytes;
     }
 
@@ -62,20 +61,6 @@ public abstract class TapBytesBase extends TapMapping {
         Object byteObj = info.get(KEY_BYTE);
         bytes = objectToNumber(byteObj);
     }
-
-    public Long actualBytes() {
-        if(bytes != null)
-            return bytes * byteRatio;
-        return null;
-    }
-
-    public Long actualDefaultBytes() {
-        if(defaultBytes != null)
-            return defaultBytes * byteRatio;
-        return null;
-    }
-
-
 
     public Boolean getFixed() {
         return fixed;
@@ -101,11 +86,11 @@ public abstract class TapBytesBase extends TapMapping {
         this.defaultBytes = defaultBytes;
     }
 
-    public int getByteRatio() {
+    public Integer getByteRatio() {
         return byteRatio;
     }
 
-    public void setByteRatio(int byteRatio) {
+    public void setByteRatio(Integer byteRatio) {
         this.byteRatio = byteRatio;
     }
 }
