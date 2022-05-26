@@ -23,13 +23,13 @@ import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.runtime.standalone.StandaloneConfig;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.storage.OffsetUtils;
+import org.codehaus.plexus.util.StringUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -39,6 +39,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -127,59 +128,102 @@ public class MysqlReader implements Closeable {
 
 	public void readBinlog(TapConnectorContext tapConnectorContext, List<String> tables,
 						   Object offset, int batchSize, StreamReadConsumer consumer) throws Throwable {
-		initDebeziumServerName(tapConnectorContext);
-		String offsetStr = "";
-		if (null != offset) {
-			offsetStr = InstanceFactory.instance(JsonParser.class).toJson(offset);
-		}
-		TapLogger.info(TAG, "Starting mysql cdc, server name: " + serverName);
-		this.eventQueue = new LinkedBlockingQueue<>(10);
-		this.streamReadConsumer = consumer;
-		this.streamConsumerThreadPool = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.SECONDS, new SynchronousQueue<>());
-		this.streamConsumerThreadPool.submit(this::eventQueueConsumer);
-		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
-		String database = connectionConfig.getString("database");
-		initMysqlSchemaHistory(tapConnectorContext);
-		this.mysqlSchemaHistoryMonitor = new ScheduledThreadPoolExecutor(1);
-		this.mysqlSchemaHistoryMonitor.scheduleAtFixedRate(() -> saveMysqlSchemaHistory(tapConnectorContext), 1L, 1L, TimeUnit.MINUTES);
-		Configuration.Builder builder = Configuration.create()
-				.with("name", serverName)
-				.with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
-				.with("database.hostname", connectionConfig.getString("host"))
-				.with("database.port", Integer.parseInt(connectionConfig.getString("port")))
-				.with("database.user", connectionConfig.getString("username"))
-				.with("database.password", connectionConfig.getString("password"))
-				.with("database.server.name", serverName)
-				.with("threadName", "Debezium-Mysql-Connector-" + serverName)
-				.with("database.history.skip.unparseable.ddl", true)
-				.with("database.history.store.only.monitored.tables.ddl", true)
-				.with("database.history.store.only.captured.tables.ddl", true)
-				.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
-				.with("max.queue.size", batchSize * 8)
-				.with("max.batch.size", batchSize)
-				.with(MySqlConnectorConfig.SERVER_ID, randomServerId());
-		List<String> dbTableNames = tables.stream().map(t -> database + "." + t).collect(Collectors.toList());
-		builder.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, database);
-		builder.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, String.join(",", dbTableNames));
-		TapLogger.info(TAG, "Table include list: " + dbTableNames);
-		builder.with("snapshot.mode", "schema_only");
+		try {
+			initDebeziumServerName(tapConnectorContext);
+			String offsetStr = "";
+			if (null != offset) {
+				offsetStr = InstanceFactory.instance(JsonParser.class).toJson(offset);
+			}
+			AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
+			TapLogger.info(TAG, "Starting mysql cdc, server name: " + serverName);
+			this.eventQueue = new LinkedBlockingQueue<>(10);
+			this.streamReadConsumer = consumer;
+			this.streamConsumerThreadPool = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.SECONDS, new SynchronousQueue<>());
+			this.streamConsumerThreadPool.submit(this::eventQueueConsumer);
+			DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
+			String database = connectionConfig.getString("database");
+			initMysqlSchemaHistory(tapConnectorContext);
+			this.mysqlSchemaHistoryMonitor = new ScheduledThreadPoolExecutor(1);
+			this.mysqlSchemaHistoryMonitor.scheduleAtFixedRate(() -> saveMysqlSchemaHistory(tapConnectorContext),
+					1L, 1L, TimeUnit.MINUTES);
+			Configuration.Builder builder = Configuration.create()
+					.with("name", serverName)
+					.with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
+					.with("database.hostname", connectionConfig.getString("host"))
+					.with("database.port", Integer.parseInt(connectionConfig.getString("port")))
+					.with("database.user", connectionConfig.getString("username"))
+					.with("database.password", connectionConfig.getString("password"))
+					.with("database.server.name", serverName)
+					.with("threadName", "Debezium-Mysql-Connector-" + serverName)
+					.with("database.history.skip.unparseable.ddl", true)
+					.with("database.history.store.only.monitored.tables.ddl", true)
+					.with("database.history.store.only.captured.tables.ddl", true)
+					.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
+					.with("max.queue.size", batchSize * 8)
+					.with("max.batch.size", batchSize)
+					.with(MySqlConnectorConfig.SERVER_ID, randomServerId());
+			List<String> dbTableNames = tables.stream().map(t -> database + "." + t).collect(Collectors.toList());
+			builder.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, database);
+			builder.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, String.join(",", dbTableNames));
+			builder.with("snapshot.mode", "schema_only");
 //		builder.with("snapshot.mode", "schema_only_recovery");
-		builder.with("database.history", "io.tapdata.connector.mysql.StateMapHistoryBackingStore");
-		builder.with(EmbeddedEngine.OFFSET_STORAGE, "io.tapdata.connector.mysql.PdkPersistenceOffsetBackingStore");
-		builder.with(StandaloneConfig.OFFSET_STORAGE_FILE_FILENAME_CONFIG, "/Users/samuel/pdkMysqlDebeziumOffset");
-		builder.with("pdk.offset.string", offsetStr);
-		Configuration configuration = builder.build();
-		embeddedEngine = (EmbeddedEngine) new EmbeddedEngine.BuilderImpl()
-				.using(configuration)
-				.notifying(this::sourceRecordConsumer)
-				.using(new DebeziumEngine.ConnectorCallback() {
-					@Override
-					public void taskStarted() {
-						streamReadConsumer.streamReadStarted();
-					}
-				})
-				.build();
-		embeddedEngine.run();
+			builder.with("database.history", "io.tapdata.connector.mysql.StateMapHistoryBackingStore");
+			builder.with(EmbeddedEngine.OFFSET_STORAGE, "io.tapdata.connector.mysql.PdkPersistenceOffsetBackingStore");
+			builder.with("pdk.offset.string", offsetStr);
+			Configuration configuration = builder.build();
+			StringBuilder configStr = new StringBuilder("Starting binlog reader with config {\n");
+			configuration.withMaskedPasswords().asMap().forEach((k, v) -> configStr.append("  ")
+					.append(k)
+					.append(": ")
+					.append(v)
+					.append("\n"));
+			configStr.append("}");
+			TapLogger.info(TAG, configStr.toString());
+			embeddedEngine = (EmbeddedEngine) new EmbeddedEngine.BuilderImpl()
+					.using(configuration)
+					.notifying(this::sourceRecordConsumer)
+					.using(new DebeziumEngine.ConnectorCallback() {
+						@Override
+						public void taskStarted() {
+							streamReadConsumer.streamReadStarted();
+						}
+					})
+					.using((result, message, throwable) -> {
+						if (result) {
+							if (StringUtils.isNotBlank(message)) {
+								TapLogger.info(TAG, "CDC engine stopped: " + message);
+							} else {
+								TapLogger.info(TAG, "CDC engine stopped");
+							}
+						} else {
+							if (null != throwable) {
+								if (StringUtils.isNotBlank(message)) {
+									throwableAtomicReference.set(new RuntimeException(message, throwable));
+								} else {
+									throwableAtomicReference.set(new RuntimeException(throwable));
+								}
+							} else {
+								throwableAtomicReference.set(new RuntimeException(message));
+							}
+						}
+						streamReadConsumer.streamReadEnded();
+					})
+					.build();
+			embeddedEngine.run();
+			if (null != throwableAtomicReference.get()) {
+				throw throwableAtomicReference.get();
+			}
+		} finally {
+			Optional.ofNullable(embeddedEngine).ifPresent(engine -> {
+				try {
+					engine.close();
+				} catch (IOException e) {
+					TapLogger.warn(TAG, "Close CDC engine failed, error: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
+				}
+			});
+			Optional.ofNullable(streamConsumerThreadPool).ifPresent(ExecutorService::shutdownNow);
+			Optional.ofNullable(mysqlSchemaHistoryMonitor).ifPresent(ExecutorService::shutdownNow);
+		}
 	}
 
 	private void initMysqlSchemaHistory(TapConnectorContext tapConnectorContext) {
@@ -231,14 +275,6 @@ public class MysqlReader implements Closeable {
 	@Override
 	public void close() {
 		this.running.set(false);
-		Optional.ofNullable(embeddedEngine).ifPresent(engine -> {
-			try {
-				engine.close();
-			} catch (IOException e) {
-				TapLogger.warn(TAG, "Close embedded engine failed, error: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
-			}
-		});
-		Optional.ofNullable(streamConsumerThreadPool).ifPresent(ExecutorService::shutdownNow);
 	}
 
 	private void sourceRecordConsumer(SourceRecord record) {
