@@ -42,7 +42,6 @@ import java.util.function.Consumer;
  **/
 @TapConnectorClass("spec.json")
 public class MysqlConnector extends ConnectorBase {
-
 	private static final String TAG = MysqlConnector.class.getSimpleName();
 	private static final int MAX_FILTER_RESULT_SIZE = 100;
 	private MysqlJdbcContext mysqlJdbcContext;
@@ -218,7 +217,7 @@ public class MysqlConnector extends ConnectorBase {
 		}
 	}
 
-	private void streamRead(TapConnectorContext tapConnectorContext, List<String> tables, Object offset, int batchSize, StreamReadConsumer consumer) {
+	private void streamRead(TapConnectorContext tapConnectorContext, List<String> tables, Object offset, int batchSize, StreamReadConsumer consumer) throws Throwable {
 		mysqlReader.readBinlog(tapConnectorContext, tables, offset, batchSize, consumer);
 	}
 

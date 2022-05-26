@@ -6,6 +6,7 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapStringValue;
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -130,7 +131,7 @@ public class TDDSourceConnector extends ConnectorBase {
         connectorFunctions.supportBatchCount(this::batchCount);
 //        connectorFunctions.supportWriteRecord(this::writeRecord);
 
-        codecRegistry.registerToTapValue(TDDUser.class, (value, tapType) -> new TapStringValue(toJson(value)));
+        codecRegistry.registerToTapValue(TDDUser.class, (value, tapType) -> new TapStringValue(TapSimplify.toJson(value)));
 
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportBatchOffset(this::batchOffset);

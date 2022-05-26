@@ -1,7 +1,7 @@
 {
   "properties": {
 	"name": "Mysql",
-	"icon": "icons/mysql.png",
+	"icon": "icons/mysql.svg",
 	"id": "mysql"
   },
   "configOptions": {

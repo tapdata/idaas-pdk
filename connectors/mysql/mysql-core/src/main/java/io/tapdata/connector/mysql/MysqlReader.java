@@ -3,33 +3,69 @@ package io.tapdata.connector.mysql;
 import io.debezium.config.Configuration;
 import io.debezium.connector.mysql.MySqlConnectorConfig;
 import io.debezium.embedded.EmbeddedEngine;
+import io.debezium.engine.DebeziumEngine;
 import io.tapdata.connector.mysql.entity.MysqlSnapshotOffset;
+import io.tapdata.connector.mysql.entity.MysqlStreamEvent;
+import io.tapdata.connector.mysql.entity.MysqlStreamOffset;
+import io.tapdata.connector.mysql.util.StringCompressUtil;
+import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
+import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.runtime.standalone.StandaloneConfig;
+import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.storage.OffsetUtils;
+import org.codehaus.plexus.util.StringUtils;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.sql.ResultSetMetaData;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author samuel
  * @Description
  * @create 2022-05-05 20:13
  **/
-public class MysqlReader {
-
+public class MysqlReader implements Closeable {
 	private static final String TAG = MysqlReader.class.getSimpleName();
+	private static final String SERVER_NAME_KEY = "SERVER_NAME";
+	private static final String MYSQL_SCHEMA_HISTORY = "MYSQL_SCHEMA_HISTORY";
+	private String serverName;
+	private AtomicBoolean running;
 	private MysqlJdbcContext mysqlJdbcContext;
+	private EmbeddedEngine embeddedEngine;
+	private LinkedBlockingQueue<MysqlStreamEvent> eventQueue;
+	private ExecutorService streamConsumerThreadPool;
+	private StreamReadConsumer streamReadConsumer;
+	private ScheduledExecutorService mysqlSchemaHistoryMonitor;
 
 	public MysqlReader(MysqlJdbcContext mysqlJdbcContext) {
 		this.mysqlJdbcContext = mysqlJdbcContext;
+		this.running = new AtomicBoolean(true);
 	}
 
 	public void readWithOffset(TapConnectorContext tapConnectorContext, TapTable tapTable, MysqlSnapshotOffset mysqlSnapshotOffset,
@@ -90,38 +126,299 @@ public class MysqlReader {
 		});
 	}
 
-	public void readBinlog(TapConnectorContext tapConnectorContext, List<String> tables, Object offset, int batchSize, StreamReadConsumer consumer) {
-		KVMap<Object> stateMap = tapConnectorContext.getStateMap();
-		DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
-		Configuration.Builder builder = Configuration.create()
-				.with("name", tapConnectorContext.getSpecification().getId())
-				.with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
-				.with("database.hostname", connectionConfig.getString("host"))
-				.with("database.port", Integer.parseInt(connectionConfig.getString("port")))
-				.with("database.user", connectionConfig.getString("username"))
-				.with("database.password", connectionConfig.getString("password"))
-				.with("database.server.name", tapConnectorContext.getSpecification().getId())
-				.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, Collections.singletonList(connectionConfig.getString("database")))
-				.with("threadName", "Debezium-Mysql-Connector-" + tapConnectorContext.getSpecification().getId())
-				.with("database.history.skip.unparseable.ddl", true)
-				.with("database.history.store.only.captured.tables.ddl", true)
-				.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
-				.with("max.queue.size", batchSize * 8)
-				.with("max.batch.size", batchSize)
-				.with(MySqlConnectorConfig.SERVER_ID, randomServerId())
-				.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, tables);
+	public void readBinlog(TapConnectorContext tapConnectorContext, List<String> tables,
+						   Object offset, int batchSize, StreamReadConsumer consumer) throws Throwable {
+		try {
+			initDebeziumServerName(tapConnectorContext);
+			String offsetStr = "";
+			if (null != offset) {
+				offsetStr = InstanceFactory.instance(JsonParser.class).toJson(offset);
+			}
+			AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
+			TapLogger.info(TAG, "Starting mysql cdc, server name: " + serverName);
+			this.eventQueue = new LinkedBlockingQueue<>(10);
+			this.streamReadConsumer = consumer;
+			this.streamConsumerThreadPool = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.SECONDS, new SynchronousQueue<>());
+			this.streamConsumerThreadPool.submit(this::eventQueueConsumer);
+			DataMap connectionConfig = tapConnectorContext.getConnectionConfig();
+			String database = connectionConfig.getString("database");
+			initMysqlSchemaHistory(tapConnectorContext);
+			this.mysqlSchemaHistoryMonitor = new ScheduledThreadPoolExecutor(1);
+			this.mysqlSchemaHistoryMonitor.scheduleAtFixedRate(() -> saveMysqlSchemaHistory(tapConnectorContext),
+					1L, 1L, TimeUnit.MINUTES);
+			Configuration.Builder builder = Configuration.create()
+					.with("name", serverName)
+					.with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
+					.with("database.hostname", connectionConfig.getString("host"))
+					.with("database.port", Integer.parseInt(connectionConfig.getString("port")))
+					.with("database.user", connectionConfig.getString("username"))
+					.with("database.password", connectionConfig.getString("password"))
+					.with("database.server.name", serverName)
+					.with("threadName", "Debezium-Mysql-Connector-" + serverName)
+					.with("database.history.skip.unparseable.ddl", true)
+					.with("database.history.store.only.monitored.tables.ddl", true)
+					.with("database.history.store.only.captured.tables.ddl", true)
+					.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
+					.with("max.queue.size", batchSize * 8)
+					.with("max.batch.size", batchSize)
+					.with(MySqlConnectorConfig.SERVER_ID, randomServerId());
+			List<String> dbTableNames = tables.stream().map(t -> database + "." + t).collect(Collectors.toList());
+			builder.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, database);
+			builder.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, String.join(",", dbTableNames));
+			builder.with("snapshot.mode", "schema_only");
+//		builder.with("snapshot.mode", "schema_only_recovery");
+			builder.with("database.history", "io.tapdata.connector.mysql.StateMapHistoryBackingStore");
+			builder.with(EmbeddedEngine.OFFSET_STORAGE, "io.tapdata.connector.mysql.PdkPersistenceOffsetBackingStore");
+			builder.with("pdk.offset.string", offsetStr);
+			Configuration configuration = builder.build();
+			StringBuilder configStr = new StringBuilder("Starting binlog reader with config {\n");
+			configuration.withMaskedPasswords().asMap().forEach((k, v) -> configStr.append("  ")
+					.append(k)
+					.append(": ")
+					.append(v)
+					.append("\n"));
+			configStr.append("}");
+			TapLogger.info(TAG, configStr.toString());
+			embeddedEngine = (EmbeddedEngine) new EmbeddedEngine.BuilderImpl()
+					.using(configuration)
+					.notifying(this::sourceRecordConsumer)
+					.using(new DebeziumEngine.ConnectorCallback() {
+						@Override
+						public void taskStarted() {
+							streamReadConsumer.streamReadStarted();
+						}
+					})
+					.using((result, message, throwable) -> {
+						if (result) {
+							if (StringUtils.isNotBlank(message)) {
+								TapLogger.info(TAG, "CDC engine stopped: " + message);
+							} else {
+								TapLogger.info(TAG, "CDC engine stopped");
+							}
+						} else {
+							if (null != throwable) {
+								if (StringUtils.isNotBlank(message)) {
+									throwableAtomicReference.set(new RuntimeException(message, throwable));
+								} else {
+									throwableAtomicReference.set(new RuntimeException(throwable));
+								}
+							} else {
+								throwableAtomicReference.set(new RuntimeException(message));
+							}
+						}
+						streamReadConsumer.streamReadEnded();
+					})
+					.build();
+			embeddedEngine.run();
+			if (null != throwableAtomicReference.get()) {
+				throw throwableAtomicReference.get();
+			}
+		} finally {
+			Optional.ofNullable(embeddedEngine).ifPresent(engine -> {
+				try {
+					engine.close();
+				} catch (IOException e) {
+					TapLogger.warn(TAG, "Close CDC engine failed, error: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
+				}
+			});
+			Optional.ofNullable(streamConsumerThreadPool).ifPresent(ExecutorService::shutdownNow);
+			Optional.ofNullable(mysqlSchemaHistoryMonitor).ifPresent(ExecutorService::shutdownNow);
+		}
+	}
 
-		Configuration configuration = builder.build();
-		EmbeddedEngine embeddedEngine = new EmbeddedEngine.BuilderImpl()
-				.using(configuration)
-				.notifying(System.out::println)
-				.build();
-		embeddedEngine.run();
+	private void initMysqlSchemaHistory(TapConnectorContext tapConnectorContext) {
+		KVMap<Object> stateMap = tapConnectorContext.getStateMap();
+		Object mysqlSchemaHistory = stateMap.get(MYSQL_SCHEMA_HISTORY);
+		if (mysqlSchemaHistory instanceof String) {
+			try {
+				mysqlSchemaHistory = StringCompressUtil.uncompress((String) mysqlSchemaHistory);
+			} catch (IOException e) {
+				throw new RuntimeException("Uncompress Mysql schema history failed, string: " + mysqlSchemaHistory, e);
+			}
+			mysqlSchemaHistory = InstanceFactory.instance(JsonParser.class).fromJson((String) mysqlSchemaHistory, Map.class);
+			MysqlSchemaHistoryTransfer.historyMap.putAll((Map) mysqlSchemaHistory);
+		}
+	}
+
+	private void saveMysqlSchemaHistory(TapConnectorContext tapConnectorContext) {
+		Thread.currentThread().setName("Save-Mysql-Schema-History-" + serverName);
+		if (!MysqlSchemaHistoryTransfer.isSave()) {
+			MysqlSchemaHistoryTransfer.executeWithLock(n -> !running.get(), () -> {
+				String json = InstanceFactory.instance(JsonParser.class).toJson(MysqlSchemaHistoryTransfer.historyMap);
+				try {
+					json = StringCompressUtil.compress(json);
+				} catch (IOException e) {
+					TapLogger.warn(TAG, "Compress Mysql schema history failed, string: " + json + ", error message: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
+					return;
+				}
+				tapConnectorContext.getStateMap().put(MYSQL_SCHEMA_HISTORY, json);
+				MysqlSchemaHistoryTransfer.save();
+			});
+		}
+	}
+
+	private void initDebeziumServerName(TapConnectorContext tapConnectorContext) {
+		this.serverName = UUID.randomUUID().toString().toLowerCase();
+		KVMap<Object> stateMap = tapConnectorContext.getStateMap();
+		Object serverNameFromStateMap = stateMap.get(SERVER_NAME_KEY);
+		if (serverNameFromStateMap instanceof String) {
+			this.serverName = String.valueOf(serverNameFromStateMap);
+		}
 	}
 
 	private static int randomServerId() {
 		int lowestServerId = 5400;
 		int highestServerId = Integer.MAX_VALUE;
 		return lowestServerId + new Random().nextInt(highestServerId - lowestServerId);
+	}
+
+	@Override
+	public void close() {
+		this.running.set(false);
+	}
+
+	private void sourceRecordConsumer(SourceRecord record) {
+		TapRecordEvent tapRecordEvent = null;
+		if (null == record || null == record.value()) return;
+		Struct value = (Struct) record.value();
+		Schema valueSchema = record.valueSchema();
+
+		if (null != valueSchema.field("op")) {
+			Struct source = value.getStruct("source");
+			Long eventTime = source.getInt64("ts_ms");
+			String table = source.getString("table");
+			String op = value.getString("op");
+			MysqlOpType mysqlOpType = MysqlOpType.fromOp(op);
+			if (null == mysqlOpType) {
+				TapLogger.debug(TAG, "Unrecognized operation type: " + op + ", will skip it, record: " + record);
+				return;
+			}
+			Map<String, Object> before;
+			Map<String, Object> after;
+			switch (mysqlOpType) {
+				case INSERT:
+					tapRecordEvent = new TapInsertRecordEvent();
+					if (null == valueSchema.field("after"))
+						throw new RuntimeException("Found insert record does not have after: " + record);
+					after = struct2Map(value.getStruct("after"));
+					((TapInsertRecordEvent) tapRecordEvent).setAfter(after);
+					break;
+				case UPDATE:
+					tapRecordEvent = new TapUpdateRecordEvent();
+					if (null != valueSchema.field("before")) {
+						before = struct2Map(value.getStruct("before"));
+						((TapUpdateRecordEvent) tapRecordEvent).setBefore(before);
+					}
+					if (null == valueSchema.field("after"))
+						throw new RuntimeException("Found update record does not have after: " + record);
+					after = struct2Map(value.getStruct("after"));
+					((TapUpdateRecordEvent) tapRecordEvent).setAfter(after);
+					break;
+				case DELETE:
+					tapRecordEvent = new TapDeleteRecordEvent();
+					if (null == valueSchema.field("before"))
+						throw new RuntimeException("Found delete record does not have before: " + record);
+					before = struct2Map(value.getStruct("before"));
+					((TapDeleteRecordEvent) tapRecordEvent).setBefore(before);
+					break;
+				default:
+					break;
+			}
+			tapRecordEvent.setTableId(table);
+			tapRecordEvent.setReferenceTime(eventTime);
+			MysqlStreamOffset mysqlStreamOffset = getMysqlStreamOffset(record);
+			MysqlStreamEvent mysqlStreamEvent = new MysqlStreamEvent(tapRecordEvent, mysqlStreamOffset);
+			enqueue(mysqlStreamEvent);
+		}
+	}
+
+	private Map<String, Object> struct2Map(Struct struct) {
+		if (null == struct) return null;
+		Map<String, Object> result = new HashMap<>();
+		Schema schema = struct.schema();
+		if (null == schema) return null;
+		for (Field field : schema.fields()) {
+			String fieldName = field.name();
+			Object value = struct.get(fieldName);
+			if (value instanceof ByteBuffer) {
+				value = ((ByteBuffer) value).array();
+			}
+			result.put(fieldName, value);
+		}
+		return result;
+	}
+
+	private MysqlStreamOffset getMysqlStreamOffset(SourceRecord record) {
+		MysqlStreamOffset mysqlStreamOffset = new MysqlStreamOffset();
+		Map<String, Object> partition = (Map<String, Object>) record.sourcePartition();
+		Map<String, Object> offset = (Map<String, Object>) record.sourceOffset();
+		// Offsets are specified as schemaless to the converter, using whatever internal schema is appropriate
+		// for that data. The only enforcement of the format is here.
+		OffsetUtils.validateFormat(partition);
+		OffsetUtils.validateFormat(offset);
+		// When serializing the key, we add in the namespace information so the key is [namespace, real key]
+		Map<String, String> offsetMap = new HashMap<>(1);
+		String key = InstanceFactory.instance(JsonParser.class).toJson(partition);
+		String value = InstanceFactory.instance(JsonParser.class).toJson(offset);
+		offsetMap.put(key, value);
+		mysqlStreamOffset.setOffset(offsetMap);
+		mysqlStreamOffset.setName(serverName);
+		return mysqlStreamOffset;
+	}
+
+	private void eventQueueConsumer() {
+		while (running.get()) {
+			MysqlStreamEvent mysqlStreamEvent;
+			try {
+				mysqlStreamEvent = eventQueue.poll(3L, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				break;
+			}
+			if (null == mysqlStreamEvent) continue;
+			ArrayList<TapEvent> events = new ArrayList<>(1);
+			events.add(mysqlStreamEvent.getTapEvent());
+			streamReadConsumer.accept(events, mysqlStreamEvent.getMysqlStreamOffset());
+		}
+	}
+
+	private void enqueue(MysqlStreamEvent mysqlStreamEvent) {
+		while (running.get()) {
+			try {
+				if (eventQueue.offer(mysqlStreamEvent, 3L, TimeUnit.SECONDS)) {
+					break;
+				}
+			} catch (InterruptedException e) {
+				break;
+			}
+		}
+	}
+
+	enum MysqlOpType {
+		INSERT("c"),
+		UPDATE("u"),
+		DELETE("d"),
+		;
+		private String op;
+
+		MysqlOpType(String op) {
+			this.op = op;
+		}
+
+		public String getOp() {
+			return op;
+		}
+
+		private static Map<String, MysqlOpType> map;
+
+		static {
+			map = new HashMap<>();
+			for (MysqlOpType value : MysqlOpType.values()) {
+				map.put(value.getOp(), value);
+			}
+		}
+
+		public static MysqlOpType fromOp(String op) {
+			return map.get(op);
+		}
 	}
 }

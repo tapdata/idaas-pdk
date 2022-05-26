@@ -9,7 +9,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * make sql
@@ -86,8 +88,9 @@ public class PostgresSqlMaker {
             return;
         }
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
+        List<String> columnList = nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPos())).map(Map.Entry::getKey).collect(Collectors.toList());
         int pos = 1;
-        for (String columnName : nameFieldMap.keySet()) {
+        for (String columnName : columnList) {
             TapField tapField = nameFieldMap.get(columnName);
             Object tapValue = insertRecord.get(columnName);
             if (tapField.getDataType() == null) {

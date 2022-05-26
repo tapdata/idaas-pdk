@@ -16,7 +16,7 @@ public class DateTime {
     private Long seconds;
     /**
      * 纳秒
-     *
+     * <p>
      * 毫秒， 微秒， 纳秒， 1000
      */
     //nano int
@@ -35,29 +35,53 @@ public class DateTime {
     }
 
     public DateTime(Instant instant) {
-        if(instant == null)
+        if (instant == null)
             throw new IllegalArgumentException("DateTime constructor instant is null");
         seconds = instant.getEpochSecond();
         nano = instant.getNano();
     }
 
     public DateTime(Date date) {
-        if(date == null)
+        if (date == null)
             throw new IllegalArgumentException("DateTime constructor date is null");
         long time = date.getTime();
         seconds = time / 1000;
-        nano = (int)((time % 1000) * 1000000);
+        nano = (int) ((time % 1000) * 1000000);
+    }
+
+    public DateTime(java.sql.Date date) {
+        if (date == null)
+            throw new IllegalArgumentException("DateTime constructor date is null");
+        long time = date.getTime();
+        seconds = time / 1000;
+        nano = (int) ((time % 1000) * 1000000);
+    }
+
+    public DateTime(java.sql.Time time) {
+        if (time == null)
+            throw new IllegalArgumentException("DateTime constructor time is null");
+        long sqlTime = time.getTime();
+        seconds = sqlTime / 1000;
+        nano = (int) ((sqlTime % 1000) * 1000000);
+    }
+
+    public DateTime(Timestamp timestamp) {
+        if (timestamp == null)
+            throw new IllegalArgumentException("DateTime constructor timestamp is null");
+        long time = timestamp.getTime();
+        seconds = time / 1000;
+        nano = (int) ((time % 1000) * 1000000);
     }
 
     public DateTime(Long time) {
-        if(time == null)
+        if (time == null)
             throw new IllegalArgumentException("DateTime constructor time is null");
         seconds = time / 1000;
-        nano = (int)((time % 1000) * 1000000);
+        nano = (int) ((time % 1000) * 1000000);
     }
 
     public DateTime(LocalDateTime localDateTime) {
-        if(localDateTime == null)
+        if (localDateTime == null)
             throw new IllegalArgumentException("DateTime constructor localDateTime is null");
         Instant instant = localDateTime.toInstant(ZoneOffset.UTC);
         seconds = instant.getEpochSecond();
@@ -74,9 +98,9 @@ public class DateTime {
 
     public Date toDate() {
         long milliseconds;
-        if(seconds != null) {
+        if (seconds != null) {
             milliseconds = seconds * 1000;
-            if(nano != null) {
+            if (nano != null) {
                 milliseconds = milliseconds + (nano / 1000 / 1000);
             }
         } else {
@@ -87,9 +111,9 @@ public class DateTime {
 
     public java.sql.Date toSqlDate() {
         long milliseconds;
-        if(seconds != null) {
+        if (seconds != null) {
             milliseconds = seconds * 1000;
-            if(nano != null) {
+            if (nano != null) {
                 milliseconds = milliseconds + (nano / 1000 / 1000);
             }
         } else {
@@ -100,9 +124,9 @@ public class DateTime {
 
     public java.sql.Time toTime() {
         long milliseconds;
-        if(seconds != null) {
+        if (seconds != null) {
             milliseconds = seconds * 1000;
-            if(nano != null) {
+            if (nano != null) {
                 milliseconds = milliseconds + (nano / 1000 / 1000);
             }
         } else {
@@ -113,9 +137,9 @@ public class DateTime {
 
     public Timestamp toTimestamp() {
         long milliseconds;
-        if(seconds != null) {
+        if (seconds != null) {
             milliseconds = seconds * 1000;
-            if(nano != null) {
+            if (nano != null) {
                 milliseconds = milliseconds + (nano / 1000 / 1000);
             }
         } else {

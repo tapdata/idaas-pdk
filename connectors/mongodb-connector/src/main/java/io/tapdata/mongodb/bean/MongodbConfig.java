@@ -2,6 +2,9 @@ package io.tapdata.mongodb.bean;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.ConnectionString;
+import io.tapdata.mongodb.MongodbUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,7 +12,6 @@ import java.io.Serializable;
 import java.util.Map;
 
 public class MongodbConfig implements Serializable {
-    private String database;
     private String collection;
     private String uri;
 
@@ -27,16 +29,16 @@ public class MongodbConfig implements Serializable {
         return uri;
     }
 
+		public String getDatabase(){
+				if (StringUtils.isNotEmpty(uri)) {
+						ConnectionString connectionString = new ConnectionString(uri);
+						return connectionString.getDatabase();
+				}
+				return null;
+		}
+
     public void setUri(String uri) {
         this.uri = uri;
-    }
-
-    public String getDatabase() {
-        return database;
-    }
-
-    public void setDatabase(String database) {
-        this.database = database;
     }
 
     public String getCollection() {

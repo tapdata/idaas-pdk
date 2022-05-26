@@ -9,12 +9,12 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>tapdata-tests</module>
+<!--        <module>tapdata-tests</module>-->
         <module>tapdata-pdk-cli</module>
         <module>connectors</module>
         <module>tapdata-pdk-runner</module>
         <module>tapdata-pdk-api</module>
-        <module>connector-archetypes</module>
+<!--        <module>connector-archetypes</module>-->
         <module>tapdata-api</module>
     </modules>
 
