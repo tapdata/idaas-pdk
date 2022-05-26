@@ -1,12 +1,14 @@
 package io.tapdata.connector.postgres;
 
+import java.io.Serializable;
+
 /**
  * offset for batch read
  *
  * @author Jarad
  * @date 2022/5/09
  */
-public class PostgresOffset {
+public class PostgresOffset implements Serializable {
 
     private String sortString;
     private Long offsetValue;
