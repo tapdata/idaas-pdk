@@ -572,7 +572,7 @@ public class MongodbConnector extends ConnectorBase {
      * current instance is serving for the table from connectorContext.
      */
     @Override
-    public void onDestroy(TapConnectionContext connectorContext) {
+    public void onDestroy(TapConnectionContext connectionContext) {
     }
 
 		private MongodbStreamReader createStreamReader(){
@@ -588,7 +588,7 @@ public class MongodbConnector extends ConnectorBase {
 		}
 
     @Override
-    public void onPause(TapConnectionContext connectorContext) throws Throwable {
+    public void onPause(TapConnectionContext connectionContext) throws Throwable {
 //        if (mongoClient != null) {
 //            mongoClient.close();
 //        }

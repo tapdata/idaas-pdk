@@ -113,16 +113,16 @@ public class MysqlConnector extends ConnectorBase {
 	}
 
 	@Override
-	public void onDestroy(TapConnectionContext connectorContext) throws Throwable {
-		if (connectorContext instanceof TapConnectorContext) {
-			KVMap<Object> stateMap = ((TapConnectorContext) connectorContext).getStateMap();
-			stateMap.remove(MysqlReader.SERVER_NAME_KEY);
-			stateMap.remove(MysqlReader.MYSQL_SCHEMA_HISTORY);
-		}
+	public void onDestroy(TapConnectionContext connectionContext) throws Throwable {
+        isConnectorStarted(connectionContext, connectorContext -> {
+            KVMap<Object> stateMap = connectorContext.getStateMap();
+            stateMap.remove(MysqlReader.SERVER_NAME_KEY);
+            stateMap.remove(MysqlReader.MYSQL_SCHEMA_HISTORY);
+        });
 	}
 
 	@Override
-	public void onPause(TapConnectionContext connectorContext) throws Throwable {
+	public void onPause(TapConnectionContext connectionContext) throws Throwable {
 		try {
 			this.mysqlJdbcContext.close();
 		} catch (Exception e) {

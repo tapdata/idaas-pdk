@@ -27,6 +27,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
@@ -235,22 +237,30 @@ public abstract class ConnectorBase implements TapConnector {
 
     public abstract void onStart(TapConnectionContext connectionContext) throws Throwable;
 
-    public abstract void onDestroy(TapConnectionContext connectorContext) throws Throwable;
+    public abstract void onDestroy(TapConnectionContext connectionContext) throws Throwable;
 
-    public abstract void onPause(TapConnectionContext connectorContext) throws Throwable;
+    public abstract void onPause(TapConnectionContext connectionContext) throws Throwable;
 
     @Override
-    public final void destroy(TapConnectionContext connectorContext) throws Throwable {
+    public final void destroy(TapConnectionContext connectionContext) throws Throwable {
         if (isDestroyed.compareAndSet(true, false)) {
-            pause(connectorContext);
-            onDestroy(connectorContext);
+            pause(connectionContext);
+            onDestroy(connectionContext);
         }
     }
 
     @Override
-    public void pause(TapConnectionContext connectorContext) throws Throwable {
+    public void pause(TapConnectionContext connectionContext) throws Throwable {
         if (isAlive.compareAndSet(true, false)) {
-            onPause(connectorContext);
+            onPause(connectionContext);
+        }
+    }
+
+    protected void isConnectorStarted(TapConnectionContext connectionContext, Consumer<TapConnectorContext> contextConsumer) {
+        if(connectionContext instanceof TapConnectorContext) {
+            if(contextConsumer != null) {
+                contextConsumer.accept((TapConnectorContext) connectionContext);
+            }
         }
     }
 }
