@@ -329,7 +329,6 @@ public class PostgresConnector extends ConnectorBase {
         }
     }
 
-    // TODO: 2022/5/13 the same type of event must be dealt with to make this method faster
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
         if (postgresJdbcContext.queryAllTables(tapTable.getId()).size() < 1) {
             throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
