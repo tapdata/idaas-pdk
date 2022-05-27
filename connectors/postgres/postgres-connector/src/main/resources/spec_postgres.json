@@ -95,14 +95,12 @@
     },
     "real": {
       "bit": 32,
-      "priority": 3,
-      "queryOnly": true,
+      "priority": 2,
       "to": "TapNumber"
     },
     "double precision": {
       "bit": 64,
-      "priority": 3,
-      "queryOnly": true,
+      "priority": 2,
       "to": "TapNumber"
     },
     "character[($byte)]": {
@@ -123,21 +121,19 @@
     },
     "bytea": {
       "byte": "4g",
-      "priority": 1,
+      "priority": 2,
       "to": "TapBinary"
     },
     "bit[($byte)]": {
       "byte": 64,
       "defaultByte": 1,
-      "priority": 3,
+      "priority": 1,
       "fixed": true,
-      "queryOnly": true,
       "to": "TapBinary"
     },
     "bit varying[($byte)]": {
       "byte": 64,
-      "priority": 3,
-      "queryOnly": true,
+      "priority": 1,
       "to": "TapBinary"
     },
     "boolean": {
@@ -161,7 +157,6 @@
       ],
       "pattern": "HH:mm:ss",
       "queryOnly": true,
-      "priority": 3,
       "to": "TapTime"
     },
     "timestamp[($fraction)] without time zone": {
@@ -170,10 +165,151 @@
         "9999-12-31 23:59:59"
       ],
       "pattern": "yyyy-MM-dd HH:mm:ss",
-      "fraction": [0,6],
-      "defaultFraction":19,
-      "priority": 3,
+      "fraction": [
+        0,
+        6
+      ],
+      "defaultFraction": 6,
+      "priority": 1,
       "to": "TapDateTime"
+    },
+    "timestamp[($fraction)] with time zone": {
+      "range": [
+        "1000-01-01 00:00:00",
+        "9999-12-31 23:59:59"
+      ],
+      "pattern": "yyyy-MM-dd HH:mm:ss",
+      "fraction": [
+        0,
+        6
+      ],
+      "defaultFraction": 6,
+      "priority": 2,
+      "to": "TapDateTime"
+    },
+    "time[($fraction)] without time zone": {
+      "range": [
+        "00:00:00",
+        "23:59:59"
+      ],
+      "pattern": "HH:mm:ss",
+      "fraction": [
+        0,
+        6
+      ],
+      "defaultFraction": 6,
+      "priority": 1,
+      "to": "TapTime"
+    },
+    "time[($fraction)] with time zone": {
+      "range": [
+        "00:00:00",
+        "23:59:59"
+      ],
+      "pattern": "HH:mm:ss",
+      "fraction": [
+        0,
+        6
+      ],
+      "defaultFraction": 6,
+      "priority": 2,
+      "to": "TapTime"
+    },
+    "point": {
+      "to": "TapBinary",
+      "queryOnly": true
+    },
+    "line": {
+      "to": "TapBinary",
+      "queryOnly": true
+    },
+    "lseg": {
+      "to": "TapBinary",
+      "queryOnly": true
+    },
+    "box": {
+      "to": "TapBinary",
+      "queryOnly": true
+    },
+    "path": {
+      "to": "TapBinary",
+      "queryOnly": true
+    },
+    "polygon": {
+      "to": "TapBinary",
+      "queryOnly": true
+    },
+    "circle": {
+      "to": "TapBinary",
+      "queryOnly": true
+    },
+    "cidr": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "inet": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "macaddr": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "uuid": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "xml": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "json": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "tsvector": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "tsquery": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "oid": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regproc": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regprocedure": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regoper": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regoperator": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regclass": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regtype": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regconfig": {
+      "to": "TapString",
+      "queryOnly": true
+    },
+    "regdictionary": {
+      "to": "TapString",
+      "queryOnly": true
     }
   }
 }
