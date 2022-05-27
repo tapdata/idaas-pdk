@@ -335,9 +335,9 @@ public class PostgresConnector extends ConnectorBase {
         }
         Connection connection = postgresJdbcContext.getConnection();
         //three types of record
-        PostgresWriteRecorder insertRecorder = new PostgresWriteRecorder(connection);
-        PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection);
-        PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection);
+        PostgresWriteRecorder insertRecorder = new PostgresWriteRecorder(connection, tapTable);
+        PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection, tapTable);
+        PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection, tapTable);
         //result of these events
         WriteListResult<TapRecordEvent> listResult = writeListResult();
         for (TapRecordEvent recordEvent : tapRecordEvents) {
@@ -345,19 +345,19 @@ public class PostgresConnector extends ConnectorBase {
                 updateRecorder.executeBatch(listResult);
                 deleteRecorder.executeBatch(listResult);
                 TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-                insertRecorder.addInsertBatch(tapTable, insertRecordEvent.getAfter());
+                insertRecorder.addInsertBatch(insertRecordEvent.getAfter());
                 insertRecorder.addAndCheckCommit(recordEvent, listResult);
             } else if (recordEvent instanceof TapUpdateRecordEvent) {
                 insertRecorder.executeBatch(listResult);
                 deleteRecorder.executeBatch(listResult);
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
-                updateRecorder.addUpdateBatch(tapTable, updateRecordEvent.getBefore(), updateRecordEvent.getAfter(), tapTable.primaryKeys());
+                updateRecorder.addUpdateBatch(updateRecordEvent.getBefore(), updateRecordEvent.getAfter());
                 updateRecorder.addAndCheckCommit(recordEvent, listResult);
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 insertRecorder.executeBatch(listResult);
                 updateRecorder.executeBatch(listResult);
                 TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
-                deleteRecorder.addDeleteBatch(tapTable, deleteRecordEvent.getBefore(), tapTable.primaryKeys());
+                deleteRecorder.addDeleteBatch(deleteRecordEvent.getBefore());
                 deleteRecorder.addAndCheckCommit(recordEvent, listResult);
             }
         }
