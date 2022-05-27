@@ -1,9 +1,10 @@
 package io.tapdata.connector.postgres.storage;
 
-import io.tapdata.connector.postgres.PostgresSqlMaker;
 import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.connector.postgres.kit.StringKit;
 import io.tapdata.entity.event.dml.TapRecordEvent;
-import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.pdk.apis.entity.WriteListResult;
@@ -11,7 +12,8 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -19,12 +21,30 @@ import java.util.stream.Collectors;
 public class PostgresWriteRecorder {
 
     private final Connection connection;
+    private final TapTable tapTable;
+    private List<String> uniqueCondition;
     private PreparedStatement preparedStatement = null;
     private AtomicLong atomicLong = new AtomicLong(0);
     private List<TapRecordEvent> batchCache = TapSimplify.list();
 
-    public PostgresWriteRecorder(Connection connection) {
+    public PostgresWriteRecorder(Connection connection, TapTable tapTable) {
         this.connection = connection;
+        this.tapTable = tapTable;
+        analyzeTable();
+    }
+
+    private void analyzeTable() {
+        if (EmptyKit.isEmpty(tapTable.getIndexList())) {
+            uniqueCondition = TapSimplify.list();
+        } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isPrimary)) {
+            uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isPrimary)
+                    .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
+        } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isUnique)) {
+            uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isUnique)
+                    .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
+        } else {
+            uniqueCondition = TapSimplify.list();
+        }
     }
 
     public void executeBatch(WriteListResult<TapRecordEvent> listResult) {
@@ -47,50 +67,48 @@ public class PostgresWriteRecorder {
         atomicLong.addAndGet(succeed);
     }
 
-    public void addInsertBatch(TapTable tapTable, Map<String, Object> after) throws SQLException {
+    public void addInsertBatch(Map<String, Object> after) throws SQLException {
         if (EmptyKit.isEmpty(after)) {
             return;
         }
         if (EmptyKit.isNull(preparedStatement)) {
-            preparedStatement = connection.prepareStatement(PostgresSqlMaker.buildPrepareInsertSQL(tapTable));
+            String insertSql = "INSERT INTO \"" + tapTable.getId() + "\" ("
+                    + after.keySet().stream().map(k -> "\"" + k + "\"").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)
+                    + ") VALUES(" + StringKit.copyString("?", after.size(), ",") + ") ";
+            if (EmptyKit.isNotEmpty(uniqueCondition)) {
+                insertSql += "ON CONFLICT ON CONSTRAINT("
+                        + tapTable.primaryKeys().stream().map(k -> "\"" + k + "\"").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)
+                        + ") DO UPDATE SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new);
+            }
+            preparedStatement = connection.prepareStatement(insertSql);
         }
         preparedStatement.clearParameters();
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        List<String> columnList = nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPos())).map(Map.Entry::getKey).collect(Collectors.toList());
         int pos = 1;
-        for (String columnName : columnList) {
-            TapField tapField = nameFieldMap.get(columnName);
-            Object tapValue = after.get(columnName);
-            if (tapField.getDataType() == null) {
-                continue;
-            }
-            if (tapValue == null) {
-                if (tapField.getNullable() != null && !tapField.getNullable()) {
-                    preparedStatement.setObject(pos++, tapField.getDefaultValue());
-                } else {
-                    preparedStatement.setObject(pos++, null);
-                }
-            } else {
-                preparedStatement.setObject(pos++, tapValue);
+        for (String key : after.keySet()) {
+            preparedStatement.setObject(pos++, after.get(key));
+        }
+        if (EmptyKit.isNotEmpty(uniqueCondition)) {
+            for (String key : after.keySet()) {
+                preparedStatement.setObject(pos++, after.get(key));
             }
         }
         preparedStatement.addBatch();
     }
 
-    public void addUpdateBatch(TapTable tapTable, Map<String, Object> before, Map<String, Object> after, Collection<String> keys) throws SQLException {
+    public void addUpdateBatch(Map<String, Object> before, Map<String, Object> after) throws SQLException {
         if (EmptyKit.isEmpty(before) || EmptyKit.isEmpty(after)) {
             return;
         }
         for (Map.Entry<String, Object> entry : before.entrySet()) {
             after.remove(entry.getKey(), entry.getValue());
         }
-        if(EmptyKit.isNotEmpty(keys)) {
-            before.keySet().removeIf(k -> !tapTable.primaryKeys().contains(k));
+        if (EmptyKit.isNotEmpty(uniqueCondition)) {
+            before.keySet().removeIf(k -> !uniqueCondition.contains(k));
         }
         if (EmptyKit.isNull(preparedStatement)) {
             preparedStatement = connection.prepareStatement("UPDATE \"" + tapTable.getId() + "\" SET " +
                     after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new) + " WHERE " +
-                    before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                    before.keySet().stream().map(k -> "(? IS NULL OR \"" + k + "\"=?)").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
         }
         preparedStatement.clearParameters();
         int pos = 1;
@@ -99,24 +117,26 @@ public class PostgresWriteRecorder {
         }
         for (String key : before.keySet()) {
             preparedStatement.setObject(pos++, before.get(key));
+            preparedStatement.setObject(pos++, before.get(key));
         }
         preparedStatement.addBatch();
     }
 
-    public void addDeleteBatch(TapTable tapTable, Map<String, Object> before, Collection<String> keys) throws SQLException {
+    public void addDeleteBatch(Map<String, Object> before) throws SQLException {
         if (EmptyKit.isEmpty(before)) {
             return;
         }
-        if(EmptyKit.isNotEmpty(keys)) {
-            before.keySet().removeIf(k -> !tapTable.primaryKeys().contains(k));
+        if (EmptyKit.isNotEmpty(uniqueCondition)) {
+            before.keySet().removeIf(k -> !uniqueCondition.contains(k));
         }
         if (EmptyKit.isNull(preparedStatement)) {
             preparedStatement = connection.prepareStatement("DELETE FROM \"" + tapTable.getId() + "\" WHERE " +
-                    before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                    before.keySet().stream().map(k -> "(? IS NULL OR \"" + k + "\"=?)").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
         }
         preparedStatement.clearParameters();
         int pos = 1;
         for (String key : before.keySet()) {
+            preparedStatement.setObject(pos++, before.get(key));
             preparedStatement.setObject(pos++, before.get(key));
         }
         preparedStatement.addBatch();
