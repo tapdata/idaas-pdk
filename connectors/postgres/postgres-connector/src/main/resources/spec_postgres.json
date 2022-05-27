@@ -57,20 +57,31 @@
     "smallint": {
       "bit": 16,
       "priority": 3,
+      "value": [
+        -32768,
+        32767
+      ],
       "to": "TapNumber"
     },
     "integer": {
       "bit": 32,
       "priority": 1,
+      "value": [
+        -2147483648,
+        2147483647
+      ],
       "to": "TapNumber"
     },
     "bigint": {
       "bit": 64,
       "priority": 3,
+      "value": [
+        -9223372036854775808,
+        9223372036854775807
+      ],
       "to": "TapNumber"
     },
     "numeric[($precision,$scale)]": {
-      "bit": 128,
       "precision": [
         1,
         1000
