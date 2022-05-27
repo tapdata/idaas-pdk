@@ -18,7 +18,7 @@
 <!--        <module>aerospike-connector</module>-->
 <!--        <module>doris-connector</module>-->
         <module>mongodb-connector</module>
-<!--        <module>mysql</module>-->
+        <module>mysql</module>
         <module>postgres</module>
     </modules>
 
