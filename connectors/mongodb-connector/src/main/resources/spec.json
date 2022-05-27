@@ -5,6 +5,7 @@
     "id": "mongodb"
   },
   "configOptions": {
+	"pdkExpansion": ["master-slave-merge"],
     "connection":{
       "type":"object",
       "properties":{
@@ -51,7 +52,7 @@
       "queryOnly": true
     },
     "BOOLEAN": {
-      "to": "TapBoolean",
+      "to": "TapBoolean"
     },
     "DATE_TIME": {
       "to": "TapDateTime",
