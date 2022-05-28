@@ -162,6 +162,7 @@ public class ModelPredictionCli extends CommonCli {
             TapTable generatedTable = generateAllTypesTable(sourceNode);
             if(generatedTable == null)
                 throw new NullPointerException("Generate all types for source " + sourceNode + " failed");
+
             for(ConnectorNode targetNode : connectorNodes) {
                 if(!sourceNode.equals(targetNode)) {
                     TapResult<LinkedHashMap<String, TapField>> result = InstanceFactory.instance(TargetTypesGenerator.class).convert(generatedTable.getNameFieldMap(), targetNode.getConnectorContext().getSpecification().getDataTypesMap(), targetNode.getCodecsFilterManager());
@@ -173,6 +174,12 @@ public class ModelPredictionCli extends CommonCli {
         }
         writeWorkbook();
         return 0;
+    }
+
+    private void specialDataTypesToTest(ConnectorNode sourceNode, TapTable generatedTable) {
+        if(sourceNode.getConnectorContext().getSpecification().getId().equals("mysql")) {
+            generatedTable.add(field("special_int(11)", "int(11)"));
+        }
     }
 
     private void writeWorkbook() {
@@ -578,6 +585,7 @@ public class ModelPredictionCli extends CommonCli {
             fillTestFields(tapTable, expression, tapMapping);
             return false;
         }, DefaultExpressionMatchingMap.ITERATE_TYPE_PREFIX_ONLY);
+        specialDataTypesToTest(node, tapTable);
         InstanceFactory.instance(TableFieldTypesGenerator.class).autoFill(tapTable.getNameFieldMap(), expressionMatchingMap);
         return tapTable;
     }

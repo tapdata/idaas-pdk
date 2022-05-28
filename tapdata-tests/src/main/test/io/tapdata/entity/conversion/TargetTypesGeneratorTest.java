@@ -765,4 +765,57 @@ class TargetTypesGeneratorTest {
         assertEquals("char(24)", ObjectIdField.getDataType());
 
     }
+
+    @Test
+    public void intTest() {
+        String targetTypeExpression = "{\n" +
+                "\"text\": {\"to\": \"TapString\",\"byte\": \"64k\"},\n" +
+                "\"intxxx\": {\"to\": \"TapNumber\", \"bit\": 32,\n"
+                + "}";
+        String sourceTypeExpression = "{" +
+                "\"char[($byte)]\": {\"to\": \"TapString\",\"byte\": 255, \"defaultByte\": 1,\"fixed\": true},\n" +
+                "\"varchar($byte)\": {\"to\": \"TapString\",\"byte\": 16383,\"defaultByte\": 4, \"byteRatio\": 4},\n" +
+                "\"tinytext\": {\"to\": \"TapString\",\"byte\": 255},\n" +
+                "\"text\": {\"to\": \"TapString\",\"byte\": \"64k\"},\n" +
+                "\"mediumtext\": {\"to\": \"TapString\",\"byte\": \"16m\"},\n" +
+                "\"longtext\": {\"to\": \"TapString\",\"byte\": \"4g\"},\n" +
+                "\"json\": {\"to\": \"TapMap\",\"byte\": \"4g\",\"queryOnly\": true},\n" +
+                "\"binary[($byte)]\": {\"to\": \"TapBinary\",\"byte\": 255,\"defaultByte\": 1,\"fixed\": true},\n" +
+                "\"varbinary[($byte)]\": {\"to\": \"TapBinary\",\"byte\": 65535,\"defaultByte\": 1},\n" +
+                "\"tinyblob\": {\"to\": \"TapBinary\",\"byte\": 255},\n" +
+                "\"blob\": {\"to\": \"TapBinary\",\"byte\": \"64k\"},\n" +
+                "\"mediumblob\": {\"to\": \"TapBinary\",\"byte\": \"16m\"},\n" +
+                "\"longblob\": {\"to\": \"TapBinary\",\"byte\": \"4g\"},\n" +
+                "\"bit[($bit)]\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 20,\"value\": [ 0, 18446744073709552000]},\n" +
+                "\"tinyint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 8,\"precision\": 3,\"value\": [ -128, 127],\"unsignedValue\": [ 0, 255],\"unsigned\": \"unsigned\"},\n" +
+                "\"smallint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 16,\"value\": [ -32768, 32767],\"unsignedValue\": [ 0, 65535],\"unsigned\": \"unsigned\",\"precision\": 5},\n" +
+                "\"mediumint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 24,\"precision\": 7,\"value\": [ -8388608, 8388607],\"unsignedValue\": [ 0, 16777215],\"unsigned\": \"unsigned\"},\n" +
+                "\"int[($zerofill)]\": {\"to\": \"TapNumber\", \"bit\": 32, \"precision\": 10, \"value\": [-2147483648, 2147483647]},\n" +
+                "\"bigint[unsigned]\": {\"to\": \"TapNumber\",\"bit\": 64,\"precision\": 19,\"value\": [ -9223372036854775808, 9223372036854775807], \"unsignedValue\": [ 0, 18446744073709551615],\"unsigned\": \"unsigned\"},\n" +
+                "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10,\"defaultScale\": 0,\"unsigned\": \"unsigned\", \"fixed\": true},\n" +
+                "\"float($precision,$scale)[unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 30],\"scale\": [ 0, 30],\"value\": [ \"-3.402823466E+38\", \"3.402823466E+38\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
+                "\"float\": {\"to\": \"TapNumber\",\"precision\": [ 1, 6],\"scale\": [ 0, 6],\"fixed\": false},\n" +
+                "\"double\": {\"to\": \"TapNumber\",\"precision\": [ 1, 11],\"scale\": [ 0, 11],\"fixed\": false},\n" +
+                "\"double[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 255],\"scale\": [ 0, 30],\"value\": [ \"-1.7976931348623157E+308\", \"1.7976931348623157E+308\"],\"unsigned\": \"unsigned\",\"fixed\": false},\n" +
+                "\"date\": {\"to\": \"TapDate\",\"range\": [ \"1000-01-01\", \"9999-12-31\"],\"pattern\": \"yyyy-MM-dd\"},\n" +
+                "\"time\": {\"to\": \"TapTime\",\"range\": [\"-838:59:59\",\"838:59:59\"]},\n" +
+                "\"datetime[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1000-01-01 00:00:00.000000\", \"9999-12-31 23:59:59.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0},\n" +
+                "\"timestamp[($fraction)]\": {\"to\": \"TapDateTime\",\"range\": [ \"1970-01-01 00:00:01.000000\", \"2038-01-19 03:14:07.999999\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss.SSSSSS\",\"fraction\": [ 0, 6],\"defaultFraction\": 0,\"withTimeZone\": true}\n"
+                + "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("int(11)", "int(11)"))
+
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+        TapField ObjectIdField = nameFieldMap.get("int(11)");
+        assertEquals("intxxx", ObjectIdField.getDataType());
+
+    }
+
 }
