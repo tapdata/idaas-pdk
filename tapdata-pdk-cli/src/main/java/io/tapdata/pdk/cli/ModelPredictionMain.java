@@ -5,7 +5,7 @@ import picocli.CommandLine;
 public class ModelPredictionMain {
     public static void main(String[] args) {
         args = new String[]{
-                "modelPrediction", "-m", "/usr/local/Cellar/maven/3.6.2/libexec", "-o", "./output",
+                "modelPrediction", "-m", "/Users/aplomb/dev/env/apache-maven-3.6.3", "-o", "./output",
 //                "-i", "tapdata-api",
 //                "-i", "tapdata-pdk-api",
 //                "-i", "connectors/connector-core",

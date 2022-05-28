@@ -6,6 +6,7 @@ import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.Node;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
+import io.tapdata.pdk.core.memory.MemoryFetcher;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -18,7 +19,7 @@ import java.util.function.Consumer;
 /**
  * TODO start monitor thread for checking slow invocation
  */
-public class PDKInvocationMonitor {
+public class PDKInvocationMonitor implements MemoryFetcher {
     private static final String TAG = PDKInvocationMonitor.class.getSimpleName();
     private static volatile PDKInvocationMonitor instance = new PDKInvocationMonitor();
     private static final Object lock = new int[0];
@@ -161,5 +162,10 @@ public class PDKInvocationMonitor {
             id = Long.toHexString(System.currentTimeMillis()) + Long.toHexString(counter.getAndIncrement());
         }
         System.out.println("takes " + (System.currentTimeMillis() - time) + " id " + id);
+    }
+
+    @Override
+    public String memory() {
+        return null;
     }
 }
