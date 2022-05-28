@@ -4,6 +4,7 @@ import io.debezium.config.Configuration;
 import io.tapdata.connector.postgres.kit.EmptyKit;
 import io.tapdata.entity.simplify.TapSimplify;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -77,7 +78,8 @@ public class PostgresDebeziumConfig {
                 .with("transforms.tsFormat1.type", "org.apache.kafka.connect.transforms.TimestampConverter$Value")
                 .with("transforms.tsFormat1.target.type", "string")
                 .with("transforms.tsFormat1.field", "transaction_time")
-                .with("transforms.tsFormat1.format", "yyyy-MM-dd HH:mm:ss");
+                .with("transforms.tsFormat1.format", "yyyy-MM-dd HH:mm:ss")
+                .with("plugin.name", postgresConfig.getLogPluginName());
         if (EmptyKit.isNotEmpty(observedTableList)) {
             //construct tableWhiteList with schema.table(,) as <public.Student,postgres.test>
             String tableWhiteList = observedTableList.stream().map(v -> postgresConfig.getSchema() + "." + v).reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new);
@@ -86,4 +88,31 @@ public class PostgresDebeziumConfig {
         return builder.build();
     }
 
+    enum LogDecorderPlugins {
+        DECORDERBUFS("decoderbufs"),
+        WAL2JSON("wal2json"),
+        WAL2JSONRDS("wal2json_rds"),
+        WAL2JSONSTREMING("wal2json_streaming"),
+        WAL2JSONRDSSTREAMING("wal2json_rds_streaming"),
+        PGOUTPUT("pgoutput"),
+        ;
+
+        private String pluginName;
+
+        LogDecorderPlugins(String pluginName) {
+            this.pluginName = pluginName;
+        }
+
+        public String getPluginName() {
+            return pluginName;
+        }
+
+        private static HashMap<String, LogDecorderPlugins> map = new HashMap<>();
+
+        static {
+            for (LogDecorderPlugins value : LogDecorderPlugins.values()) {
+                map.put(value.getPluginName(), value);
+            }
+        }
+    }
 }

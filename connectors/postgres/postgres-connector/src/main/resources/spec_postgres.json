@@ -49,6 +49,39 @@
           "title": "Password",
           "x-decorator": "FormItem",
           "x-component": "Password"
+        },
+        "logPluginName": {
+          "type": "string",
+          "title": "LogPluginName",
+          "default": "DECORDERBUFS",
+          "x-decorator": "FormItem",
+          "x-component": "Select",
+          "enum": [
+            {
+              "label": "DECORDERBUFS",
+              "value": "decoderbufs"
+            },
+            {
+              "label": "WAL2JSON",
+              "value": "wal2json"
+            },
+            {
+              "label": "WAL2JSONRDS",
+              "value": "wal2json_rds"
+            },
+            {
+              "label": "WAL2JSONSTREMING",
+              "value": "wal2json_streaming"
+            },
+            {
+              "label": "WAL2JSONRDSSTREAMING",
+              "value": "wal2json_rds_streaming"
+            },
+            {
+              "label": "PGOUTPUT",
+              "value": "pgoutput"
+            }
+          ]
         }
       }
     }
