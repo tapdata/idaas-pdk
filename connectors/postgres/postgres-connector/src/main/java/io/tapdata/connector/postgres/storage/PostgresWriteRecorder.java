@@ -76,7 +76,7 @@ public class PostgresWriteRecorder {
                     + after.keySet().stream().map(k -> "\"" + k + "\"").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)
                     + ") VALUES(" + StringKit.copyString("?", after.size(), ",") + ") ";
             if (EmptyKit.isNotEmpty(uniqueCondition)) {
-                insertSql += "ON CONFLICT ON CONSTRAINT("
+                insertSql += "ON CONFLICT("
                         + tapTable.primaryKeys().stream().map(k -> "\"" + k + "\"").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)
                         + ") DO UPDATE SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new);
             }
@@ -108,7 +108,7 @@ public class PostgresWriteRecorder {
         if (EmptyKit.isNull(preparedStatement)) {
             preparedStatement = connection.prepareStatement("UPDATE \"" + tapTable.getId() + "\" SET " +
                     after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new) + " WHERE " +
-                    before.keySet().stream().map(k -> "(? IS NULL OR \"" + k + "\"=?)").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                    before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
         }
         preparedStatement.clearParameters();
         int pos = 1;
@@ -116,7 +116,6 @@ public class PostgresWriteRecorder {
             preparedStatement.setObject(pos++, after.get(key));
         }
         for (String key : before.keySet()) {
-            preparedStatement.setObject(pos++, before.get(key));
             preparedStatement.setObject(pos++, before.get(key));
         }
         preparedStatement.addBatch();
@@ -131,12 +130,11 @@ public class PostgresWriteRecorder {
         }
         if (EmptyKit.isNull(preparedStatement)) {
             preparedStatement = connection.prepareStatement("DELETE FROM \"" + tapTable.getId() + "\" WHERE " +
-                    before.keySet().stream().map(k -> "(? IS NULL OR \"" + k + "\"=?)").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                    before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
         }
         preparedStatement.clearParameters();
         int pos = 1;
         for (String key : before.keySet()) {
-            preparedStatement.setObject(pos++, before.get(key));
             preparedStatement.setObject(pos++, before.get(key));
         }
         preparedStatement.addBatch();
