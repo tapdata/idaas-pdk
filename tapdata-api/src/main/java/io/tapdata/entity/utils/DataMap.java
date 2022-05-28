@@ -1,7 +1,9 @@
 package io.tapdata.entity.utils;
 
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  *
@@ -25,6 +27,8 @@ public class DataMap extends LinkedHashMap<String, Object> {
 	}
 
 	public String getString(String key) {
-		return String.valueOf(super.getOrDefault(key, ""));
+		Object o = super.get(key);
+		if(null == o) return null;
+		return String.valueOf(o);
 	}
 }

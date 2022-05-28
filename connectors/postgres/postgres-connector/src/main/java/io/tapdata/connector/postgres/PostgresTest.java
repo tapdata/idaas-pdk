@@ -38,7 +38,7 @@ public class PostgresTest implements AutoCloseable {
     //Test pg connect and log in
     public TestItem testConnect() {
         try (
-                Connection connection = postgresJdbcContext.getConnection();
+                Connection connection = postgresJdbcContext.getConnection()
         ) {
             return testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY);
         } catch (Exception e) {
@@ -52,15 +52,13 @@ public class PostgresTest implements AutoCloseable {
                 Connection conn = postgresJdbcContext.getConnection();
                 PreparedStatement ps = conn.prepareStatement(
                         "SELECT count(*) FROM information_schema.table_privileges " +
-                                "WHERE grantee=? AND table_catalog=? AND table_schema=? ");
+                                "WHERE grantee=? AND table_catalog=? AND table_schema=? ")
         ) {
             AtomicInteger tablePrivileges = new AtomicInteger();
             ps.setObject(1, postgresConfig.getUser());
             ps.setObject(2, postgresConfig.getDatabase());
             ps.setObject(3, postgresConfig.getSchema());
-            postgresJdbcContext.query(ps, resultSet -> {
-                tablePrivileges.set(resultSet.getInt(1));
-            });
+            postgresJdbcContext.query(ps, resultSet -> tablePrivileges.set(resultSet.getInt(1)));
             if (tablePrivileges.get() >= 7 * tableCount()) {
                 return testItem(PostgresTestItem.CHECK_TABLE_PRIVILEGE.getContent(), TestItem.RESULT_SUCCESSFULLY);
             } else {
@@ -75,9 +73,8 @@ public class PostgresTest implements AutoCloseable {
     public TestItem testReplication() {
         try {
             AtomicBoolean rolReplication = new AtomicBoolean();
-            postgresJdbcContext.query(String.format(PG_ROLE_INFO, postgresConfig.getUser()), resultSet -> {
-                rolReplication.set(resultSet.getBoolean("rolreplication"));
-            });
+            postgresJdbcContext.query(String.format(PG_ROLE_INFO, postgresConfig.getUser()),
+                    resultSet -> rolReplication.set(resultSet.getBoolean("rolreplication")));
             if (rolReplication.get()) {
                 return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY);
             } else {
@@ -91,9 +88,7 @@ public class PostgresTest implements AutoCloseable {
 
     private int tableCount() throws Throwable {
         AtomicInteger tableCount = new AtomicInteger();
-        postgresJdbcContext.query(PG_TABLE_NUM, resultSet -> {
-            tableCount.set(resultSet.getInt(1));
-        });
+        postgresJdbcContext.query(PG_TABLE_NUM, resultSet -> tableCount.set(resultSet.getInt(1)));
         return tableCount.get();
     }
 

@@ -162,6 +162,7 @@ public class ModelPredictionCli extends CommonCli {
             TapTable generatedTable = generateAllTypesTable(sourceNode);
             if(generatedTable == null)
                 throw new NullPointerException("Generate all types for source " + sourceNode + " failed");
+
             for(ConnectorNode targetNode : connectorNodes) {
                 if(!sourceNode.equals(targetNode)) {
                     TapResult<LinkedHashMap<String, TapField>> result = InstanceFactory.instance(TargetTypesGenerator.class).convert(generatedTable.getNameFieldMap(), targetNode.getConnectorContext().getSpecification().getDataTypesMap(), targetNode.getCodecsFilterManager());
@@ -173,6 +174,16 @@ public class ModelPredictionCli extends CommonCli {
         }
         writeWorkbook();
         return 0;
+    }
+
+    private void specialDataTypesToTest(ConnectorNode sourceNode, TapTable generatedTable) {
+        if(sourceNode.getConnectorContext().getSpecification().getId().equals("mysql")) {
+            generatedTable.add(field("special_int(11)", "int(11)"));
+        }
+
+        if(sourceNode.getConnectorContext().getSpecification().getId().equals("mongodb")) {
+            generatedTable.add(field("special_string_id_primary", "string").primaryKeyPos(generatedTable.getNameFieldMap().size()));
+        }
     }
 
     private void writeWorkbook() {
@@ -209,19 +220,19 @@ public class ModelPredictionCli extends CommonCli {
         Map<String, Object[]> data = new LinkedHashMap<>();
         String sourceName = sourceNode.getConnectorContext().getSpecification().getName();
         String targetName = targetNode.getConnectorContext().getSpecification().getName();
-        data.put("1", new Object[] {"No.", sourceName + " type", sourceName + " model", targetName + " type", targetName + " model"});
+        data.put("1", new Object[] {"No.", "Field name", sourceName + " type", sourceName + " model", targetName + " type", targetName + " model"});
         Set<Map.Entry<String, TapField>> entries = sourceNameFieldMap.entrySet();
         int index = 0;
         for(Map.Entry<String, TapField> entry : entries) {
             TapField targetField = targetNameFieldMap.get(entry.getKey());
-            data.put(String.valueOf(index + 2), new Object[] {index + 1,
+            data.put(String.valueOf(index + 2), new Object[] {index + 1, entry.getKey(),
                     getDataTypeName(sourceNode, entry.getValue()), entry.getValue().getDataType(),
                     getDataTypeName(targetNode, targetField), targetField.getDataType()
             });
             index++;
         }
-        int sourceCommendIndex = 2;
-        int targetCommendIndex = 4;
+        int sourceCommendIndex = 3;
+        int targetCommendIndex = 5;
 
         //https://www.baeldung.com/apache-poi-change-cell-font
         //Iterate over data and write to sheet
@@ -578,6 +589,7 @@ public class ModelPredictionCli extends CommonCli {
             fillTestFields(tapTable, expression, tapMapping);
             return false;
         }, DefaultExpressionMatchingMap.ITERATE_TYPE_PREFIX_ONLY);
+        specialDataTypesToTest(node, tapTable);
         InstanceFactory.instance(TableFieldTypesGenerator.class).autoFill(tapTable.getNameFieldMap(), expressionMatchingMap);
         return tapTable;
     }

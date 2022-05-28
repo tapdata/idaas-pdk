@@ -13,38 +13,44 @@
 		  "title": "Host",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
-		  "default": "127.0.0.1"
+		  "default": "127.0.0.1",
+		  "apiServerKey": "database_host"
 		},
 		"port": {
 		  "type": "string",
 		  "title": "Port",
 		  "x-decorator": "FormItem",
 		  "x-component": "InputNumber",
-		  "default": 3306
+		  "default": 3306,
+		  "apiServerKey": "database_port"
 		},
 		"database": {
 		  "type": "string",
 		  "title": "Database Name",
 		  "x-decorator": "FormItem",
-		  "x-component": "Input"
+		  "x-component": "Input",
+		  "apiServerKey": "database_name"
 		},
 		"username": {
 		  "type": "string",
 		  "title": "Username",
 		  "x-decorator": "FormItem",
-		  "x-component": "Input"
+		  "x-component": "Input",
+		  "apiServerKey": "database_username"
 		},
 		"password": {
 		  "type": "string",
 		  "title": "Password",
 		  "x-decorator": "FormItem",
-		  "x-component": "Password"
+		  "x-component": "Password",
+		  "apiServerKey": "database_password"
 		},
 		"addtionalString": {
 		  "type": "string",
 		  "title": "Connection Parameter String",
 		  "x-decorator": "FormItem",
-		  "x-component": "Input"
+		  "x-component": "Input",
+		  "apiServerKey": "additionalString"
 		},
 		"timezone": {
 		  "type": "string",
@@ -173,7 +179,7 @@
 	  "fixed": true
 	},
 	"varchar($byte)": {
-      "name": "varchar",
+	  "name": "varchar",
 	  "to": "TapString",
 	  "byte": 16383,
 	  "defaultByte": 1,
@@ -181,24 +187,29 @@
 	},
 	"tinytext": {
 	  "to": "TapString",
-	  "byte": 255
+	  "byte": 255,
+	  "pkEnablement": false
 	},
 	"text": {
 	  "to": "TapString",
-	  "byte": "64k"
+	  "byte": "64k",
+	  "pkEnablement": false
 	},
 	"mediumtext": {
 	  "to": "TapString",
-	  "byte": "16m"
+	  "byte": "16m",
+	  "pkEnablement": false
 	},
 	"longtext": {
 	  "to": "TapString",
-	  "byte": "4g"
+	  "byte": "4g",
+	  "pkEnablement": false
 	},
 	"json": {
 	  "to": "TapMap",
 	  "byte": "4g",
-	  "queryOnly": true
+	  "queryOnly": true,
+	  "pkEnablement": false
 	},
 	"binary[($byte)]": {
 	  "to": "TapBinary",
@@ -231,7 +242,7 @@
 	  "to": "TapBinary",
 	  "queryOnly": true
 	},
-	"tinyint": {
+	"tinyint[($zerofill)]": {
 	  "to": "TapNumber",
 	  "bit": 8,
 	  "precision": 3,
@@ -240,7 +251,7 @@
 		255
 	  ]
 	},
-	"tinyint unsigned": {
+	"tinyint[($zerofill)] unsigned": {
 	  "to": "TapNumber",
 	  "bit": 8,
 	  "precision": 3,
@@ -256,7 +267,7 @@
 	"bit(1)": {
 	  "to": "TapBoolean"
 	},
-	"smallint": {
+	"smallint[($zerofill)]": {
 	  "to": "TapNumber",
 	  "bit": 16,
 	  "value": [
@@ -265,7 +276,7 @@
 	  ],
 	  "precision": 5
 	},
-	"smallint unsigned": {
+	"smallint[($zerofill)] unsigned": {
 	  "to": "TapNumber",
 	  "bit": 16,
 	  "precision": 5,
@@ -275,7 +286,7 @@
 	  ],
 	  "unsigned": "unsigned"
 	},
-	"mediumint": {
+	"mediumint[($zerofill)]": {
 	  "to": "TapNumber",
 	  "bit": 24,
 	  "precision": 7,
@@ -284,7 +295,7 @@
 		8388607
 	  ]
 	},
-	"mediumint unsigned": {
+	"mediumint[($zerofill)] unsigned": {
 	  "to": "TapNumber",
 	  "bit": 24,
 	  "precision": 8,
@@ -294,7 +305,7 @@
 	  ],
 	  "unsigned": "unsigned"
 	},
-	"int": {
+	"int[($zerofill)]": {
 	  "to": "TapNumber",
 	  "bit": 32,
 	  "precision": 10,
@@ -303,7 +314,7 @@
 		2147483647
 	  ]
 	},
-	"int unsigned": {
+	"int[($zerofill)] unsigned": {
 	  "to": "TapNumber",
 	  "bit": 32,
 	  "precision": 10,
@@ -312,7 +323,7 @@
 		4294967295
 	  ]
 	},
-	"bigint": {
+	"bigint[($zerofill)]": {
 	  "to": "TapNumber",
 	  "bit": 64,
 	  "precision": 19,
@@ -321,7 +332,7 @@
 		9223372036854775807
 	  ]
 	},
-	"bigint unsigned": {
+	"bigint[($zerofill)] unsigned": {
 	  "to": "TapNumber",
 	  "bit": 64,
 	  "precision": 20,
@@ -445,13 +456,13 @@
 	  "withTimeZone": true
 	},
 	"enum($enums)": {
-      "name": "enum",
+	  "name": "enum",
 	  "to": "TapString",
 	  "queryOnly": true,
 	  "byte": 16383
 	},
 	"set($sets)": {
-      "name": "set",
+	  "name": "set",
 	  "to": "TapString",
 	  "queryOnly": true,
 	  "byte": 16383

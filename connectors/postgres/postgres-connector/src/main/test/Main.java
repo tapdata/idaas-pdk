@@ -33,7 +33,7 @@ public class Main {
                 "WHERE col.table_catalog='COOLGJ' AND col.table_schema='public' AND col.table_name='TestD' \n" +
                 "ORDER BY col.table_name,col.ordinal_position");
         while (rs.next()) {
-            System.out.println(rs.getObject("column_default"));
+            System.out.println(rs.getString("column_default").length());
         }
         postgresJdbcContext.close();
 
