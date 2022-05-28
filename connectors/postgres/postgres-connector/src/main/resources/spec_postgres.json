@@ -12,43 +12,50 @@
           "type": "string",
           "title": "Host",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+          "apiServerKey": "database_host"
         },
         "port": {
           "type": "string",
           "title": "Port",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+          "apiServerKey": "database_port"
         },
         "database": {
           "type": "string",
           "title": "Database",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+		  "apiServerKey": "database_name"
         },
         "schema": {
           "type": "string",
           "title": "Schema",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+		  "apiServerKey": "database_owner"
         },
         "extParams": {
           "type": "string",
           "title": "ExtendParams",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+		  "apiServerKey": "additionalString"
         },
         "user": {
           "type": "string",
           "title": "User",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+		  "apiServerKey": "database_username"
         },
         "password": {
           "type": "string",
           "title": "Password",
           "x-decorator": "FormItem",
-          "x-component": "Password"
+          "x-component": "Password",
+		  "apiServerKey": "database_password"
         }
       }
     }

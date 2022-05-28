@@ -13,38 +13,44 @@
 		  "title": "Host",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
-		  "default": "127.0.0.1"
+		  "default": "127.0.0.1",
+		  "apiServerKey": "database_host"
 		},
 		"port": {
 		  "type": "string",
 		  "title": "Port",
 		  "x-decorator": "FormItem",
 		  "x-component": "InputNumber",
-		  "default": 3306
+		  "default": 3306,
+		  "apiServerKey": "database_port"
 		},
 		"database": {
 		  "type": "string",
 		  "title": "Database Name",
 		  "x-decorator": "FormItem",
-		  "x-component": "Input"
+		  "x-component": "Input",
+		  "apiServerKey": "database_name"
 		},
 		"username": {
 		  "type": "string",
 		  "title": "Username",
 		  "x-decorator": "FormItem",
-		  "x-component": "Input"
+		  "x-component": "Input",
+		  "apiServerKey": "database_username"
 		},
 		"password": {
 		  "type": "string",
 		  "title": "Password",
 		  "x-decorator": "FormItem",
-		  "x-component": "Password"
+		  "x-component": "Password",
+		  "apiServerKey": "database_password"
 		},
 		"addtionalString": {
 		  "type": "string",
 		  "title": "Connection Parameter String",
 		  "x-decorator": "FormItem",
-		  "x-component": "Input"
+		  "x-component": "Input",
+		  "apiServerKey": "additionalString"
 		},
 		"timezone": {
 		  "type": "string",
@@ -173,7 +179,7 @@
 	  "fixed": true
 	},
 	"varchar($byte)": {
-      "name": "varchar",
+	  "name": "varchar",
 	  "to": "TapString",
 	  "byte": 16383,
 	  "defaultByte": 1,
@@ -445,13 +451,13 @@
 	  "withTimeZone": true
 	},
 	"enum($enums)": {
-      "name": "enum",
+	  "name": "enum",
 	  "to": "TapString",
 	  "queryOnly": true,
 	  "byte": 16383
 	},
 	"set($sets)": {
-      "name": "set",
+	  "name": "set",
 	  "to": "TapString",
 	  "queryOnly": true,
 	  "byte": 16383
