@@ -187,24 +187,29 @@
 	},
 	"tinytext": {
 	  "to": "TapString",
-	  "byte": 255
+	  "byte": 255,
+	  "pkEnablement": false
 	},
 	"text": {
 	  "to": "TapString",
-	  "byte": "64k"
+	  "byte": "64k",
+	  "pkEnablement": false
 	},
 	"mediumtext": {
 	  "to": "TapString",
-	  "byte": "16m"
+	  "byte": "16m",
+	  "pkEnablement": false
 	},
 	"longtext": {
 	  "to": "TapString",
-	  "byte": "4g"
+	  "byte": "4g",
+	  "pkEnablement": false
 	},
 	"json": {
 	  "to": "TapMap",
 	  "byte": "4g",
-	  "queryOnly": true
+	  "queryOnly": true,
+	  "pkEnablement": false
 	},
 	"binary[($byte)]": {
 	  "to": "TapBinary",
