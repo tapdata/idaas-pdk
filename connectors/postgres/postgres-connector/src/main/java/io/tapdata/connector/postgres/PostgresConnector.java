@@ -269,7 +269,7 @@ public class PostgresConnector extends ConnectorBase {
             }
             if (EmptyKit.isNotEmpty(tapTable.getIndexList())) {
                 tapTable.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
-                        sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
+                        sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
                                 i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
                                         .reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new) + ')'));
             }
