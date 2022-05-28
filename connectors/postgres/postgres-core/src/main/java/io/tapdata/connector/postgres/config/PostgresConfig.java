@@ -29,6 +29,7 @@ public class PostgresConfig implements Serializable {
     private String schema;
     private String user;
     private String password;
+    private String logPluginName;
     private int insertBatchSize = 1000;
 
     public static PostgresConfig load(String jsonFile) {
@@ -146,5 +147,13 @@ public class PostgresConfig implements Serializable {
 
     public void setInsertBatchSize(int insertBatchSize) {
         this.insertBatchSize = insertBatchSize;
+    }
+
+    public String getLogPluginName() {
+        return logPluginName;
+    }
+
+    public void setLogPluginName(String logPluginName) {
+        this.logPluginName = logPluginName;
     }
 }
