@@ -63,6 +63,7 @@
           "default": "DECORDERBUFS",
           "x-decorator": "FormItem",
           "x-component": "Select",
+          "apiServerKey": "logPlugin",
           "enum": [
             {
               "label": "DECORDERBUFS",
