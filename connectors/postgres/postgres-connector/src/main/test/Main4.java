@@ -1,9 +1,11 @@
 import io.tapdata.entity.utils.DataMap;
 
+import java.nio.ByteBuffer;
+
 public class Main4 {
     public static void main(String[] args) {
-        DataMap dataMap = new DataMap();
-        dataMap.put("aaa", null);
-        System.out.println(dataMap.getString("aaa").length());
+        Long i = 22222L;
+
+        System.out.println(i.byteValue());
     }
 }

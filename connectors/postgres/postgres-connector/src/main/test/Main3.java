@@ -19,13 +19,17 @@ public class Main3 {
         postgresConfig.setPassword("gj0628");
         PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
         Connection connection = postgresJdbcContext.getConnection();
+//        PreparedStatement preparedStatement = connection.prepareStatement(
+//                "DELETE FROM \"PgTest1234\" WHERE \"ddd\"=? or ((COALESCE(\"ddd\", null) is null) and (COALESCE(?, null) is null))");
         PreparedStatement preparedStatement = connection.prepareStatement(
-                "DELETE FROM \"PgTest1234\" WHERE (  ? is null)");
-        preparedStatement.setNull(1, Types.DATE);
-//        preparedStatement.setObject(2,new java.sql.Date(new Date().getTime()));
+                "INSERT INTO \"PgTest1234\" VALUES ('hhhh',?,'2020-01-02',?)");
+        preparedStatement.setObject(1, "55");
+        preparedStatement.setObject(2, "56767.8");
         preparedStatement.addBatch();
         preparedStatement.executeBatch();
+        connection.commit();
         postgresJdbcContext.close();
+
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {
 //            rs.last();

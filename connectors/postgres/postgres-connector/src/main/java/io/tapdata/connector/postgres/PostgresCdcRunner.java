@@ -5,6 +5,7 @@ import io.debezium.engine.DebeziumEngine;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.connector.postgres.config.PostgresDebeziumConfig;
 import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.connector.postgres.kit.NumberKit;
 import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
@@ -17,6 +18,7 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.List;
@@ -166,6 +168,9 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             Object obj = struct.get(field.name());
             if (obj instanceof ByteBuffer) {
                 obj = struct.getBytes(field.name());
+            } else if (obj instanceof Struct) {
+                String str = new String(((Struct) obj).getBytes("value"));
+                obj = BigDecimal.valueOf(NumberKit.bytes2long(((Struct) obj).getBytes("value")), (int) ((Struct) obj).get("scale"));
             }
             dataMap.put(field.name(), obj);
         });

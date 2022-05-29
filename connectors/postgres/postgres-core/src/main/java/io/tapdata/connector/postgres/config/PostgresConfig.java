@@ -29,7 +29,7 @@ public class PostgresConfig implements Serializable {
     private String schema;
     private String user;
     private String password;
-    private String logPluginName;
+    private String logPluginName = "decoderbufs";
     private int insertBatchSize = 1000;
 
     public static PostgresConfig load(String jsonFile) {

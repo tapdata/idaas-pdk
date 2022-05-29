@@ -39,8 +39,6 @@ public class PostgresSqlMaker {
             builder.append('\"').append(tapField.getName()).append("\" ").append(tapField.getDataType()).append(' ');
             if (tapField.getNullable() != null && !tapField.getNullable()) {
                 builder.append("NOT NULL").append(' ');
-            } else {
-                builder.append("NULL").append(' ');
             }
             if (tapField.getDefaultValue() != null) {
                 builder.append("DEFAULT").append(' ').append(tapField.getDefaultValue()).append(' ');
