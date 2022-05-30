@@ -409,8 +409,8 @@ public class PostgresConnector extends ConnectorBase {
             //last events those less than eventBatchSize
             if (EmptyKit.isNotEmpty(tapEvents)) {
                 postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + tapEvents.size());
-                eventsOffsetConsumer.accept(tapEvents, postgresOffset);
             }
+            eventsOffsetConsumer.accept(tapEvents, postgresOffset);
         });
 
     }
