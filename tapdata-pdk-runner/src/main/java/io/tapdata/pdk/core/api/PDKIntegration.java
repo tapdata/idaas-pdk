@@ -329,31 +329,6 @@ public class PDKIntegration {
         }
     }
 
-    public static class SourceConnectorBuilder extends ConnectorBuilder<SourceNode> {
-        public SourceNode build() {
-            checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
-            if(nodeInstance == null)
-                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("Source not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
-            SourceNode sourceNode = new SourceNode();
-            sourceNode.init((TapConnector) nodeInstance.getTapNode());
-            sourceNode.dagId = dagId;
-            sourceNode.associateId = associateId;
-            sourceNode.tasks = tasks;
-            sourceNode.table = table;
-            sourceNode.tables = tables;
-            sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            sourceNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
-            sourceNode.connectorContext.setTableMap(tableMap);
-            sourceNode.connectorContext.setStateMap(stateMap);
-
-            PDKInvocationMonitor.getInstance().invokePDKMethod(sourceNode, PDKMethod.REGISTER_CAPABILITIES,
-                    sourceNode::registerCapabilities,
-                    MessageFormat.format("call source functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
-            return sourceNode;
-        }
-    }
-
     public static class ConnectorBuilderEx extends ConnectorBuilder<ConnectorNode> {
         public ConnectorNode build() {
             checkParams();
@@ -379,31 +354,6 @@ public class PDKIntegration {
         }
     }
 
-    public static class TargetConnectorBuilder extends ConnectorBuilder<TargetNode> {
-        public TargetNode build() {
-            checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
-            if(nodeInstance == null)
-                throw new CoreException(PDKRunnerErrorCodes.PDK_TARGET_NOTFOUND, MessageFormat.format("Target not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
-            TargetNode targetNode = new TargetNode();
-            targetNode.dagId = dagId;
-            targetNode.associateId = associateId;
-            targetNode.tasks = tasks;
-            targetNode.table = table;
-            targetNode.tables = tables;
-            targetNode.init((TapConnector) nodeInstance.getTapNode());
-            targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            targetNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
-            targetNode.connectorContext.setTableMap(tableMap);
-            targetNode.connectorContext.setStateMap(stateMap);
-
-            PDKInvocationMonitor.getInstance().invokePDKMethod(targetNode, PDKMethod.REGISTER_CAPABILITIES,
-                    targetNode::registerCapabilities,
-                    MessageFormat.format("call target functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
-            return targetNode;
-        }
-    }
-
     public static class ProcessorConnectorBuilder extends ProcessorBuilder<ProcessorNode> {
         public ProcessorNode build() {
             checkParams();
@@ -421,55 +371,6 @@ public class PDKIntegration {
                     () -> processorNode.processorFunctions(processorNode.processorFunctions),
                     MessageFormat.format("call processor functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
             return processorNode;
-        }
-    }
-
-    public static class SourceAndTargetConnectorBuilder extends ConnectorBuilder<SourceAndTargetNode> {
-        public SourceAndTargetNode build() {
-            checkParams();
-            TapNodeInstance nodeInstance = TapConnectorManager.getInstance().createConnectorInstance(associateId, pdkId, group, version);
-            if(nodeInstance == null)
-                throw new CoreException(PDKRunnerErrorCodes.PDK_PROCESSOR_NOTFOUND, MessageFormat.format("SourceAndTarget not found for pdkId {0} group {1} version {2} for associateId {3}", pdkId, group, version, associateId));
-
-            TapConnectorContext nodeContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
-            nodeContext.setTableMap(tableMap);
-            nodeContext.setStateMap(stateMap);
-
-            ConnectorFunctions connectorFunctions = new ConnectorFunctions();
-            TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
-
-            SourceNode sourceNode = new SourceNode();
-            sourceNode.init((TapConnector) nodeInstance.getTapNode(), codecRegistry, connectorFunctions);
-            sourceNode.dagId = dagId;
-            sourceNode.associateId = associateId;
-            sourceNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            sourceNode.connectorContext = nodeContext;
-            sourceNode.tasks = tasks;
-            sourceNode.table = table;
-            sourceNode.tables = tables;
-
-            TargetNode targetNode = new TargetNode();
-            targetNode.dagId = dagId;
-            targetNode.associateId = associateId;
-            targetNode.init((TapConnector) nodeInstance.getTapNode(), codecRegistry, connectorFunctions);
-            targetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            targetNode.connectorContext = nodeContext;
-            targetNode.tasks = tasks;
-            targetNode.table = table;
-            targetNode.tables = tables;
-
-            //Source and Target are the same object, will only invoke the method once, no matter source or target, the method is the same.
-
-            PDKInvocationMonitor.getInstance().invokePDKMethod(targetNode, PDKMethod.REGISTER_CAPABILITIES,
-                    targetNode::registerCapabilities,
-                    MessageFormat.format("call target functions {0} associateId {1}", TapNodeSpecification.idAndGroup(pdkId, group, version), associateId), TAG);
-            SourceAndTargetNode sourceAndTargetNode = new SourceAndTargetNode();
-            sourceAndTargetNode.dagId = dagId;
-            sourceAndTargetNode.associateId = associateId;
-            sourceAndTargetNode.tapNodeInfo = nodeInstance.getTapNodeInfo();
-            sourceAndTargetNode.sourceNode = sourceNode;
-            sourceAndTargetNode.targetNode = targetNode;
-            return sourceAndTargetNode;
         }
     }
 
@@ -497,39 +398,6 @@ public class PDKIntegration {
     public static boolean hasJar(String oneJarPath) {
         init();
         return tapConnectorManager.checkTapConnectorByJarName(oneJarPath);
-    }
-
-    /**
-     * use createConnectorBuilder please
-     *
-     * @return
-     */
-    @Deprecated
-    public static ConnectorBuilder<SourceAndTargetNode> createSourceAndTargetBuilder() {
-        init();
-        return new SourceAndTargetConnectorBuilder();
-    }
-
-    /**
-     * use createConnectorBuilder please
-     *
-     * @return
-     */
-    @Deprecated
-    public static ConnectorBuilder<SourceNode> createSourceBuilder() {
-        init();
-        return new SourceConnectorBuilder();
-    }
-
-    /**
-     * use createConnectorBuilder please
-     *
-     * @return
-     */
-    @Deprecated
-    public static ConnectorBuilder<TargetNode> createTargetBuilder() {
-        init();
-        return new TargetConnectorBuilder();
     }
 
     public static ProcessorBuilder<ProcessorNode> createProcessorBuilder() {
