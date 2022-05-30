@@ -97,16 +97,15 @@ public class PostgresWriteRecorder {
         preparedStatement.addBatch();
     }
 
+    //before is always empty
     public void addUpdateBatch(Map<String, Object> before, Map<String, Object> after) throws SQLException {
-        if (EmptyKit.isEmpty(before) || EmptyKit.isEmpty(after)) {
+        if (EmptyKit.isEmpty(after) || EmptyKit.isEmpty(uniqueCondition)) {
             return;
         }
         for (Map.Entry<String, Object> entry : before.entrySet()) {
             after.remove(entry.getKey(), entry.getValue());
         }
-        if (EmptyKit.isNotEmpty(uniqueCondition)) {
-            before.keySet().removeIf(k -> !uniqueCondition.contains(k));
-        }
+        uniqueCondition.forEach(k -> before.put(k, after.get(k)));
         if (EmptyKit.isNull(preparedStatement)) {
             if (hasPk) {
                 preparedStatement = connection.prepareStatement("UPDATE \"" + tapTable.getId() + "\" SET " +

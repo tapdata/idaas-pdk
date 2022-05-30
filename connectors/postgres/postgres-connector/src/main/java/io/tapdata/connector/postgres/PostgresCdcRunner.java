@@ -164,6 +164,9 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     private DataMap getMapFromStruct(Struct struct) {
         DataMap dataMap = new DataMap();
+        if (EmptyKit.isNull(struct)) {
+            return dataMap;
+        }
         struct.schema().fields().forEach(field -> {
             Object obj = struct.get(field.name());
             if (obj instanceof ByteBuffer) {
