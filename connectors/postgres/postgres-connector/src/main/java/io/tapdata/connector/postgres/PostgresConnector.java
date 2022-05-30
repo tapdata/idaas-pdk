@@ -52,6 +52,7 @@ public class PostgresConnector extends ConnectorBase {
     private PostgresConfig postgresConfig;
     private PostgresJdbcContext postgresJdbcContext;
     private PostgresCdcRunner cdcRunner;
+    private String postgresVersion;
     private static final int BATCH_READ_SIZE = 5000;
     private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
 
@@ -208,6 +209,7 @@ public class PostgresConnector extends ConnectorBase {
         if (EmptyKit.isNull(postgresJdbcContext)) {
             postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
         }
+        postgresVersion = postgresJdbcContext.queryVersion();
     }
 
     //one filter can only match one record
@@ -268,10 +270,21 @@ public class PostgresConnector extends ConnectorBase {
                 }
             }
             if (EmptyKit.isNotEmpty(tapTable.getIndexList())) {
-                tapTable.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
-                        sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
-                                i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
-                                        .reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new) + ')'));
+                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+                    tapTable.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
+                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
+                                            .reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new) + ')'));
+                } else {
+                    List<String> existsIndexes = TapSimplify.list();
+                    postgresJdbcContext.query("SELECT relname FROM pg_class WHERE relname IN (" +
+                                    tapTable.getIndexList().stream().map(i -> "'" + i.getName() + "'").collect(Collectors.joining(",")) + ") AND relkind = 'i'",
+                            resultSet -> existsIndexes.addAll(DbKit.getDataFromResultSet(resultSet).stream().map(v -> v.getString("relname")).collect(Collectors.toList())));
+                    tapTable.getIndexList().stream().filter(i -> !i.isPrimary() && !existsIndexes.contains(i.getName())).forEach(i ->
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
+                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
+                                            .reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new) + ')'));
+                }
             }
             postgresJdbcContext.batchExecute(sqls);
         } catch (Throwable e) {
