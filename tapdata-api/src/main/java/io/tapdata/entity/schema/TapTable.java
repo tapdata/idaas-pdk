@@ -3,232 +3,250 @@ package io.tapdata.entity.schema;
 import java.util.*;
 
 public class TapTable extends TapItem<TapField> {
-    public TapTable() {}
-    public TapTable(String nameAndId) {
-        this(nameAndId, nameAndId);
-    }
-    public TapTable(String id, String name) {
-        this.name = name;
-        this.id = id;
-    }
-    private Long lastUpdate;
-    public TapTable lastUpdate(Long lastUpdate) {
-        this.lastUpdate = lastUpdate;
-        return this;
-    }
+	public TapTable() {
+	}
 
-    /**
-     * Please don't add or remove on this field. If you need to add or delete, please set new one.
-     * Protect ConcurrentModification.
-     */
-    private LinkedHashMap<String, TapField> nameFieldMap;
+	public TapTable(String nameAndId) {
+		this(nameAndId, nameAndId);
+	}
 
-    /**
-     * For the database which don't need create table before insert records.
-     *
-     * Given the default primary keys, if user don't give the specific primary key, will use defaultPrimaryKeys as primary keys.
-     */
-    private List<String> defaultPrimaryKeys;
-    public TapTable defaultPrimaryKeys(List<String> defaultPrimaryKeys) {
-        this.defaultPrimaryKeys = defaultPrimaryKeys;
-        return this;
-    }
+	public TapTable(String id, String name) {
+		this.name = name;
+		this.id = id;
+	}
 
-    private List<TapIndex> indexList;
+	private Long lastUpdate;
 
-    private String id;
+	public TapTable lastUpdate(Long lastUpdate) {
+		this.lastUpdate = lastUpdate;
+		return this;
+	}
 
-    private String name;
-    /**
-     * 存储引擎， innoDB
-     */
-    private String storageEngine;
-    /**
-     * 字符编码
-     */
-    private String charset;
+	/**
+	 * Please don't add or remove on this field. If you need to add or delete, please set new one.
+	 * Protect ConcurrentModification.
+	 */
+	private LinkedHashMap<String, TapField> nameFieldMap;
 
-    private String comment;
+	/**
+	 * For the database which don't need create table before insert records.
+	 * <p>
+	 * Given the default primary keys, if user don't give the specific primary key, will use defaultPrimaryKeys as primary keys.
+	 */
+	private List<String> defaultPrimaryKeys;
 
-    protected String pdkId;
-    public TapTable pdkId(String pdkId) {
-        this.pdkId = pdkId;
-        return this;
-    }
-    protected String pdkGroup;
-    public TapTable pdkGroup(String pdkGroup) {
-        this.pdkGroup = pdkGroup;
-        return this;
-    }
-    protected String pdkVersion;
-    public TapTable pdkVersion(String pdkVersion) {
-        this.pdkVersion = pdkVersion;
-        return this;
-    }
+	public TapTable defaultPrimaryKeys(List<String> defaultPrimaryKeys) {
+		this.defaultPrimaryKeys = defaultPrimaryKeys;
+		return this;
+	}
 
-    public String toString() {
-        return "TapTable id " + id +
-                " name " + name +
-                " storageEngine " + storageEngine +
-                " charset " + charset +
-                " number of fields " + (nameFieldMap != null ? nameFieldMap.size() : 0);
-    }
+	private List<TapIndex> indexList;
 
-    public TapTable add(TapIndex index) {
-        indexCheck(index);
-        if(indexList == null) {
-            indexList = new ArrayList<>();
-        }
-        indexList.add(index);
-        return this;
-    }
+	private String id;
 
-    public TapTable add(TapField field) {
-        fieldCheck(field);
-        if(nameFieldMap == null) {
-            nameFieldMap = new LinkedHashMap<>();
-        }
-        nameFieldMap.put(field.getName(), field);
-        if(field.getPos() == null) {
-            field.pos(nameFieldMap.size());
-        }
-        return this;
-    }
+	private String name;
+	/**
+	 * 存储引擎， innoDB
+	 */
+	private String storageEngine;
+	/**
+	 * 字符编码
+	 */
+	private String charset;
 
-    private void indexCheck(TapIndex index) {
-        if(index == null)
-            throw new IllegalArgumentException("index is null when add into table " + name);
-        if(index.getIndexFields() == null || index.getIndexFields().isEmpty())
-            throw new IllegalArgumentException("index fields is null or empty when add into table " + name);
-    }
+	private String comment;
 
-    private void fieldCheck(TapField field) {
-        if(field == null)
-            throw new IllegalArgumentException("field is null when add into table " + name);
-        if(field.getName() == null)
-            throw new IllegalArgumentException("field name is null when add into table " + name);
-    }
+	protected String pdkId;
 
-    public Collection<String> primaryKeys() {
-        LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
-        if(nameFieldMapCopyRef == null)
-            return Collections.emptyList();
+	public TapTable pdkId(String pdkId) {
+		this.pdkId = pdkId;
+		return this;
+	}
 
-        Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
-        for (String key : nameFieldMapCopyRef.keySet()) {
-            TapField field = nameFieldMapCopyRef.get(key);
-            if (field != null && field.getPrimaryKey() != null && field.getPrimaryKey()) {
-                posPrimaryKeyName.put(field.getPrimaryKeyPos(), field.getName());
-            }
-        }
-        return posPrimaryKeyName.values();
-    }
+	protected String pdkGroup;
 
-    @Override
-    public Collection<TapField> childItems() {
-        if(nameFieldMap != null)
-            return nameFieldMap.values();
-        return null;
-    }
+	public TapTable pdkGroup(String pdkGroup) {
+		this.pdkGroup = pdkGroup;
+		return this;
+	}
 
-    public String getName() {
-        return name;
-    }
+	protected String pdkVersion;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public TapTable pdkVersion(String pdkVersion) {
+		this.pdkVersion = pdkVersion;
+		return this;
+	}
 
-    public void putField(String name, TapField field) {
-        field.setName(name);
-        add(field);
-    }
+	private Collection<String> logicPrimaries;
 
-    public LinkedHashMap<String, TapField> getNameFieldMap() {
-        return nameFieldMap;
-    }
+	public String toString() {
+		return "TapTable id " + id +
+				" name " + name +
+				" storageEngine " + storageEngine +
+				" charset " + charset +
+				" number of fields " + (nameFieldMap != null ? nameFieldMap.size() : 0);
+	}
 
-    public void setNameFieldMap(LinkedHashMap<String, TapField> nameFieldMap) {
-        this.nameFieldMap = nameFieldMap;
-    }
+	public TapTable add(TapIndex index) {
+		indexCheck(index);
+		if (indexList == null) {
+			indexList = new ArrayList<>();
+		}
+		indexList.add(index);
+		return this;
+	}
 
-    public String getStorageEngine() {
-        return storageEngine;
-    }
+	public TapTable add(TapField field) {
+		fieldCheck(field);
+		if (nameFieldMap == null) {
+			nameFieldMap = new LinkedHashMap<>();
+		}
+		nameFieldMap.put(field.getName(), field);
+		if (field.getPos() == null) {
+			field.pos(nameFieldMap.size());
+		}
+		return this;
+	}
 
-    public void setStorageEngine(String storageEngine) {
-        this.storageEngine = storageEngine;
-    }
+	private void indexCheck(TapIndex index) {
+		if (index == null)
+			throw new IllegalArgumentException("index is null when add into table " + name);
+		if (index.getIndexFields() == null || index.getIndexFields().isEmpty())
+			throw new IllegalArgumentException("index fields is null or empty when add into table " + name);
+	}
 
-    public String getCharset() {
-        return charset;
-    }
+	private void fieldCheck(TapField field) {
+		if (field == null)
+			throw new IllegalArgumentException("field is null when add into table " + name);
+		if (field.getName() == null)
+			throw new IllegalArgumentException("field name is null when add into table " + name);
+	}
 
-    public void setCharset(String charset) {
-        this.charset = charset;
-    }
+	public Collection<String> primaryKeys() {
+		if (null != logicPrimaries && logicPrimaries.size() > 0) return logicPrimaries;
+		LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
+		if (nameFieldMapCopyRef == null)
+			return Collections.emptyList();
 
-    public String getId() {
-        return id;
-    }
+		Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
+		for (String key : nameFieldMapCopyRef.keySet()) {
+			TapField field = nameFieldMapCopyRef.get(key);
+			if (field != null && field.getPrimaryKey() != null && field.getPrimaryKey()) {
+				posPrimaryKeyName.put(field.getPrimaryKeyPos(), field.getName());
+			}
+		}
+		return posPrimaryKeyName.values();
+	}
 
-    public void setId(String id) {
-        this.id = id;
-    }
+	@Override
+	public Collection<TapField> childItems() {
+		if (nameFieldMap != null)
+			return nameFieldMap.values();
+		return null;
+	}
 
-    public List<TapIndex> getIndexList() {
-        return indexList;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setIndexList(List<TapIndex> indexList) {
-        this.indexList = indexList;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public List<String> getDefaultPrimaryKeys() {
-        return defaultPrimaryKeys;
-    }
+	public void putField(String name, TapField field) {
+		field.setName(name);
+		add(field);
+	}
 
-    public void setDefaultPrimaryKeys(List<String> defaultPrimaryKeys) {
-        this.defaultPrimaryKeys = defaultPrimaryKeys;
-    }
+	public LinkedHashMap<String, TapField> getNameFieldMap() {
+		return nameFieldMap;
+	}
 
-    public String getPdkId() {
-        return pdkId;
-    }
+	public void setNameFieldMap(LinkedHashMap<String, TapField> nameFieldMap) {
+		this.nameFieldMap = nameFieldMap;
+	}
 
-    public void setPdkId(String pdkId) {
-        this.pdkId = pdkId;
-    }
+	public String getStorageEngine() {
+		return storageEngine;
+	}
 
-    public String getPdkGroup() {
-        return pdkGroup;
-    }
+	public void setStorageEngine(String storageEngine) {
+		this.storageEngine = storageEngine;
+	}
 
-    public void setPdkGroup(String pdkGroup) {
-        this.pdkGroup = pdkGroup;
-    }
+	public String getCharset() {
+		return charset;
+	}
 
-    public String getPdkVersion() {
-        return pdkVersion;
-    }
+	public void setCharset(String charset) {
+		this.charset = charset;
+	}
 
-    public void setPdkVersion(String pdkVersion) {
-        this.pdkVersion = pdkVersion;
-    }
+	public String getId() {
+		return id;
+	}
 
-    public String getComment() {
-        return comment;
-    }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
+	public List<TapIndex> getIndexList() {
+		return indexList;
+	}
 
-    public Long getLastUpdate() {
-        return lastUpdate;
-    }
+	public void setIndexList(List<TapIndex> indexList) {
+		this.indexList = indexList;
+	}
 
-    public void setLastUpdate(Long lastUpdate) {
-        this.lastUpdate = lastUpdate;
-    }
+	public List<String> getDefaultPrimaryKeys() {
+		return defaultPrimaryKeys;
+	}
+
+	public void setDefaultPrimaryKeys(List<String> defaultPrimaryKeys) {
+		this.defaultPrimaryKeys = defaultPrimaryKeys;
+	}
+
+	public String getPdkId() {
+		return pdkId;
+	}
+
+	public void setPdkId(String pdkId) {
+		this.pdkId = pdkId;
+	}
+
+	public String getPdkGroup() {
+		return pdkGroup;
+	}
+
+	public void setPdkGroup(String pdkGroup) {
+		this.pdkGroup = pdkGroup;
+	}
+
+	public String getPdkVersion() {
+		return pdkVersion;
+	}
+
+	public void setPdkVersion(String pdkVersion) {
+		this.pdkVersion = pdkVersion;
+	}
+
+	public String getComment() {
+		return comment;
+	}
+
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
+
+	public Long getLastUpdate() {
+		return lastUpdate;
+	}
+
+	public void setLastUpdate(Long lastUpdate) {
+		this.lastUpdate = lastUpdate;
+	}
+
+	public void setLogicPrimaries(Collection<String> logicPrimaries) {
+		this.logicPrimaries = logicPrimaries;
+	}
 }
