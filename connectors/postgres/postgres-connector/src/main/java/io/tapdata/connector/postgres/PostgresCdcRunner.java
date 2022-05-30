@@ -55,13 +55,20 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         return this;
     }
 
+    public PostgresCdcRunner useSlot(String slotName) {
+        this.runnerName = slotName;
+        return this;
+    }
+
     public PostgresCdcRunner watch(List<String> observedTableList) {
         this.observedTableList = observedTableList;
         postgresDebeziumConfig = new PostgresDebeziumConfig()
                 .use(postgresConfig)
                 .watch(observedTableList);
+        if (EmptyKit.isNotNull(runnerName)) {
+            postgresDebeziumConfig.useSlot(runnerName);
+        }
         this.runnerName = postgresDebeziumConfig.getSlotName();
-
         return this;
     }
 

@@ -2,12 +2,10 @@ package io.tapdata.connector.postgres.config;
 
 import io.debezium.config.Configuration;
 import io.tapdata.connector.postgres.kit.EmptyKit;
-import io.tapdata.entity.simplify.TapSimplify;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * debezium config for postgres
@@ -34,9 +32,12 @@ public class PostgresDebeziumConfig {
     public PostgresDebeziumConfig watch(List<String> observedTableList) {
         this.observedTableList = observedTableList;
         //unique and can find it
-        this.slotName = "cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig) + (EmptyKit.isNotEmpty(observedTableList) ?
-                        TapSimplify.toJson(observedTableList.stream().sorted().collect(Collectors.toList())) : "null")).getBytes())
-                .toString().replaceAll("-", "_");
+        if (EmptyKit.isNull(slotName)) {
+//            this.slotName = "tapdata_cdc_" + UUID.nameUUIDFromBytes((TapSimplify.toJson(postgresConfig) + (EmptyKit.isNotEmpty(observedTableList) ?
+//                            TapSimplify.toJson(observedTableList.stream().sorted().collect(Collectors.toList())) : "null")).getBytes())
+//                    .toString().replaceAll("-", "_");
+            this.slotName = "tapdata_cdc_" + UUID.randomUUID().toString().replaceAll("-", "_");
+        }
         this.namespace = slotName + "-postgres-connector";
         return this;
     }
@@ -47,6 +48,11 @@ public class PostgresDebeziumConfig {
 
     public String getSlotName() {
         return slotName;
+    }
+
+    public PostgresDebeziumConfig useSlot(String slotName) {
+        this.slotName = slotName;
+        return this;
     }
 
     public String getNamespace() {
