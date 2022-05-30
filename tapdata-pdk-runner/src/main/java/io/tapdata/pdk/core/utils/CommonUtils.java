@@ -6,12 +6,21 @@ import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.error.QuiteException;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CommonUtils {
+    static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+    public static String dateString() {
+        return dateString(new Date());
+    }
+    public static String dateString(Date date) {
+        return sdf.format(date);
+    }
     public static String uuid() {
         return UUID.randomUUID().toString().replace("-", "");
     }

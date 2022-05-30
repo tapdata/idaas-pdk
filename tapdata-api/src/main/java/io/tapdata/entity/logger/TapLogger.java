@@ -39,6 +39,8 @@ public class TapLogger {
         void error(String log);
 
         void fatal(String log);
+
+        void memory(String memoryLog);
     }
 
     public static String getClassTag(Class<?> clazz) {
@@ -115,6 +117,15 @@ public class TapLogger {
             System.out.println("[FATAL] " + log);
     }
 
+    public static void memory(String tag, String msg, Object... params) {
+        if(!enable || level > LEVEL_FATAL) return;
+
+        String log = getMemoryMsg(tag, FormatUtils.format(msg, params));
+        if (logListener != null)
+            logListener.memory(log);
+        else
+            System.out.println(log);
+    }
     private static String getLogMsg(String tag, String msg) {
         StringBuilder builder = new StringBuilder();
         builder.append("$$time:: " + dateString()).
@@ -134,6 +145,16 @@ public class TapLogger {
                 append(" ").
                 append("[" + msg + "]").
                 append(" $$thread:: " + Thread.currentThread().getName());
+        return builder.toString();
+    }
+
+    private static String getMemoryMsg(String tag, String msg) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("MEMORY").
+                append(" $$time:: " + dateString()).
+                append(" $$tag:: " + tag).
+                append(" ").
+                append("[" + msg + "]");
         return builder.toString();
     }
 

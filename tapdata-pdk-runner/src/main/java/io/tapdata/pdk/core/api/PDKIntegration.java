@@ -20,6 +20,8 @@ import io.tapdata.pdk.core.connector.TapConnectorManager;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
+import io.tapdata.pdk.core.memory.MemoryFetcher;
+import io.tapdata.pdk.core.memory.MemoryManager;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
@@ -31,6 +33,7 @@ import java.util.Map;
 public class PDKIntegration {
     private static TapConnectorManager tapConnectorManager;
 
+    private static MemoryManager memoryManager;
     private static final String TAG = PDKIntegration.class.getSimpleName();
 
     private PDKIntegration() {}
@@ -473,6 +476,9 @@ public class PDKIntegration {
     private static void init() {
         if(tapConnectorManager == null) {
             tapConnectorManager = TapConnectorManager.getInstance().start();
+            memoryManager = MemoryManager.build();
+            memoryManager.register(TapConnectorManager.class.getSimpleName(), tapConnectorManager);
+            memoryManager.register(PDKInvocationMonitor.class.getSimpleName(), PDKInvocationMonitor.getInstance());
         }
     }
 
@@ -539,5 +545,15 @@ public class PDKIntegration {
     public static ConnectorBuilder<ConnectorNode> createConnectorBuilder() {
         init();
         return new ConnectorBuilderEx();
+    }
+
+    public static void registerMemoryFetcher(String key, MemoryFetcher memoryFetcher) {
+        init();
+        memoryManager.register(key, memoryFetcher);
+    }
+
+    public static void unregisterMemoryFetcher(String key) {
+        init();
+        memoryManager.unregister(key);
     }
 }

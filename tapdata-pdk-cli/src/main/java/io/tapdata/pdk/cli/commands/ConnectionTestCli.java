@@ -47,7 +47,7 @@ public class ConnectionTestCli extends CommonCli {
                     .withPdkId(pdkId)
                     .withConnectionConfig(dataMap)
                     .build();
-            connectionNode.getConnectorNode().connectionTest(connectionNode.getConnectionContext(), testItem -> TapLogger.info(TAG, "testItem {}", testItem));
+//            connectionNode.getConnectorNode().connectionTest(connectionNode.getConnectionContext(), testItem -> TapLogger.info(TAG, "testItem {}", testItem));
 
         } catch (Throwable throwable) {
             CommonUtils.logError(TAG, "AllTables failed", throwable);
