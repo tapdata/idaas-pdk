@@ -422,8 +422,8 @@ public class PostgresConnector extends ConnectorBase {
             //last events those less than eventBatchSize
             if (EmptyKit.isNotEmpty(tapEvents)) {
                 postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + tapEvents.size());
-                eventsOffsetConsumer.accept(tapEvents, postgresOffset);
             }
+            eventsOffsetConsumer.accept(tapEvents, postgresOffset);
         });
 
     }
@@ -460,11 +460,14 @@ public class PostgresConnector extends ConnectorBase {
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) {
         if (cdcRunner == null) {
-            cdcRunner = new PostgresCdcRunner()
-                    .use(postgresConfig)
-                    .watch(tableList)
-                    .offset(offsetState)
-                    .registerConsumer(consumer, recordSize);
+            Object slotName = nodeContext.getStateMap().get("tapdata_pg_slot");
+            cdcRunner = new PostgresCdcRunner().use(postgresConfig);
+            if (EmptyKit.isNull(slotName)) {
+                cdcRunner.watch(tableList).offset(offsetState).registerConsumer(consumer, recordSize);
+                nodeContext.getStateMap().put("tapdata_pg_slot", cdcRunner.runnerName);
+            } else {
+                cdcRunner.useSlot(slotName.toString()).watch(tableList).offset(offsetState).registerConsumer(consumer, recordSize);
+            }
 //            if (EmptyKit.isNotNull(nodeContext.getStateMap().get("manyOffsetMap"))) {
 //                PostgresOffsetStorage.manyOffsetMap = (Map) nodeContext.getStateMap().get("manyOffsetMap");
 //            }
