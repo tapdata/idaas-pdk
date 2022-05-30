@@ -166,11 +166,12 @@ public abstract class TapMapping {
         int pos = typeExpression.indexOf(str);
         if (pos >= 0) {
             int startPos = typeExpression.lastIndexOf("[", pos);
-            if (startPos + 1 == pos) {
-                typeExpression = typeExpression.substring(0, startPos) + (needSpace ? " " : "") + typeExpression.substring(startPos + 1);
-
+            if (startPos >= 0) {
                 int endPos = typeExpression.indexOf("]", pos);
                 if (endPos >= 0) {
+                    typeExpression = typeExpression.substring(0, startPos) + (needSpace ? " " : "") + typeExpression.substring(startPos + 1);
+
+                    endPos = typeExpression.indexOf("]", pos);
                     typeExpression = typeExpression.substring(0, endPos) + typeExpression.substring(endPos + 1);
                 }
             }

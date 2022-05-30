@@ -179,6 +179,29 @@ public class ModelPredictionCli extends CommonCli {
     private void specialDataTypesToTest(ConnectorNode sourceNode, TapTable generatedTable) {
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("mysql")) {
             generatedTable.add(field("special_int(11)", "int(11)"));
+            generatedTable.add(field("special_enum()", "enum('03TapMongoDB','04TapDB2','05TapPostgres','06TapSqlserver')"));
+            generatedTable.add(field("special_mediumint(9)", "mediumint(9)"));
+            generatedTable.add(field("special_mediumint(8)_unsigned", "mediumint(8) unsigned"));
+            generatedTable.add(field("special_tinyint(4)", "tinyint(4)"));
+            generatedTable.add(field("special_tinyint(3)_unsigned", "tinyint(3) unsigned"));
+            generatedTable.add(field("special_tinyint(1)", "tinyint(1)"));
+            generatedTable.add(field("special_bit(1)", "bit(1)"));
+            generatedTable.add(field("special_bit(32)", "bit(32)"));
+            generatedTable.add(field("special_bit(64)", "bit(64)"));
+            generatedTable.add(field("special_smallint(6)", "smallint(6)"));
+            generatedTable.add(field("special_smallint(5)_unsigned", "smallint(5) unsigned"));
+            generatedTable.add(field("special_mediumint(9)", "mediumint(9)"));
+            generatedTable.add(field("special_mediumint(8)_unsigned", "mediumint(8) unsigned"));
+            generatedTable.add(field("special_int(10)_unsigned", "int(10) unsigned"));
+            generatedTable.add(field("special_bigint(20)", "bigint(20)"));
+            generatedTable.add(field("special_bigint(20)_unsigned", "bigint(20) unsigned"));
+            generatedTable.add(field("special_varbinary(10)", "varbinary(10)"));
+            generatedTable.add(field("special_varbinary(255)", "varbinary(255)"));
+            generatedTable.add(field("special_set()", "set('03TapMongoDB','04TapDB2','05TapPostgres')"));
+            generatedTable.add(field("special_char(10)", "char(10)"));
+            generatedTable.add(field("special_char(255)", "char(255)"));
+            generatedTable.add(field("special_varchar(10)", "varchar(10)"));
+            generatedTable.add(field("special_varchar(255)", "varchar(255)"));
         }
 
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("mongodb")) {
