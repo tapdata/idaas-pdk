@@ -11,6 +11,7 @@ import io.tapdata.pdk.apis.context.TapConnectionContext;
 
 import java.sql.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PostgresJdbcContext implements AutoCloseable {
 
@@ -49,6 +50,16 @@ public class PostgresJdbcContext implements AutoCloseable {
             }
         } catch (Throwable ignored) {
         }
+    }
+
+    public String queryVersion() {
+        AtomicReference<String> version = new AtomicReference<>("");
+        try {
+            query("SELECT VERSION()", resultSet -> version.set(resultSet.getString(1)));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return version.get();
     }
 
     public List<String> queryAllTables(String tableName) {
