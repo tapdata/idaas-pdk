@@ -239,7 +239,8 @@
 	  "byte": "4g"
 	},
 	"bit[($bit)]": {
-	  "to": "TapBinary",
+	  "to": "TapNumber",
+	  "bit": 64,
 	  "queryOnly": true
 	},
 	"tinyint[($zerofill)]": {
