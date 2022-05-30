@@ -2,6 +2,7 @@ package io.tapdata.pdk.core.classloader;
 
 import com.google.common.collect.Lists;
 import io.tapdata.entity.error.CoreException;
+import io.tapdata.entity.utils.ParagraphFormatter;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
@@ -56,6 +57,18 @@ public class ExternalJarManager {
     private JarAnnotationHandlersListener jarAnnotationHandlersListener;
 
     private AtomicBoolean firstTime = new AtomicBoolean(false);
+
+    public String toMemoryString(String memoryLevel, int indentation) {
+        ParagraphFormatter paragraphFormatter = new ParagraphFormatter(ExternalJarManager.class.getSimpleName(), indentation)
+                .addRow("Path", path)
+                .addRow("JarFiles", jarFiles != null ? Arrays.toString(jarFiles.toArray()) : null)
+                .addRow("LoadNewJarAtRuntime", loadNewJarAtRuntime)
+                .addRow("UpdateJarWhenIdleAtRuntime", updateJarWhenIdleAtRuntime)
+                .addRow("RefreshLocalJars", refreshLocalJars)
+                .addRow("IsStarted", isStarted)
+                ;
+        return paragraphFormatter.toString();
+    }
     private ExternalJarManager() {}
     public static ExternalJarManager build() {
         return new ExternalJarManager();
