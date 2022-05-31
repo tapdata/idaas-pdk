@@ -2,6 +2,7 @@ package io.tapdata.connector.postgres.config;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.tapdata.connector.postgres.kit.EmptyKit;
 import io.tapdata.entity.logger.TapLogger;
 
 import java.io.File;
@@ -66,6 +67,9 @@ public class PostgresConfig implements Serializable {
      * @return DB URL
      */
     public String getDatabaseUrl() {
+        if (EmptyKit.isNotEmpty(extParams) && !extParams.startsWith("?")) {
+            extParams = "?" + extParams;
+        }
         return String.format(this.getDatabaseUrlPattern(), this.getHost(), this.getPort(), this.getDatabase(), this.getExtParams());
     }
 
