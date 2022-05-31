@@ -264,7 +264,7 @@ public class PDKTestBase {
 
     public void prepareSourceNode(TapNodeInfo nodeInfo, DataMap connection, Consumer<ConnectorNode> consumer) {
         try {
-            consumer.accept(PDKIntegration.createSourceBuilder()
+            consumer.accept(PDKIntegration.createConnectorBuilder()
                     .withPdkId(nodeInfo.getTapNodeSpecification().getId())
                     .withAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup())
                     .withGroup(nodeInfo.getTapNodeSpecification().getGroup())
@@ -278,7 +278,7 @@ public class PDKTestBase {
 
     public void prepareTargetNode(TapNodeInfo nodeInfo, DataMap connection, Consumer<ConnectorNode> consumer) {
         try {
-            consumer.accept(PDKIntegration.createTargetBuilder()
+            consumer.accept(PDKIntegration.createConnectorBuilder()
                     .withPdkId(nodeInfo.getTapNodeSpecification().getId())
                     .withAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup())
                     .withGroup(nodeInfo.getTapNodeSpecification().getGroup())
@@ -290,9 +290,9 @@ public class PDKTestBase {
         }
     }
 
-    public void prepareSourceAndTargetNode(TapNodeInfo nodeInfo, DataMap connection, Consumer<SourceAndTargetNode> consumer) {
+    public void prepareSourceAndTargetNode(TapNodeInfo nodeInfo, DataMap connection, Consumer<ConnectorNode> consumer) {
         try {
-            consumer.accept(PDKIntegration.createSourceAndTargetBuilder()
+            consumer.accept(PDKIntegration.createConnectorBuilder()
                     .withPdkId(nodeInfo.getTapNodeSpecification().getId())
                     .withAssociateId("associated_" + nodeInfo.getTapNodeSpecification().idAndGroup())
                     .withGroup(nodeInfo.getTapNodeSpecification().getGroup())
