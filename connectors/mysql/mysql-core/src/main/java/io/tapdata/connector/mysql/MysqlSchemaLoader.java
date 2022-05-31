@@ -3,6 +3,8 @@ package io.tapdata.connector.mysql;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
@@ -32,8 +34,8 @@ public class MysqlSchemaLoader {
 			"   and i.TABLE_NAME = k.TABLE_NAME\n" +
 			"   and i.INDEX_NAME = CONCAT(k.CONSTRAINT_NAME,'_idx')\n" +
 			"   and i.COLUMN_NAME = k.COLUMN_NAME\n" +
-			" where i.TABLE_SCHEMA = ?\n" +
-			"   and i.TABLE_NAME = ?\n" +
+			" where i.TABLE_SCHEMA = '%s'\n" +
+			"   and i.TABLE_NAME = '%s'\n" +
 			"   and i.INDEX_NAME <> 'PRIMARY'\n" +
 			"   and k.CONSTRAINT_NAME is null";
 	private TapConnectionContext tapConnectionContext;
@@ -61,9 +63,14 @@ public class MysqlSchemaLoader {
 			while (tableRs.next()) {
 				TapTable tapTable = TapSimplify.table(tableRs.getString("TABLE_NAME"));
 				try {
-					addColumns(tapConnectionContext, tapTable);
+					discoverFields(tapConnectionContext, tapTable);
 				} catch (Exception e) {
-					TapLogger.info(TAG, e.getMessage() + "\n" + TapSimplify.getStackString(e));
+					TapLogger.error(TAG, "Discover columns failed, error msg: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
+				}
+				try {
+					discoverIndexes(tapConnectionContext, tapTable);
+				} catch (Throwable e) {
+					TapLogger.error(TAG, "Discover indexes failed, error msg: " + e.getMessage() + "\n" + TapSimplify.getStackString(e));
 				}
 				tempList.add(tapTable);
 				if (tempList.size() == tableSize) {
@@ -78,14 +85,13 @@ public class MysqlSchemaLoader {
 		});
 	}
 
-	private void addColumns(TapConnectionContext connectionContext, TapTable tapTable) throws Throwable {
+	private void discoverFields(TapConnectionContext connectionContext, TapTable tapTable) throws Throwable {
 		AtomicInteger primaryPos = new AtomicInteger(1);
 		DataMap connectionConfig = connectionContext.getConnectionConfig();
 		String database = connectionConfig.getString("database");
 		TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
 		try {
-			List<String> defaultPk = new ArrayList<>();
-			mysqlJdbcContext.query(String.format(SELECT_COLUMNS, database, tapTable.getName()), columnRs -> {
+			mysqlJdbcContext.query(String.format(SELECT_COLUMNS, database, tapTable.getId()), columnRs -> {
 				while (columnRs.next()) {
 					String columnName = columnRs.getString("COLUMN_NAME");
 					String columnType = columnRs.getString("COLUMN_TYPE");
@@ -101,7 +107,6 @@ public class MysqlSchemaLoader {
 					Object columnKey = columnRs.getObject("COLUMN_KEY");
 					if (columnKey instanceof String && columnKey.equals("PRI")) {
 						field.primaryKeyPos(primaryPos.getAndIncrement());
-						defaultPk.add(columnName);
 					}
 
 					String columnDefault = columnRs.getString("COLUMN_DEFAULT");
@@ -112,5 +117,36 @@ public class MysqlSchemaLoader {
 		} catch (Exception e) {
 			throw new Exception("Load column metadata error, table: " + database + "." + tapTable.getName() + "; Reason: " + e.getMessage(), e);
 		}
+	}
+
+	private void discoverIndexes(TapConnectionContext tapConnectionContext, TapTable tapTable) throws Throwable {
+		DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
+		String database = connectionConfig.getString("database");
+		List<TapIndex> indexes = new ArrayList<>();
+		mysqlJdbcContext.query(String.format(SELECT_ALL_INDEX_SQL, database, tapTable.getId()), indexRs -> {
+			while (indexRs.next()) {
+				String indexName = indexRs.getString("INDEX_NAME");
+				TapIndex tapIndex = indexes.stream().filter(i -> i.getName().equals(indexName)).findFirst().orElse(null);
+				if (null == tapIndex) {
+					tapIndex = new TapIndex();
+					tapIndex.setName(indexName);
+					int nonUnique = indexRs.getInt("NON_UNIQUE");
+					tapIndex.setUnique(nonUnique == 1);
+					tapIndex.setPrimary(false);
+					indexes.add(tapIndex);
+				}
+				List<TapIndexField> indexFields = tapIndex.getIndexFields();
+				if (null == indexFields) {
+					indexFields = new ArrayList<>();
+					tapIndex.setIndexFields(indexFields);
+				}
+				TapIndexField tapIndexField = new TapIndexField();
+				tapIndexField.setName(indexRs.getString("COLUMN_NAME"));
+				String collation = indexRs.getString("COLLATION");
+				tapIndexField.setFieldAsc("A".equals(collation));
+				indexFields.add(tapIndexField);
+			}
+		});
+		tapTable.setIndexList(indexes);
 	}
 }
