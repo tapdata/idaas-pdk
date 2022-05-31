@@ -1,7 +1,6 @@
 package io.tapdata.pdk.apis.entity.merge;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -10,23 +9,33 @@ import java.util.Map;
  * @create 2022-05-27 16:18
  **/
 public class MergeLookupResult implements Serializable {
-		private static final long serialVersionUID = -6100854075182627105L;
-		private MergeTableProperties property;
-		private List<Map<String, Object>> data;
+	private static final long serialVersionUID = -6100854075182627105L;
+	private MergeTableProperties property;
+	private Map<String, Object> data;
 
-		public MergeTableProperties getProperty() {
-				return property;
-		}
+	private MergeLookupResult mergeLookupResult;
 
-		public void setProperty(MergeTableProperties property) {
-				this.property = property;
-		}
+	public MergeTableProperties getProperty() {
+		return property;
+	}
 
-		public List<Map<String, Object>> getData() {
-				return data;
-		}
+	public void setProperty(MergeTableProperties property) {
+		this.property = property;
+	}
 
-		public void setData(List<Map<String, Object>> data) {
-				this.data = data;
-		}
+	public Map<String, Object> getData() {
+		return data;
+	}
+
+	public void setData(Map<String, Object> data) {
+		this.data = data;
+	}
+
+	public MergeLookupResult getMergeLookupResult() {
+		return mergeLookupResult;
+	}
+
+	public void setMergeLookupResult(MergeLookupResult mergeLookupResult) {
+		this.mergeLookupResult = mergeLookupResult;
+	}
 }
