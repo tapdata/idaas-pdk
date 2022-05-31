@@ -1,7 +1,6 @@
 package io.tapdata.mongodb.reader;
 
 import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Aggregates;
@@ -16,7 +15,7 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.mongodb.MongodbUtil;
-import io.tapdata.mongodb.bean.MongodbConfig;
+import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.BsonDocument;
@@ -29,10 +28,8 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
-import javax.print.Doc;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 
 import static io.tapdata.base.ConnectorBase.*;
 import static java.util.Collections.singletonList;
@@ -133,17 +130,15 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 														TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
 												}
 										} else if (operationType == OperationType.UPDATE) {
-												DataMap before = new DataMap();
 												DataMap after = new DataMap();
 												if (MapUtils.isEmpty(fullDocument)) {
 														TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
 														continue;
 												}
 												if (event.getDocumentKey() != null) {
-														before.put("_id", fullDocument.get("_id"));
 														after.putAll(fullDocument);
 
-														TapUpdateRecordEvent recordEvent = updateDMLEvent(before, after, collectionName);
+														TapUpdateRecordEvent recordEvent = updateDMLEvent(null, after, collectionName);
 														recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 														tapEvents.add(recordEvent);
 												} else {

@@ -1,7 +1,7 @@
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.*;
 import com.mongodb.client.internal.MongoBatchCursorAdapter;
-import io.tapdata.mongodb.bean.MongoDBConfig;
+import io.tapdata.mongodb.entity.MongoDBConfig;
 import org.bson.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

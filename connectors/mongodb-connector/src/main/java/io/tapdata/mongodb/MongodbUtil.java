@@ -25,6 +25,8 @@ import java.util.stream.IntStream;
  **/
 public class MongodbUtil {
 
+		public final static String SUB_COLUMN_NAME = "__tapd8";
+
 		private static final int SAMPLE_SIZE_BATCH_SIZE = 1000;
 
 		private final static String BUILDINFO = "buildinfo";
@@ -224,6 +226,25 @@ public class MongodbUtil {
 						}
 				}
 				return serverDate != null ? serverDate.getTime() : 0;
+		}
+
+		public static String mongodbKeySpecialCharHandler(String key, String replacement) {
+
+				if (StringUtils.isNotBlank(key)) {
+						if (key.startsWith("$")) {
+								key = key.replaceFirst("\\$", replacement);
+						}
+
+						if (key.contains(".") && !key.startsWith(SUB_COLUMN_NAME + ".")) {
+								key = key.replaceAll("\\.", replacement);
+						}
+
+						if (key.contains(" ")) {
+								key = key.replaceAll(" ", replacement);
+						}
+				}
+
+				return key;
 		}
 
 		public static void main(String[] args) {

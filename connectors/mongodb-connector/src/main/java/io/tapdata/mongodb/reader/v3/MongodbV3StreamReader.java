@@ -8,12 +8,10 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
-import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
-import io.tapdata.mongodb.MongoStreamOffset;
 import io.tapdata.mongodb.MongodbConnector;
 import io.tapdata.mongodb.MongodbUtil;
-import io.tapdata.mongodb.bean.MongodbConfig;
+import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.mongodb.reader.MongodbStreamReader;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import org.apache.commons.collections4.CollectionUtils;
@@ -25,7 +23,6 @@ import org.bson.conversions.Bson;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 
 import static io.tapdata.base.ConnectorBase.*;
 
