@@ -88,19 +88,19 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         //build debezium engine
         this.engine = (EmbeddedEngine) EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
-//                .using(new DebeziumEngine.ConnectorCallback() {
-//                    @Override
-//                    public void taskStarted() {
-//                        DebeziumEngine.ConnectorCallback.super.taskStarted();
-//                        consumer.streamReadStarted();
-//                    }
-//
-//                    @Override
-//                    public void taskStopped() {
-//                        DebeziumEngine.ConnectorCallback.super.taskStopped();
-//                        consumer.streamReadEnded();
-//                    }
-//                })
+                .using(new DebeziumEngine.ConnectorCallback() {
+                    @Override
+                    public void taskStarted() {
+                        DebeziumEngine.ConnectorCallback.super.taskStarted();
+                        consumer.streamReadStarted();
+                    }
+
+                    @Override
+                    public void taskStopped() {
+                        DebeziumEngine.ConnectorCallback.super.taskStopped();
+                        consumer.streamReadEnded();
+                    }
+                })
 //                .using((b, s, throwable) -> {
 //
 //                })
@@ -109,7 +109,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 //                .notifying(this::consumeRecord)
 //                .using((numberOfMessagesSinceLastCommit, timeSinceLastCommit) ->
 //                        numberOfMessagesSinceLastCommit >= 1000 || timeSinceLastCommit.getSeconds() >= 60)
-                .notifying(this::consumeRecord)
+                .notifying(this::consumeRecords)
                 .build();
         //make replica identity for postgres those without unique key
 //        try {

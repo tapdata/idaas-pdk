@@ -351,7 +351,7 @@ public class PostgresConnector extends ConnectorBase {
         PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection, tapTable);
         PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection, tapTable);
 
-        if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+        if (postgresVersion.compareTo("PostgreSQL 9.5") <= 0) {
             insertRecorder.setPostgresVersion(postgresVersion);
             updateRecorder.setPostgresVersion(postgresVersion);
             deleteRecorder.setPostgresVersion(postgresVersion);
