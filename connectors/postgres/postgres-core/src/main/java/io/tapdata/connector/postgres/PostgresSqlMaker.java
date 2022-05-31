@@ -8,6 +8,7 @@ import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * make sql
@@ -84,11 +85,11 @@ public class PostgresSqlMaker {
             if (EmptyKit.isNotEmpty(filter.getMatch())) {
                 builder.append("AND ");
             }
-            builder.append(filter.getOperators().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new)).append(' ');
+            builder.append(filter.getOperators().stream().map(v -> v.toString("\"")).collect(Collectors.joining(" AND "))).append(' ');
         }
         if (EmptyKit.isNotEmpty(filter.getSortOnList())) {
             builder.append("ORDER BY ");
-            builder.append(filter.getSortOnList().stream().map(v -> v.toString("\"")).reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)).append(' ');
+            builder.append(filter.getSortOnList().stream().map(v -> v.toString("\"")).collect(Collectors.joining(", "))).append(' ');
         }
         if (null != filter.getSkip()) {
             builder.append("OFFSET ").append(filter.getSkip()).append(' ');

@@ -88,19 +88,19 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         //build debezium engine
         this.engine = (EmbeddedEngine) EmbeddedEngine.create()
                 .using(postgresDebeziumConfig.create())
-                .using(new DebeziumEngine.ConnectorCallback() {
-                    @Override
-                    public void taskStarted() {
-                        DebeziumEngine.ConnectorCallback.super.taskStarted();
-                        consumer.streamReadStarted();
-                    }
-
-                    @Override
-                    public void taskStopped() {
-                        DebeziumEngine.ConnectorCallback.super.taskStopped();
-                        consumer.streamReadEnded();
-                    }
-                })
+//                .using(new DebeziumEngine.ConnectorCallback() {
+//                    @Override
+//                    public void taskStarted() {
+//                        DebeziumEngine.ConnectorCallback.super.taskStarted();
+//                        consumer.streamReadStarted();
+//                    }
+//
+//                    @Override
+//                    public void taskStopped() {
+//                        DebeziumEngine.ConnectorCallback.super.taskStopped();
+//                        consumer.streamReadEnded();
+//                    }
+//                })
 //                .using((b, s, throwable) -> {
 //
 //                })
@@ -109,7 +109,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 //                .notifying(this::consumeRecord)
 //                .using((numberOfMessagesSinceLastCommit, timeSinceLastCommit) ->
 //                        numberOfMessagesSinceLastCommit >= 1000 || timeSinceLastCommit.getSeconds() >= 60)
-                .notifying(this::consumeRecords)
+                .notifying(this::consumeRecord)
                 .build();
         //make replica identity for postgres those without unique key
 //        try {
@@ -120,10 +120,9 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         return this;
     }
 
-//    public void consumeRecord(SourceRecord sourceRecord) {
-//        System.out.println(TapSimplify.toJson(sourceRecord));
-//        System.out.println(TapSimplify.toJson(sourceRecord.sourceOffset()));
-//    }
+    public void consumeRecord(SourceRecord sourceRecord) {
+        System.out.println(sourceRecord);
+    }
 
     @Override
     public void consumeRecords(List<SourceRecord> sourceRecords, DebeziumEngine.RecordCommitter<SourceRecord> committer) {
@@ -203,7 +202,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     //make these tables ready for REPLICA IDENTITY
     private void makeReplicaIdentity() throws Throwable {
         String tableSql = EmptyKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN ('" +
-                observedTableList.stream().reduce((v1, v2) -> v1 + "','" + v2).orElseGet(String::new) + "')";
+                String.join("','", observedTableList) + "')";
         List<String> tableD = TapSimplify.list(); //to make table IDENTITY 'D'
         List<String> tableF = TapSimplify.list(); //to make table IDENTITY 'F'
         postgresJdbcContext.query(String.format(PG_ALL_REPLICA_IDENTITY, postgresConfig.getSchema(), tableSql), resultSet -> {

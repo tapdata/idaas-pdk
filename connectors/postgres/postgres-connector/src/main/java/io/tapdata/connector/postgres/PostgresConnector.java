@@ -5,7 +5,6 @@ import io.tapdata.connector.postgres.bean.PostgresColumn;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.connector.postgres.kit.DbKit;
 import io.tapdata.connector.postgres.kit.EmptyKit;
-import io.tapdata.connector.postgres.kit.StringKit;
 import io.tapdata.connector.postgres.storage.PostgresWriteRecorder;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
@@ -252,7 +251,7 @@ public class PostgresConnector extends ConnectorBase {
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
         String sql = "CREATE TABLE IF NOT EXISTS \"" + tapTable.getId() + "\"(" + PostgresSqlMaker.buildColumnDefinition(tapTable);
         if (EmptyKit.isNotEmpty(tapTable.primaryKeys())) {
-            sql += "," + " PRIMARY KEY (\"" + StringKit.combineString(primaryKeys, "\",\"") + "\" )";
+            sql += "," + " PRIMARY KEY (\"" + String.join("\",\"", primaryKeys) + "\" )";
         }
         sql += ")";
         try {
@@ -274,7 +273,7 @@ public class PostgresConnector extends ConnectorBase {
                     tapTable.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
                             sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
                                     i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
-                                            .reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new) + ')'));
+                                            .collect(Collectors.joining(",")) + ')'));
                 } else {
                     List<String> existsIndexes = TapSimplify.list();
                     postgresJdbcContext.query("SELECT relname FROM pg_class WHERE relname IN (" +
@@ -283,7 +282,7 @@ public class PostgresConnector extends ConnectorBase {
                     tapTable.getIndexList().stream().filter(i -> !i.isPrimary() && !existsIndexes.contains(i.getName())).forEach(i ->
                             sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + tapTable.getId() + "\"(" +
                                     i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
-                                            .reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new) + ')'));
+                                            .collect(Collectors.joining(",")) + ')'));
                 }
             }
             postgresJdbcContext.batchExecute(sqls);
@@ -351,6 +350,12 @@ public class PostgresConnector extends ConnectorBase {
         PostgresWriteRecorder insertRecorder = new PostgresWriteRecorder(connection, tapTable);
         PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection, tapTable);
         PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection, tapTable);
+
+        if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+            insertRecorder.setPostgresVersion(postgresVersion);
+            updateRecorder.setPostgresVersion(postgresVersion);
+            deleteRecorder.setPostgresVersion(postgresVersion);
+        }
         //result of these events
         WriteListResult<TapRecordEvent> listResult = writeListResult();
         for (TapRecordEvent recordEvent : tapRecordEvents) {

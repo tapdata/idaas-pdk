@@ -6,6 +6,7 @@ import io.tapdata.connector.postgres.kit.EmptyKit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * debezium config for postgres
@@ -88,7 +89,7 @@ public class PostgresDebeziumConfig {
                 .with("plugin.name", postgresConfig.getLogPluginName());
         if (EmptyKit.isNotEmpty(observedTableList)) {
             //construct tableWhiteList with schema.table(,) as <public.Student,postgres.test>
-            String tableWhiteList = observedTableList.stream().map(v -> postgresConfig.getSchema() + "." + v).reduce((v1, v2) -> v1 + "," + v2).orElseGet(String::new);
+            String tableWhiteList = observedTableList.stream().map(v -> postgresConfig.getSchema() + "." + v).collect(Collectors.joining(", "));
             builder.with("table.whitelist", tableWhiteList);
         }
         return builder.build();

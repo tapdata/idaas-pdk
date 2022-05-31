@@ -27,6 +27,7 @@ public class PostgresWriteRecorder {
     private PreparedStatement preparedStatement = null;
     private AtomicLong atomicLong = new AtomicLong(0);
     private List<TapRecordEvent> batchCache = TapSimplify.list();
+    private String postgresVersion = "PostgreSQL 9.6";
 
     public PostgresWriteRecorder(Connection connection, TapTable tapTable) {
         this.connection = connection;
@@ -74,22 +75,45 @@ public class PostgresWriteRecorder {
             return;
         }
         if (EmptyKit.isNull(preparedStatement)) {
-            String insertSql = "INSERT INTO \"" + tapTable.getId() + "\" ("
-                    + after.keySet().stream().map(k -> "\"" + k + "\"").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)
-                    + ") VALUES(" + StringKit.copyString("?", after.size(), ",") + ") ";
+            String insertHead = "INSERT INTO \"" + tapTable.getId() + "\" ("
+                    + after.keySet().stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", ")) + ") ";
+            String insertValue = "VALUES(" + StringKit.copyString("?", after.size(), ",") + ") ";
+            String insertSql = insertHead + insertValue;
             if (EmptyKit.isNotEmpty(uniqueCondition)) {
-                insertSql += "ON CONFLICT("
-                        + uniqueCondition.stream().map(k -> "\"" + k + "\"").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new)
-                        + ") DO UPDATE SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new);
+                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+                    insertSql += "ON CONFLICT("
+                            + uniqueCondition.stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", "))
+                            + ") DO UPDATE SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(", "));
+                } else {
+                    if (hasPk) {
+                        insertSql = "WITH upsert AS (UPDATE \"" + tapTable.getId() + "\" SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?")
+                                .collect(Collectors.joining(", ")) + " WHERE " + uniqueCondition.stream().map(k -> "\"" + k + "\"=?")
+                                .collect(Collectors.joining(" AND ")) + " RETURNING *) " + insertHead + " SELECT "
+                                + StringKit.copyString("?", after.size(), ",") + " WHERE NOT EXISTS (SELECT * FROM upsert)";
+                    } else {
+                        insertSql = "WITH upsert AS (UPDATE \"" + tapTable.getId() + "\" SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?")
+                                .collect(Collectors.joining(", ")) + " WHERE " + uniqueCondition.stream().map(k -> "(\"" + k + "\"=? OR (\"" + k + "\" IS NULL AND ?::text IS NULL))")
+                                .collect(Collectors.joining(" AND ")) + " RETURNING *) " + insertHead + " SELECT "
+                                + StringKit.copyString("?", after.size(), ",") + " WHERE NOT EXISTS (SELECT * FROM upsert)";
+                    }
+                }
             }
             preparedStatement = connection.prepareStatement(insertSql);
         }
         preparedStatement.clearParameters();
         int pos = 1;
+        if (postgresVersion.compareTo("PostgreSQL 9.5") <= 0 && EmptyKit.isNotEmpty(uniqueCondition)) {
+            for (String key : after.keySet()) {
+                preparedStatement.setObject(pos++, after.get(key));
+            }
+            for (String key : uniqueCondition) {
+                preparedStatement.setObject(pos++, after.get(key));
+            }
+        }
         for (String key : after.keySet()) {
             preparedStatement.setObject(pos++, after.get(key));
         }
-        if (EmptyKit.isNotEmpty(uniqueCondition)) {
+        if (EmptyKit.isNotEmpty(uniqueCondition) && postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
             for (String key : after.keySet()) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
@@ -105,17 +129,19 @@ public class PostgresWriteRecorder {
         for (Map.Entry<String, Object> entry : before.entrySet()) {
             after.remove(entry.getKey(), entry.getValue());
         }
-        uniqueCondition.forEach(k -> before.put(k, after.get(k)));
+        if (EmptyKit.isEmpty(before)) {
+            uniqueCondition.forEach(k -> before.put(k, after.get(k)));
+        }
         if (EmptyKit.isNull(preparedStatement)) {
             if (hasPk) {
                 preparedStatement = connection.prepareStatement("UPDATE \"" + tapTable.getId() + "\" SET " +
-                        after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new) + " WHERE " +
-                        before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                        after.keySet().stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(", ")) + " WHERE " +
+                        before.keySet().stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(" AND ")));
             } else {
                 preparedStatement = connection.prepareStatement("UPDATE \"" + tapTable.getId() + "\" SET " +
-                        after.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new) + " WHERE " +
+                        after.keySet().stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(", ")) + " WHERE " +
                         before.keySet().stream().map(k -> "(\"" + k + "\"=? OR (\"" + k + "\" IS NULL AND ?::text IS NULL))")
-                                .reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                                .collect(Collectors.joining(" AND ")));
             }
         }
         preparedStatement.clearParameters();
@@ -137,11 +163,11 @@ public class PostgresWriteRecorder {
         if (EmptyKit.isNull(preparedStatement)) {
             if (hasPk) {
                 preparedStatement = connection.prepareStatement("DELETE FROM \"" + tapTable.getId() + "\" WHERE " +
-                        before.keySet().stream().map(k -> "\"" + k + "\"=?").reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                        before.keySet().stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(" AND ")));
             } else {
                 preparedStatement = connection.prepareStatement("DELETE FROM \"" + tapTable.getId() + "\" WHERE " +
                         before.keySet().stream().map(k -> "(\"" + k + "\"=? OR (\"" + k + "\" IS NULL AND ?::text IS NULL))")
-                                .reduce((v1, v2) -> v1 + " AND " + v2).orElseGet(String::new));
+                                .collect(Collectors.joining(" AND ")));
             }
         }
         preparedStatement.clearParameters();
@@ -201,5 +227,13 @@ public class PostgresWriteRecorder {
 
     public void setBatchCache(List<TapRecordEvent> batchCache) {
         this.batchCache = batchCache;
+    }
+
+    public String getPostgresVersion() {
+        return postgresVersion;
+    }
+
+    public void setPostgresVersion(String postgresVersion) {
+        this.postgresVersion = postgresVersion;
     }
 }
