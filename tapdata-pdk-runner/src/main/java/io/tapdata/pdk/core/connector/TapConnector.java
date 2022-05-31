@@ -2,6 +2,7 @@ package io.tapdata.pdk.core.connector;
 
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.utils.ParagraphFormatter;
 import io.tapdata.pdk.core.tapnode.TapNodeClassFactory;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
 import io.tapdata.pdk.core.utils.state.StateMachine;
@@ -35,6 +36,15 @@ public class TapConnector {
 
     private final Object lock = new int[0];
 
+    public String toMemoryString(String memoryLevel, int indentation) {
+        ParagraphFormatter paragraphFormatter = new ParagraphFormatter(TapConnector.class.getSimpleName(), indentation)
+                .addRow("JarFile", jarFile)
+                .addRow("JarFileTime", jarFileTime)
+                .addRow("LoadingJarFile", loadingJarFile)
+                .addRow("State", stateMachine != null ? stateMachine.getCurrentState() : null)
+        ;
+        return paragraphFormatter.toString();
+    }
     public String toString() {
         return TapConnector.class.getSimpleName() + "#" + (stateMachine != null ? stateMachine.getCurrentState() : STATE_NONE) + " jarFile " + (jarFile != null ? jarFile.getName() : "none") + " jarFileTime " + jarFileTime;
     }

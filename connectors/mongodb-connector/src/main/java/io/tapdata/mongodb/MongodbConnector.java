@@ -15,6 +15,7 @@ import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.ParagraphFormatter;
 import io.tapdata.mongodb.bean.MongodbConfig;
 import io.tapdata.mongodb.reader.MongodbStreamReader;
 import io.tapdata.mongodb.reader.MongodbV4StreamReader;
@@ -259,6 +260,7 @@ public class MongodbConnector extends ConnectorBase {
      */
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
+        connectorFunctions.supportMemoryFetcher(this::memoryFetcher);
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
         connectorFunctions.supportDropTable(this::dropTable);
@@ -309,6 +311,12 @@ public class MongodbConnector extends ConnectorBase {
         connectorFunctions.supportStreamRead(this::streamRead);
 				connectorFunctions.supportTimestampToStreamOffset(this::streamOffset);
 //        connectorFunctions.supportStreamOffset((connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer) -> streamOffset(connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer));
+    }
+
+    private String memoryFetcher(List<String> mapKeys, String level) {
+        ParagraphFormatter paragraphFormatter = new ParagraphFormatter(MongodbConnector.class.getSimpleName());
+        paragraphFormatter.addRow("MongoConfig", mongoConfig != null ? mongoConfig.getCollection() + "@" + mongoConfig.getDatabase() : null);
+        return paragraphFormatter.toString();
     }
 
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
