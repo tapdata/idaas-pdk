@@ -1,6 +1,7 @@
 package io.tapdata.pdk.apis.entity.merge;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,7 +14,7 @@ public class MergeLookupResult implements Serializable {
 	private MergeTableProperties property;
 	private Map<String, Object> data;
 
-	private MergeLookupResult mergeLookupResult;
+	private List<MergeLookupResult> mergeLookupResults;
 
 	public MergeTableProperties getProperty() {
 		return property;
@@ -31,11 +32,11 @@ public class MergeLookupResult implements Serializable {
 		this.data = data;
 	}
 
-	public MergeLookupResult getMergeLookupResult() {
-		return mergeLookupResult;
+	public List<MergeLookupResult> getMergeLookupResults() {
+		return mergeLookupResults;
 	}
 
-	public void setMergeLookupResult(MergeLookupResult mergeLookupResult) {
-		this.mergeLookupResult = mergeLookupResult;
+	public void setMergeLookupResults(List<MergeLookupResult> mergeLookupResults) {
+		this.mergeLookupResults = mergeLookupResults;
 	}
 }
