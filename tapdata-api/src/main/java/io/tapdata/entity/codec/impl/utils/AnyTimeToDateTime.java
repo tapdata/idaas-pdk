@@ -20,14 +20,22 @@ public class AnyTimeToDateTime {
         classHandlers.register(java.sql.Time.class, DateTime::new);
         classHandlers.register(LocalDateTime.class, DateTime::new);
         classHandlers.register(Instant.class, DateTime::new);
-        classHandlers.register(Long.class, DateTime::new);
-        classHandlers.register(long.class, DateTime::new);
+//        classHandlers.register(Long.class, DateTime::new);
+//        classHandlers.register(long.class, DateTime::new);
         classHandlers.register(Timestamp.class, DateTime::new);
         classHandlers.register(ZonedDateTime.class, DateTime::new);
     }
 
     public static DateTime toDateTime(Object obj) {
         return (DateTime) classHandlers.handle(obj);
+    }
+
+    public static DateTime toDateTime(Object obj, Integer fraction) {
+        if(fraction != null && obj instanceof Long) {
+            return new DateTime((Long) obj, fraction);
+        } else {
+            return toDateTime(obj);
+        }
     }
 
     public static long convertTimestamp(long timestamp, TimeZone fromTimeZone, TimeZone toTimeZone) {
