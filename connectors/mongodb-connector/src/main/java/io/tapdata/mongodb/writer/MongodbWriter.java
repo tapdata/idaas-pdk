@@ -112,11 +112,16 @@ public class MongodbWriter {
 				WriteModel<Document> writeModel = null;
 				if (recordEvent instanceof TapInsertRecordEvent) {
 						TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-						final Document pkFilter = getPkFilter(pks, insertRecordEvent.getAfter());
+
+						if (CollectionUtils.isNotEmpty(pks)) {
+								final Document pkFilter = getPkFilter(pks, insertRecordEvent.getAfter());
 //								writeModels.add(new InsertOneModel<>(new Document(insertRecordEvent.getAfter())));
-						writeModel = new UpdateManyModel<>(pkFilter, new Document().append("$set", insertRecordEvent.getAfter()), options);
+								writeModel = new UpdateManyModel<>(pkFilter, new Document().append("$set", insertRecordEvent.getAfter()), options);
+						} else {
+								writeModel = new InsertOneModel<>(new Document(insertRecordEvent.getAfter()));
+						}
 						inserted.incrementAndGet();
-				} else if (recordEvent instanceof TapUpdateRecordEvent) {
+				} else if (recordEvent instanceof TapUpdateRecordEvent && CollectionUtils.isEmpty(pks)) {
 
 						TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
 						Map<String, Object> after = updateRecordEvent.getAfter();
@@ -125,7 +130,7 @@ public class MongodbWriter {
 
 						writeModel = new UpdateManyModel<>(pkFilter, new Document().append("$set", after), options);
 						updated.incrementAndGet();
-				} else if (recordEvent instanceof TapDeleteRecordEvent) {
+				} else if (recordEvent instanceof TapDeleteRecordEvent && CollectionUtils.isEmpty(pks)) {
 
 						TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
 						Map<String, Object> before = deleteRecordEvent.getBefore();
