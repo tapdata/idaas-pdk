@@ -169,6 +169,11 @@ public class MongodbMergeOperate {
 				final String targetPath = currentProperty.getTargetPath();
 				final boolean array = currentProperty.getIsArray();
 				if (array) {
+						final Document filter = filter(
+										MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
+										currentProperty.getJoinKeys()
+						);
+						mergeResult.getFilter().putAll(filter);
 						final List<Document> arrayFilter = arrayFilter(
 										MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
 										currentProperty.getJoinKeys(),
@@ -331,7 +336,7 @@ public class MongodbMergeOperate {
 				List<Document> arrayFilter = new ArrayList<>();
 				for (Map<String, String> joinKey : joinKeys) {
 						Document filter = new Document();
-						final String embeddedField = joinKey.get("target").replace(targetPath + ".", "");
+						final String embeddedField = joinKey.get("target").substring(joinKey.get("target").lastIndexOf(".") + 1);
 						filter.put("element1." + embeddedField, MapUtil.getValueByKey(data, joinKey.get("source")));
 						arrayFilter.add(filter);
 				}
