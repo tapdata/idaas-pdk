@@ -9,9 +9,11 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.WriteListResult;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,22 +40,26 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 	@Override
 	public WriteListResult<TapRecordEvent> write(TapConnectorContext tapConnectorContext, TapTable tapTable, List<TapRecordEvent> tapRecordEvents) throws Throwable {
 		WriteListResult<TapRecordEvent> writeListResult = new WriteListResult<>(0L, 0L, 0L, new HashMap<>());
+		TapRecordEvent errorRecord = null;
 		try {
 			for (TapRecordEvent tapRecordEvent : tapRecordEvents) {
-				if (!running.get()) {
-					break;
-				}
-				if (tapRecordEvent instanceof TapInsertRecordEvent) {
-					int insertRow = doInsertOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
-					writeListResult.incrementInserted(insertRow);
-				} else if (tapRecordEvent instanceof TapUpdateRecordEvent) {
-					int updateRow = doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
-					writeListResult.incrementModified(updateRow);
-				} else if (tapRecordEvent instanceof TapDeleteRecordEvent) {
-					int deleteRow = doDeleteOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
-					writeListResult.incrementRemove(deleteRow);
-				} else {
-					writeListResult.addError(tapRecordEvent, new Exception("Event type \"" + tapRecordEvent.getClass().getSimpleName() + "\" not support: " + tapRecordEvent));
+				if (!running.get()) break;
+				try {
+					if (tapRecordEvent instanceof TapInsertRecordEvent) {
+						int insertRow = doInsertOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+						writeListResult.incrementInserted(insertRow);
+					} else if (tapRecordEvent instanceof TapUpdateRecordEvent) {
+						int updateRow = doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+						writeListResult.incrementModified(updateRow);
+					} else if (tapRecordEvent instanceof TapDeleteRecordEvent) {
+						int deleteRow = doDeleteOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+						writeListResult.incrementRemove(deleteRow);
+					} else {
+						writeListResult.addError(tapRecordEvent, new Exception("Event type \"" + tapRecordEvent.getClass().getSimpleName() + "\" not support: " + tapRecordEvent));
+					}
+				} catch (Throwable e) {
+					errorRecord = tapRecordEvent;
+					throw e;
 				}
 			}
 			MysqlJdbcContext.tryCommit(connection);
@@ -61,6 +67,7 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 			writeListResult.setInsertedCount(0);
 			writeListResult.setModifiedCount(0);
 			writeListResult.setRemovedCount(0);
+			if (null != errorRecord) writeListResult.addError(errorRecord, e);
 			MysqlJdbcContext.tryRollBack(connection);
 			throw e;
 		}
@@ -79,16 +86,21 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 	private int doInsertOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
 		PreparedStatement insertPreparedStatement = getInsertPreparedStatement(tapConnectorContext, tapTable, tapRecordEvent, insertMap);
 		setPreparedStatementValues(tapTable, tapRecordEvent, insertPreparedStatement);
-		int row = 0;
+		int row;
 		try {
 			row = insertPreparedStatement.executeUpdate();
 			writeListResult.incrementInserted(row);
 		} catch (Exception e) {
-			TapLogger.warn(TAG, "Execute insert failed, will retry update or insert after check record exists");
-			if (rowExists(tapConnectorContext, tapTable, tapRecordEvent)) {
-				row = doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+			if (e instanceof SQLIntegrityConstraintViolationException
+					&& CollectionUtils.isNotEmpty(tapTable.primaryKeys())) {
+				TapLogger.warn(TAG, "Execute insert failed, will retry update or insert after check record exists");
+				if (rowExists(tapConnectorContext, tapTable, tapRecordEvent)) {
+					row = doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);
+				} else {
+					throw new Exception("Insert data failed, sql: " + insertPreparedStatement + ", message: " + e.getMessage(), e);
+				}
 			} else {
-				writeListResult.addError(tapRecordEvent, new Exception("Insert data failed, message: " + e.getMessage(), e));
+				throw new Exception("Insert data failed, sql: " + insertPreparedStatement + ", message: " + e.getMessage(), e);
 			}
 		}
 		return row;
@@ -98,11 +110,11 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 		PreparedStatement updatePreparedStatement = getUpdatePreparedStatement(tapConnectorContext, tapTable, tapRecordEvent, updateMap);
 		int parameterIndex = setPreparedStatementValues(tapTable, tapRecordEvent, updatePreparedStatement);
 		setPreparedStatementWhere(tapTable, tapRecordEvent, updatePreparedStatement, parameterIndex);
-		int row = 0;
+		int row;
 		try {
 			row = updatePreparedStatement.executeUpdate();
 		} catch (Exception e) {
-			writeListResult.addError(tapRecordEvent, new Exception("Update data failed, message: " + e.getMessage(), e));
+			throw new Exception("Update data failed, sql: " + updatePreparedStatement + ", message: " + e.getMessage(), e);
 		}
 		return row;
 	}
@@ -110,12 +122,12 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 	private int doDeleteOne(TapConnectorContext tapConnectorContext, TapTable tapTable, TapRecordEvent tapRecordEvent, WriteListResult<TapRecordEvent> writeListResult) throws Throwable {
 		PreparedStatement deletePreparedStatement = getDeletePreparedStatement(tapConnectorContext, tapTable, tapRecordEvent, deleteMap);
 		setPreparedStatementWhere(tapTable, tapRecordEvent, deletePreparedStatement, 1);
-		int row = 0;
+		int row;
 		try {
 			row = deletePreparedStatement.executeUpdate();
 			writeListResult.incrementRemove(row);
-		} catch (SQLException e) {
-			writeListResult.addError(tapRecordEvent, new Exception("Delete data failed, message: " + e.getMessage(), e));
+		} catch (Throwable e) {
+			throw new Exception("Delete data failed, sql: " + deletePreparedStatement + ", message: " + e.getMessage(), e);
 		}
 		return row;
 	}
@@ -124,12 +136,16 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 		PreparedStatement checkRowExistsPreparedStatement = getCheckRowExistsPreparedStatement(tapConnectorContext, tapTable, tapRecordEvent, checkExistsMap);
 		setPreparedStatementWhere(tapTable, tapRecordEvent, checkRowExistsPreparedStatement, 1);
 		AtomicBoolean result = new AtomicBoolean(false);
-		this.mysqlJdbcContext.query(checkRowExistsPreparedStatement, rs -> {
-			if (rs.next()) {
-				int count = rs.getInt("count");
-				result.set(count > 0);
-			}
-		});
+		try {
+			this.mysqlJdbcContext.query(checkRowExistsPreparedStatement, rs -> {
+				if (rs.next()) {
+					int count = rs.getInt("count");
+					result.set(count > 0);
+				}
+			});
+		} catch (Throwable e) {
+			throw new Exception("Check row exists failed, sql: " + checkRowExistsPreparedStatement + ", message: " + e.getMessage(), e);
+		}
 		return result.get();
 	}
 }
