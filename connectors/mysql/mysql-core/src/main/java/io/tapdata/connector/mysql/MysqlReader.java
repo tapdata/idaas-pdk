@@ -15,13 +15,17 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.schema.type.TapDateTime;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.entity.utils.cache.KVMap;
+import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
@@ -63,6 +67,7 @@ public class MysqlReader implements Closeable {
 	private ExecutorService streamConsumerThreadPool;
 	private StreamReadConsumer streamReadConsumer;
 	private ScheduledExecutorService mysqlSchemaHistoryMonitor;
+	private KVReadOnlyMap<TapTable> tapTableMap;
 
 	public MysqlReader(MysqlJdbcContext mysqlJdbcContext) {
 		this.mysqlJdbcContext = mysqlJdbcContext;
@@ -131,6 +136,7 @@ public class MysqlReader implements Closeable {
 						   Object offset, int batchSize, StreamReadConsumer consumer) throws Throwable {
 		try {
 			initDebeziumServerName(tapConnectorContext);
+			this.tapTableMap = tapConnectorContext.getTableMap();
 			String offsetStr = "";
 			JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
 			MysqlStreamOffset mysqlStreamOffset = null;
@@ -330,25 +336,25 @@ public class MysqlReader implements Closeable {
 					tapRecordEvent = new TapInsertRecordEvent();
 					if (null == valueSchema.field("after"))
 						throw new RuntimeException("Found insert record does not have after: " + record);
-					after = struct2Map(value.getStruct("after"));
+					after = struct2Map(value.getStruct("after"), table);
 					((TapInsertRecordEvent) tapRecordEvent).setAfter(after);
 					break;
 				case UPDATE:
 					tapRecordEvent = new TapUpdateRecordEvent();
 					if (null != valueSchema.field("before")) {
-						before = struct2Map(value.getStruct("before"));
+						before = struct2Map(value.getStruct("before"), table);
 						((TapUpdateRecordEvent) tapRecordEvent).setBefore(before);
 					}
 					if (null == valueSchema.field("after"))
 						throw new RuntimeException("Found update record does not have after: " + record);
-					after = struct2Map(value.getStruct("after"));
+					after = struct2Map(value.getStruct("after"), table);
 					((TapUpdateRecordEvent) tapRecordEvent).setAfter(after);
 					break;
 				case DELETE:
 					tapRecordEvent = new TapDeleteRecordEvent();
 					if (null == valueSchema.field("before"))
 						throw new RuntimeException("Found delete record does not have before: " + record);
-					before = struct2Map(value.getStruct("before"));
+					before = struct2Map(value.getStruct("before"), table);
 					((TapDeleteRecordEvent) tapRecordEvent).setBefore(before);
 					break;
 				default:
@@ -362,7 +368,7 @@ public class MysqlReader implements Closeable {
 		}
 	}
 
-	private Map<String, Object> struct2Map(Struct struct) {
+	private Map<String, Object> struct2Map(Struct struct, String table) {
 		if (null == struct) return null;
 		Map<String, Object> result = new HashMap<>();
 		Schema schema = struct.schema();
@@ -373,9 +379,24 @@ public class MysqlReader implements Closeable {
 			if (value instanceof ByteBuffer) {
 				value = ((ByteBuffer) value).array();
 			}
+			value = handleDatetime(table, fieldName, value);
 			result.put(fieldName, value);
 		}
 		return result;
+	}
+
+	private Object handleDatetime(String table, String fieldName, Object value) {
+		TapTable tapTable = tapTableMap.get(table);
+		if (null == tapTable) return value;
+		TapField tapField = tapTable.getNameFieldMap().get(fieldName);
+		if (null == tapField) return value;
+		TapType tapType = tapField.getTapType();
+		if (tapType instanceof TapDateTime) {
+			if (((TapDateTime) tapType).getFraction().equals(0) && value instanceof Long) {
+				value = ((Long) value) / 1000;
+			}
+		}
+		return value;
 	}
 
 	private MysqlStreamOffset getMysqlStreamOffset(SourceRecord record) {

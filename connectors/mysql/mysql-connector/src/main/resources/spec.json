@@ -181,7 +181,7 @@
 	"varchar($byte)": {
 	  "name": "varchar",
 	  "to": "TapString",
-	  "byte": 16383,
+	  "byte": 16358,
 	  "defaultByte": 1,
 	  "byteRatio": 4
 	},
