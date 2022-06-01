@@ -22,7 +22,7 @@ public class PostgresTest implements AutoCloseable {
 
     public PostgresTest(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+        postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
     }
 
     //Test host and port
@@ -95,7 +95,7 @@ public class PostgresTest implements AutoCloseable {
     @Override
     public void close() {
         try {
-            postgresJdbcContext.close();
+            postgresJdbcContext.finish();
         } catch (Exception ignored) {
         }
     }

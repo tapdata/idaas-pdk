@@ -7,27 +7,27 @@ import io.tapdata.connector.postgres.kit.EmptyKit;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.pdk.apis.context.TapConnectionContext;
 
 import java.sql.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class PostgresJdbcContext implements AutoCloseable {
+public class PostgresJdbcContext {
 
     private final static String TAG = PostgresJdbcContext.class.getSimpleName();
     private final HikariDataSource hikariDataSource;
-    private PostgresConfig postgresConfig;
+    private final PostgresConfig postgresConfig;
+    private final AtomicInteger connectorNumber = new AtomicInteger(1);
 
-    public PostgresJdbcContext(TapConnectionContext tapConnectionContext) {
-        DataMap connectionConfig = tapConnectionContext.getConnectionConfig();
-        PostgresConfig postgresConfig = PostgresConfig.load(connectionConfig);
-        hikariDataSource = HikariConnection.getHikariDataSource(postgresConfig);
+    public PostgresJdbcContext incrementAndGet() {
+        connectorNumber.incrementAndGet();
+        return this;
     }
 
-    public PostgresJdbcContext(PostgresConfig postgresConfig) {
+    public PostgresJdbcContext(PostgresConfig postgresConfig, HikariDataSource hikariDataSource) {
         this.postgresConfig = postgresConfig;
-        hikariDataSource = HikariConnection.getHikariDataSource(postgresConfig);
+        this.hikariDataSource = hikariDataSource;
     }
 
     public Connection getConnection() throws SQLException {
@@ -163,30 +163,10 @@ public class PostgresJdbcContext implements AutoCloseable {
         }
     }
 
-    @Override
-    public void close() {
-        if (EmptyKit.isNotNull(hikariDataSource)) {
-            hikariDataSource.close();
-        }
-    }
-
-    static class HikariConnection {
-        public static HikariDataSource getHikariDataSource(PostgresConfig postgresConfig) throws IllegalArgumentException {
-            HikariDataSource hikariDataSource;
-            if (EmptyKit.isNull(postgresConfig)) {
-                throw new IllegalArgumentException("Postgres Config cannot be null");
-            }
-            hikariDataSource = new HikariDataSource();
-            hikariDataSource.setDriverClassName("org.postgresql.Driver");
-            hikariDataSource.setJdbcUrl(postgresConfig.getDatabaseUrl());
-            hikariDataSource.setUsername(postgresConfig.getUser());
-            hikariDataSource.setPassword(postgresConfig.getPassword());
-            hikariDataSource.setMinimumIdle(1);
-            hikariDataSource.setMaximumPoolSize(20);
-            hikariDataSource.setAutoCommit(false);
-            hikariDataSource.setIdleTimeout(60 * 1000L);
-            hikariDataSource.setKeepaliveTime(60 * 1000L);
-            return hikariDataSource;
+    public void finish() {
+        if (connectorNumber.decrementAndGet() <= 0) {
+            this.hikariDataSource.close();
+            PostgresDataPool.removeJdbcContext(postgresConfig);
         }
     }
 

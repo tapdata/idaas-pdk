@@ -1,3 +1,4 @@
+import io.tapdata.connector.postgres.PostgresDataPool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 
@@ -17,7 +18,7 @@ public class Main3 {
         postgresConfig.setExtParams("");
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
-        PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+        PostgresJdbcContext postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
         Connection connection = postgresJdbcContext.getConnection();
 //        PreparedStatement preparedStatement = connection.prepareStatement(
 //                "DELETE FROM \"PgTest1234\" WHERE \"ddd\"=? or ((COALESCE(\"ddd\", null) is null) and (COALESCE(?, null) is null))");
@@ -28,7 +29,7 @@ public class Main3 {
         preparedStatement.addBatch();
         preparedStatement.executeBatch();
         connection.commit();
-        postgresJdbcContext.close();
+        postgresJdbcContext.finish();
 
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {
