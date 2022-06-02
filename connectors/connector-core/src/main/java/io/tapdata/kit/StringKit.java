@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres.kit;
+package io.tapdata.kit;
 
 public class StringKit {
 

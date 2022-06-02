@@ -2,7 +2,7 @@ package io.tapdata.connector.postgres.config;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.entity.logger.TapLogger;
 
 import java.io.File;

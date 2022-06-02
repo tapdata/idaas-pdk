@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres.kit;
+package io.tapdata.kit;
 
 import java.util.Collection;
 import java.util.Map;

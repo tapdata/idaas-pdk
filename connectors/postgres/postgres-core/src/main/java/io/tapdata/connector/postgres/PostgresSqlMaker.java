@@ -1,6 +1,6 @@
 package io.tapdata.connector.postgres;
 
-import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
