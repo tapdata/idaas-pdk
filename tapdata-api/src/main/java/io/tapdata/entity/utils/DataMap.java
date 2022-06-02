@@ -31,4 +31,8 @@ public class DataMap extends LinkedHashMap<String, Object> {
 		if(null == o) return null;
 		return String.valueOf(o);
 	}
+
+	public Object getObject(String key) {
+		return super.get(key);
+	}
 }
