@@ -159,7 +159,7 @@ public class MysqlReader implements Closeable {
 			initMysqlSchemaHistory(tapConnectorContext);
 			this.mysqlSchemaHistoryMonitor = new ScheduledThreadPoolExecutor(1);
 			this.mysqlSchemaHistoryMonitor.scheduleAtFixedRate(() -> saveMysqlSchemaHistory(tapConnectorContext),
-					1L, 1L, TimeUnit.MINUTES);
+					10L, 10L, TimeUnit.SECONDS);
 			Configuration.Builder builder = Configuration.create()
 					.with("name", serverName)
 					.with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
@@ -232,6 +232,7 @@ public class MysqlReader implements Closeable {
 		} finally {
 			Optional.ofNullable(streamConsumerThreadPool).ifPresent(ExecutorService::shutdownNow);
 			Optional.ofNullable(mysqlSchemaHistoryMonitor).ifPresent(ExecutorService::shutdownNow);
+			TapLogger.info(TAG, "Mysql binlog reader stopped");
 		}
 	}
 

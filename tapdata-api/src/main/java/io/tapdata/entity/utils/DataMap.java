@@ -32,7 +32,7 @@ public class DataMap extends LinkedHashMap<String, Object> {
 		return String.valueOf(o);
 	}
 
-	public <T> T getObject(Class<T> tClass) {
-		return (T) super.clone();
+	public Object getObject(String key) {
+		return super.get(key);
 	}
 }

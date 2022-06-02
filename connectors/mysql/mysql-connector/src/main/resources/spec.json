@@ -354,10 +354,12 @@
 	  ],
 	  "defaultPrecision": 10,
 	  "defaultScale": 0,
-	  "unsigned": "unsigned"
+	  "unsigned": "unsigned",
+	  "fixed": true
 	},
-	"float[($precision,$scale)][unsigned]": {
+	"float($precision,$scale)[unsigned]": {
 	  "to": "TapNumber",
+	  "name": "float",
 	  "precision": [
 		1,
 		30

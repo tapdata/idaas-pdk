@@ -16,12 +16,11 @@ public class InvocationCollector {
     private LongAdder totalTakes = new LongAdder();
 
     public String toMemoryString(String memoryLevel) {
-        return toMemoryString(memoryLevel, 0);
+        return toMemoryString(memoryLevel, 1);
     }
     public String toMemoryString(String memoryLevel, int indentation) {
         ParagraphFormatter paragraphFormatter = new ParagraphFormatter(InvocationCollector.class.getSimpleName(), indentation)
                 .addRow("Counter", counter.longValue())
-                .addRow("TotalTakes", counter.longValue())
                 .addRow("TotalTakes", totalTakes.longValue())
                 ;
 
