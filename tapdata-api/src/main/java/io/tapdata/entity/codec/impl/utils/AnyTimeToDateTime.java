@@ -20,8 +20,8 @@ public class AnyTimeToDateTime {
         classHandlers.register(java.sql.Time.class, DateTime::new);
         classHandlers.register(LocalDateTime.class, DateTime::new);
         classHandlers.register(Instant.class, DateTime::new);
-//        classHandlers.register(Long.class, DateTime::new);
-//        classHandlers.register(long.class, DateTime::new);
+        classHandlers.register(Long.class, DateTime::new);
+        classHandlers.register(long.class, DateTime::new);
         classHandlers.register(Timestamp.class, DateTime::new);
         classHandlers.register(ZonedDateTime.class, DateTime::new);
     }
