@@ -1,17 +1,18 @@
 package io.tapdata.connector.postgres.storage;
 
-import io.tapdata.kit.EmptyKit;
-import io.tapdata.kit.StringKit;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.StringKit;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,17 +37,25 @@ public class PostgresWriteRecorder {
     }
 
     private void analyzeTable() {
-        if (EmptyKit.isEmpty(tapTable.getIndexList())) {
-            uniqueCondition = TapSimplify.list();
-        } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isPrimary)) {
+        //1、primaryKeys has first priority
+        if (EmptyKit.isNotEmpty(tapTable.primaryKeys())) {
             hasPk = true;
-            uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isPrimary)
-                    .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
-        } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isUnique)) {
-            uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isUnique)
-                    .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
-        } else {
-            uniqueCondition = TapSimplify.list();
+            uniqueCondition = new ArrayList<>(tapTable.primaryKeys());
+        }
+        //2、second priority: analyze table with its indexes
+        else {
+            if (EmptyKit.isEmpty(tapTable.getIndexList())) {
+                uniqueCondition = TapSimplify.list();
+            } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isPrimary)) {
+                hasPk = true;
+                uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isPrimary)
+                        .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
+            } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isUnique)) {
+                uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isUnique)
+                        .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
+            } else {
+                uniqueCondition = TapSimplify.list();
+            }
         }
     }
 
@@ -126,11 +135,10 @@ public class PostgresWriteRecorder {
         if (EmptyKit.isEmpty(after) || EmptyKit.isEmpty(uniqueCondition)) {
             return;
         }
+        before.clear();
+        uniqueCondition.forEach(k -> before.put(k, after.get(k)));
         for (Map.Entry<String, Object> entry : before.entrySet()) {
             after.remove(entry.getKey(), entry.getValue());
-        }
-        if (EmptyKit.isEmpty(before)) {
-            uniqueCondition.forEach(k -> before.put(k, after.get(k)));
         }
         if (EmptyKit.isNull(preparedStatement)) {
             if (hasPk) {

@@ -51,7 +51,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     public PostgresCdcRunner use(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        this.postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+        this.postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
         return this;
     }
 
@@ -192,7 +192,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         if (EmptyKit.isNotNull(needClearSlot) && (boolean) needClearSlot) {
             clearSlot();
         }
-        postgresJdbcContext.close();
+        postgresJdbcContext.finish();
     }
 
     private void clearSlot() throws SQLException {

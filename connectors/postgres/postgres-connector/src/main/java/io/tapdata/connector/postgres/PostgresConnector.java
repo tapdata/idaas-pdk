@@ -183,7 +183,7 @@ public class PostgresConnector extends ConnectorBase {
     @Override
     public void onDestroy(TapConnectionContext connectionContext) throws IOException, SQLException {
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
-            postgresJdbcContext.close();
+            postgresJdbcContext.finish();
         }
         if (EmptyKit.isNotNull(cdcRunner)) {
             cdcRunner.closeCdcRunner(true);
@@ -195,7 +195,7 @@ public class PostgresConnector extends ConnectorBase {
     @Override
     public void onPause(TapConnectionContext connectionContext) throws Throwable {
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
-            postgresJdbcContext.close();
+            postgresJdbcContext.finish();
         }
         if (EmptyKit.isNotNull(cdcRunner)) {
             cdcRunner.closeCdcRunner(false);
@@ -206,7 +206,7 @@ public class PostgresConnector extends ConnectorBase {
     private void initConnection(TapConnectionContext connectorContext) {
         postgresConfig = PostgresConfig.load(connectorContext.getConnectionConfig());
         if (EmptyKit.isNull(postgresJdbcContext)) {
-            postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+            postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
         }
         postgresVersion = postgresJdbcContext.queryVersion();
     }

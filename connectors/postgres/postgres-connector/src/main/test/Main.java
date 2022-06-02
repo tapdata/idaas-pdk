@@ -1,3 +1,4 @@
+import io.tapdata.connector.postgres.PostgresDataPool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 
@@ -14,7 +15,7 @@ public class Main {
         postgresConfig.setExtParams("");
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
-        PostgresJdbcContext postgresJdbcContext = new PostgresJdbcContext(postgresConfig);
+        PostgresJdbcContext postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
         Connection connection = postgresJdbcContext.getConnection();
         ResultSet rs = connection.createStatement().executeQuery("SELECT col.*, d.description,\n" +
                 "       (SELECT pg_catalog.format_type(a.atttypid, a.atttypmod) AS \"dataType\"\n" +
@@ -33,9 +34,9 @@ public class Main {
                 "WHERE col.table_catalog='COOLGJ' AND col.table_schema='public' AND col.table_name='TestD' \n" +
                 "ORDER BY col.table_name,col.ordinal_position");
         while (rs.next()) {
-            System.out.println(rs.getString("column_default").length());
+            System.out.println(rs.getString("column_default"));
         }
-        postgresJdbcContext.close();
+        postgresJdbcContext.finish();
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {
 //            rs.last();
