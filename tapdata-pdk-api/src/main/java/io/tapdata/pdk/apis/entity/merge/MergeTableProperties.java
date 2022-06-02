@@ -58,11 +58,11 @@ public class MergeTableProperties implements Serializable {
 		this.targetPath = targetPath;
 	}
 
-	public boolean isArray() {
+	public boolean getIsArray() {
 		return isArray;
 	}
 
-	public void setArray(boolean array) {
+	public void setIsArray(boolean array) {
 		isArray = array;
 	}
 

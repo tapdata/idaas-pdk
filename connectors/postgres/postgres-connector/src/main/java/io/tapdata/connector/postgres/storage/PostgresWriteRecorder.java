@@ -1,7 +1,7 @@
 package io.tapdata.connector.postgres.storage;
 
-import io.tapdata.connector.postgres.kit.EmptyKit;
-import io.tapdata.connector.postgres.kit.StringKit;
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.StringKit;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapIndexField;

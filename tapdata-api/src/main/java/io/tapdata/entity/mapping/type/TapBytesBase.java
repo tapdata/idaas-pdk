@@ -9,10 +9,12 @@ public abstract class TapBytesBase extends TapMapping {
     public static final String KEY_BYTE = "byte";
     public static final String KEY_BYTE_RATIO = "byteRatio";
     public static final String KEY_BYTE_DEFAULT = "defaultByte";
+    public static final String KEY_BYTE_PREFER = "preferByte";
 
     protected Boolean fixed;
     protected Long bytes;
     protected Long defaultBytes;
+    protected Long preferBytes;
     /**
      * some database varchar(8), the 8 means byte or char.
      * if charset is utf8, a char may occupy 3 bytes.
@@ -37,6 +39,8 @@ public abstract class TapBytesBase extends TapMapping {
             bytes = objectToNumber(byteStr);//Long.parseLong(byteStr);
         }
         if(bytes == null)
+            bytes = preferBytes;
+        if(bytes == null)
             bytes = defaultBytes;
         if(bytes == null)
             bytes = this.bytes;
@@ -57,6 +61,9 @@ public abstract class TapBytesBase extends TapMapping {
 
         Object byteDefaultObject = info.get(KEY_BYTE_DEFAULT);
         defaultBytes = objectToNumber(byteDefaultObject);
+
+        Object bytePreferObject = info.get(KEY_BYTE_PREFER);
+        preferBytes = objectToNumber(bytePreferObject);
 
         Object byteObj = info.get(KEY_BYTE);
         bytes = objectToNumber(byteObj);
@@ -92,5 +99,13 @@ public abstract class TapBytesBase extends TapMapping {
 
     public void setByteRatio(Integer byteRatio) {
         this.byteRatio = byteRatio;
+    }
+
+    public Long getPreferBytes() {
+        return preferBytes;
+    }
+
+    public void setPreferBytes(Long preferBytes) {
+        this.preferBytes = preferBytes;
     }
 }

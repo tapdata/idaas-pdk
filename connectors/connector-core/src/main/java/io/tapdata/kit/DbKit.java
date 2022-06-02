@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres.kit;
+package io.tapdata.kit;
 
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;

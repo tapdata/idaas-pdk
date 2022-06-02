@@ -35,6 +35,7 @@
 	},
 	"STRING": {
 	  "to": "TapString",
+	  "preferByte": "1m",
 	  "byte": "16m"
 	},
 	"DOCUMENT": {
@@ -103,12 +104,11 @@
 	},
 	"DECIMAL128": {
 	  "to": "TapNumber",
-	  "precision": 3,
-	  "bit": 128,
 	  "value": [
-		1E+6145,
-		-1E+6145
-	  ]
+		  -1E+6145,
+		  1E+6145
+	  ],
+	  "scale": 1000
 	},
 	"MIN_KEY": {
 	  "to": "TapString",

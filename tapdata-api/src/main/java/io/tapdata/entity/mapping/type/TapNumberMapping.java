@@ -19,13 +19,16 @@ import static io.tapdata.entity.simplify.TapSimplify.tapNumber;
  */
 public class TapNumberMapping extends TapMapping {
     public static final String KEY_PRECISION = "precision";
-    public static final String KEY_PRECISION_DEFAULT = "precisionDefault";
+    public static final String KEY_PRECISION_DEFAULT = "defaultPrecision";
+    public static final String KEY_PRECISION_PREFER = "preferPrecision";
     public static final String KEY_SCALE = "scale";
-    public static final String KEY_SCALE_DEFAULT = "scaleDefault";
+    public static final String KEY_SCALE_DEFAULT = "defaultScale";
+    public static final String KEY_SCALE_PREFER = "preferScale";
     public static final String KEY_UNSIGNED = "unsigned";
     public static final String KEY_ZEROFILL = "zerofill";
     public static final String KEY_BIT = "bit";
-    public static final String KEY_BIT_DEFAULT = "bitDefault";
+    public static final String KEY_BIT_DEFAULT = "defaultBit";
+    public static final String KEY_BIT_PREFER = "preferBit";
     public static final String KEY_BIT_RATIO = "bitRatio";
     public static final String KEY_VALUE = "value";
     public static final String KEY_UNSIGNED_VALUE = "unsignedValue";
@@ -35,15 +38,18 @@ public class TapNumberMapping extends TapMapping {
 
     private Integer bit;
     private Integer defaultBit;
+    private Integer preferBit;
     private int bitRatio = 1;
 
     private Integer minPrecision;
     private Integer maxPrecision;
     private Integer defaultPrecision;
+    private Integer preferPrecision;
 
     private Integer minScale;
     private Integer maxScale;
     private Integer defaultScale;
+    private Integer preferScale;
 
     private String unsigned;
     private String zerofill;
@@ -76,6 +82,10 @@ public class TapNumberMapping extends TapMapping {
         if(defaultLengthObj instanceof Number) {
             defaultBit = ((Number) defaultLengthObj).intValue();
         }
+        Object preferLengthObj = getObject(info, KEY_BIT_PREFER);
+        if(preferLengthObj instanceof Number) {
+            preferBit = ((Number) preferLengthObj).intValue();
+        }
         Object ratioObj = info.get(KEY_BIT_RATIO);
         if(ratioObj instanceof Number) {
             bitRatio = ((Number) ratioObj).intValue();
@@ -100,6 +110,10 @@ public class TapNumberMapping extends TapMapping {
         if(defaultPrecisionObj instanceof Number) {
             defaultPrecision = ((Number) defaultPrecisionObj).intValue();
         }
+        Object preferPrecisionObj = getObject(info, KEY_PRECISION_PREFER);
+        if(preferPrecisionObj instanceof Number) {
+            preferPrecision = ((Number) preferPrecisionObj).intValue();
+        }
 
         Object scaleObj = getObject(info, KEY_SCALE);
         if (scaleObj instanceof List) {
@@ -120,6 +134,10 @@ public class TapNumberMapping extends TapMapping {
         Object defaultScaleObj = getObject(info, KEY_SCALE_DEFAULT);
         if(defaultScaleObj instanceof Number) {
             defaultScale = ((Number) defaultScaleObj).intValue();
+        }
+        Object preferScaleObj = getObject(info, KEY_SCALE_PREFER);
+        if(preferScaleObj instanceof Number) {
+            preferScale = ((Number) preferScaleObj).intValue();
         }
 
         Object valueObj = getObject(info, KEY_VALUE);
@@ -203,7 +221,7 @@ public class TapNumberMapping extends TapMapping {
         }
         if(minPrecision == null && maxPrecision == null) {
             minPrecision = 1;
-            maxPrecision = maxValue.precision();
+            maxPrecision = maxValue.toPlainString().length();
         }
     }
 
@@ -228,6 +246,8 @@ public class TapNumberMapping extends TapMapping {
             }
         }
         if(length == null)
+            length = preferBit;
+        if(length == null)
             length = defaultBit;
         if(length == null)
             length = bit;
@@ -245,6 +265,8 @@ public class TapNumberMapping extends TapMapping {
             }
         }
         if(precision == null)
+            precision = preferPrecision;
+        if(precision == null)
             precision = defaultPrecision;
         if(precision == null)
             precision = maxPrecision;
@@ -260,6 +282,8 @@ public class TapNumberMapping extends TapMapping {
             }
         }
         if(scale == null)
+            scale = preferScale;
+        if(scale == null)
             scale = defaultScale;
         if(scale == null)
             scale = maxScale;
@@ -269,6 +293,9 @@ public class TapNumberMapping extends TapMapping {
         if(length != null) {
             theMinValue = TypeUtils.minValueForBit(length, theUnsigned);
             theMaxValue = TypeUtils.maxValueForBit(length, theUnsigned);
+        } else if(minValue != null && maxValue != null) {
+            theMinValue = minValue;
+            theMaxValue = maxValue;
         } else if(precision != null){
             theMinValue = (theUnsigned != null && theUnsigned) ? BigDecimal.ZERO : TypeUtils.minValueForPrecision(precision);
             theMaxValue = TypeUtils.maxValueForPrecision(precision);
@@ -276,7 +303,7 @@ public class TapNumberMapping extends TapMapping {
             theMinValue = BigDecimal.valueOf(-Double.MAX_VALUE);
             theMaxValue = BigDecimal.valueOf(Double.MAX_VALUE);
         }
-        int actualPrecision = theMaxValue.precision();
+        int actualPrecision = theMaxValue.toPlainString().length();
         if(precision > actualPrecision) {
             precision = actualPrecision;
         }
@@ -291,9 +318,10 @@ public class TapNumberMapping extends TapMapping {
                 .unsigned(theUnsigned)
                 .zerofill(theZerofill);
     }
+    final BigDecimal theMaxValue = BigDecimal.valueOf(10).pow(246);
     final BigDecimal valueValue = BigDecimal.valueOf(10).pow(245);
     final BigDecimal scaleValue = BigDecimal.valueOf(10).pow(245);
-    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(244);
+    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(60);
     final BigDecimal unsignedValue = BigDecimal.valueOf(10).pow(244);
 
     @Override
@@ -313,7 +341,13 @@ public class TapNumberMapping extends TapMapping {
             Boolean unsigned = tapNumber.getUnsigned();
 
             BigDecimal comingMaxValue = tapNumber.getMaxValue();
+            if(comingMaxValue.compareTo(valueValue) > 0) {
+                comingMaxValue = theMaxValue;
+            }
             BigDecimal comingMinValue = tapNumber.getMinValue();
+            if(comingMinValue.compareTo(valueValue.negate()) < 0) {
+                comingMinValue = theMaxValue.negate();
+            }
 
 //            final BigDecimal unsignedValue = realMaxValue.multiply(BigDecimal.TEN);
 //            final BigDecimal fixedValue =   unsignedValue.multiply(BigDecimal.TEN);
@@ -410,8 +444,8 @@ public class TapNumberMapping extends TapMapping {
 
         if (minDistance.compareTo(BigDecimal.ZERO) < 0 || maxDistance.compareTo(BigDecimal.ZERO) < 0) {
             BigDecimal theDistance = minDistance.add(maxDistance).abs();
-            if(theDistance.compareTo(valueValue) > 0) {
-                return valueValue.add(valueValue).negate();//-valueValue - valueValue;
+            if(theDistance.compareTo(valueValue.pow(2)) > 0) {
+                return valueValue.add(valueValue.pow(2)).negate();//-valueValue - valueValue;
             } else {
                 return valueValue.add(theDistance).negate();//-valueValue - theDistance.negate().doubleValue();
             }
@@ -618,5 +652,29 @@ public class TapNumberMapping extends TapMapping {
 
     public void setUnsignedMaxValue(BigDecimal unsignedMaxValue) {
         this.unsignedMaxValue = unsignedMaxValue;
+    }
+
+    public Integer getPreferBit() {
+        return preferBit;
+    }
+
+    public void setPreferBit(Integer preferBit) {
+        this.preferBit = preferBit;
+    }
+
+    public Integer getPreferPrecision() {
+        return preferPrecision;
+    }
+
+    public void setPreferPrecision(Integer preferPrecision) {
+        this.preferPrecision = preferPrecision;
+    }
+
+    public Integer getPreferScale() {
+        return preferScale;
+    }
+
+    public void setPreferScale(Integer preferScale) {
+        this.preferScale = preferScale;
     }
 }

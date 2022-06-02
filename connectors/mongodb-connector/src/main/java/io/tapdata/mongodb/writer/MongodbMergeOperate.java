@@ -34,17 +34,6 @@ public class MongodbMergeOperate {
 						List<MergeResult> mergeResults = new ArrayList<>();
 						final MergeInfo mergeInfo = (MergeInfo) info.get(MergeInfo.EVENT_INFO_KEY);
 						final MergeTableProperties currentProperty = mergeInfo.getCurrentProperty();
-						if (currentProperty.getMergeType() != MergeTableProperties.MergeType.appendWrite && CollectionUtils.isEmpty(currentProperty.getJoinKeys())) {
-								final Collection<String> primaryKeys = table.primaryKeys();
-								List<Map<String, String>> joinKeys = new ArrayList<>(primaryKeys.size());
-								for (String primaryKey : primaryKeys) {
-										joinKeys.add(new HashMap<String, String>(1) {{
-												put("source", primaryKey);
-												put("target", primaryKey);
-										}});
-								}
-								currentProperty.setJoinKeys(joinKeys);
-						}
 						final List<MergeLookupResult> mergeLookupResults = mergeInfo.getMergeLookupResults();
 						recursiveMerge(mergeBundle, currentProperty, mergeResults, mergeLookupResults, new MergeResult());
 
@@ -77,13 +66,17 @@ public class MongodbMergeOperate {
 		) {
 
 				switch (properties.getMergeType()) {
-						case appendWrite:
-								appendMerge(mergeBundle, properties, mergeResult);
-								break;
+//						case appendWrite:
+//								appendMerge(mergeBundle, properties, mergeResult);
+//								break;
 						case updateOrInsert:
 								upsertMerge(mergeBundle, properties, mergeResult);
 								break;
 						case updateWrite:
+								if (mergeResult.getOperation() != null) {
+										mergeResults.add(mergeResult);
+										mergeResult = new MergeResult();
+								}
 								updateMerge(mergeBundle, properties, mergeResult);
 								break;
 						case updateIntoArray:
@@ -174,11 +167,17 @@ public class MongodbMergeOperate {
 
 		public static void updateMerge(MergeBundle mergeBundle, MergeTableProperties currentProperty, MergeResult mergeResult) {
 				final String targetPath = currentProperty.getTargetPath();
-				final boolean array = currentProperty.isArray();
+				final boolean array = currentProperty.getIsArray();
 				if (array) {
-						final List<Document> arrayFilter = arrayFilter(
+						final Document filter = filter(
 										MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
 										currentProperty.getJoinKeys()
+						);
+						mergeResult.getFilter().putAll(filter);
+						final List<Document> arrayFilter = arrayFilter(
+										MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
+										currentProperty.getJoinKeys(),
+										currentProperty.getTargetPath()
 						);
 						mergeResult.getUpdateOptions().arrayFilters(arrayFilter);
 				} else {
@@ -197,8 +196,14 @@ public class MongodbMergeOperate {
 				MapUtil.recursiveFlatMap(value, flatValue, "");
 				value = MapUtils.isNotEmpty(flatValue) ? flatValue : value;
 				if (StringUtils.isNotEmpty(targetPath)) {
+						final String targetPathFirst = targetPath.substring(0, targetPath.lastIndexOf("."));
+						final String targetPathLast = targetPath.substring(targetPath.lastIndexOf(".") + 1);
 						for (Map.Entry<String, Object> entry : value.entrySet()) {
-								updateOpDoc.append(targetPath + "." + entry.getKey(), entry.getValue());
+								if (array) {
+										updateOpDoc.append(targetPathFirst + ".$[element1]." + targetPathLast + "." + entry.getKey(), entry.getValue());
+								} else {
+										updateOpDoc.append(targetPath + "." + entry.getKey(), entry.getValue());
+								}
 						}
 				} else {
 						updateOpDoc.putAll(value);
@@ -227,7 +232,7 @@ public class MongodbMergeOperate {
 
 		public static void updateIntoArrayMerge(MergeBundle mergeBundle, MergeTableProperties currentProperty, MergeResult mergeResult) {
 				final String targetPath = currentProperty.getTargetPath();
-				final boolean array = currentProperty.isArray();
+				final boolean array = currentProperty.getIsArray();
 				final MergeBundle.EventOperation operation = mergeBundle.getOperation();
 				final List<String> arrayKeys = currentProperty.getArrayKeys();
 				if (array) {
@@ -247,7 +252,8 @@ public class MongodbMergeOperate {
 						if (operation == MergeBundle.EventOperation.UPDATE) {
 								final List<Document> arrayFilter = arrayFilter(
 												MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
-												currentProperty.getJoinKeys()
+												currentProperty.getJoinKeys(),
+												currentProperty.getTargetPath()
 								);
 								mergeResult.getUpdateOptions().arrayFilters(arrayFilter);
 						}
@@ -261,6 +267,9 @@ public class MongodbMergeOperate {
 				}
 				switch (operation) {
 						case INSERT:
+								for (String arrayKey : arrayKeys) {
+										mergeResult.getFilter().append(targetPath + "." + arrayKey, new Document("$ne", after.get(arrayKey)));
+								}
 								updateOpDoc.append(targetPath, after);
 								if (mergeResult.getUpdate().containsKey("$addToSet")) {
 										mergeResult.getUpdate().get("$addToSet", Document.class).putAll(updateOpDoc);
@@ -323,11 +332,12 @@ public class MongodbMergeOperate {
 				return document;
 		}
 
-		private static List<Document> arrayFilter(Map<String, Object> data, List<Map<String, String>> joinKeys) {
+		private static List<Document> arrayFilter(Map<String, Object> data, List<Map<String, String>> joinKeys, String targetPath) {
 				List<Document> arrayFilter = new ArrayList<>();
 				for (Map<String, String> joinKey : joinKeys) {
 						Document filter = new Document();
-						filter.put("element1." + joinKey.get("target"), MapUtil.getValueByKey(data, joinKey.get("source")));
+						final String embeddedField = joinKey.get("target").substring(joinKey.get("target").lastIndexOf(".") + 1);
+						filter.put("element1." + embeddedField, MapUtil.getValueByKey(data, joinKey.get("source")));
 						arrayFilter.add(filter);
 				}
 				return arrayFilter;

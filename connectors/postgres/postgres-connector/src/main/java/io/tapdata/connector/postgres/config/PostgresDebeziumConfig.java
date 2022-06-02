@@ -1,7 +1,7 @@
 package io.tapdata.connector.postgres.config;
 
 import io.debezium.config.Configuration;
-import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.kit.EmptyKit;
 
 import java.util.HashMap;
 import java.util.List;
