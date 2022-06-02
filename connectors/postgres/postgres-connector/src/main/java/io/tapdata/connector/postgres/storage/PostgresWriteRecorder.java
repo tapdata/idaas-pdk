@@ -135,11 +135,11 @@ public class PostgresWriteRecorder {
         if (EmptyKit.isEmpty(after) || EmptyKit.isEmpty(uniqueCondition)) {
             return;
         }
+        before.clear();
+        uniqueCondition.forEach(k -> before.put(k, after.get(k)));
         for (Map.Entry<String, Object> entry : before.entrySet()) {
             after.remove(entry.getKey(), entry.getValue());
         }
-        before.clear();
-        uniqueCondition.forEach(k -> before.put(k, after.get(k)));
         if (EmptyKit.isNull(preparedStatement)) {
             if (hasPk) {
                 preparedStatement = connection.prepareStatement("UPDATE \"" + tapTable.getId() + "\" SET " +
