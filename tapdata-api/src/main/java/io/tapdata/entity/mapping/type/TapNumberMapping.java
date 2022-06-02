@@ -221,7 +221,7 @@ public class TapNumberMapping extends TapMapping {
         }
         if(minPrecision == null && maxPrecision == null) {
             minPrecision = 1;
-            maxPrecision = maxValue.precision();
+            maxPrecision = maxValue.toPlainString().length();
         }
     }
 
@@ -293,6 +293,9 @@ public class TapNumberMapping extends TapMapping {
         if(length != null) {
             theMinValue = TypeUtils.minValueForBit(length, theUnsigned);
             theMaxValue = TypeUtils.maxValueForBit(length, theUnsigned);
+        } else if(minValue != null && maxValue != null) {
+            theMinValue = minValue;
+            theMaxValue = maxValue;
         } else if(precision != null){
             theMinValue = (theUnsigned != null && theUnsigned) ? BigDecimal.ZERO : TypeUtils.minValueForPrecision(precision);
             theMaxValue = TypeUtils.maxValueForPrecision(precision);
@@ -300,7 +303,7 @@ public class TapNumberMapping extends TapMapping {
             theMinValue = BigDecimal.valueOf(-Double.MAX_VALUE);
             theMaxValue = BigDecimal.valueOf(Double.MAX_VALUE);
         }
-        int actualPrecision = theMaxValue.precision();
+        int actualPrecision = theMaxValue.toPlainString().length();
         if(precision > actualPrecision) {
             precision = actualPrecision;
         }
@@ -315,9 +318,10 @@ public class TapNumberMapping extends TapMapping {
                 .unsigned(theUnsigned)
                 .zerofill(theZerofill);
     }
+    final BigDecimal theMaxValue = BigDecimal.valueOf(10).pow(246);
     final BigDecimal valueValue = BigDecimal.valueOf(10).pow(245);
     final BigDecimal scaleValue = BigDecimal.valueOf(10).pow(245);
-    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(244);
+    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(60);
     final BigDecimal unsignedValue = BigDecimal.valueOf(10).pow(244);
 
     @Override
@@ -337,7 +341,13 @@ public class TapNumberMapping extends TapMapping {
             Boolean unsigned = tapNumber.getUnsigned();
 
             BigDecimal comingMaxValue = tapNumber.getMaxValue();
+            if(comingMaxValue.compareTo(valueValue) > 0) {
+                comingMaxValue = theMaxValue;
+            }
             BigDecimal comingMinValue = tapNumber.getMinValue();
+            if(comingMinValue.compareTo(valueValue.negate()) < 0) {
+                comingMinValue = theMaxValue.negate();
+            }
 
 //            final BigDecimal unsignedValue = realMaxValue.multiply(BigDecimal.TEN);
 //            final BigDecimal fixedValue =   unsignedValue.multiply(BigDecimal.TEN);
@@ -434,8 +444,8 @@ public class TapNumberMapping extends TapMapping {
 
         if (minDistance.compareTo(BigDecimal.ZERO) < 0 || maxDistance.compareTo(BigDecimal.ZERO) < 0) {
             BigDecimal theDistance = minDistance.add(maxDistance).abs();
-            if(theDistance.compareTo(valueValue) > 0) {
-                return valueValue.add(valueValue).negate();//-valueValue - valueValue;
+            if(theDistance.compareTo(valueValue.pow(2)) > 0) {
+                return valueValue.add(valueValue.pow(2)).negate();//-valueValue - valueValue;
             } else {
                 return valueValue.add(theDistance).negate();//-valueValue - theDistance.negate().doubleValue();
             }

@@ -3,6 +3,7 @@ package io.tapdata.pdk.cli.commands;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.mapping.type.*;
@@ -11,7 +12,6 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.simplify.pretty.BiClassHandlers;
-import io.tapdata.entity.simplify.pretty.ClassHandlers;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.cache.KVMap;
@@ -43,8 +43,6 @@ import java.text.MessageFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static io.tapdata.entity.simplify.TapSimplify.*;
 
@@ -172,7 +170,9 @@ public class ModelPredictionCli extends CommonCli {
                 }
             }
         }
-        writeWorkbook();
+        String file = writeWorkbook();
+        TapLogger.info(TAG, "Excel file has been written in {}", file);
+        System.exit(1);
         return 0;
     }
 
@@ -209,20 +209,23 @@ public class ModelPredictionCli extends CommonCli {
         }
     }
 
-    private void writeWorkbook() {
+    private String writeWorkbook() {
         if(workbook == null)
-            return;
+            return null;
+        String file = output + "TypesMappingReport_" + dateTime() + ".xlsx";
         try
         {
             //Write the workbook in file system
-            FileOutputStream out = FileUtils.openOutputStream(new File(output + "TypesMappingReport_" + dateTime() + ".xlsx"));
+            FileOutputStream out = FileUtils.openOutputStream(new File(file));
             workbook.write(out);
             out.close();
         }
         catch (Exception e)
         {
             e.printStackTrace();
+            throw new RuntimeException(e);
         }
+        return file;
     }
 
     private String dateTime() {
@@ -531,24 +534,20 @@ public class ModelPredictionCli extends CommonCli {
         ) {
             needEmpty = false;
             TapResult<String> result;
-            result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale()));
-            if(result != null && result.getResult() != TapResult.RESULT_FAILED)
-                fields.add(result.getData());
             result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMinScale()));
             if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                 fields.add(result.getData());
-            result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMinPrecision()).scale(numberMapping.getMaxScale()));
-            if(result != null && result.getResult() != TapResult.RESULT_FAILED)
-                fields.add(result.getData());
-            result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMinPrecision()).scale(numberMapping.getMinScale()));
-            if(result != null && result.getResult() != TapResult.RESULT_FAILED)
-                fields.add(result.getData());
+            if(numberMapping.getMaxScale() / 2 > numberMapping.getMinScale()) {
+                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale() / 2));
+                if(result != null && result.getResult() != TapResult.RESULT_FAILED)
+                    fields.add(result.getData());
+            }
             if(numberMapping.getUnsigned() != null) {
-                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale()).unsigned(true));
+                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMinScale()).unsigned(true));
                 if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                     fields.add(result.getData());
 
-                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale()).unsigned(false));
+                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMinScale()).unsigned(false));
                 if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                     fields.add(result.getData());
             }
