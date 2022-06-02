@@ -1,5 +1,5 @@
-import io.tapdata.connector.postgres.PostgresCdcRunner;
-import io.tapdata.connector.postgres.PostgresOffset;
+import io.tapdata.connector.postgres.cdc.PostgresCdcRunner;
+import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 
 import java.util.Collections;

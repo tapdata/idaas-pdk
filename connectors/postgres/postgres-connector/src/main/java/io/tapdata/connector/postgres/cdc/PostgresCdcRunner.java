@@ -1,12 +1,15 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.connector.postgres.cdc;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
+import io.tapdata.connector.postgres.PostgresDataPool;
+import io.tapdata.connector.postgres.PostgresJdbcContext;
+import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
 import io.tapdata.connector.postgres.config.PostgresConfig;
-import io.tapdata.connector.postgres.config.PostgresDebeziumConfig;
+import io.tapdata.connector.postgres.cdc.config.PostgresDebeziumConfig;
 import io.tapdata.kit.EmptyKit;
 import io.tapdata.kit.NumberKit;
-import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
+import io.tapdata.connector.postgres.cdc.offset.PostgresOffsetStorage;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;

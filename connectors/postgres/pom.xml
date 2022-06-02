@@ -21,7 +21,6 @@
   <properties>
     <java.version>8</java.version>
     <postgres.driver.version>42.3.4</postgres.driver.version>
-    <fastjson.version>2.13.2</fastjson.version>
     <hikari.version>4.0.3</hikari.version>
     <debezium.version>1.5.4.Final</debezium.version>
     <postgres.core.version>1.0-SNAPSHOT</postgres.core.version>
@@ -42,11 +41,6 @@
         <groupId>com.zaxxer</groupId>
         <artifactId>HikariCP</artifactId>
         <version>${hikari.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>${fastjson.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

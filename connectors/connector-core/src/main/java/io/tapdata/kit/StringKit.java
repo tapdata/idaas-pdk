@@ -10,4 +10,8 @@ public class StringKit {
         return sb.delete(sb.length() - combiner.length(), sb.length()).toString();
     }
 
+    public static String replaceOnce(String text, String searchString, String replacement) {
+        return text.replace(searchString, replacement);
+    }
+
 }

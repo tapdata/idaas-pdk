@@ -13,34 +13,26 @@ import java.io.Serializable;
  */
 public class PostgresConfig extends CommonDbConfig implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    private static final String TAG = PostgresConfig.class.getSimpleName();
-
-    private String jdbcDriver = "org.postgresql.Driver";
-    private String databaseUrlPattern = "jdbc:postgresql://%s:%d/%s%s"; // last %s reserved for extend params
-    private String extParams = "";
-    private String host;
-    private int port;
-    private String database;
-    private String schema;
-    private String user;
-    private String password;
     private String logPluginName = "decoderbufs";
-    private int insertBatchSize = 1000;
+
+    public PostgresConfig() {
+
+    }
 
     public String getDatabaseUrl() {
-        if (EmptyKit.isNotEmpty(extParams) && !extParams.startsWith("?")) {
-            extParams = "?" + extParams;
+        if (EmptyKit.isNotEmpty(this.getExtParams()) && !this.getExtParams().startsWith("?")) {
+            this.setExtParams("?" + this.getExtParams());
         }
         return String.format(this.getDatabaseUrlPattern(), this.getHost(), this.getPort(), this.getDatabase(), this.getExtParams());
     }
 
-    public int getInsertBatchSize() {
-        return insertBatchSize;
+    public String getJdbcDriver() {
+        return "org.postgresql.Driver";
     }
 
-    public void setInsertBatchSize(int insertBatchSize) {
-        this.insertBatchSize = insertBatchSize;
+    public String getDatabaseUrlPattern() {
+        // last %s reserved for extend params
+        return "jdbc:postgresql://%s:%d/%s%s";
     }
 
     public String getLogPluginName() {

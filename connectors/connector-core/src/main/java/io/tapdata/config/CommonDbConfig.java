@@ -14,8 +14,6 @@ public abstract class CommonDbConfig implements Serializable {
     private static final JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
     private static final BeanUtils beanUtils = InstanceFactory.instance(BeanUtils.class);
 
-    private String jdbcDriver;
-    private String databaseUrlPattern;
     private String extParams;
     private String host;
     private int port;
@@ -43,22 +41,6 @@ public abstract class CommonDbConfig implements Serializable {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public String getJdbcDriver() {
-        return jdbcDriver;
-    }
-
-    public void setJdbcDriver(String jdbcDriver) {
-        this.jdbcDriver = jdbcDriver;
-    }
-
-    public String getDatabaseUrlPattern() {
-        return databaseUrlPattern;
-    }
-
-    public void setDatabaseUrlPattern(String databaseUrlPattern) {
-        this.databaseUrlPattern = databaseUrlPattern;
     }
 
     public String getExtParams() {

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.tapdata.pdk</groupId>
+        <artifactId>connectors</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <groupId>io.tapdata</groupId>
+    <artifactId>oracle</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>Oracle</name>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>oracle-core</module>
+        <module>oracle-connector</module>
+    </modules>
+
+    <properties>
+        <java.version>8</java.version>
+        <oracle.driver.version>21.5.0.0</oracle.driver.version>
+        <hikari.version>4.0.3</hikari.version>
+        <oracle.core.version>1.0-SNAPSHOT</oracle.core.version>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.tapdata</groupId>
+                <artifactId>oracle-core</artifactId>
+                <version>${oracle.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.database.jdbc</groupId>
+                <artifactId>ojdbc8</artifactId>
+                <version>${oracle.driver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikari.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

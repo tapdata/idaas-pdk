@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres.storage;
+package io.tapdata.connector.postgres;
 
 import io.tapdata.kit.EmptyKit;
 import io.tapdata.kit.StringKit;

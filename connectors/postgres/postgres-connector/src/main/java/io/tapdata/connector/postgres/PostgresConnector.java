@@ -2,10 +2,9 @@ package io.tapdata.connector.postgres;
 
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.postgres.bean.PostgresColumn;
+import io.tapdata.connector.postgres.cdc.PostgresCdcRunner;
+import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
 import io.tapdata.connector.postgres.config.PostgresConfig;
-import io.tapdata.kit.DbKit;
-import io.tapdata.kit.EmptyKit;
-import io.tapdata.connector.postgres.storage.PostgresWriteRecorder;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
@@ -22,6 +21,8 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.kit.DbKit;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -121,7 +122,7 @@ public class PostgresConnector extends ConnectorBase {
 
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
-        postgresConfig = PostgresConfig.load(connectionContext.getConnectionConfig());
+        postgresConfig = (PostgresConfig) new PostgresConfig().load(connectionContext.getConnectionConfig());
         PostgresTest postgresTest = new PostgresTest(postgresConfig);
         TestItem testHostPort = postgresTest.testHostPort();
         consumer.accept(testHostPort);
@@ -204,7 +205,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void initConnection(TapConnectionContext connectorContext) {
-        postgresConfig = PostgresConfig.load(connectorContext.getConnectionConfig());
+        postgresConfig = (PostgresConfig) new PostgresConfig().load(connectorContext.getConnectionConfig());
         if (EmptyKit.isNull(postgresJdbcContext)) {
             postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
         }
@@ -469,7 +470,7 @@ public class PostgresConnector extends ConnectorBase {
             cdcRunner = new PostgresCdcRunner().use(postgresConfig);
             if (EmptyKit.isNull(slotName)) {
                 cdcRunner.watch(tableList).offset(offsetState).registerConsumer(consumer, recordSize);
-                nodeContext.getStateMap().put("tapdata_pg_slot", cdcRunner.runnerName);
+                nodeContext.getStateMap().put("tapdata_pg_slot", cdcRunner.getRunnerName());
             } else {
                 cdcRunner.useSlot(slotName.toString()).watch(tableList).offset(offsetState).registerConsumer(consumer, recordSize);
             }

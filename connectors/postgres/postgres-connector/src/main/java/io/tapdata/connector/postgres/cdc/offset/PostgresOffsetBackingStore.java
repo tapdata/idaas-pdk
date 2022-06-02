@@ -1,7 +1,6 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.connector.postgres.cdc.offset;
 
 import io.tapdata.kit.EmptyKit;
-import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.JsonParser;
 import org.apache.kafka.connect.runtime.WorkerConfig;
