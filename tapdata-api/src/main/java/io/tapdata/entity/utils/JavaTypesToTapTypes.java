@@ -18,7 +18,7 @@ public class JavaTypesToTapTypes {
     public static final String JAVA_Map = "Map";
     public static final String JAVA_Array = "Array";
 
-    public TapType toTapType(String javaType) {
+    public static TapType toTapType(String javaType) {
         if(javaType == null)
             throw new CoreException(TapAPIErrorCodes.ERROR_MISSING_JAVA_TYPE, "Missing javaType for TapType conversion");
 
