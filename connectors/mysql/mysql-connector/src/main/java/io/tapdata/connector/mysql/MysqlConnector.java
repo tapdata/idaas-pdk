@@ -116,8 +116,7 @@ public class MysqlConnector extends ConnectorBase {
 	public void onDestroy(TapConnectionContext connectionContext) throws Throwable {
 		isConnectorStarted(connectionContext, connectorContext -> {
 			KVMap<Object> stateMap = connectorContext.getStateMap();
-			stateMap.remove(MysqlReader.SERVER_NAME_KEY);
-			stateMap.remove(MysqlReader.MYSQL_SCHEMA_HISTORY);
+			stateMap.clear();
 		});
 	}
 
@@ -128,6 +127,7 @@ public class MysqlConnector extends ConnectorBase {
 		} catch (Exception e) {
 			TapLogger.error(TAG, "Release connector failed, error: " + e.getMessage() + "\n" + getStackString(e));
 		}
+		Optional.ofNullable(this.mysqlReader).ifPresent(MysqlReader::close);
 		Optional.ofNullable(this.mysqlWriter).ifPresent(MysqlWriter::onDestroy);
 	}
 

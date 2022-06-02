@@ -243,7 +243,7 @@ public abstract class ConnectorBase implements TapConnector {
 
     @Override
     public final void destroy(TapConnectionContext connectionContext) throws Throwable {
-        if (isDestroyed.compareAndSet(true, false)) {
+        if (isDestroyed.compareAndSet(false, true)) {
             pause(connectionContext);
             onDestroy(connectionContext);
         }

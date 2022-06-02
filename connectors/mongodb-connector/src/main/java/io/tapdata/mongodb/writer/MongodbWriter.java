@@ -121,7 +121,7 @@ public class MongodbWriter {
 								writeModel = new InsertOneModel<>(new Document(insertRecordEvent.getAfter()));
 						}
 						inserted.incrementAndGet();
-				} else if (recordEvent instanceof TapUpdateRecordEvent && CollectionUtils.isEmpty(pks)) {
+				} else if (recordEvent instanceof TapUpdateRecordEvent && CollectionUtils.isNotEmpty(pks)) {
 
 						TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
 						Map<String, Object> after = updateRecordEvent.getAfter();
@@ -130,7 +130,7 @@ public class MongodbWriter {
 
 						writeModel = new UpdateManyModel<>(pkFilter, new Document().append("$set", after), options);
 						updated.incrementAndGet();
-				} else if (recordEvent instanceof TapDeleteRecordEvent && CollectionUtils.isEmpty(pks)) {
+				} else if (recordEvent instanceof TapDeleteRecordEvent && CollectionUtils.isNotEmpty(pks)) {
 
 						TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
 						Map<String, Object> before = deleteRecordEvent.getBefore();
