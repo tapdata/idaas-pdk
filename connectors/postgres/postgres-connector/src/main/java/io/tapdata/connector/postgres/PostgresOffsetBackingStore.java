@@ -1,6 +1,6 @@
 package io.tapdata.connector.postgres;
 
-import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.JsonParser;

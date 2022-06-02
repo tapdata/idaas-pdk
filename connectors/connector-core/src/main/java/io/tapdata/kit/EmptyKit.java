@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres.kit;
+package io.tapdata.kit;
 
 import java.util.Collection;
 import java.util.Map;
@@ -19,6 +19,14 @@ public class EmptyKit {
 
     public static boolean isEmpty(String var) {
         return null == var || var.isEmpty();
+    }
+
+    public static <T> boolean isEmpty(T[] arr) {
+        return null == arr || arr.length == 0;
+    }
+
+    public static <T> boolean isNotEmpty(T[] arr) {
+        return null != arr && arr.length > 0;
     }
 
     public static boolean isNotEmpty(Collection<?> var) {

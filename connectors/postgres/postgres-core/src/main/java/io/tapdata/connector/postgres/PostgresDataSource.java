@@ -6,24 +6,28 @@ import io.tapdata.kit.EmptyKit;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class PostgresDataPool {
+public class PostgresDataSource {
 
-    private final static ConcurrentHashMap<String, PostgresJdbcContext> dataPool = new ConcurrentHashMap<>(16);
+    private final static ConcurrentHashMap<String, PostgresJdbcContext> postgresDataSource = new ConcurrentHashMap<>(16);
+
+    private PostgresDataSource() {
+
+    }
 
     public static PostgresJdbcContext getJdbcContext(PostgresConfig postgresConfig) {
-        String key = postgresConfig.getHost() + postgresConfig.getPort();
-        if (dataPool.containsKey(key)) {
-            return dataPool.get(key).incrementAndGet();
+        String key = postgresConfig.getDatabase() + postgresConfig.getPort();
+        if (postgresDataSource.containsKey(key)) {
+            return postgresDataSource.get(key);
         } else {
             PostgresJdbcContext context = new PostgresJdbcContext(postgresConfig, HikariConnection.getHikariDataSource(postgresConfig));
-            dataPool.put(key, context);
+            postgresDataSource.put(key, context);
             return context;
         }
     }
 
     public static void removeJdbcContext(PostgresConfig postgresConfig) {
-        String key = postgresConfig.getHost() + postgresConfig.getPort();
-        dataPool.remove(key);
+        String key = postgresConfig.getDatabase() + postgresConfig.getPort();
+        postgresDataSource.remove(key);
     }
 
     static class HikariConnection {
@@ -33,7 +37,7 @@ public class PostgresDataPool {
                 throw new IllegalArgumentException("Postgres Config cannot be null");
             }
             hikariDataSource = new HikariDataSource();
-            hikariDataSource.setDriverClassName(postgresConfig.getJdbcDriver());
+            hikariDataSource.setDriverClassName("org.postgresql.Driver");
             hikariDataSource.setJdbcUrl(postgresConfig.getDatabaseUrl());
             hikariDataSource.setUsername(postgresConfig.getUser());
             hikariDataSource.setPassword(postgresConfig.getPassword());

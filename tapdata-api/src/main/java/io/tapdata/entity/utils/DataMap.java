@@ -31,4 +31,8 @@ public class DataMap extends LinkedHashMap<String, Object> {
 		if(null == o) return null;
 		return String.valueOf(o);
 	}
+
+	public <T> T getObject(Class<T> tClass) {
+		return (T) super.clone();
+	}
 }
