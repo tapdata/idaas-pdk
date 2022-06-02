@@ -2,7 +2,7 @@ package io.tapdata.connector.postgres;
 
 import com.zaxxer.hikari.HikariDataSource;
 import io.tapdata.connector.postgres.config.PostgresConfig;
-import io.tapdata.connector.postgres.kit.EmptyKit;
+import io.tapdata.kit.EmptyKit;
 
 import java.util.concurrent.ConcurrentHashMap;
 
