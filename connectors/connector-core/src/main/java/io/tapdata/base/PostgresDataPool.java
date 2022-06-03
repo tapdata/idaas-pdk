@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.base;
 
 import com.zaxxer.hikari.HikariDataSource;
 import io.tapdata.connector.postgres.config.PostgresConfig;
