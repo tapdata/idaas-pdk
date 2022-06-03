@@ -54,7 +54,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     public PostgresCdcRunner use(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        this.postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig);
+        this.postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         return this;
     }
 

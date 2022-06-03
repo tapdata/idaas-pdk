@@ -1,3 +1,4 @@
+import io.tapdata.base.DataSourcePool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.entity.utils.DataMap;
@@ -23,7 +24,7 @@ public class Main {
 //        postgresConfig.setExtParams("");
 //        postgresConfig.setUser("postgres");
 //        postgresConfig.setPassword("gj0628");
-        PostgresJdbcContext postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
+        PostgresJdbcContext postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         Connection connection = postgresJdbcContext.getConnection();
         ResultSet rs = connection.createStatement().executeQuery("SELECT col.*, d.description,\n" +
                 "       (SELECT pg_catalog.format_type(a.atttypid, a.atttypmod) AS \"dataType\"\n" +

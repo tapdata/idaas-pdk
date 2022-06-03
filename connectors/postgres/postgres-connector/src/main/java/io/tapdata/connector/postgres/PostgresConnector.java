@@ -208,7 +208,7 @@ public class PostgresConnector extends ConnectorBase {
     private void initConnection(TapConnectionContext connectorContext) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectorContext.getConnectionConfig());
         if (EmptyKit.isNull(postgresJdbcContext)) {
-            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig);
+            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         }
         postgresVersion = postgresJdbcContext.queryVersion();
     }

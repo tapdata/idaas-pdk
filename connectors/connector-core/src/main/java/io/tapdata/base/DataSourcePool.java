@@ -10,12 +10,18 @@ public class DataSourcePool {
 
     private final static ConcurrentHashMap<String, JdbcContext> dataPool = new ConcurrentHashMap<>(16);
 
-    public static JdbcContext getJdbcContext(CommonDbConfig config) {
+    public static JdbcContext getJdbcContext(CommonDbConfig config, Class<? extends JdbcContext> clazz) {
         String key = uniqueKeyForDb(config);
         if (dataPool.containsKey(key)) {
             return dataPool.get(key).incrementAndGet();
         } else {
-            JdbcContext context = new JdbcContext(config, HikariConnection.getHikariDataSource(config));
+            JdbcContext context = null;
+            try {
+                context = clazz.getDeclaredConstructor(config.getClass(), HikariDataSource.class)
+                        .newInstance(config, HikariConnection.getHikariDataSource(config));
+            } catch (Exception e) {
+                context = new JdbcContext(config, HikariConnection.getHikariDataSource(config));
+            }
             dataPool.put(key, context);
             return context;
         }
