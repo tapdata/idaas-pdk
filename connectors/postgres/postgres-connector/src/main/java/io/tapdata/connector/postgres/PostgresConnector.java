@@ -1,6 +1,7 @@
 package io.tapdata.connector.postgres;
 
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.base.DataSourcePool;
 import io.tapdata.connector.postgres.bean.PostgresColumn;
 import io.tapdata.connector.postgres.cdc.PostgresCdcRunner;
 import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
@@ -207,7 +208,7 @@ public class PostgresConnector extends ConnectorBase {
     private void initConnection(TapConnectionContext connectorContext) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectorContext.getConnectionConfig());
         if (EmptyKit.isNull(postgresJdbcContext)) {
-            postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
+            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig);
         }
         postgresVersion = postgresJdbcContext.queryVersion();
     }

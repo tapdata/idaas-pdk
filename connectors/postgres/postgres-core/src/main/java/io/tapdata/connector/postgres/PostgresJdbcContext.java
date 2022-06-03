@@ -1,74 +1,30 @@
 package io.tapdata.connector.postgres;
 
 import com.zaxxer.hikari.HikariDataSource;
-import io.tapdata.base.ResultSetConsumer;
+import io.tapdata.base.JdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
-import io.tapdata.kit.DbKit;
-import io.tapdata.kit.EmptyKit;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.kit.DbKit;
+import io.tapdata.kit.EmptyKit;
 
-import java.sql.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
-public class PostgresJdbcContext {
+public class PostgresJdbcContext extends JdbcContext {
 
     private final static String TAG = PostgresJdbcContext.class.getSimpleName();
-    private final HikariDataSource hikariDataSource;
-    private final PostgresConfig postgresConfig;
-    private final AtomicInteger connectorNumber = new AtomicInteger(1);
 
-    public PostgresJdbcContext incrementAndGet() {
-        connectorNumber.incrementAndGet();
-        return this;
-    }
-
-    public PostgresJdbcContext(PostgresConfig postgresConfig, HikariDataSource hikariDataSource) {
-        this.postgresConfig = postgresConfig;
-        this.hikariDataSource = hikariDataSource;
-    }
-
-    public Connection getConnection() throws SQLException {
-        return hikariDataSource.getConnection();
-    }
-
-    public static void tryCommit(Connection connection) {
-        try {
-            if (EmptyKit.isNotNull(connection) && connection.isValid(5) && !connection.getAutoCommit()) {
-                connection.commit();
-            }
-        } catch (Throwable ignored) {
-        }
-    }
-
-    public static void tryRollBack(Connection connection) {
-        try {
-            if (EmptyKit.isNotNull(connection) && connection.isValid(5) && !connection.getAutoCommit()) {
-                connection.rollback();
-            }
-        } catch (Throwable ignored) {
-        }
-    }
-
-    public String queryVersion() {
-        AtomicReference<String> version = new AtomicReference<>("");
-        try {
-            query("SELECT VERSION()", resultSet -> version.set(resultSet.getString(1)));
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return version.get();
+    public PostgresJdbcContext(PostgresConfig config, HikariDataSource hikariDataSource) {
+        super(config, hikariDataSource);
     }
 
     public List<String> queryAllTables(String tableName) {
-        TapLogger.debug(TAG, "Query all tables, schema: " + postgresConfig.getSchema());
+        TapLogger.debug(TAG, "Query all tables, schema: " + getConfig().getSchema());
         List<String> tableList = TapSimplify.list();
         String tableSql = EmptyKit.isNotNull(tableName) ? "AND table_name='" + tableName + "'" : "";
         try {
-            query(String.format(PG_ALL_TABLE, postgresConfig.getDatabase(), postgresConfig.getSchema(), tableSql), resultSet -> {
+            query(String.format(PG_ALL_TABLE, getConfig().getDatabase(), getConfig().getSchema(), tableSql), resultSet -> {
                 while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
                     tableList.add(resultSet.getString("table_name"));
                     resultSet.next();
@@ -81,11 +37,11 @@ public class PostgresJdbcContext {
     }
 
     public List<DataMap> queryAllColumns(String tableName) {
-        TapLogger.debug(TAG, "Query all columns, schema: " + postgresConfig.getSchema());
+        TapLogger.debug(TAG, "Query all columns, schema: " + getConfig().getSchema());
         List<DataMap> columnList = TapSimplify.list();
         String tableSql = EmptyKit.isNotNull(tableName) ? "AND table_name='" + tableName + "'" : "";
         try {
-            query(String.format(PG_ALL_COLUMN, postgresConfig.getDatabase(), postgresConfig.getSchema(), tableSql),
+            query(String.format(PG_ALL_COLUMN, getConfig().getDatabase(), getConfig().getSchema(), tableSql),
                     resultSet -> columnList.addAll(DbKit.getDataFromResultSet(resultSet)));
         } catch (Throwable e) {
             TapLogger.error(TAG, "Execute queryAllColumns failed, error: " + e.getMessage(), e);
@@ -94,81 +50,16 @@ public class PostgresJdbcContext {
     }
 
     public List<DataMap> queryAllIndexes(String tableName) {
-        TapLogger.debug(TAG, "Query all indexes, schema: " + postgresConfig.getSchema());
+        TapLogger.debug(TAG, "Query all indexes, schema: " + getConfig().getSchema());
         List<DataMap> indexList = TapSimplify.list();
         String tableSql = EmptyKit.isNotNull(tableName) ? "AND table_name='" + tableName + "'" : "";
         try {
-            query(String.format(PG_ALL_INDEX, postgresConfig.getDatabase(), postgresConfig.getSchema(), tableSql),
+            query(String.format(PG_ALL_INDEX, getConfig().getDatabase(), getConfig().getSchema(), tableSql),
                     resultSet -> indexList.addAll(DbKit.getDataFromResultSet(resultSet)));
         } catch (Throwable e) {
             TapLogger.error(TAG, "Execute queryAllIndexes failed, error: " + e.getMessage(), e);
         }
         return indexList;
-    }
-
-    public void query(String sql, ResultSetConsumer resultSetConsumer) throws Throwable {
-        TapLogger.debug(TAG, "Execute query, sql: " + sql);
-        try (
-                Connection connection = getConnection();
-                Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery(sql)
-        ) {
-            if (EmptyKit.isNotNull(resultSet)) {
-                resultSet.next();
-                resultSetConsumer.accept(resultSet);
-            }
-        } catch (SQLException e) {
-            throw new SQLException("Execute query failed, sql: " + sql + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
-        }
-    }
-
-    public void query(PreparedStatement preparedStatement, ResultSetConsumer resultSetConsumer) throws Throwable {
-        TapLogger.debug(TAG, "Execute query, sql: " + preparedStatement);
-        try (
-                ResultSet resultSet = preparedStatement.executeQuery()
-        ) {
-            if (EmptyKit.isNotNull(resultSet)) {
-                resultSet.next();
-                resultSetConsumer.accept(resultSet);
-            }
-        } catch (SQLException e) {
-            throw new SQLException("Execute query failed, sql: " + preparedStatement + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
-        }
-    }
-
-    public void execute(String sql) throws SQLException {
-        TapLogger.debug(TAG, "Execute sql: " + sql);
-        try (
-                Connection connection = getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            statement.execute(sql);
-            connection.commit();
-        } catch (SQLException e) {
-            throw new SQLException("Execute sql failed, sql: " + sql + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
-        }
-    }
-
-    public void batchExecute(List<String> sqls) throws SQLException {
-        TapLogger.debug(TAG, "batchExecute sqls: " + sqls);
-        try (
-                Connection connection = getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            for (String sql : sqls) {
-                statement.execute(sql);
-            }
-            connection.commit();
-        } catch (SQLException e) {
-            throw new SQLException("batchExecute sql failed, sqls: " + sqls + ", message: " + e.getSQLState() + " " + e.getErrorCode() + " " + e.getMessage(), e);
-        }
-    }
-
-    public void finish() {
-        if (connectorNumber.decrementAndGet() <= 0) {
-            this.hikariDataSource.close();
-            PostgresDataPool.removeJdbcContext(postgresConfig);
-        }
     }
 
     private final static String PG_ALL_TABLE =

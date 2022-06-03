@@ -1,5 +1,6 @@
 package io.tapdata.connector.postgres;
 
+import io.tapdata.base.DataSourcePool;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.util.NetUtil;
@@ -22,7 +23,7 @@ public class PostgresTest implements AutoCloseable {
 
     public PostgresTest(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
+        postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig);
     }
 
     //Test host and port

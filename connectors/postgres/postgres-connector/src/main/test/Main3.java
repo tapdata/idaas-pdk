@@ -1,12 +1,8 @@
-import io.tapdata.connector.postgres.PostgresDataPool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Types;
-import java.util.Date;
 
 public class Main3 {
     public static void main(String[] args) throws Throwable {

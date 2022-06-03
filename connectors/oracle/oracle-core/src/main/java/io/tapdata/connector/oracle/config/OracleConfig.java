@@ -16,15 +16,12 @@ public class OracleConfig extends CommonDbConfig implements Serializable {
 
     public OracleConfig() {
         setDbType("oracle");
+        setJdbcDriver("oracle.jdbc.driver.OracleDriver");
     }
 
     @Override
     public String getDatabaseUrlPattern() {
         return "jdbc:" + this.getDbType() + ":thin:@//%s:%d/%s%s";
-    }
-
-    public String getJdbcDriver() {
-        return "org.postgresql.Driver";
     }
 
     public String getLogPluginName() {

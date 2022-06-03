@@ -2,7 +2,7 @@ package io.tapdata.connector.postgres.cdc;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
-import io.tapdata.connector.postgres.PostgresDataPool;
+import io.tapdata.base.DataSourcePool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.cdc.config.PostgresDebeziumConfig;
 import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
@@ -54,7 +54,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     public PostgresCdcRunner use(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        this.postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
+        this.postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig);
         return this;
     }
 

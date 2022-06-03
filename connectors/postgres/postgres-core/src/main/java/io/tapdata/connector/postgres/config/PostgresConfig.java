@@ -16,10 +16,7 @@ public class PostgresConfig extends CommonDbConfig implements Serializable {
 
     public PostgresConfig() {
         setDbType("postgresql");
-    }
-
-    public String getJdbcDriver() {
-        return "org.postgresql.Driver";
+        setJdbcDriver("org.postgresql.Driver");
     }
 
     public String getLogPluginName() {

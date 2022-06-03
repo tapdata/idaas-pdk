@@ -1,4 +1,3 @@
-import io.tapdata.connector.postgres.PostgresDataPool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.entity.utils.DataMap;

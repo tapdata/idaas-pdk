@@ -9,7 +9,7 @@ import io.tapdata.kit.EmptyKit;
 import java.io.Serializable;
 import java.util.Map;
 
-public abstract class CommonDbConfig implements Serializable {
+public class CommonDbConfig implements Serializable {
 
     private static final String TAG = CommonDbConfig.class.getSimpleName();
     private static final JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
@@ -23,6 +23,7 @@ public abstract class CommonDbConfig implements Serializable {
     private String user;
     private String password;
     private String extParams;
+    private String jdbcDriver;
 
     public String getDatabaseUrlPattern() {
         // last %s reserved for extend params
@@ -119,5 +120,13 @@ public abstract class CommonDbConfig implements Serializable {
 
     public void setExtParams(String extParams) {
         this.extParams = extParams;
+    }
+
+    public String getJdbcDriver() {
+        return jdbcDriver;
+    }
+
+    public void setJdbcDriver(String jdbcDriver) {
+        this.jdbcDriver = jdbcDriver;
     }
 }
