@@ -25,11 +25,12 @@ public class Main {
 //        postgresConfig.setUser("postgres");
 //        postgresConfig.setPassword("gj0628");
         OracleJdbcContext oracleJdbcContext = (OracleJdbcContext) DataSourcePool.getJdbcContext(oracleConfig, OracleJdbcContext.class);
-        Connection connection = oracleJdbcContext.getConnection();
-        ResultSet rs = connection.createStatement().executeQuery("select * from \"A\"");
-        while (rs.next()) {
-            System.out.println(rs.getString("NAME"));
-        }
+//        Connection connection = oracleJdbcContext.getConnection();
+//        ResultSet rs = connection.createStatement().executeQuery("select * from \"A\"");
+        oracleJdbcContext.queryAllTables(null).forEach(System.out::println);
+//        while (rs.next()) {
+//            System.out.println(rs.getString("NAME"));
+//        }
         oracleJdbcContext.finish();
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {

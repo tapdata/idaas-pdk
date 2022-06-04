@@ -1,5 +1,6 @@
 package io.tapdata.connector.postgres;
 
+import com.google.common.collect.Lists;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.postgres.bean.PostgresColumn;
@@ -64,61 +65,54 @@ public class PostgresConnector extends ConnectorBase {
 
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
-        List<TapTable> tapTableList = new LinkedList<>();
         //get table info
-        List<String> tableList = postgresJdbcContext.queryAllTables(null);
-        List<DataMap> columnList = postgresJdbcContext.queryAllColumns(null);
-        List<DataMap> indexList = postgresJdbcContext.queryAllIndexes(null);
-        //1、filter by tableList
-        if (EmptyKit.isNotEmpty(tables)) {
-            tableList.removeIf(t -> !tables.contains(t));
-            columnList.removeIf(c -> !tables.contains(c.getString("table_name")));
-            indexList.removeIf(i -> !tables.contains(i.getString("table_name")));
-        }
-        tableList.forEach(table -> {
-            //2、table name
-            TapTable tapTable = table(table);
-            //3、primary key and table index
-            List<String> primaryKey = TapSimplify.list();
-            List<TapIndex> tapIndexList = TapSimplify.list();
-            Map<String, List<DataMap>> indexMap = indexList.stream().filter(idx -> table.equals(idx.getString("table_name")))
-                    .collect(Collectors.groupingBy(idx -> idx.getString("index_name"), LinkedHashMap::new, Collectors.toList()));
-            indexMap.forEach((key, value) -> {
-                if (value.stream().anyMatch(v -> (boolean) v.get("is_primary"))) {
-                    primaryKey.addAll(value.stream().map(v -> v.getString("column_name")).collect(Collectors.toList()));
-                }
-                TapIndex index = new TapIndex();
-                index.setName(key);
-                List<TapIndexField> fieldList = TapSimplify.list();
-                value.forEach(v -> {
-                    TapIndexField field = new TapIndexField();
-                    field.setFieldAsc("A".equals(v.getString("asc_or_desc")));
-                    field.setName(v.getString("column_name"));
-                    fieldList.add(field);
-                });
-                index.setUnique(value.stream().anyMatch(v -> (boolean) v.get("is_unique")));
-                index.setPrimary(value.stream().anyMatch(v -> (boolean) v.get("is_primary")));
-                index.setIndexFields(fieldList);
-                tapIndexList.add(index);
-            });
-            //4、table columns info
-            AtomicInteger keyPos = new AtomicInteger(0);
-            columnList.stream().filter(col -> table.equals(col.getString("table_name")))
-                    .forEach(col -> {
-                        TapField tapField = new PostgresColumn(col).getTapField();
-                        tapField.setPos(keyPos.incrementAndGet());
-                        tapField.setPrimaryKey(primaryKey.contains(tapField.getName()));
-                        tapField.setPrimaryKeyPos(primaryKey.indexOf(tapField.getName()) + 1);
-                        tapTable.add(tapField);
+        List<String> tableList = postgresJdbcContext.queryAllTables(tables);
+        List<List<String>> tableLists = Lists.partition(tableList, tableSize);
+        tableLists.forEach(subList -> {
+            List<TapTable> tapTableList = TapSimplify.list();
+            List<DataMap> columnList = postgresJdbcContext.queryAllColumns(subList);
+            List<DataMap> indexList = postgresJdbcContext.queryAllIndexes(subList);
+            tableList.forEach(table -> {
+                //2、table name
+                TapTable tapTable = table(table);
+                //3、primary key and table index
+                List<String> primaryKey = TapSimplify.list();
+                List<TapIndex> tapIndexList = TapSimplify.list();
+                Map<String, List<DataMap>> indexMap = indexList.stream().filter(idx -> table.equals(idx.getString("table_name")))
+                        .collect(Collectors.groupingBy(idx -> idx.getString("index_name"), LinkedHashMap::new, Collectors.toList()));
+                indexMap.forEach((key, value) -> {
+                    if (value.stream().anyMatch(v -> (boolean) v.get("is_primary"))) {
+                        primaryKey.addAll(value.stream().map(v -> v.getString("column_name")).collect(Collectors.toList()));
+                    }
+                    TapIndex index = new TapIndex();
+                    index.setName(key);
+                    List<TapIndexField> fieldList = TapSimplify.list();
+                    value.forEach(v -> {
+                        TapIndexField field = new TapIndexField();
+                        field.setFieldAsc("A".equals(v.getString("asc_or_desc")));
+                        field.setName(v.getString("column_name"));
+                        fieldList.add(field);
                     });
-            tapTable.setIndexList(tapIndexList);
-            tapTableList.add(tapTable);
-            if (tapTableList.size() == tableSize) {
-                consumer.accept(tapTableList);
-                tapTableList.clear();
-            }
+                    index.setUnique(value.stream().anyMatch(v -> (boolean) v.get("is_unique")));
+                    index.setPrimary(value.stream().anyMatch(v -> (boolean) v.get("is_primary")));
+                    index.setIndexFields(fieldList);
+                    tapIndexList.add(index);
+                });
+                //4、table columns info
+                AtomicInteger keyPos = new AtomicInteger(0);
+                columnList.stream().filter(col -> table.equals(col.getString("table_name")))
+                        .forEach(col -> {
+                            TapField tapField = new PostgresColumn(col).getTapField();
+                            tapField.setPos(keyPos.incrementAndGet());
+                            tapField.setPrimaryKey(primaryKey.contains(tapField.getName()));
+                            tapField.setPrimaryKeyPos(primaryKey.indexOf(tapField.getName()) + 1);
+                            tapTable.add(tapField);
+                        });
+                tapTable.setIndexList(tapIndexList);
+                tapTableList.add(tapTable);
+            });
+            consumer.accept(tapTableList);
         });
-        consumer.accept(tapTableList);
     }
 
     @Override
@@ -323,7 +317,7 @@ public class PostgresConnector extends ConnectorBase {
 
     private void clearTable(TapConnectorContext tapConnectorContext, TapClearTableEvent tapClearTableEvent) {
         try {
-            if (postgresJdbcContext.queryAllTables(tapClearTableEvent.getTableId()).size() == 1) {
+            if (postgresJdbcContext.queryAllTables(Collections.singletonList(tapClearTableEvent.getTableId())).size() == 1) {
                 postgresJdbcContext.execute("TRUNCATE TABLE \"" + tapClearTableEvent.getTableId() + "\"");
             }
         } catch (Throwable e) {
@@ -334,7 +328,7 @@ public class PostgresConnector extends ConnectorBase {
 
     private void dropTable(TapConnectorContext tapConnectorContext, TapDropTableEvent tapDropTableEvent) {
         try {
-            if (postgresJdbcContext.queryAllTables(tapDropTableEvent.getTableId()).size() == 1) {
+            if (postgresJdbcContext.queryAllTables(Collections.singletonList(tapDropTableEvent.getTableId())).size() == 1) {
                 postgresJdbcContext.execute("DROP TABLE IF EXISTS \"" + tapDropTableEvent.getTableId() + "\"");
             }
         } catch (Throwable e) {
@@ -344,7 +338,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
-        if (postgresJdbcContext.queryAllTables(tapTable.getId()).size() < 1) {
+        if (postgresJdbcContext.queryAllTables(Collections.singletonList(tapTable.getId())).size() < 1) {
             throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
         }
         Connection connection = postgresJdbcContext.getConnection();

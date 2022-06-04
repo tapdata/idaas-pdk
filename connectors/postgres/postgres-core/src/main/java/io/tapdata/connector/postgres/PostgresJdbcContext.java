@@ -8,6 +8,7 @@ import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.kit.DbKit;
 import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.StringKit;
 
 import java.util.List;
 
@@ -19,10 +20,11 @@ public class PostgresJdbcContext extends JdbcContext {
         super(config, hikariDataSource);
     }
 
-    public List<String> queryAllTables(String tableName) {
-        TapLogger.debug(TAG, "Query all tables, schema: " + getConfig().getSchema());
+    @Override
+    public List<String> queryAllTables(List<String> tableNames) {
+        TapLogger.debug(TAG, "Query some tables, schema: " + getConfig().getSchema());
         List<String> tableList = TapSimplify.list();
-        String tableSql = EmptyKit.isNotNull(tableName) ? "AND table_name='" + tableName + "'" : "";
+        String tableSql = EmptyKit.isNotEmpty(tableNames) ? "AND table_name IN (" + StringKit.joinString(tableNames, "'", ",") + ")" : "";
         try {
             query(String.format(PG_ALL_TABLE, getConfig().getDatabase(), getConfig().getSchema(), tableSql), resultSet -> {
                 while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
@@ -36,10 +38,11 @@ public class PostgresJdbcContext extends JdbcContext {
         return tableList;
     }
 
-    public List<DataMap> queryAllColumns(String tableName) {
-        TapLogger.debug(TAG, "Query all columns, schema: " + getConfig().getSchema());
+    @Override
+    public List<DataMap> queryAllColumns(List<String> tableNames) {
+        TapLogger.debug(TAG, "Query some columns, schema: " + getConfig().getSchema());
         List<DataMap> columnList = TapSimplify.list();
-        String tableSql = EmptyKit.isNotNull(tableName) ? "AND table_name='" + tableName + "'" : "";
+        String tableSql = EmptyKit.isNotEmpty(tableNames) ? "AND table_name IN (" + StringKit.joinString(tableNames, "'", ",") + ")" : "";
         try {
             query(String.format(PG_ALL_COLUMN, getConfig().getDatabase(), getConfig().getSchema(), tableSql),
                     resultSet -> columnList.addAll(DbKit.getDataFromResultSet(resultSet)));
@@ -49,10 +52,11 @@ public class PostgresJdbcContext extends JdbcContext {
         return columnList;
     }
 
-    public List<DataMap> queryAllIndexes(String tableName) {
-        TapLogger.debug(TAG, "Query all indexes, schema: " + getConfig().getSchema());
+    @Override
+    public List<DataMap> queryAllIndexes(List<String> tableNames) {
+        TapLogger.debug(TAG, "Query some indexes, schema: " + getConfig().getSchema());
         List<DataMap> indexList = TapSimplify.list();
-        String tableSql = EmptyKit.isNotNull(tableName) ? "AND table_name='" + tableName + "'" : "";
+        String tableSql = EmptyKit.isNotEmpty(tableNames) ? "AND table_name IN (" + StringKit.joinString(tableNames, "'", ",") + ")" : "";
         try {
             query(String.format(PG_ALL_INDEX, getConfig().getDatabase(), getConfig().getSchema(), tableSql),
                     resultSet -> indexList.addAll(DbKit.getDataFromResultSet(resultSet)));

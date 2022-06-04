@@ -2,6 +2,7 @@ package io.tapdata.common;
 
 import com.zaxxer.hikari.HikariDataSource;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.kit.EmptyKit;
 
 import java.sql.*;
@@ -49,6 +50,22 @@ public abstract class JdbcContext {
         try (
                 Connection connection = getConnection();
                 Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(sql)
+        ) {
+            if (EmptyKit.isNotNull(resultSet)) {
+                resultSet.next();
+                resultSetConsumer.accept(resultSet);
+            }
+        } catch (SQLException e) {
+            throw new SQLException("Execute query failed, sql: " + sql + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
+        }
+    }
+
+    public void queryByPage(String sql, ResultSetConsumer resultSetConsumer) throws Throwable {
+        TapLogger.debug(TAG, "Execute query, sql: " + sql);
+        try (
+                Connection connection = getConnection();
+                Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
                 ResultSet resultSet = statement.executeQuery(sql)
         ) {
             if (EmptyKit.isNotNull(resultSet)) {
@@ -108,4 +125,10 @@ public abstract class JdbcContext {
             DataSourcePool.removeJdbcContext(config);
         }
     }
+
+    public abstract List<String> queryAllTables(List<String> tableNames);
+
+    public abstract List<DataMap> queryAllColumns(List<String> tableNames);
+
+    public abstract List<DataMap> queryAllIndexes(List<String> tableNames);
 }
