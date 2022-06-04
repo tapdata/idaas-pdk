@@ -1,7 +1,6 @@
-package io.tapdata.base;
+package io.tapdata.common;
 
 import com.zaxxer.hikari.HikariDataSource;
-import io.tapdata.config.CommonDbConfig;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.kit.EmptyKit;
 
@@ -10,7 +9,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class JdbcContext {
+public abstract class JdbcContext {
 
     private final static String TAG = JdbcContext.class.getSimpleName();
     private final HikariDataSource hikariDataSource;

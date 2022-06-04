@@ -1,4 +1,4 @@
-package io.tapdata.config;
+package io.tapdata.common;
 
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.BeanUtils;

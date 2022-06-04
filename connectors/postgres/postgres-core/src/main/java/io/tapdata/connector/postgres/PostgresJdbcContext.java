@@ -1,7 +1,7 @@
 package io.tapdata.connector.postgres;
 
 import com.zaxxer.hikari.HikariDataSource;
-import io.tapdata.base.JdbcContext;
+import io.tapdata.common.JdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.simplify.TapSimplify;

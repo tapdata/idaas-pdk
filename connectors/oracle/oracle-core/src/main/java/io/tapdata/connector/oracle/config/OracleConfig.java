@@ -1,6 +1,6 @@
 package io.tapdata.connector.oracle.config;
 
-import io.tapdata.config.CommonDbConfig;
+import io.tapdata.common.CommonDbConfig;
 
 import java.io.Serializable;
 

@@ -1,4 +1,4 @@
-package io.tapdata.base;
+package io.tapdata.common;
 
 import java.sql.ResultSet;
 

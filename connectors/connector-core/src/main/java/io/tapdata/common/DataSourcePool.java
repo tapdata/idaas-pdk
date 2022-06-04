@@ -1,7 +1,6 @@
-package io.tapdata.base;
+package io.tapdata.common;
 
 import com.zaxxer.hikari.HikariDataSource;
-import io.tapdata.config.CommonDbConfig;
 import io.tapdata.kit.EmptyKit;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,12 +16,10 @@ public class DataSourcePool {
         } else {
             JdbcContext context = null;
             try {
-                context = clazz.getDeclaredConstructor(config.getClass(), HikariDataSource.class)
-                        .newInstance(config, HikariConnection.getHikariDataSource(config));
-            } catch (Exception e) {
-                context = new JdbcContext(config, HikariConnection.getHikariDataSource(config));
+                context = clazz.getDeclaredConstructor(config.getClass(), HikariDataSource.class).newInstance(config, HikariConnection.getHikariDataSource(config));
+                dataPool.put(key, context);
+            } catch (Exception ignore) {
             }
-            dataPool.put(key, context);
             return context;
         }
     }

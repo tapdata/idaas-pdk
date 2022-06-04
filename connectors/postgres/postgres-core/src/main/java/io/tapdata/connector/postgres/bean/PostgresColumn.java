@@ -1,5 +1,6 @@
 package io.tapdata.connector.postgres.bean;
 
+import io.tapdata.common.CommonColumn;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.utils.DataMap;
 

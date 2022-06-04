@@ -1,6 +1,6 @@
 package io.tapdata.connector.postgres.config;
 
-import io.tapdata.config.CommonDbConfig;
+import io.tapdata.common.CommonDbConfig;
 
 import java.io.Serializable;
 
