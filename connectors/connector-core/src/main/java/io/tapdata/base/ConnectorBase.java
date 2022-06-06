@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
@@ -79,10 +78,16 @@ public abstract class ConnectorBase implements TapConnector {
         return TapSimplify.toJson(obj, features);
     }
 
-    public static DataMap fromJson(String json) {
+    public static Object fromJson(String json) {
         return TapSimplify.fromJson(json);
     }
+    public static DataMap fromJsonObject(String json) {
+        return TapSimplify.fromJsonObject(json);
+    }
 
+    public static List<?> fromJsonArray(String json) {
+        return TapSimplify.fromJsonArray(json);
+    }
     public static <T> T fromJson(String json, Class<T> clazz) {
         return TapSimplify.fromJson(json, clazz);
     }

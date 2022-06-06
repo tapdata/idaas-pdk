@@ -18,6 +18,7 @@ public class ToTapNumberCodec implements ToTapValueCodec<TapNumberValue> {
 
         TapNumberValue numberValue = null;
         if(value instanceof Number) {
+            //TODO whether should use Number better than Double? 
             numberValue = new TapNumberValue(Double.valueOf(String.valueOf(value)));
         } else if(value instanceof String) {
             try {

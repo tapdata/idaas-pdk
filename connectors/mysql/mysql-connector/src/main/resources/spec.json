@@ -208,7 +208,6 @@
 	"json": {
 	  "to": "TapMap",
 	  "byte": "4g",
-	  "queryOnly": true,
 	  "pkEnablement": false
 	},
 	"binary[($byte)]": {

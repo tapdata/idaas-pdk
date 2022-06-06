@@ -5,6 +5,9 @@ import io.tapdata.entity.codec.TapDefaultCodecs;
 import io.tapdata.entity.codec.ToTapValueCodec;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.schema.value.TapMapValue;
+import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.InstanceFactory;
+import io.tapdata.entity.utils.JsonParser;
 
 import java.util.Map;
 
@@ -15,6 +18,12 @@ public class ToTapMapCodec implements ToTapValueCodec<TapMapValue> {
 
         if(value instanceof Map) {
             return new TapMapValue((Map<?, ?>) value);
+        } else if(value instanceof String) {
+            try {
+                return new TapMapValue(InstanceFactory.instance(JsonParser.class).fromJsonObject((String) value));
+            } catch(Throwable throwable) {
+                throwable.printStackTrace();
+            }
         }
 
         return null;
