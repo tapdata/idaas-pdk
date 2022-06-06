@@ -89,7 +89,6 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 		int row;
 		try {
 			row = insertPreparedStatement.executeUpdate();
-			writeListResult.incrementInserted(row);
 		} catch (Exception e) {
 			if (e instanceof SQLIntegrityConstraintViolationException
 					&& CollectionUtils.isNotEmpty(tapTable.primaryKeys())) {
