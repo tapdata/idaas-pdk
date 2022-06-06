@@ -19,7 +19,7 @@ public class CommonColumn {
     public CommonColumn() {
     }
 
-    private Boolean isNullable() {
+    protected Boolean isNullable() {
         return "1".equals(this.nullable);
     }
 

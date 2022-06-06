@@ -1,8 +1,8 @@
 {
   "properties": {
-    "name": "PostgreSQL",
-    "icon": "icons/postgres.png",
-    "id": "postgres"
+    "name": "Oracle",
+    "icon": "icons/oracle.png",
+    "id": "oracle"
   },
   "configOptions": {
     "connection": {
@@ -24,7 +24,7 @@
         },
         "database": {
           "type": "string",
-          "title": "Database",
+          "title": "SID",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "database_name"
@@ -60,35 +60,12 @@
         "logPluginName": {
           "type": "string",
           "title": "LogPluginName",
-          "default": "DECORDERBUFS",
+          "default": "",
           "x-decorator": "FormItem",
           "x-component": "Select",
           "apiServerKey": "logPlugin",
           "enum": [
-            {
-              "label": "DECORDERBUFS",
-              "value": "decoderbufs"
-            },
-            {
-              "label": "WAL2JSON",
-              "value": "wal2json"
-            },
-            {
-              "label": "WAL2JSONRDS",
-              "value": "wal2json_rds"
-            },
-            {
-              "label": "WAL2JSONSTREMING",
-              "value": "wal2json_streaming"
-            },
-            {
-              "label": "WAL2JSONRDSSTREAMING",
-              "value": "wal2json_rds_streaming"
-            },
-            {
-              "label": "PGOUTPUT",
-              "value": "pgoutput"
-            }
+
           ]
         }
       }

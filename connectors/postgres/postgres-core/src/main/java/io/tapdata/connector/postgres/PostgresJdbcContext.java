@@ -36,7 +36,7 @@ public class PostgresJdbcContext extends JdbcContext {
 
     @Override
     public List<DataMap> queryAllColumns(List<String> tableNames) {
-        TapLogger.debug(TAG, "Query some columns, schema: " + getConfig().getSchema());
+        TapLogger.debug(TAG, "Query columns of some tables, schema: " + getConfig().getSchema());
         List<DataMap> columnList = TapSimplify.list();
         String tableSql = EmptyKit.isNotEmpty(tableNames) ? "AND table_name IN (" + StringKit.joinString(tableNames, "'", ",") + ")" : "";
         try {
@@ -50,7 +50,7 @@ public class PostgresJdbcContext extends JdbcContext {
 
     @Override
     public List<DataMap> queryAllIndexes(List<String> tableNames) {
-        TapLogger.debug(TAG, "Query some indexes, schema: " + getConfig().getSchema());
+        TapLogger.debug(TAG, "Query indexes of some tables, schema: " + getConfig().getSchema());
         List<DataMap> indexList = TapSimplify.list();
         String tableSql = EmptyKit.isNotEmpty(tableNames) ? "AND table_name IN (" + StringKit.joinString(tableNames, "'", ",") + ")" : "";
         try {

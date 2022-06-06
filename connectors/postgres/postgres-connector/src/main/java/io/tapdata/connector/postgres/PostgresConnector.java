@@ -67,6 +67,7 @@ public class PostgresConnector extends ConnectorBase {
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         //get table info
         List<DataMap> tableList = postgresJdbcContext.queryAllTables(tables);
+        //paginate by tableSize
         List<List<DataMap>> tableLists = Lists.partition(tableList, tableSize);
         tableLists.forEach(subList -> {
             List<TapTable> tapTableList = TapSimplify.list();
@@ -74,7 +75,7 @@ public class PostgresConnector extends ConnectorBase {
             List<DataMap> columnList = postgresJdbcContext.queryAllColumns(subTableNames);
             List<DataMap> indexList = postgresJdbcContext.queryAllIndexes(subTableNames);
             subList.forEach(subTable -> {
-                //2、table name
+                //1、table name/comment
                 String table = subTable.getString("table_name");
                 TapTable tapTable = table(table);
                 tapTable.setComment(subTable.getString("comment"));

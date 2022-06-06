@@ -3,9 +3,6 @@ import io.tapdata.connector.oracle.OracleJdbcContext;
 import io.tapdata.connector.oracle.config.OracleConfig;
 import io.tapdata.entity.utils.DataMap;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-
 public class Main {
     public static void main(String[] args) throws Throwable {
         DataMap map = new DataMap();
@@ -16,7 +13,7 @@ public class Main {
         map.put("extParams", "");
         map.put("user", "tapdata");
         map.put("password", "Gotapd8!");
-        OracleConfig oracleConfig = (OracleConfig) new OracleConfig().load(map);
+        OracleConfig oracleConfig = new OracleConfig().load(map);
 //        postgresConfig.setHost("192.168.1.189");
 //        postgresConfig.setPort(5432);
 //        postgresConfig.setDatabase("COOLGJ");
@@ -27,7 +24,11 @@ public class Main {
         OracleJdbcContext oracleJdbcContext = (OracleJdbcContext) DataSourcePool.getJdbcContext(oracleConfig, OracleJdbcContext.class);
 //        Connection connection = oracleJdbcContext.getConnection();
 //        ResultSet rs = connection.createStatement().executeQuery("select * from \"A\"");
-        oracleJdbcContext.queryAllTables(null).forEach(v -> System.out.println(v.getString("TABLE_NAME") + v.getString("COMMENTS")));
+        oracleJdbcContext.queryAllColumns(null).forEach(v -> {
+            v.forEach((key, value) -> {
+                System.out.println(key + ": " + value);
+            });
+        });
 //        while (rs.next()) {
 //            System.out.println(rs.getString("NAME"));
 //        }

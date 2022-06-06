@@ -1,8 +1,10 @@
 package io.tapdata.connector.oracle.config;
 
 import io.tapdata.common.CommonDbConfig;
+import io.tapdata.kit.EmptyKit;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Oracle database config
@@ -15,8 +17,18 @@ public class OracleConfig extends CommonDbConfig implements Serializable {
     private String logPluginName = "";
 
     public OracleConfig() {
+        //customize oracle config
         setDbType("oracle");
         setJdbcDriver("oracle.jdbc.driver.OracleDriver");
+    }
+
+    @Override
+    public OracleConfig load(Map<String, Object> map) {
+        CommonDbConfig config = super.load(map);
+        if (EmptyKit.isEmpty(config.getSchema())) {
+            config.setSchema(getUser().toUpperCase());
+        }
+        return (OracleConfig) config;
     }
 
     @Override
