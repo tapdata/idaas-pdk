@@ -126,7 +126,7 @@ public abstract class JdbcContext {
         }
     }
 
-    public abstract List<String> queryAllTables(List<String> tableNames);
+    public abstract List<DataMap> queryAllTables(List<String> tableNames);
 
     public abstract List<DataMap> queryAllColumns(List<String> tableNames);
 

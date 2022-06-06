@@ -27,7 +27,7 @@ public class Main {
         OracleJdbcContext oracleJdbcContext = (OracleJdbcContext) DataSourcePool.getJdbcContext(oracleConfig, OracleJdbcContext.class);
 //        Connection connection = oracleJdbcContext.getConnection();
 //        ResultSet rs = connection.createStatement().executeQuery("select * from \"A\"");
-        oracleJdbcContext.queryAllTables(null).forEach(System.out::println);
+        oracleJdbcContext.queryAllTables(null).forEach(v -> System.out.println(v.getString("TABLE_NAME") + v.getString("COMMENTS")));
 //        while (rs.next()) {
 //            System.out.println(rs.getString("NAME"));
 //        }

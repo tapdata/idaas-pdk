@@ -21,17 +21,13 @@ public class PostgresJdbcContext extends JdbcContext {
     }
 
     @Override
-    public List<String> queryAllTables(List<String> tableNames) {
+    public List<DataMap> queryAllTables(List<String> tableNames) {
         TapLogger.debug(TAG, "Query some tables, schema: " + getConfig().getSchema());
-        List<String> tableList = TapSimplify.list();
+        List<DataMap> tableList = TapSimplify.list();
         String tableSql = EmptyKit.isNotEmpty(tableNames) ? "AND table_name IN (" + StringKit.joinString(tableNames, "'", ",") + ")" : "";
         try {
-            query(String.format(PG_ALL_TABLE, getConfig().getDatabase(), getConfig().getSchema(), tableSql), resultSet -> {
-                while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
-                    tableList.add(resultSet.getString("table_name"));
-                    resultSet.next();
-                }
-            });
+            query(String.format(PG_ALL_TABLE, getConfig().getDatabase(), getConfig().getSchema(), tableSql),
+                    resultSet -> tableList.addAll(DbKit.getDataFromResultSet(resultSet)));
         } catch (Throwable e) {
             TapLogger.error(TAG, "Execute queryAllTables failed, error: " + e.getMessage(), e);
         }
@@ -67,7 +63,11 @@ public class PostgresJdbcContext extends JdbcContext {
     }
 
     private final static String PG_ALL_TABLE =
-            "SELECT * FROM information_schema.tables WHERE table_catalog='%s' AND table_schema='%s' %s ORDER BY table_name";
+            "SELECT t.table_name,\n" +
+                    "       (select cast(obj_description(relfilenode, 'pg_class') as varchar) as comment\n" +
+                    "        from pg_class c\n" +
+                    "        where relname = t.table_name)\n" +
+                    "FROM information_schema.tables t WHERE t.table_catalog='%s' AND t.table_schema='%s' %s ORDER BY t.table_name";
     private final static String PG_ALL_COLUMN =
             "SELECT col.*, d.description,\n" +
                     "       (SELECT pg_catalog.format_type(a.atttypid, a.atttypmod) AS \"dataType\"\n" +
