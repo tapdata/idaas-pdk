@@ -5,7 +5,9 @@ import java.util.List;
 public interface JsonParser {
     String toJson(Object obj, ToJsonFeature... features);
 
-    DataMap fromJson(String json);
+    DataMap fromJsonObject(String json);
+    List<?> fromJsonArray(String json);
+    Object fromJson(String json);
 
     <T> T fromJson(String json, Class<T> clazz);
 

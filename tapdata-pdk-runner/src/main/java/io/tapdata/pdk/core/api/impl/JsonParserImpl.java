@@ -23,12 +23,10 @@ import java.util.List;
 
 @Implementation(JsonParser.class)
 public class JsonParserImpl implements JsonParser {
-    private static final String PREFIX = "TapClass#{";
-    private static final String SUFFIX = "}#";
 
     @Override
     public String toJsonWithClass(Object obj) {
-        return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
+        return JSON.toJSONString(obj, SerializerFeature.WriteClassName, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
 //        return PREFIX + obj.getClass().getName() + SUFFIX + JSON.toJSONString(obj);
     }
 
@@ -70,10 +68,18 @@ public class JsonParserImpl implements JsonParser {
             return JSON.toJSONString(obj, SerializerFeature.DisableCircularReferenceDetect/*, SerializerFeature.SortField, SerializerFeature.MapSortField*/);
         }
     }
+    @Override
+    public DataMap fromJsonObject(String json) {
+        return JSON.parseObject(json, DataMap.class, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
+    }
+    @Override
+    public List<?> fromJsonArray(String json) {
+        return JSON.parseObject(json, List.class, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
+    }
 
     @Override
-    public DataMap fromJson(String json) {
-        return JSON.parseObject(json, DataMap.class, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
+    public Object fromJson(String json) {
+        return JSON.parseObject(json, Feature.OrderedField, /*Feature.UseNativeJavaObject, */Feature.DisableCircularReferenceDetect);
     }
 
     @Override

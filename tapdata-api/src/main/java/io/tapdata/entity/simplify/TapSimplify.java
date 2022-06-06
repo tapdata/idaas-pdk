@@ -46,8 +46,16 @@ public class TapSimplify {
 		return jsonParser.toJson(obj, features);
 	}
 
-	public static DataMap fromJson(String json) {
+	public static Object fromJson(String json) {
 		return jsonParser.fromJson(json);
+	}
+
+	public static DataMap fromJsonObject(String json) {
+		return jsonParser.fromJsonObject(json);
+	}
+
+	public static List<?> fromJsonArray(String json) {
+		return jsonParser.fromJsonArray(json);
 	}
 
 	public static <T> T fromJson(String json, Class<T> clazz) {
