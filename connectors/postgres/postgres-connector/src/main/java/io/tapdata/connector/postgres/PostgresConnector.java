@@ -52,7 +52,6 @@ public class PostgresConnector extends ConnectorBase {
     private PostgresJdbcContext postgresJdbcContext;
     private PostgresCdcRunner cdcRunner;
     private String postgresVersion;
-    private static final int BATCH_READ_SIZE = 5000;
     private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
 
     @Override
@@ -411,11 +410,11 @@ public class PostgresConnector extends ConnectorBase {
         else {
             postgresOffset = (PostgresOffset) offsetState;
         }
-        String sql = "SELECT * FROM \"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue() + " LIMIT " + BATCH_READ_SIZE;
+        String sql = "SELECT * FROM \"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue();
         postgresJdbcContext.query(sql, resultSet -> {
             //get all column names
             List<String> columnNames = DbKit.getColumnsFromResultSet(resultSet);
-            while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
+            while (isAlive() && !resultSet.isAfterLast() && resultSet.getRow() > 0) {
                 tapEvents.add(insertRecordEvent(DbKit.getRowFromResultSet(resultSet, columnNames), tapTable.getId()));
                 if (tapEvents.size() == eventBatchSize) {
                     postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + eventBatchSize);
