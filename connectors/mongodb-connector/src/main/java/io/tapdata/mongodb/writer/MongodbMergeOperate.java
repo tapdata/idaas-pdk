@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author jackin
@@ -25,7 +26,7 @@ import java.util.*;
  **/
 public class MongodbMergeOperate {
 
-		public static List<WriteModel<Document>> merge(TapRecordEvent tapRecordEvent, TapTable table) {
+		public static List<WriteModel<Document>> merge(AtomicLong inserted, AtomicLong updated, AtomicLong deleted, TapRecordEvent tapRecordEvent, TapTable table) {
 				List<WriteModel<Document>> writeModels = new ArrayList<>();
 				final MergeBundle mergeBundle = mergeBundle(tapRecordEvent);
 				final Map<String, Object> info = tapRecordEvent.getInfo();
@@ -43,12 +44,15 @@ public class MongodbMergeOperate {
 										switch (operation) {
 												case INSERT:
 														writeModels.add(new InsertOneModel<>(mergeResult.getInsert()));
+														inserted.incrementAndGet();
 														break;
 												case UPDATE:
 														writeModels.add(new UpdateManyModel<Document>(mergeResult.getFilter(), mergeResult.getUpdate(), mergeResult.getUpdateOptions()));
+														updated.incrementAndGet();
 														break;
 												case DELETE:
 														writeModels.add(new DeleteOneModel<>(mergeResult.getFilter()));
+														deleted.incrementAndGet();
 														break;
 										}
 								}
