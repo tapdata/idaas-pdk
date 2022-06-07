@@ -147,6 +147,7 @@ public class ModelPredictionCli extends CommonCli {
                         .withVersion(specification.getVersion())
                         .withTableMap(kvMap)
                         .withStateMap(stateMap)
+												.withGlobalStateMap(null)
                         .build();
                 PDKInvocationMonitor.getInstance().invokePDKMethod(node, PDKMethod.REGISTER_CAPABILITIES,
                         node::registerCapabilities,

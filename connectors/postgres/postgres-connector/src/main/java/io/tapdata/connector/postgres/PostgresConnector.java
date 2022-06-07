@@ -32,7 +32,6 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -181,7 +180,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
 
-    private void onDestroy(TapConnectorContext connectorContext) throws IOException, SQLException {
+    private void onDestroy(TapConnectorContext connectorContext) throws Throwable {
         if (EmptyKit.isNotNull(slotName)) {
             clearSlot(slotName.toString());
         }
@@ -191,8 +190,12 @@ public class PostgresConnector extends ConnectorBase {
         //stateMap will be cleared by engine
     }
 
-    private void clearSlot(String slotName) throws SQLException {
-        postgresJdbcContext.execute("SELECT pg_drop_replication_slot('" + slotName + "')");
+    private void clearSlot(String slotName) throws Throwable {
+        postgresJdbcContext.query("SELECT COUNT(*) FROM pg_replication_slots WHERE slot_name='" + slotName + "' AND active='false'", resultSet -> {
+            if (resultSet.getInt(1) > 0) {
+                postgresJdbcContext.execute("SELECT pg_drop_replication_slot('" + slotName + "')");
+            }
+        });
     }
 
     @Override
