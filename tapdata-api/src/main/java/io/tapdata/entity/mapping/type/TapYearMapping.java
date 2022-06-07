@@ -35,7 +35,7 @@ public class TapYearMapping extends TapMapping {
 
     @Override
     public TapType toTapType(String dataType, Map<String, String> params) {
-        return new TapYear();
+        return new TapYear().min(minRange).max(maxRange);
     }
 
     @Override
