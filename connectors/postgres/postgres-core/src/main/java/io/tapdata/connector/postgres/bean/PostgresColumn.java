@@ -3,6 +3,7 @@ package io.tapdata.connector.postgres.bean;
 import io.tapdata.common.CommonColumn;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.kit.EmptyKit;
 
 /**
  * @author Jarad
@@ -16,7 +17,7 @@ public class PostgresColumn extends CommonColumn {
 //        this.dataType = dataMap.getString("data_type"); //'data_type' without precision or scale
         this.nullable = dataMap.getString("is_nullable");
         this.remarks = dataMap.getString("remark");
-        this.columnDefaultValue = dataMap.getString("column_default");
+        this.columnDefaultValue = getDefaultValue(dataMap.getString("column_default"));
     }
 
     @Override
@@ -28,5 +29,15 @@ public class PostgresColumn extends CommonColumn {
     @Override
     protected Boolean isNullable() {
         return "YES".equals(this.nullable);
+    }
+
+    private String getDefaultValue(String defaultValue) {
+        if (EmptyKit.isNull(defaultValue) || defaultValue.startsWith("NULL::")) {
+            return null;
+        } else if (defaultValue.contains("::")) {
+            return defaultValue.substring(0, defaultValue.lastIndexOf("::"));
+        } else {
+            return defaultValue;
+        }
     }
 }

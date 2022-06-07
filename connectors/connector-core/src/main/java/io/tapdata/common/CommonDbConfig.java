@@ -31,6 +31,9 @@ public class CommonDbConfig implements Serializable {
     }
 
     public String getDatabaseUrl() {
+        if (EmptyKit.isNull(this.getExtParams())) {
+            this.setExtParams("");
+        }
         if (EmptyKit.isNotEmpty(this.getExtParams()) && !this.getExtParams().startsWith("?")) {
             this.setExtParams("?" + this.getExtParams());
         }

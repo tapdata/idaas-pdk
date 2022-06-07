@@ -1,4 +1,4 @@
-import io.tapdata.base.DataSourcePool;
+import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.entity.utils.DataMap;
