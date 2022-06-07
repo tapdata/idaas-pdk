@@ -1,5 +1,6 @@
 package io.tapdata.mongodb.reader;
 
+import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.*;
@@ -14,9 +15,12 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.entity.MongodbConfig;
+import io.tapdata.mongodb.util.MongodbLookupUtil;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentReader;
@@ -29,6 +33,7 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.tapdata.base.ConnectorBase.*;
@@ -49,27 +54,31 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 		private MongoClient mongoClient;
 		private MongoDatabase mongoDatabase;
 		private MongodbConfig mongodbConfig;
+		private KVMap<Object> globalStateMap;
 
 		@Override
 		public void onStart(MongodbConfig mongodbConfig) {
 				this.mongodbConfig = mongodbConfig;
 				if (mongoClient == null) {
-						mongoClient = MongoClients.create(mongodbConfig.getUri());
-						CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-										fromProviders(PojoCodecProvider.builder().automatic(true).build()));
-						mongoDatabase = mongoClient.getDatabase(mongodbConfig.getDatabase()).withCodecRegistry(pojoCodecRegistry);
+						mongoClient = MongodbUtil.createMongoClient(mongodbConfig);
+						mongoDatabase = mongoClient.getDatabase(mongodbConfig.getDatabase());
 				}
 		}
 
 		@Override
-		public void read(List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer){
+		public void read(TapConnectorContext connectorContext, List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer){
 				List<Bson> pipeline = singletonList(Aggregates.match(
 								Filters.in("ns.coll", tableList)
 				));
+
+				if (this.globalStateMap == null) {
+						this.globalStateMap = connectorContext.getGlobalStateMap();
+				}
 //        pipeline = new ArrayList<>();
 //        List<Bson> collList = tableList.stream().map(t -> Filters.eq("ns.coll", t)).collect(Collectors.toList());
 //        List<Bson> pipeline1 = asList(Aggregates.match(Filters.or(collList)));
 
+				ConnectionString connectionString = new ConnectionString(mongodbConfig.getUri());
 				while (!running.get()) {
 						List<TapEvent> tapEvents = list();
 						ChangeStreamIterable<Document> changeStream;
@@ -123,7 +132,8 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 												if (event.getDocumentKey() != null) {
 														final Document documentKey = new DocumentCodec().decode(new BsonDocumentReader(event.getDocumentKey()), DecoderContext.builder().build());
 														before.put("_id", documentKey.get("_id"));
-														TapDeleteRecordEvent recordEvent = deleteDMLEvent(before, collectionName);
+														final Map lookupData = MongodbLookupUtil.findDeleteCacheByOid(connectionString, collectionName, documentKey.get("_id"), globalStateMap);
+														TapDeleteRecordEvent recordEvent = deleteDMLEvent(MapUtils.isNotEmpty(lookupData) ? lookupData : before, collectionName);
 														recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 														tapEvents.add(recordEvent);
 												} else {

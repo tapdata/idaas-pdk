@@ -1,5 +1,6 @@
 package io.tapdata.mongodb.reader.v3;
 
+import com.mongodb.ConnectionString;
 import com.mongodb.CursorType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -9,11 +10,14 @@ import com.mongodb.client.model.Filters;
 import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.mongodb.MongodbConnector;
 import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.mongodb.reader.MongodbStreamReader;
+import io.tapdata.mongodb.util.MongodbLookupUtil;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.BsonTimestamp;
@@ -55,10 +59,12 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 
 		private Exception error;
 
+		private KVMap<Object> globalStateMap;
+
 		@Override
 		public void onStart(MongodbConfig mongodbConfig) {
 				this.mongodbConfig = mongodbConfig;
-				mongoClient = MongoClients.create(mongodbConfig.getUri());
+				mongoClient = MongodbUtil.createMongoClient(mongodbConfig);
 				nodesURI = MongodbUtil.nodesURI(mongoClient, mongodbConfig.getUri());
 				running.compareAndSet(false, true);
 
@@ -66,7 +72,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 		}
 
 		@Override
-		public void read(List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer) throws Exception {
+		public void read(TapConnectorContext connectorContext, List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer) throws Exception {
 				if (CollectionUtils.isNotEmpty(tableList)) {
 						for (String tableName : tableList) {
 								namespaces.add(new StringBuilder(mongodbConfig.getDatabase()).append(".").append(tableName).toString());
@@ -75,6 +81,10 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 
 				if (tapEventQueue == null) {
 						tapEventQueue = new LinkedBlockingDeque<>(eventBatchSize);
+				}
+
+				if (this.globalStateMap == null) {
+						this.globalStateMap = connectorContext.getGlobalStateMap();
 				}
 
 				if (offset != null) {
@@ -167,6 +177,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 
 				try (MongoClient mongoclient = MongoClients.create(mongodbURI)) {
 
+						ConnectionString connectionString = new ConnectionString(mongodbURI);
 						final MongoCollection<Document> oplogCollection = mongoclient.getDatabase(LOCAL_DATABASE).getCollection(OPLOG_COLLECTION);
 //						List<TapEvent> tapEvents = new ArrayList<>(eventBatchSize);
 						// todo exception retry
@@ -182,7 +193,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 										while (running.get()) {
 												if (mongoCursor.hasNext()) {
 														final Document event = mongoCursor.next();
-														final TapBaseEvent tapBaseEvent = handleOplogEvent(event);
+														final TapBaseEvent tapBaseEvent = handleOplogEvent(event, connectionString);
 														if (tapBaseEvent == null) {
 																continue;
 														}
@@ -228,7 +239,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 				}
 		}
 
-		protected TapBaseEvent handleOplogEvent(Document event) {
+		protected TapBaseEvent handleOplogEvent(Document event, ConnectionString connectionString) {
 				TapLogger.debug(TAG, "Found event: {}", event);
 				String ns = event.getString("ns");
 				Document object = event.get("o", Document.class);
@@ -303,7 +314,8 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 								} else if ("i".equalsIgnoreCase(event.getString("op"))) {
 										tapBaseEvent = insertRecordEvent(o, collectionName);
 								} else if ("d".equalsIgnoreCase(event.getString("op"))) {
-										tapBaseEvent = deleteDMLEvent(o, collectionName);
+										final Map lookupData = MongodbLookupUtil.findDeleteCacheByOid(connectionString, collectionName, o.get("_id"), globalStateMap);
+										tapBaseEvent = deleteDMLEvent(lookupData != null ? lookupData : o, collectionName);
 								}
 //								try {
 //										factory.recordEvent(event, clock.currentTimeInMillis(), true);

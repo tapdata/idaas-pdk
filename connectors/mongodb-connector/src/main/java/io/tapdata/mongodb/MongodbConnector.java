@@ -315,7 +315,7 @@ public class MongodbConnector extends ConnectorBase {
 
     private String memoryFetcher(List<String> mapKeys, String level) {
         ParagraphFormatter paragraphFormatter = new ParagraphFormatter(MongodbConnector.class.getSimpleName());
-        paragraphFormatter.addRow("MongoConfig", mongoConfig != null ? mongoConfig.getCollection() + "@" + mongoConfig.getDatabase() : null);
+        paragraphFormatter.addRow("MongoConfig", mongoConfig != null ? mongoConfig.getDatabase() : null);
         return paragraphFormatter.toString();
     }
 
@@ -330,7 +330,7 @@ public class MongodbConnector extends ConnectorBase {
 				}
 				if (mongoClient == null) {
 						try {
-								mongoClient = MongoClients.create(mongoConfig.getUri());
+								mongoClient = MongodbUtil.createMongoClient(mongoConfig);
 								mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
 						} catch (Throwable e) {
 								throw new RuntimeException(String.format("create mongodb connection failed %s, mongo config %s, connection config %s", e.getMessage(), mongoConfig, connectionConfig), e);
@@ -370,7 +370,7 @@ public class MongodbConnector extends ConnectorBase {
      */
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
 				if(mongodbWriter == null){
-						mongodbWriter = new MongodbWriter();
+						mongodbWriter = new MongodbWriter(connectorContext.getGlobalStateMap());
 						mongodbWriter.onStart(mongoConfig);
 				}
 
@@ -564,12 +564,11 @@ public class MongodbConnector extends ConnectorBase {
 						mongodbStreamReader = createStreamReader();
 				}
 				try {
-						mongodbStreamReader.read(tableList, offset, eventBatchSize, consumer);
+						mongodbStreamReader.read(connectorContext, tableList, offset, eventBatchSize, consumer);
 				} catch (Exception e) {
 						throw new RuntimeException(e);
 				}
 
-//				consumer.asyncMethodAndNoRetry();
     }
     /**
      * The method invocation life circle is below,

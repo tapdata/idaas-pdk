@@ -1,23 +1,33 @@
 package io.tapdata.mongodb;
 
 import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.kit.EmptyKit;
 import io.tapdata.kit.StringKit;
+import io.tapdata.mongodb.entity.MongodbConfig;
+import io.tapdata.mongodb.util.SSLUtil;
+import org.apache.commons.collections4.CollectionUtils;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -248,8 +258,91 @@ public class MongodbUtil {
 				return key;
 		}
 
-		public static void main(String[] args) {
-				ConnectionString connectionString = new ConnectionString("mongodb://root:Gotapd8@192.168.1.183:23221/target?authSource=admin");
-				System.out.println(connectionString);
+		public static MongoClient createMongoClient(MongodbConfig mongodbConfig) {
+				final MongoClientSettings.Builder builder = MongoClientSettings.builder();
+				String mongodbUri = mongodbConfig.getUri();
+				builder.applyConnectionString(new ConnectionString(mongodbUri));
+
+				if (mongodbConfig.isSsl()) {
+						if (EmptyKit.isNotEmpty(mongodbUri) &&
+										(mongodbUri.indexOf("tlsAllowInvalidCertificates=true") > 0 ||
+														mongodbUri.indexOf("sslAllowInvalidCertificates=true") > 0)) {
+								builder.applyToSslSettings(sslSettingBuilder -> {
+										SSLContext sslContext = null;
+										try {
+												sslContext = SSLContext.getInstance("SSL");
+										} catch (NoSuchAlgorithmException e) {
+												throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
+										}
+										try {
+												sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+														@Override
+														public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+														}
+
+														@Override
+														public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+														}
+
+														@Override
+														public X509Certificate[] getAcceptedIssuers() {
+																return null;
+														}
+												}}, new SecureRandom());
+										} catch (KeyManagementException e) {
+												throw new RuntimeException(String.format("Initialize ssl context failed %s", e.getMessage()), e);
+										}
+										sslSettingBuilder.enabled(true).context(sslContext).invalidHostNameAllowed(true);
+								});
+
+						} else {
+								sslMongoClientOption(mongodbConfig.isSslValidate(), mongodbConfig.getSslCA(), mongodbConfig.getSslCA(),
+												mongodbConfig.getSslKey(), mongodbConfig.getSslPass(), mongodbConfig.getCheckServerIdentity(), builder);
+						}
+				}
+
+				return MongoClients.create(builder.build());
+		}
+
+		public static void sslMongoClientOption(boolean sslValidate, String sslCA, String sslCert, String sslKeyStr, String sslPass,
+																						boolean checkServerIdentity, MongoClientSettings.Builder builder){
+
+
+				List<String> certificates = SSLUtil.retriveCertificates(sslCert);
+				String sslKey = SSLUtil.retrivePrivateKey(sslKeyStr);
+				if (EmptyKit.isNotBlank(sslKey) && CollectionUtils.isNotEmpty(certificates)) {
+
+						builder.applyToSslSettings(sslSettingsBuilder -> {
+								List<String> trustCertificates = null;
+								if (sslValidate) {
+										trustCertificates = SSLUtil.retriveCertificates(sslCA);
+								}
+								SSLContext sslContext = null;
+								try {
+										sslContext = SSLUtil.createSSLContext(sslKey, certificates, trustCertificates, sslPass);
+								} catch (Exception e) {
+										throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
+								}
+								sslSettingsBuilder.context(sslContext);
+								sslSettingsBuilder.enabled(true);
+								sslSettingsBuilder.invalidHostNameAllowed(!checkServerIdentity);
+						});
+				}
+		}
+
+		public static String getSimpleMongodbUri(ConnectionString connectionString) {
+				if (connectionString == null) {
+						return "";
+				}
+
+				String uri = "mongodb://";
+
+				uri += connectionString.getHosts().stream().collect(Collectors.joining(",")).trim();
+
+				if (EmptyKit.isNotBlank(connectionString.getDatabase())) {
+						uri += "/" + connectionString.getDatabase();
+				}
+
+				return uri;
 		}
 }

@@ -11,13 +11,142 @@
 	"connection": {
 	  "type": "object",
 	  "properties": {
-		"uri": {
+        "isUri": {
+          "type": "boolean",
+          "title": "Connection mode",
+          "default": true,
+          "enum": [
+            {
+              "label": "URI mode",
+              "value": true
+            },
+            {
+              "label": "Standard mode",
+              "value": false
+            }
+          ],
+          "x-decorator": "FormItem",
+          "x-component": "Radio.Group",
+          "x-component-props": {
+            "optionType": "button"
+          },
+          "x-reactions": [
+            {
+              "target": "*(host,database,user,password)",
+              "fulfill": {
+                "state": {
+                  "visible": "{{$self.value===false}}"
+                }
+              }
+            },
+            {
+              "target": "uri",
+              "fulfill": {
+                "state": {
+                  "visible": "{{$self.value!==false}}"
+                }
+              }
+            }
+          ]
+        },
+        "uri": {
 		  "type": "string",
 		  "title": "ConnectionUri",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_uri"
-		}
+		},
+        "host": {
+          "required": true,
+          "type": "string",
+          "title": "DB Host",
+          "x-decorator": "FormItem",
+          "x-component": "Input",
+          "x-component-props": {
+            "placeholder": "Database Host(127.0.0.1/Domain:{Port},Please use multiple addresses , separate)"
+          }
+        },
+        "database": {
+          "required": true,
+          "type": "string",
+          "title": "DB Name",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "user": {
+          "type": "string",
+          "title": "Username",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "password": {
+          "type": "string",
+          "title": "Password",
+          "x-decorator": "FormItem",
+          "x-component": "Password"
+        },
+        "additionalString": {
+          "type": "string",
+          "title": "Connection String Params",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "ssl": {
+          "type": "boolean",
+          "title": "Use TLS/SSL Connection",
+          "default": false,
+          "enum": [
+            {
+              "label": "Connect directly",
+              "value": false
+            },
+            {
+              "label": "Connect via TLS/SSL tunnel",
+              "value": true
+            }
+          ],
+          "x-decorator": "FormItem",
+          "x-component": "Radio.Group",
+          "x-component-props": {
+            "optionType": "button"
+          },
+          "x-reactions": [
+            {
+              "target": "*(sslKey,sslPass,sslValidate)",
+              "fulfill": {
+                "state": {
+                  "visible": "{{$self.value===true}}"
+                }
+              }
+            }
+          ]
+        },
+        "sslKey": {
+          "type": "string",
+          "title": "Private Key",
+          "x-decorator": "FormItem",
+          "x-component": "TextFileReader"
+        },
+        "sslPass": {
+          "type": "string",
+          "title": "Private Key Password",
+          "x-decorator": "FormItem",
+          "x-component": "Input"
+        },
+        "sslValidate": {
+          "type": "boolean",
+          "title": "Validate Server Certificate",
+          "x-decorator": "FormItem",
+          "x-component": "Switch",
+          "x-reactions": [{
+            "target": "sslCA",
+            "fulfill": {
+              "state": {
+                "visible": "{{$self.value===true}}"
+              }
+            }
+          }]
+        }
 	  }
 	}
   },
