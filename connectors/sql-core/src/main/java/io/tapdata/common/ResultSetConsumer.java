@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.common;
 
 import java.sql.ResultSet;
 

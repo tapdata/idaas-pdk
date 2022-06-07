@@ -28,6 +28,23 @@ public class DbKit {
         return list;
     }
 
+    public static List<DataMap> getPageDataFromResultSet(ResultSet resultSet, int page, int pageSize) {
+        List<DataMap> list = TapSimplify.list();
+        try {
+            if (EmptyKit.isNotNull(resultSet)) {
+                List<String> columnNames = getColumnsFromResultSet(resultSet);
+                resultSet.absolute((page - 1) * pageSize + 1);
+                while (!resultSet.isAfterLast() && resultSet.getRow() > 0 && resultSet.getRow() <= page * pageSize) {
+                    list.add(getRowFromResultSet(resultSet, columnNames));
+                    resultSet.next();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public static DataMap getRowFromResultSet(ResultSet resultSet, Collection<String> columnNames) {
         DataMap map = DataMap.create();
         try {

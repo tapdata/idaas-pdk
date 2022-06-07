@@ -6,6 +6,7 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.mongodb.entity.MergeBundle;
 import io.tapdata.mongodb.entity.MergeResult;
 import io.tapdata.mongodb.util.MapUtil;
@@ -14,7 +15,6 @@ import io.tapdata.pdk.apis.entity.merge.MergeLookupResult;
 import io.tapdata.pdk.apis.entity.merge.MergeTableProperties;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 
 import java.util.*;
@@ -112,7 +112,7 @@ public class MongodbMergeOperate {
 				switch (operation) {
 						case INSERT:
 						case UPDATE:
-								if (StringUtils.isNotEmpty(targetPath)) {
+								if (EmptyKit.isNotEmpty(targetPath)) {
 										insertDoc.put(targetPath, mergeBundle.getAfter());
 								} else {
 										insertDoc.putAll(mergeBundle.getAfter());
@@ -141,7 +141,7 @@ public class MongodbMergeOperate {
 								Map<String, Object> flatValue = new Document();
 								MapUtil.recursiveFlatMap(after, flatValue, "");
 								after = MapUtils.isNotEmpty(flatValue) ? flatValue : after;
-								if (StringUtils.isNotEmpty(targetPath)) {
+								if (EmptyKit.isNotEmpty(targetPath)) {
 										for (Map.Entry<String, Object> entry : after.entrySet()) {
 												setOperateDoc.append(targetPath + "." + entry.getKey(), entry.getValue());
 										}
@@ -199,7 +199,7 @@ public class MongodbMergeOperate {
 				Map<String, Object> flatValue = new Document();
 				MapUtil.recursiveFlatMap(value, flatValue, "");
 				value = MapUtils.isNotEmpty(flatValue) ? flatValue : value;
-				if (StringUtils.isNotEmpty(targetPath)) {
+				if (EmptyKit.isNotEmpty(targetPath)) {
 						final String targetPathFirst = targetPath.substring(0, targetPath.lastIndexOf("."));
 						final String targetPathLast = targetPath.substring(targetPath.lastIndexOf(".") + 1);
 						for (Map.Entry<String, Object> entry : value.entrySet()) {

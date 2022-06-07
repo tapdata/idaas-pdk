@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.connector.postgres.cdc;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;

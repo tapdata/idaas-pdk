@@ -3,7 +3,7 @@ package io.tapdata.mongodb.entity;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.ConnectionString;
-import org.apache.commons.lang3.StringUtils;
+import io.tapdata.kit.EmptyKit;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,13 +28,13 @@ public class MongodbConfig implements Serializable {
         return uri;
     }
 
-		public String getDatabase(){
-				if (StringUtils.isNotEmpty(uri)) {
-						ConnectionString connectionString = new ConnectionString(uri);
-						return connectionString.getDatabase();
-				}
-				return null;
-		}
+    public String getDatabase() {
+        if (EmptyKit.isNotEmpty(uri)) {
+            ConnectionString connectionString = new ConnectionString(uri);
+            return connectionString.getDatabase();
+        }
+        return null;
+    }
 
     public void setUri(String uri) {
         this.uri = uri;

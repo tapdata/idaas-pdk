@@ -51,25 +51,6 @@ public class PostgresSqlMaker {
     }
 
     /**
-     * combine columns for inserting records
-     * e.g.
-     * INSERT INTO DMLTest_postgres_oFsAOk VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     *
-     * @param tapTable Table Object
-     * @return insert SQL
-     */
-    public static String buildPrepareInsertSQL(TapTable tapTable) {
-        LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        StringBuilder stringBuilder = new StringBuilder();
-        long fieldCount = nameFieldMap.keySet().stream().filter(v -> null != nameFieldMap.get(v).getDataType()).count();
-        for (int i = 0; i < fieldCount; i++) {
-            stringBuilder.append("?, ");
-        }
-        stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
-        return "INSERT INTO \"" + tapTable.getId() + "\" VALUES (" + stringBuilder + ")";
-    }
-
-    /**
      * build subSql after where for advance query
      *
      * @param filter condition of advance query
@@ -126,26 +107,4 @@ public class PostgresSqlMaker {
         return builder.toString();
     }
 
-    /**
-     * public String buildInsertValues(TapTable tapTable, Map<String, Object> record) {
-     * LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-     * StringBuilder builder = new StringBuilder();
-     * for (String columnName : nameFieldMap.keySet()) {
-     * TapField tapField = nameFieldMap.get(columnName);
-     * Object tapValue = record.get(columnName);
-     * if (tapField.getDataType() == null) continue;
-     * if (tapValue == null) {
-     * if (tapField.getNullable() != null && !tapField.getNullable()) {
-     * builder.append("'").append(tapField.getDefaultValue()).append("'").append(',');
-     * } else {
-     * builder.append("null").append(',');
-     * }
-     * } else {
-     * builder.append("'").append(getFieldOriginValue(tapValue)).append("'").append(',');
-     * }
-     * }
-     * builder.delete(builder.length() - 1, builder.length());
-     * return builder.toString();
-     * }
-     */
 }

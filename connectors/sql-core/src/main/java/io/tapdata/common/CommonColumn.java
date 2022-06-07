@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres.bean;
+package io.tapdata.common;
 
 import io.tapdata.entity.schema.TapField;
 
@@ -19,7 +19,7 @@ public class CommonColumn {
     public CommonColumn() {
     }
 
-    private Boolean isNullable() {
+    protected Boolean isNullable() {
         return "1".equals(this.nullable);
     }
 
