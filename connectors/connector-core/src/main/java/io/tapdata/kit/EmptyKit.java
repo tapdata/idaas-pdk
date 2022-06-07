@@ -21,6 +21,10 @@ public class EmptyKit {
         return null == var || var.isEmpty();
     }
 
+    public static <T> boolean isEmpty(T[] arr) {
+        return null == arr || arr.length == 0;
+    }
+
     public static boolean isNotEmpty(Collection<?> var) {
         return null != var && !var.isEmpty();
     }
@@ -31,6 +35,18 @@ public class EmptyKit {
 
     public static boolean isNotEmpty(String var) {
         return null != var && !var.isEmpty();
+    }
+
+    public static <T> boolean isNotEmpty(T[] arr) {
+        return null != arr && arr.length > 0;
+    }
+
+    public static boolean isBlank(String var) {
+        return null == var || var.isEmpty() || var.trim().isEmpty();
+    }
+
+    public static boolean isNotBlank(String var) {
+        return null != var && !var.isEmpty() && !var.trim().isEmpty();
     }
 
     public static boolean isNull(Object var) {

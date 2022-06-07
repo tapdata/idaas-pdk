@@ -1,6 +1,4 @@
-package io.tapdata.connector.postgres.storage;
-
-import io.tapdata.connector.postgres.PostgresOffset;
+package io.tapdata.connector.postgres.cdc.offset;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

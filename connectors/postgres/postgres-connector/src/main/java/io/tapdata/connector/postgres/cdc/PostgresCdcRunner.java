@@ -1,18 +1,21 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.connector.postgres.cdc;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
+import io.tapdata.common.DataSourcePool;
+import io.tapdata.connector.postgres.PostgresJdbcContext;
+import io.tapdata.connector.postgres.cdc.config.PostgresDebeziumConfig;
+import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
+import io.tapdata.connector.postgres.cdc.offset.PostgresOffsetStorage;
 import io.tapdata.connector.postgres.config.PostgresConfig;
-import io.tapdata.connector.postgres.config.PostgresDebeziumConfig;
-import io.tapdata.kit.EmptyKit;
-import io.tapdata.kit.NumberKit;
-import io.tapdata.connector.postgres.storage.PostgresOffsetStorage;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.NumberKit;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -51,7 +54,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     public PostgresCdcRunner use(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        this.postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
+        this.postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         return this;
     }
 

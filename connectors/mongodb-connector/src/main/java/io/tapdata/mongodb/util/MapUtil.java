@@ -1,10 +1,10 @@
 package io.tapdata.mongodb.util;
 
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.mongodb.MongodbUtil;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 
 import java.lang.reflect.Field;
@@ -36,22 +36,22 @@ public class MapUtil {
   public static Object getValueByKey(Map<String, Object> dataMap, String key, String replacement) {
     Object value = null;
 
-    if (MapUtils.isEmpty(dataMap) || StringUtils.isBlank(key)) {
+    if (MapUtils.isEmpty(dataMap) || EmptyKit.isBlank(key)) {
       return null;
     }
 
     if (needSplit(key)) {
       String[] split = key.split("\\.");
 
-      if (split.length > 0 && StringUtils.isNoneBlank(split)) {
+      if (split.length > 0 && EmptyKit.isNotEmpty(split)) {
 
-        List<String> keys = Arrays.stream(split).filter(StringUtils::isNotBlank).collect(Collectors.toList());
+        List<String> keys = Arrays.stream(split).filter(EmptyKit::isNotBlank).collect(Collectors.toList());
 
         value = dataMap;
         for (int i = 0; i < keys.size(); i++) {
           String subKey = keys.get(i);
 
-          subKey = StringUtils.isNotBlank(replacement) ? MongodbUtil.mongodbKeySpecialCharHandler(subKey, replacement) : subKey;
+          subKey = EmptyKit.isNotBlank(replacement) ? MongodbUtil.mongodbKeySpecialCharHandler(subKey, replacement) : subKey;
 
           if (value instanceof Map && ((Map) value).containsKey(subKey)) {
             value = ((Map) value).get(subKey);
@@ -66,7 +66,7 @@ public class MapUtil {
     key = trimKey(key);
 
     if (value == null) {
-      key = StringUtils.isNotBlank(replacement) ? MongodbUtil.mongodbKeySpecialCharHandler(key, replacement) : key;
+      key = EmptyKit.isNotBlank(replacement) ? MongodbUtil.mongodbKeySpecialCharHandler(key, replacement) : key;
       if (dataMap.containsKey(key)) {
         value = dataMap.get(key);
       }
@@ -100,15 +100,15 @@ public class MapUtil {
 
   public static boolean removeValueByKey(Map<String, Object> dataMap, String key, String replacement) {
     boolean isRemoved = false;
-    if (MapUtils.isNotEmpty(dataMap) && StringUtils.isNotBlank(key)) {
+    if (MapUtils.isNotEmpty(dataMap) && EmptyKit.isNotBlank(key)) {
       if (needSplit(key)) {
         String[] split = key.split("\\.");
 
-        if (split.length > 0 && StringUtils.isNoneBlank(split)) {
+        if (split.length > 0 && EmptyKit.isNotEmpty(split)) {
           Object value = dataMap;
           for (int i = 0; i < split.length; i++) {
             String subKey = split[i];
-            if (StringUtils.isNotBlank(replacement)) {
+            if (EmptyKit.isNotBlank(replacement)) {
               subKey = MongodbUtil.mongodbKeySpecialCharHandler(subKey, replacement);
             }
 
@@ -124,7 +124,7 @@ public class MapUtil {
         }
       }
       if (!isRemoved) {
-        if (StringUtils.isNotBlank(replacement)) {
+        if (EmptyKit.isNotBlank(replacement)) {
           key = MongodbUtil.mongodbKeySpecialCharHandler(key, replacement);
         }
         if (dataMap.containsKey(key)) {
@@ -146,7 +146,7 @@ public class MapUtil {
       return true;
     }
 
-    if (StringUtils.isBlank(key)) {
+    if (EmptyKit.isBlank(key)) {
       return false;
     }
 
@@ -572,7 +572,7 @@ public class MapUtil {
 
 		private static String getFieldName(String parentKey, String key) {
 				String fieldName;
-				if (StringUtils.isNotBlank(parentKey)) {
+				if (EmptyKit.isNotBlank(parentKey)) {
 						fieldName = parentKey + "." + key;
 				} else {
 						fieldName = key;

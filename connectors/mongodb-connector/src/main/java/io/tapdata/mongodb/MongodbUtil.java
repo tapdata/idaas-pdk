@@ -7,7 +7,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import io.tapdata.entity.logger.TapLogger;
-import org.apache.commons.lang3.StringUtils;
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.StringKit;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
@@ -92,7 +93,7 @@ public class MongodbUtil {
 						String replicaSetName = replicaSetUsedIn(hostStr);
 						String addresses = hostStr.split("/")[1];
 						StringBuilder sb = new StringBuilder();
-						if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
+						if (EmptyKit.isNotEmpty(username) && EmptyKit.isNotEmpty(password)) {
 								try {
 										sb.append("mongodb://").append(URLEncoder.encode(connectionString.getUsername(), "UTF-8")).append(":").append(URLEncoder.encode(String.valueOf(password), "UTF-8")).append("@").append(addresses).append("/").append(database);
 								} catch (UnsupportedEncodingException e) {
@@ -101,7 +102,7 @@ public class MongodbUtil {
 						} else {
 								sb.append("mongodb://").append(addresses).append("/").append(database);
 						}
-						if (StringUtils.isNotBlank(mongoDBURIOptions)) {
+						if (EmptyKit.isNotBlank(mongoDBURIOptions)) {
 								sb.append("?").append(mongoDBURIOptions);
 						}
 						nodeConnURIs.put(replicaSetName, sb.toString());
@@ -124,12 +125,12 @@ public class MongodbUtil {
 										String replicaSetName = document.getString("set");
 
 										StringBuilder uriSB = new StringBuilder();
-										if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+										if (EmptyKit.isNotBlank(username) && EmptyKit.isNotBlank(password)) {
 												uriSB.append("mongodb://").append(URLEncoder.encode(username, "UTF-8")).append(":").append(URLEncoder.encode(password, "UTF-8")).append("@").append(addressStr).append("/").append(database);
 										} else {
 												uriSB.append("mongodb://").append(addressStr).append("/").append(database);
 										}
-										if (StringUtils.isNotBlank(mongoDBURIOptions)) {
+										if (EmptyKit.isNotBlank(mongoDBURIOptions)) {
 												uriSB.append("?").append(mongoDBURIOptions);
 										}
 										nodeConnURIs.put(replicaSetName, uriSB.toString());
@@ -140,7 +141,7 @@ public class MongodbUtil {
 
 										for (String address : connectionString.getHosts()) {
 												StringBuilder sb = new StringBuilder();
-												if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+												if (EmptyKit.isNotBlank(username) && EmptyKit.isNotBlank(password)) {
 														try {
 																sb.append("mongodb://").append(URLEncoder.encode(username, "UTF-8")).append(":").append(URLEncoder.encode(password, "UTF-8")).append("@").append(address).append("/").append(database);
 														} catch (UnsupportedEncodingException ex) {
@@ -149,7 +150,7 @@ public class MongodbUtil {
 												} else {
 														sb.append("mongodb://").append(address).append("/").append(database);
 												}
-												if (StringUtils.isNotBlank(mongoDBURIOptions)) {
+												if (EmptyKit.isNotBlank(mongoDBURIOptions)) {
 														sb.append("?").append(mongoDBURIOptions);
 												}
 												nodeConnURIs.put(replicaSetName, sb.toString());
@@ -176,7 +177,7 @@ public class MongodbUtil {
 				String options = null;
 				try {
 
-						if (StringUtils.isNotBlank(databaseUri)) {
+						if (EmptyKit.isNotBlank(databaseUri)) {
 								String[] split = databaseUri.split("\\?", 2);
 								if (split.length == 2) {
 										options = split[1];
@@ -191,7 +192,7 @@ public class MongodbUtil {
 		}
 
 		public static String maskUriPassword(String mongodbUri) {
-				if (StringUtils.isNotBlank(mongodbUri)) {
+				if (EmptyKit.isNotBlank(mongodbUri)) {
 						try {
 								ConnectionString connectionString = new ConnectionString(mongodbUri);
 								MongoCredential credentials = connectionString.getCredential();
@@ -201,7 +202,7 @@ public class MongodbUtil {
 												String pass = new String(password);
 												pass = URLEncoder.encode(pass, "UTF-8");
 
-												mongodbUri = StringUtils.replaceOnce(mongodbUri, pass + "@", "******@");
+												mongodbUri = StringKit.replaceOnce(mongodbUri, pass + "@", "******@");
 										}
 								}
 
@@ -230,7 +231,7 @@ public class MongodbUtil {
 
 		public static String mongodbKeySpecialCharHandler(String key, String replacement) {
 
-				if (StringUtils.isNotBlank(key)) {
+				if (EmptyKit.isNotBlank(key)) {
 						if (key.startsWith("$")) {
 								key = key.replaceFirst("\\$", replacement);
 						}

@@ -19,7 +19,7 @@
           "type": "string",
           "title": "Port",
           "x-decorator": "FormItem",
-          "x-component": "Input",
+          "x-component": "InputNumber",
           "apiServerKey": "database_port"
         },
         "database": {

@@ -1,12 +1,12 @@
-package io.tapdata.connector.postgres.storage;
+package io.tapdata.connector.postgres;
 
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.StringKit;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
-import io.tapdata.kit.EmptyKit;
-import io.tapdata.kit.StringKit;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 
 import java.sql.Connection;

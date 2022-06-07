@@ -1,21 +1,30 @@
-import io.tapdata.connector.postgres.PostgresDataPool;
+import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
+import io.tapdata.entity.utils.DataMap;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 
 public class Main {
     public static void main(String[] args) throws Throwable {
-        PostgresConfig postgresConfig = new PostgresConfig();
-        postgresConfig.setHost("192.168.1.189");
-        postgresConfig.setPort(5432);
-        postgresConfig.setDatabase("COOLGJ");
-        postgresConfig.setSchema("public");
-        postgresConfig.setExtParams("");
-        postgresConfig.setUser("postgres");
-        postgresConfig.setPassword("gj0628");
-        PostgresJdbcContext postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
+        DataMap map = new DataMap();
+        map.put("host", "192.168.1.189");
+        map.put("port", 5432);
+        map.put("database", "COOLGJ");
+        map.put("schema", "public");
+        map.put("extParams", "");
+        map.put("user", "postgres");
+        map.put("password", "gj0628");
+        PostgresConfig postgresConfig = (PostgresConfig) new PostgresConfig().load(map);
+//        postgresConfig.setHost("192.168.1.189");
+//        postgresConfig.setPort(5432);
+//        postgresConfig.setDatabase("COOLGJ");
+//        postgresConfig.setSchema("public");
+//        postgresConfig.setExtParams("");
+//        postgresConfig.setUser("postgres");
+//        postgresConfig.setPassword("gj0628");
+        PostgresJdbcContext postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         Connection connection = postgresJdbcContext.getConnection();
         ResultSet rs = connection.createStatement().executeQuery("SELECT col.*, d.description,\n" +
                 "       (SELECT pg_catalog.format_type(a.atttypid, a.atttypmod) AS \"dataType\"\n" +

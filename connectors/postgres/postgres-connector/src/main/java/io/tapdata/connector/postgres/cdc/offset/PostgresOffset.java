@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.connector.postgres.cdc.offset;
 
 import java.io.Serializable;
 

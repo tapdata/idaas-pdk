@@ -1,6 +1,7 @@
-package io.tapdata.connector.postgres.config;
+package io.tapdata.connector.postgres.cdc.config;
 
 import io.debezium.config.Configuration;
+import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.kit.EmptyKit;
 
 import java.util.HashMap;
@@ -69,7 +70,7 @@ public class PostgresDebeziumConfig {
         Configuration.Builder builder = Configuration.create();
         builder.with("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
 //                .with("offset.storage", "org.apache.kafka.connect.storage.FileOffsetBackingStore")
-                .with("offset.storage", "io.tapdata.connector.postgres.PostgresOffsetBackingStore") //customize offset store, store in engine
+                .with("offset.storage", "io.tapdata.connector.postgres.cdc.offset.PostgresOffsetBackingStore") //customize offset store, store in engine
                 .with("snapshot.mode", "never")
                 .with("slot.name", slotName)
 //                .with("offset.storage.file.filename", "d:/cdc/offset/" + slotName + ".dat") //path must be changed with requirement

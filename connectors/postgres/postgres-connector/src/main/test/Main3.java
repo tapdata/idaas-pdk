@@ -1,12 +1,9 @@
-import io.tapdata.connector.postgres.PostgresDataPool;
+import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Types;
-import java.util.Date;
 
 public class Main3 {
     public static void main(String[] args) throws Throwable {
@@ -18,7 +15,7 @@ public class Main3 {
         postgresConfig.setExtParams("");
         postgresConfig.setUser("postgres");
         postgresConfig.setPassword("gj0628");
-        PostgresJdbcContext postgresJdbcContext = PostgresDataPool.getJdbcContext(postgresConfig);
+        PostgresJdbcContext postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         Connection connection = postgresJdbcContext.getConnection();
 //        PreparedStatement preparedStatement = connection.prepareStatement(
 //                "DELETE FROM \"PgTest1234\" WHERE \"ddd\"=? or ((COALESCE(\"ddd\", null) is null) and (COALESCE(?, null) is null))");
