@@ -119,6 +119,7 @@ public class RegisterCli extends CommonCli {
 
                     TapNodeContainer nodeContainer = JSON.parseObject(IOUtils.toString(nodeInfo.readResource(nodeInfo.getNodeClass().getAnnotation(TapConnectorClass.class).value())), TapNodeContainer.class);
                     o.put("expression", JSON.toJSONString(nodeContainer.getDataTypes()));
+                    o.put("messages", nodeContainer.getMessages());
 
                     io.tapdata.pdk.apis.TapConnector connector1 = (io.tapdata.pdk.apis.TapConnector) nodeInfo.getNodeClass().getConstructor().newInstance();
                     ConnectorFunctions connectorFunctions = new ConnectorFunctions();
