@@ -7,7 +7,6 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
 import io.tapdata.pdk.core.utils.CommonUtils;
-import io.tapdata.pdk.core.utils.LoggerUtils;
 import io.tapdata.pdk.tdd.core.PDKTestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -75,7 +74,7 @@ public class BasicTest extends PDKTestBase {
                     throwable.printStackTrace();
                     Assertions.fail(throwable);
                 } finally {
-                    CommonUtils.handleAnyError(connectionNode::connectorDestroy);
+                    CommonUtils.handleAnyError(connectionNode::connectorStop);
                 }
             });
         });
