@@ -54,7 +54,7 @@ public abstract class DebeziumCdcRunner implements Runnable {
     /**
      * close cdc sync
      */
-    public void closeCdcRunner(Object param) throws IOException, SQLException {
+    public void closeCdcRunner() throws IOException, SQLException {
         engine.close();
     }
 
