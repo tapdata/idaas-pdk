@@ -14,11 +14,16 @@ public class TapAdvanceFilter extends TapFilter {
     private Integer limit;
     private List<QueryOperator> operators;
     private List<SortOn> sortOnList;
+    private Projection projection;
 
     public static TapAdvanceFilter create() {
         return new TapAdvanceFilter();
     }
 
+    public TapAdvanceFilter projection(Projection projection) {
+        this.projection = projection;
+        return this;
+    }
     public TapAdvanceFilter limit(int limit) {
         this.limit = limit;
         return this;
@@ -82,4 +87,11 @@ public class TapAdvanceFilter extends TapFilter {
         this.skip = skip;
     }
 
+    public Projection getProjection() {
+        return projection;
+    }
+
+    public void setProjection(Projection projection) {
+        this.projection = projection;
+    }
 }
