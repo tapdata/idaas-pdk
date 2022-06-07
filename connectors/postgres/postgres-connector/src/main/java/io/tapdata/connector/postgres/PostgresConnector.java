@@ -394,7 +394,8 @@ public class PostgresConnector extends ConnectorBase {
 
     private long batchCount(TapConnectorContext tapConnectorContext, TapTable tapTable) throws Throwable {
         AtomicLong count = new AtomicLong(0);
-        String sql = "SELECT COUNT(1) FROM \"" + tapTable.getId() + "\"";
+        String schema = tapConnectorContext.getConnectionConfig().getString("schema");
+		String sql = "SELECT COUNT(1) FROM \"" + schema + "\".\"" + tapTable.getId() + "\"";
         postgresJdbcContext.query(sql, resultSet -> count.set(resultSet.getLong(1)));
         return count.get();
     }
@@ -410,7 +411,8 @@ public class PostgresConnector extends ConnectorBase {
         else {
             postgresOffset = (PostgresOffset) offsetState;
         }
-        String sql = "SELECT * FROM \"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue();
+        String schema = tapConnectorContext.getConnectionConfig().getString("schema");
+		String sql = "SELECT * FROM \"" + schema + "\".\"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue();
         postgresJdbcContext.query(sql, resultSet -> {
             //get all column names
             List<String> columnNames = DbKit.getColumnsFromResultSet(resultSet);
