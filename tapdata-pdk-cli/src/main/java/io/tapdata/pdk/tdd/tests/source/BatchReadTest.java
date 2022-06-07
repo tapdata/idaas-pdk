@@ -13,8 +13,6 @@ import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 import io.tapdata.pdk.cli.entity.DAGDescriber;
 import io.tapdata.pdk.core.api.ConnectorNode;
-import io.tapdata.pdk.core.api.SourceNode;
-import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.pdk.core.dag.TapDAGNode;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
 import io.tapdata.pdk.core.monitor.PDKMethod;
@@ -190,13 +188,13 @@ public class BatchReadTest extends PDKTestBase {
                                                         $(() -> Assertions.fail("Target table " + targetTable + " should be deleted, because dropTable has been called, please check your dropTable method whether it works as expected or not"));
                                                     }
                                                 }
-                                                CommonUtils.handleAnyError(connectionNode::connectorDestroy);
+                                                CommonUtils.handleAnyError(connectionNode::connectorStop);
                                                 completed();
                                             } catch (Throwable throwable) {
                                                 throwable.printStackTrace();
                                                 Assertions.fail(throwable);
                                             } finally {
-                                                CommonUtils.handleAnyError(connectionNode::connectorDestroy);
+                                                CommonUtils.handleAnyError(connectionNode::connectorStop);
                                             }
 
 
