@@ -24,6 +24,6 @@ public class Main2 {
         new Thread(cdcRunner::startCdcRunner).start();
         Thread.sleep(150000);
 
-        cdcRunner.closeCdcRunner(null);
+        cdcRunner.closeCdcRunner();
     }
 }
