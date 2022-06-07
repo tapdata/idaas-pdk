@@ -1,16 +1,26 @@
 package io.tapdata.pdk.apis.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Projection {
     private List<String> includeFields;
-    public Projection includeFields(List<String> includeFields) {
-        this.includeFields = includeFields;
+    private List<String> excludeFields;
+    public Projection include(String includeField) {
+        if(includeFields == null)
+            includeFields = new ArrayList<>();
+
+        if((excludeFields != null && !excludeFields.contains(includeField)) && !includeFields.contains(includeField))
+            includeFields.add(includeField);
         return this;
     }
-    private List<String> excludeFields;
-    public Projection excludeFields(List<String> excludeFields) {
-        this.excludeFields = excludeFields;
+
+    public Projection exclude(String excludeField) {
+        if(excludeFields == null)
+            excludeFields = new ArrayList<>();
+
+        if((includeFields != null && !includeFields.contains(excludeField)) && !excludeFields.contains(excludeField))
+            excludeFields.add(excludeField);
         return this;
     }
 
@@ -18,15 +28,8 @@ public class Projection {
         return includeFields;
     }
 
-    public void setIncludeFields(List<String> includeFields) {
-        this.includeFields = includeFields;
-    }
-
     public List<String> getExcludeFields() {
         return excludeFields;
     }
 
-    public void setExcludeFields(List<String> excludeFields) {
-        this.excludeFields = excludeFields;
-    }
 }
