@@ -10,28 +10,28 @@
       "properties": {
         "host": {
           "type": "string",
-          "title": "Host",
+          "title": "${host}",
           "x-decorator": "FormItem",
           "x-component": "Input",
           "apiServerKey": "database_host"
         },
         "port": {
           "type": "string",
-          "title": "Port",
+          "title": "${port}",
           "x-decorator": "FormItem",
           "x-component": "InputNumber",
           "apiServerKey": "database_port"
         },
         "database": {
           "type": "string",
-          "title": "Database",
+          "title": "${database}",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "database_name"
         },
         "schema": {
           "type": "string",
-          "title": "Schema",
+          "title": "${schema}",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "database_owner"
@@ -45,21 +45,21 @@
         },
         "user": {
           "type": "string",
-          "title": "Username",
+          "title": "${user}",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "database_username"
         },
         "password": {
           "type": "string",
-          "title": "Password",
+          "title": "${password}",
           "x-decorator": "FormItem",
           "x-component": "Password",
 		  "apiServerKey": "database_password"
         },
         "logPluginName": {
           "type": "string",
-          "title": "LogPluginName",
+          "title": "#{logPluginName}",
           "default": "DECORDERBUFS",
           "x-decorator": "FormItem",
           "x-component": "Select",
@@ -92,6 +92,39 @@
           ]
         }
       }
+    }
+  },
+  "messages": {
+    "default": "en-US",
+    "en-US": {
+      "host": "Host",
+      "port": "Port",
+      "database" : "database",
+      "schema" : "schema",
+      "extParams" : "extParams",
+      "user" : "user",
+      "password" : "password",
+      "logPluginName" : "logPluginName"
+    },
+    "zh-CN": {
+      "host": "地址",
+      "port": "端口",
+      "database" : "数据库",
+      "schema" : "模型",
+      "extParams" : "额外参数",
+      "user" : "账号",
+      "password" : "密码",
+      "logPluginName" : "日志插件"
+    },
+    "zh-TW": {
+      "host": "地址",
+      "port": "端口",
+      "database" : "數據庫",
+      "schema" : "模型",
+      "extParams" : "額外參數",
+      "user" : "賬號",
+      "password" : "密碼",
+      "logPluginName" : "日誌插件"
     }
   },
   "dataTypes": {

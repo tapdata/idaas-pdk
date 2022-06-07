@@ -21,6 +21,18 @@
 	  }
 	}
   },
+	"messages": {
+		"default": "en-US",
+		"en-US": {
+			"uri": "ConnectionUri"
+		},
+		"zh-CN": {
+			"uri": "地址"
+		},
+		"zh-TW": {
+			"uri": "地址"
+		}
+	},
   "dataTypes": {
 	"DOUBLE": {
 	  "to": "TapNumber",
