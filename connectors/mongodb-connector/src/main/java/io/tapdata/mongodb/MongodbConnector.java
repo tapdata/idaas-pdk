@@ -205,7 +205,7 @@ public class MongodbConnector extends ConnectorBase {
             throwable.printStackTrace();
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
         } finally {
-						onPause(connectionContext);
+						onStop(connectionContext);
 				}
     }
 
@@ -222,7 +222,7 @@ public class MongodbConnector extends ConnectorBase {
 				} catch (Exception e) {
 						throw e;
 				} finally {
-						onPause(connectionContext);
+						onStop(connectionContext);
 				}
 				return index;
     }
@@ -578,9 +578,9 @@ public class MongodbConnector extends ConnectorBase {
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
      */
-    @Override
-    public void onDestroy(TapConnectionContext connectionContext) {
-    }
+//    @Override
+//    public void onDestroy(TapConnectionContext connectionContext) {
+//    }
 
 		private MongodbStreamReader createStreamReader(){
 				final int version = MongodbUtil.getVersion(mongoClient, mongoConfig.getDatabase());
@@ -595,7 +595,7 @@ public class MongodbConnector extends ConnectorBase {
 		}
 
     @Override
-    public void onPause(TapConnectionContext connectionContext) throws Throwable {
+    public void onStop(TapConnectionContext connectionContext) throws Throwable {
 //        if (mongoClient != null) {
 //            mongoClient.close();
 //        }

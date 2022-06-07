@@ -140,13 +140,13 @@ public class PostgresConnector extends ConnectorBase {
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) {
-        initConnection(connectionContext);
         return postgresJdbcContext.queryAllTables(null).size();
     }
 
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 
+        connectorFunctions.supportReleaseExternalFunction(this::onDestroy);
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportCreateTable(this::createTable);
 //        connectorFunctions.supportAlterTable(this::alterTable);
@@ -180,8 +180,8 @@ public class PostgresConnector extends ConnectorBase {
 //        codecRegistry.registerFromTapValue(TapDateValue.class, "text", tapDateValue -> tapDateValue.getValue().toString());
     }
 
-    @Override
-    public void onDestroy(TapConnectionContext connectionContext) throws IOException, SQLException {
+
+    private void onDestroy(TapConnectorContext connectorContext) throws IOException, SQLException {
         if (EmptyKit.isNotNull(slotName)) {
             clearSlot(slotName.toString());
         }
@@ -196,7 +196,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     @Override
-    public void onPause(TapConnectionContext connectionContext) throws Throwable {
+    public void onStop(TapConnectionContext connectionContext) throws Throwable {
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
             postgresJdbcContext.finish();
         }
