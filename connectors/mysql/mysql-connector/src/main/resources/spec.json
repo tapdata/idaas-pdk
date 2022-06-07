@@ -13,7 +13,6 @@
 		  "title": "${host}",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
-		  "default": "127.0.0.1",
 		  "apiServerKey": "database_host"
 		},
 		"port": {
@@ -21,7 +20,6 @@
 		  "title": "${port}",
 		  "x-decorator": "FormItem",
 		  "x-component": "InputNumber",
-		  "default": 3306,
 		  "apiServerKey": "database_port"
 		},
 		"database": {
@@ -56,6 +54,7 @@
 		  "type": "string",
 		  "title": "${timezone}",
 		  "default": "Database Timezone",
+		  "x-decorator": "FormItem",
 		  "x-component": "Select",
 		  "enum": [
 			{
