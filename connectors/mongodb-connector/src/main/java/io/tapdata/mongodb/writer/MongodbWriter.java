@@ -87,7 +87,7 @@ public class MongodbWriter {
 				for (TapRecordEvent recordEvent : tapRecordEvents) {
 						final Map<String, Object> info = recordEvent.getInfo();
 						if (MapUtils.isNotEmpty(info) && info.containsKey(MergeInfo.EVENT_INFO_KEY)) {
-								final List<WriteModel<Document>> mergeWriteModels = MongodbMergeOperate.merge(recordEvent, table);
+								final List<WriteModel<Document>> mergeWriteModels = MongodbMergeOperate.merge(inserted, updated, deleted, recordEvent, table);
 								if (CollectionUtils.isNotEmpty(mergeWriteModels)) {
 										writeModels.addAll(mergeWriteModels);
 								}
