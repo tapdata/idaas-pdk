@@ -246,19 +246,23 @@ public class ModelPredictionCli extends CommonCli {
         Map<String, Object[]> data = new LinkedHashMap<>();
         String sourceName = sourceNode.getConnectorContext().getSpecification().getName();
         String targetName = targetNode.getConnectorContext().getSpecification().getName();
-        data.put("1", new Object[] {"No.", "Field name", sourceName + " type", sourceName + " model", targetName + " type", targetName + " model"});
+        data.put("1", new Object[] {"No.", "Field name", sourceName + " type", sourceName + " tap type", sourceName + " params", sourceName + " expression", sourceName + " model", " to ", targetName + " model", targetName + " type", targetName + " tap type", targetName + " params", targetName + " expression"});
         Set<Map.Entry<String, TapField>> entries = sourceNameFieldMap.entrySet();
         int index = 0;
         for(Map.Entry<String, TapField> entry : entries) {
             TapField targetField = targetNameFieldMap.get(entry.getKey());
             data.put(String.valueOf(index + 2), new Object[] {index + 1, entry.getKey(),
-                    getDataTypeName(sourceNode, entry.getValue()), entry.getValue().getDataType(),
-                    getDataTypeName(targetNode, targetField), targetField.getDataType()
+                    getDataTypeName(sourceNode, entry.getValue()), getTapType(sourceNode, entry.getValue()), getParams(sourceNode, entry.getValue()), getExpression(sourceNode, entry.getValue()), entry.getValue().getDataType(),
+                    "-->",
+                    targetField.getDataType(), getDataTypeName(targetNode, targetField), getTapType(targetNode, targetField), getParams(targetNode, targetField), getExpression(targetNode, targetField),
             });
             index++;
         }
-        int sourceCommendIndex = 3;
-        int targetCommendIndex = 5;
+        int sourceCommendIndex = 6;
+        int targetCommendIndex = 8;
+
+        int sourceParamsIndex = 4;
+        int targetParamsIndex = 11;
 
         //https://www.baeldung.com/apache-poi-change-cell-font
         //Iterate over data and write to sheet
@@ -271,8 +275,16 @@ public class ModelPredictionCli extends CommonCli {
             int cellnum = 0;
             for (Object obj : objArr)
             {
+                CellStyle cellStyle = workbook.createCellStyle();
+
                 Cell cell = row.createCell(cellnum++);
-                sheet.autoSizeColumn(cellnum - 1);
+//                sheet.setDefaultRowHeight((short) 2000);
+                if(cellnum - 1 == sourceParamsIndex || cellnum - 1 == targetParamsIndex) {
+                    sheet.setColumnWidth(cellnum - 1, 4000);
+//                    cellStyle.setAlignment(HorizontalAlignment.LEFT);
+                } else {
+                    sheet.autoSizeColumn(cellnum - 1);
+                }
                 if(sourceCommendIndex == cellnum - 1) {
                     TypeExprResult<DataMap> result = addCellComment(creationHelper, drawing, cell, sourceNode, (String)obj);
                 }
@@ -280,8 +292,6 @@ public class ModelPredictionCli extends CommonCli {
                     TypeExprResult<DataMap> result = addCellComment(creationHelper, drawing, cell, targetNode, (String)obj);
                 }
 
-
-                CellStyle cellStyle = workbook.createCellStyle();
                 if(sourceCommendIndex == cellnum  - 1 || targetCommendIndex == cellnum  - 1) {
                     cellStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
                     cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -300,6 +310,35 @@ public class ModelPredictionCli extends CommonCli {
             }
         }
 
+    }
+    private Object getExpression(ConnectorNode connectorNode, TapField field) {
+        TypeExprResult<DataMap> result = connectorNode.getConnectorContext().getSpecification().getDataTypesMap().get(field.getDataType());
+        if(result == null)
+            return null;
+        return result.getExpression();
+    }
+    private Object getParams(ConnectorNode connectorNode, TapField field) {
+        TypeExprResult<DataMap> result = connectorNode.getConnectorContext().getSpecification().getDataTypesMap().get(field.getDataType());
+        if(result == null)
+            return null;
+        Object value = result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+        if(value instanceof TapMapping) {
+            TapMapping map = (TapMapping) value;
+            return JSON.toJSONString(map, true);
+        }
+        return null;
+    }
+
+    private Object getTapType(ConnectorNode connectorNode, TapField field) {
+        TypeExprResult<DataMap> result = connectorNode.getConnectorContext().getSpecification().getDataTypesMap().get(field.getDataType());
+        if(result == null)
+            return null;
+        Object value = result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+        if(value instanceof TapMapping) {
+            TapMapping map = (TapMapping) value;
+            return map.getTo();
+        }
+        return null;
     }
 
     private String getDataTypeName(ConnectorNode connectorNode, TapField field) {

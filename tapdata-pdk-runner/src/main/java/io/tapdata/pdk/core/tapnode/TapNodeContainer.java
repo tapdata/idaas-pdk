@@ -12,6 +12,8 @@ public class TapNodeContainer {
 
     private Map<String, DataMap> dataTypes;
 
+    private Map<String, Object> messages;
+
     public DataMap getConfigOptions() {
         return configOptions;
     }
@@ -34,5 +36,13 @@ public class TapNodeContainer {
 
     public void setDataTypes(Map<String, DataMap> dataTypes) {
         this.dataTypes = dataTypes;
+    }
+
+    public Map<String, Object> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(Map<String, Object> messages) {
+        this.messages = messages;
     }
 }
