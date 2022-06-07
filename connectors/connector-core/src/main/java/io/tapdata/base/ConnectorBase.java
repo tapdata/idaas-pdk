@@ -11,6 +11,7 @@ import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.*;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -251,6 +252,21 @@ public abstract class ConnectorBase implements TapConnector {
         if (isDestroyed.compareAndSet(false, true)) {
             pause(connectionContext);
             onDestroy(connectionContext);
+            isConnectorStarted(connectionContext, tapConnectorContext -> {
+                KVMap<Object> stateMap = tapConnectorContext.getStateMap();
+                if(stateMap != null) {
+                    try {
+                        stateMap.clear();
+                    } catch (Throwable ignored) {
+                        TapLogger.warn(TAG, "destroy, clear stateMap failed, {}, connector {}", ignored.getMessage(), tapConnectorContext.toString());
+                    }
+                    try {
+                        stateMap.reset();
+                    } catch (Throwable ignored) {
+                        TapLogger.warn(TAG, "destroy, reset stateMap failed, {}, connector {}", ignored.getMessage(), tapConnectorContext.toString());
+                    }
+                }
+            });
         }
     }
 
