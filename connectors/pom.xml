@@ -20,7 +20,8 @@
         <module>mongodb-connector</module>
         <module>mysql</module>
         <module>postgres</module>
-        <module>oracle</module>
+<!--        <module>oracle</module>-->
+        <module>sql-core</module>
     </modules>
 
     <properties>
