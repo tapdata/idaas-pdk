@@ -4,7 +4,7 @@ import io.tapdata.entity.event.TapBaseEvent;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.schema.TapTable;
 
-public class TapRecordEvent extends TapBaseEvent {
+public abstract class TapRecordEvent extends TapBaseEvent {
     /**
      * 数据源的类型， mysql一类
      */
@@ -13,6 +13,10 @@ public class TapRecordEvent extends TapBaseEvent {
      * 数据源的版本
      */
     protected String connectorVersion;
+
+    public TapRecordEvent(int type) {
+        super(type);
+    }
 
     @Override
     public void clone(TapEvent tapEvent) {

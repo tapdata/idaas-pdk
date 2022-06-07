@@ -11,6 +11,10 @@ public abstract class TapBaseEvent extends TapEvent {
      */
     protected Long referenceTime;
 
+    public TapBaseEvent(int type) {
+        super(type);
+    }
+
 //    protected String pdkId;
 //    protected String pdkGroup;
 //    protected String pdkVersion;

@@ -9,11 +9,16 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class TapUpdateRecordEvent extends TapRecordEvent {
+	public static final int TYPE = 302;
 	/**
 	 * The latest record, after insert and update
 	 * Value format should follow TapType formats
 	 */
 	private Map<String, Object> after;
+
+	public TapUpdateRecordEvent() {
+		super(TYPE);
+	}
 
 	public TapUpdateRecordEvent after(Map<String, Object> after) {
 		this.after = after;

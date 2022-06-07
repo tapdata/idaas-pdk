@@ -8,11 +8,16 @@ import io.tapdata.entity.utils.TapUtils;
 import java.util.Map;
 
 public class TapInsertRecordEvent extends TapRecordEvent {
+	public static final int TYPE = 300;
 	/**
 	 * The latest record, after insert and update
 	 * Value format should follow TapType formats
 	 */
 	private Map<String, Object> after;
+
+	public TapInsertRecordEvent() {
+		super(TYPE);
+	}
 
 	public void clone(TapEvent tapEvent) {
 		super.clone(tapEvent);

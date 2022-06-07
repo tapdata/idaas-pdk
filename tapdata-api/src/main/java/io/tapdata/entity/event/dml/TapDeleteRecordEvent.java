@@ -8,8 +8,12 @@ import io.tapdata.entity.utils.TapUtils;
 import java.util.Map;
 
 public class TapDeleteRecordEvent extends TapRecordEvent {
-
+	public static final int TYPE = 301;
 	private Map<String, Object> before;
+
+	public TapDeleteRecordEvent() {
+		super(TYPE);
+	}
 
 	@Override
 	public void clone(TapEvent tapEvent) {

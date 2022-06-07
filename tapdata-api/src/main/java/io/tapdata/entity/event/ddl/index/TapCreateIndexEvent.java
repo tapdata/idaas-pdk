@@ -9,7 +9,13 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TapCreateIndexEvent extends TapIndexEvent {
+    public static final int TYPE = 101;
     private List<TapIndex> indexList;
+
+    public TapCreateIndexEvent() {
+        super(TYPE);
+    }
+
     public TapCreateIndexEvent indexList(List<TapIndex> indexList) {
         this.indexList = indexList;
         return this;

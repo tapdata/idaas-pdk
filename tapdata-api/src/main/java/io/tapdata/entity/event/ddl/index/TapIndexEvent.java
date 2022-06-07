@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class TapIndexEvent extends TapDDLEvent {
+public abstract class TapIndexEvent extends TapDDLEvent {
 
+    public TapIndexEvent(int type) {
+        super(type);
+    }
 }

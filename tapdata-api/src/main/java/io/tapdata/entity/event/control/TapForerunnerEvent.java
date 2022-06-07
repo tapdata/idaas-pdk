@@ -7,6 +7,10 @@ import io.tapdata.entity.schema.TapTable;
 import java.util.List;
 
 public class TapForerunnerEvent extends PatrolEvent {
+    public static final int TYPE = 401;
+    public TapForerunnerEvent() {
+        super(TYPE);
+    }
     private TapTable table;
     public TapForerunnerEvent table(TapTable table) {
         this.table = table;

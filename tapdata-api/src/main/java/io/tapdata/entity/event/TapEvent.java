@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class TapEvent implements Serializable {
+    protected int type;
     /**
      * The time when the event is created
      */
@@ -14,6 +15,14 @@ public abstract class TapEvent implements Serializable {
     public Map<String, Object> info;
 
     public Map<String, Object> traceMap;
+
+    public TapEvent(int type) {
+        this.type = type;
+    }
+
+    public int getType() {
+        return type;
+    }
 
     public Map<String, Object> getTraceMap() {
         return traceMap;

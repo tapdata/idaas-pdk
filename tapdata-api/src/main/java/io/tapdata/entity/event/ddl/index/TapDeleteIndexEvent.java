@@ -6,7 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TapDeleteIndexEvent extends TapIndexEvent {
+    public static final int TYPE = 100;
     private List<String> indexNames;
+
+    public TapDeleteIndexEvent() {
+        super(TYPE);
+    }
+
     public TapDeleteIndexEvent indexNames(List<String> indexNames) {
         this.indexNames = indexNames;
         return this;
