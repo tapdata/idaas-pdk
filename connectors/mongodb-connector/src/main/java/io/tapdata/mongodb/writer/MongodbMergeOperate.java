@@ -172,42 +172,41 @@ public class MongodbMergeOperate {
 		public static void updateMerge(MergeBundle mergeBundle, MergeTableProperties currentProperty, MergeResult mergeResult) {
 				final String targetPath = currentProperty.getTargetPath();
 				final boolean array = currentProperty.getIsArray();
+				final Document filter = filter(
+								MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
+								currentProperty.getJoinKeys()
+				);
+				mergeResult.getFilter().putAll(filter);
 				if (array) {
-						final Document filter = filter(
-										MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
-										currentProperty.getJoinKeys()
-						);
-						mergeResult.getFilter().putAll(filter);
 						final List<Document> arrayFilter = arrayFilter(
 										MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
 										currentProperty.getJoinKeys(),
 										currentProperty.getTargetPath()
 						);
 						mergeResult.getUpdateOptions().arrayFilters(arrayFilter);
-				} else {
-						final Document filter = filter(
-										MapUtils.isNotEmpty(mergeBundle.getBefore()) ? mergeBundle.getBefore() : mergeBundle.getAfter(),
-										currentProperty.getJoinKeys()
-						);
-						mergeResult.getFilter().putAll(filter);
 				}
 
 				Map<String, Object> value = MapUtils.isNotEmpty(mergeBundle.getAfter()) ? mergeBundle.getAfter() : mergeBundle.getBefore();
 				final MergeBundle.EventOperation operation = mergeBundle.getOperation();
 
+				String updatePatch = targetPath;
+				if (array) {
+						if (targetPath.contains(".")) {
+								final String targetPathFirst = targetPath.substring(0, targetPath.lastIndexOf("."));
+								final String targetPathLast = targetPath.substring(targetPath.lastIndexOf(".") + 1);
+								updatePatch = targetPathFirst + ".$[element1]." + targetPathLast;
+						} else {
+								updatePatch = targetPath + ".$[element1]";
+						}
+				}
+
 				Document updateOpDoc = new Document();
 				Map<String, Object> flatValue = new Document();
 				MapUtil.recursiveFlatMap(value, flatValue, "");
 				value = MapUtils.isNotEmpty(flatValue) ? flatValue : value;
-				if (EmptyKit.isNotEmpty(targetPath)) {
-						final String targetPathFirst = targetPath.substring(0, targetPath.lastIndexOf("."));
-						final String targetPathLast = targetPath.substring(targetPath.lastIndexOf(".") + 1);
+				if (EmptyKit.isNotEmpty(updatePatch)) {
 						for (Map.Entry<String, Object> entry : value.entrySet()) {
-								if (array) {
-										updateOpDoc.append(targetPathFirst + ".$[element1]." + targetPathLast + "." + entry.getKey(), entry.getValue());
-								} else {
-										updateOpDoc.append(targetPath + "." + entry.getKey(), entry.getValue());
-								}
+								updateOpDoc.append(updatePatch + "." + entry.getKey(), entry.getValue());
 						}
 				} else {
 						updateOpDoc.putAll(value);
