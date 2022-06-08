@@ -41,7 +41,7 @@ import java.util.function.Consumer;
  * @Description
  * @create 2022-04-25 15:09
  **/
-@TapConnectorClass("spec.json")
+@TapConnectorClass("mysql-spec.json")
 public class MysqlConnector extends ConnectorBase {
 	private static final String TAG = MysqlConnector.class.getSimpleName();
 	private static final int MAX_FILTER_RESULT_SIZE = 100;
