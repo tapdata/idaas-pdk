@@ -139,7 +139,7 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 												} else {
 														TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
 												}
-										} else if (operationType == OperationType.UPDATE) {
+										} else if (operationType == OperationType.UPDATE || operationType == OperationType.REPLACE) {
 												DataMap after = new DataMap();
 												if (MapUtils.isEmpty(fullDocument)) {
 														TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
@@ -152,10 +152,8 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 														recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 														tapEvents.add(recordEvent);
 												} else {
-														TapLogger.error(TAG, "Document key is null, failed to update. {}", event);
+														throw new RuntimeException(String.format("Document key is null, failed to update. %s", event));
 												}
-										} else {
-												TapLogger.error(TAG, "Unsupported operationType {}, {}", operationType, event);
 										}
 								} catch (Throwable throwable) {
 										if (!running.get() && throwable instanceof IllegalStateException) {
