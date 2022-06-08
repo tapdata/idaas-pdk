@@ -124,7 +124,6 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 		int row;
 		try {
 			row = deletePreparedStatement.executeUpdate();
-			writeListResult.incrementRemove(row);
 		} catch (Throwable e) {
 			throw new Exception("Delete data failed, sql: " + deletePreparedStatement + ", message: " + e.getMessage(), e);
 		}

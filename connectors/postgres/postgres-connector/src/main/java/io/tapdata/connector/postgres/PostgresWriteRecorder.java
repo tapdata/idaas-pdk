@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -23,6 +24,7 @@ public class PostgresWriteRecorder {
 
     private final Connection connection;
     private final TapTable tapTable;
+    private final List<String> allColumn;
     private final String schema;
     private List<String> uniqueCondition;
     private boolean hasPk = false;
@@ -35,6 +37,7 @@ public class PostgresWriteRecorder {
         this.connection = connection;
         this.tapTable = tapTable;
         this.schema = schema;
+        this.allColumn = new ArrayList<>(tapTable.getNameFieldMap().keySet());
         analyzeTable();
     }
 
@@ -87,25 +90,25 @@ public class PostgresWriteRecorder {
         }
         if (EmptyKit.isNull(preparedStatement)) {
             String insertHead = "INSERT INTO \"" + schema + "\".\"" + tapTable.getId() + "\" ("
-                    + after.keySet().stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", ")) + ") ";
-            String insertValue = "VALUES(" + StringKit.copyString("?", after.size(), ",") + ") ";
+                    + allColumn.stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", ")) + ") ";
+            String insertValue = "VALUES(" + StringKit.copyString("?", allColumn.size(), ",") + ") ";
             String insertSql = insertHead + insertValue;
             if (EmptyKit.isNotEmpty(uniqueCondition)) {
                 if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
                     insertSql += "ON CONFLICT("
                             + uniqueCondition.stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", "))
-                            + ") DO UPDATE SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(", "));
+                            + ") DO UPDATE SET " + allColumn.stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(", "));
                 } else {
                     if (hasPk) {
-                        insertSql = "WITH upsert AS (UPDATE \"" + schema + "\".\"" + tapTable.getId() + "\" SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?")
+                        insertSql = "WITH upsert AS (UPDATE \"" + schema + "\".\"" + tapTable.getId() + "\" SET " + allColumn.stream().map(k -> "\"" + k + "\"=?")
                                 .collect(Collectors.joining(", ")) + " WHERE " + uniqueCondition.stream().map(k -> "\"" + k + "\"=?")
                                 .collect(Collectors.joining(" AND ")) + " RETURNING *) " + insertHead + " SELECT "
-                                + StringKit.copyString("?", after.size(), ",") + " WHERE NOT EXISTS (SELECT * FROM upsert)";
+                                + StringKit.copyString("?", allColumn.size(), ",") + " WHERE NOT EXISTS (SELECT * FROM upsert)";
                     } else {
-                        insertSql = "WITH upsert AS (UPDATE \"" + schema + "\".\"" + tapTable.getId() + "\" SET " + after.keySet().stream().map(k -> "\"" + k + "\"=?")
+                        insertSql = "WITH upsert AS (UPDATE \"" + schema + "\".\"" + tapTable.getId() + "\" SET " + allColumn.stream().map(k -> "\"" + k + "\"=?")
                                 .collect(Collectors.joining(", ")) + " WHERE " + uniqueCondition.stream().map(k -> "(\"" + k + "\"=? OR (\"" + k + "\" IS NULL AND ?::text IS NULL))")
                                 .collect(Collectors.joining(" AND ")) + " RETURNING *) " + insertHead + " SELECT "
-                                + StringKit.copyString("?", after.size(), ",") + " WHERE NOT EXISTS (SELECT * FROM upsert)";
+                                + StringKit.copyString("?", allColumn.size(), ",") + " WHERE NOT EXISTS (SELECT * FROM upsert)";
                     }
                 }
             }
@@ -114,18 +117,18 @@ public class PostgresWriteRecorder {
         preparedStatement.clearParameters();
         int pos = 1;
         if (postgresVersion.compareTo("PostgreSQL 9.5") <= 0 && EmptyKit.isNotEmpty(uniqueCondition)) {
-            for (String key : after.keySet()) {
+            for (String key : allColumn) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
             for (String key : uniqueCondition) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
         }
-        for (String key : after.keySet()) {
+        for (String key : allColumn) {
             preparedStatement.setObject(pos++, after.get(key));
         }
         if (EmptyKit.isNotEmpty(uniqueCondition) && postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
-            for (String key : after.keySet()) {
+            for (String key : allColumn) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
         }

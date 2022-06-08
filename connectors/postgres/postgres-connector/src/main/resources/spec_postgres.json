@@ -9,6 +9,7 @@
       "type": "object",
       "properties": {
         "host": {
+          "required": true,
           "type": "string",
           "title": "${host}",
           "x-decorator": "FormItem",
@@ -16,6 +17,7 @@
           "apiServerKey": "database_host"
         },
         "port": {
+          "required": true,
           "type": "string",
           "title": "${port}",
           "x-decorator": "FormItem",
@@ -23,6 +25,7 @@
           "apiServerKey": "database_port"
         },
         "database": {
+          "required": true,
           "type": "string",
           "title": "${database}",
           "x-decorator": "FormItem",
@@ -30,6 +33,7 @@
 		  "apiServerKey": "database_name"
         },
         "schema": {
+          "required": true,
           "type": "string",
           "title": "${schema}",
           "x-decorator": "FormItem",
@@ -58,6 +62,7 @@
 		  "apiServerKey": "database_password"
         },
         "logPluginName": {
+          "required": true,
           "type": "string",
           "title": "#{logPluginName}",
           "default": "PGOUTPUT",
@@ -91,8 +96,8 @@
     }
   },
   "messages": {
-    "default": "en-US",
-    "en-US": {
+    "default": "en_US",
+    "en_US": {
       "host": "Host",
       "port": "Port",
       "database" : "database",
@@ -102,7 +107,7 @@
       "password" : "password",
       "logPluginName" : "logPluginName"
     },
-    "zh-CN": {
+    "zh_CN": {
       "host": "地址",
       "port": "端口",
       "database" : "数据库",
@@ -112,7 +117,7 @@
       "password" : "密码",
       "logPluginName" : "日志插件"
     },
-    "zh-TW": {
+    "zh_TW": {
       "host": "地址",
       "port": "端口",
       "database" : "數據庫",

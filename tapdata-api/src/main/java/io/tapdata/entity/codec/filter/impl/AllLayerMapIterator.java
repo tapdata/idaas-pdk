@@ -41,12 +41,12 @@ public class AllLayerMapIterator implements MapIteratorEx {
         for (Map.Entry<String, Object> entry : obj.entrySet()) {
             Object value = entry.getValue();
             if(value instanceof Map) {
-                iterateWithPrefix(prefix + entry.getKey() + ".", (Map<String, Object>) value, filter);
+                iterateWithPrefix(prefix + entry.getKey() + MAP_KEY_SEPARATOR, (Map<String, Object>) value, filter);
             } else if(entry.getValue() instanceof Collection) {
 //                iterateListWithPrefix(prefix + entry.getKey() + ".#", (Collection<Object>) entry.getValue(), newList, filter);
 
                 Collection<Object> newList = new ArrayList<>();
-                iterateListWithPrefix(prefix + entry.getKey() + ".#", (Collection<Object>) value, newList, filter);
+                iterateListWithPrefix(prefix + entry.getKey() + ARRAY_KEY_SEPARATOR, (Collection<Object>) value, newList, filter);
                 entry.setValue(newList);
             }
             Object newValue = filter.apply(prefix + entry.getKey(), entry.getValue());
@@ -61,11 +61,11 @@ public class AllLayerMapIterator implements MapIteratorEx {
         for (Object entry : collection) {
             Object value = entry;
             if(value instanceof Map) {
-                iterateWithPrefix(prefix + i + ".", (Map<String, Object>) value, filter);
+                iterateWithPrefix(prefix + i + MAP_KEY_SEPARATOR, (Map<String, Object>) value, filter);
             } else if(value instanceof Collection) {
 //                iterateListWithPrefix(prefix + i + ".#", (Collection<Object>) entry, newList, filter);
                 Collection<Object> newList1 = new ArrayList<>();
-                iterateListWithPrefix(prefix + i + ".#", (Collection<Object>) value, newList1, filter);
+                iterateListWithPrefix(prefix + i + ARRAY_KEY_SEPARATOR, (Collection<Object>) value, newList1, filter);
                 value = newList1;
             }
             Object newValue = filter.apply(prefix + i, value);
@@ -87,10 +87,10 @@ public class AllLayerMapIterator implements MapIteratorEx {
         for(Map.Entry<String, Object> entry : entrySet) {
             Object value = entry.getValue();
             if(value instanceof Map) {
-                iterateWithPrefix(entry.getKey() + ".", (Map<String, Object>) value, filter);
+                iterateWithPrefix(entry.getKey() + MAP_KEY_SEPARATOR, (Map<String, Object>) value, filter);
             } else if(value instanceof Collection) {
                 Collection<Object> newList = new ArrayList<>();
-                iterateListWithPrefix(entry.getKey() + ".#", (Collection<Object>) value, newList, filter);
+                iterateListWithPrefix(entry.getKey() + ARRAY_KEY_SEPARATOR, (Collection<Object>) value, newList, filter);
                 entry.setValue(newList);
             }
             Object newValue = filter.apply(entry.getKey(), entry.getValue());

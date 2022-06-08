@@ -41,6 +41,9 @@ public class DataSourcePool {
     }
 
     private static String uniqueKeyForDb(CommonDbConfig config) {
+        if (EmptyKit.isNull(config)) {
+            throw new RuntimeException("Data Source Error, Please check!");
+        }
         return config.getHost() + config.getPort() + config.getDatabase() + config.getSchema();
     }
 
