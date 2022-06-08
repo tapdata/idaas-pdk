@@ -1,6 +1,7 @@
 package io.tapdata.mongodb.entity;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.ConnectionString;
 import io.tapdata.kit.EmptyKit;
@@ -42,11 +43,13 @@ public class MongodbConfig implements Serializable {
 
     public static MongodbConfig load(String jsonFile) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new JsonFactory());
+				mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper.readValue(new File(jsonFile), MongodbConfig.class);
     }
 
     public static MongodbConfig load(Map<String, Object> map) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+				mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper.readValue((new ObjectMapper()).writeValueAsString(map), MongodbConfig.class);
     }
 
