@@ -26,6 +26,10 @@ public class ToTapDateTimeCodec implements ToTapValueCodec<TapDateTimeValue> {
 			DateTime dateTime = AnyTimeToDateTime.toDateTime(value, tapDateTime.getFraction());
 			if (dateTime != null)
 				return new TapDateTimeValue(dateTime);
+		} else {
+			DateTime dateTime = AnyTimeToDateTime.toDateTime(value);
+			if (dateTime != null)
+				return new TapDateTimeValue(dateTime);
 		}
 		return null;
 	}
