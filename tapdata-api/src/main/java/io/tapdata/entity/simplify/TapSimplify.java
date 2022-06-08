@@ -1,6 +1,9 @@
 package io.tapdata.entity.simplify;
 
 import io.tapdata.entity.event.control.HeartbeatEvent;
+import io.tapdata.entity.event.ddl.field.DeleteFieldItem;
+import io.tapdata.entity.event.ddl.field.InsertFieldItem;
+import io.tapdata.entity.event.ddl.field.UpdateFieldItem;
 import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.index.TapDeleteIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
@@ -169,6 +172,18 @@ public class TapSimplify {
 		clearTableEvent.setTime(System.currentTimeMillis());
 		clearTableEvent.setTableId(tableId);
 		return clearTableEvent;
+	}
+
+	public static DeleteFieldItem deleteFieldItem() {
+		return new DeleteFieldItem();
+	}
+
+	public static InsertFieldItem insertFieldItem() {
+		return new InsertFieldItem();
+	}
+
+	public static UpdateFieldItem updateFieldItem() {
+		return new UpdateFieldItem();
 	}
 
 	public static TapAlterTableEvent alterTableEvent(String tableId) {

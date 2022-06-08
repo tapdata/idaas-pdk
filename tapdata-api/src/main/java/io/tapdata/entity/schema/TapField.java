@@ -6,6 +6,22 @@ import io.tapdata.entity.schema.type.TapType;
 import java.io.Serializable;
 
 public class TapField extends TapItem<TapField> implements Serializable {
+    public static final String FIELD_NAME = "name";
+    public static final String FIELD_DATA_TYPE = "dataType";
+    public static final String FIELD_AUTO_INC = "autoInc";
+    public static final String FIELD_AUTO_INC_START_VALUE = "autoIncStartValue";
+    public static final String FIELD_CHECK = "check";
+    public static final String FIELD_COMMENT = "comment";
+    public static final String FIELD_CONSTRAINT = "constraint";
+    public static final String FIELD_DEFAULT_VALUE = "defaultValue";
+    public static final String FIELD_POS = "pos";
+    public static final String FIELD_IS_PRIMARY_KEY = "isPrimaryKey";
+    public static final String FIELD_PRIMARY_KEY_POS = "primaryKeyPos";
+    public static final String FIELD_FOREIGN_KEY_FIELD = "foreignKeyField";
+    public static final String FIELD_FOREIGN_KEY_TABLE = "foreignKeyTable";
+    public static final String FIELD_IS_PARTITION_KEY = "isPartitionKey";
+    public static final String FIELD_NULLABLE = "nullable";
+
     public TapField() {}
 
     public TapField(String name, String dataType) {

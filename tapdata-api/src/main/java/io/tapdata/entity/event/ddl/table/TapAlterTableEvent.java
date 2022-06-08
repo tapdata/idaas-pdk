@@ -1,6 +1,7 @@
 package io.tapdata.entity.event.ddl.table;
 
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.field.TapFieldItem;
 import io.tapdata.entity.schema.TapField;
 
 import java.util.List;
@@ -10,9 +11,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TapAlterTableEvent extends TapTableEvent {
     public static final int TYPE = 200;
-    private Map<String, TapField> changedNameFields;
-    private List<TapField> insertFields;
-    private List<String> deleteFields;
+    private List<TapFieldItem> fieldItems;
+
+    public TapAlterTableEvent add(TapFieldItem fieldItem) {
+        if(fieldItems == null) {
+            fieldItems = new CopyOnWriteArrayList<>();
+        }
+        fieldItems.add(fieldItem);
+        return this;
+    }
 
     public TapAlterTableEvent() {
         super(TYPE);
@@ -23,37 +30,16 @@ public class TapAlterTableEvent extends TapTableEvent {
         super.clone(tapEvent);
         if(tapEvent instanceof TapAlterTableEvent) {
             TapAlterTableEvent alterTableEvent = (TapAlterTableEvent) tapEvent;
-            if(changedNameFields != null)
-                alterTableEvent.changedNameFields = new ConcurrentHashMap<>(changedNameFields);
-            if(insertFields != null)
-                alterTableEvent.insertFields = new CopyOnWriteArrayList<>(insertFields);
-            if(deleteFields != null)
-                alterTableEvent.deleteFields = new CopyOnWriteArrayList<>(deleteFields);
-
+            if(fieldItems != null)
+                alterTableEvent.fieldItems = new CopyOnWriteArrayList<>(fieldItems);
         }
     }
 
-    public Map<String, TapField> getChangedNameFields() {
-        return changedNameFields;
+    public List<TapFieldItem> getFieldItems() {
+        return fieldItems;
     }
 
-    public void setChangedNameFields(Map<String, TapField> changedNameFields) {
-        this.changedNameFields = changedNameFields;
-    }
-
-    public List<TapField> getInsertFields() {
-        return insertFields;
-    }
-
-    public void setInsertFields(List<TapField> insertFields) {
-        this.insertFields = insertFields;
-    }
-
-    public List<String> getDeleteFields() {
-        return deleteFields;
-    }
-
-    public void setDeleteFields(List<String> deleteFields) {
-        this.deleteFields = deleteFields;
+    public void setFieldItems(List<TapFieldItem> fieldItems) {
+        this.fieldItems = fieldItems;
     }
 }
