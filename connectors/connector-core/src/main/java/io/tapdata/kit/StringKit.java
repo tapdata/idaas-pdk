@@ -5,6 +5,14 @@ import java.util.stream.Collectors;
 
 public class StringKit {
 
+    /**
+     * write string several times
+     *
+     * @param copied   "?"
+     * @param count    3
+     * @param combiner ","
+     * @return "?,?,?"
+     */
     public static String copyString(String copied, Integer count, String combiner) {
         if (count < 1 || EmptyKit.isNull(copied)) {
             return "";
@@ -16,6 +24,7 @@ public class StringKit {
         return sb.delete(sb.length() - combiner.length(), sb.length()).toString();
     }
 
+    //replace first
     public static String replaceOnce(String text, String searchString, String replacement) {
         if (EmptyKit.isEmpty(text)) {
             return "";
@@ -23,6 +32,14 @@ public class StringKit {
         return text.replace(searchString, replacement);
     }
 
+    /**
+     * join strings with around and splitter
+     *
+     * @param list     ["a","b","c"]
+     * @param around   "'"
+     * @param splitter ","
+     * @return "'a','b','c'"
+     */
     public static String joinString(List<String> list, String around, String splitter) {
         if (EmptyKit.isEmpty(list)) {
             return "";

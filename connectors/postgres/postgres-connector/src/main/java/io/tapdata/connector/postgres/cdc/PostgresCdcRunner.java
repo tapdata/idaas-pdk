@@ -12,6 +12,7 @@ import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.kit.EmptyKit;
@@ -19,6 +20,7 @@ import io.tapdata.kit.NumberKit;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.codehaus.plexus.util.StringUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -26,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +39,7 @@ import java.util.stream.Collectors;
  */
 public class PostgresCdcRunner extends DebeziumCdcRunner {
 
+    private static final String TAG = PostgresCdcRunner.class.getSimpleName();
     private PostgresJdbcContext postgresJdbcContext;
     private PostgresConfig postgresConfig;
     private PostgresDebeziumConfig postgresDebeziumConfig;
@@ -43,6 +47,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     private PostgresOffset postgresOffset;
     private int recordSize;
     private StreamReadConsumer consumer;
+    private final AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
 
     public PostgresCdcRunner() {
 
@@ -85,6 +90,10 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         return this;
     }
 
+    public AtomicReference<Throwable> getThrowable() {
+        return throwableAtomicReference;
+    }
+
     public PostgresCdcRunner registerConsumer(StreamReadConsumer consumer, int recordSize) {
         this.recordSize = recordSize;
         this.consumer = consumer;
@@ -104,16 +113,33 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                         consumer.streamReadEnded();
                     }
                 })
-//                .using((b, s, throwable) -> {
-//
-//                })
 //                .using(this.getClass().getClassLoader())
 //                .using(Clock.SYSTEM)
 //                .notifying(this::consumeRecord)
 //                .using((numberOfMessagesSinceLastCommit, timeSinceLastCommit) ->
 //                        numberOfMessagesSinceLastCommit >= 1000 || timeSinceLastCommit.getSeconds() >= 60)
-                .notifying(this::consumeRecords)
+                .notifying(this::consumeRecords).using((result, message, throwable) -> {
+                    if (result) {
+                        if (StringUtils.isNotBlank(message)) {
+                            TapLogger.info(TAG, "CDC engine stopped: " + message);
+                        } else {
+                            TapLogger.info(TAG, "CDC engine stopped");
+                        }
+                    } else {
+                        if (null != throwable) {
+                            if (StringUtils.isNotBlank(message)) {
+                                throwableAtomicReference.set(new RuntimeException(message, throwable));
+                            } else {
+                                throwableAtomicReference.set(new RuntimeException(throwable));
+                            }
+                        } else {
+                            throwableAtomicReference.set(new RuntimeException(message));
+                        }
+                    }
+                    consumer.streamReadEnded();
+                })
                 .build();
+
         //make replica identity for postgres those without unique key
 //        try {
 //            makeReplicaIdentity();
@@ -190,16 +216,9 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     }
 
     @Override
-    public void closeCdcRunner(Object needClearSlot) throws IOException, SQLException {
-        super.closeCdcRunner(needClearSlot);
-        if (EmptyKit.isNotNull(needClearSlot) && (boolean) needClearSlot) {
-            clearSlot();
-        }
+    public void closeCdcRunner() throws IOException, SQLException {
+        super.closeCdcRunner();
         postgresJdbcContext.finish();
-    }
-
-    private void clearSlot() throws SQLException {
-        postgresJdbcContext.execute("SELECT pg_drop_replication_slot('" + runnerName + "')");
     }
 
     //make these tables ready for REPLICA IDENTITY

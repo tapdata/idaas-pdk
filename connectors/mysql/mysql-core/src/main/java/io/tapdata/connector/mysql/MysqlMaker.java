@@ -71,16 +71,20 @@ public class MysqlMaker implements SqlMaker {
 				String key = entry.getKey();
 				Object value = entry.getValue();
 				if (value instanceof Number) {
-					whereList.add(key + ">" + value);
+					whereList.add(key + ">=" + value);
 				} else {
-					whereList.add(key + ">'" + value + "'");
+					whereList.add(key + ">='" + value + "'");
 				}
 				orderList.add(key + " ASC");
 			}
 		}
 		if (CollectionUtils.isNotEmpty(pks)) {
 			for (String pk : pks) {
-				orderList.add(pk + " ASC");
+				String orderStr = pk + " ASC";
+				if (orderList.contains(orderStr)) {
+					continue;
+				}
+				orderList.add(orderStr);
 			}
 		} else {
 			TapLogger.info(TAG, "Table {} not support snapshot offset", tapTable.getName());
@@ -208,10 +212,10 @@ public class MysqlMaker implements SqlMaker {
 		}
 
 		// default value
-		String defaultValue = tapField.getDefaultValue() == null ? "" : tapField.getDefaultValue().toString();
+		/*String defaultValue = tapField.getDefaultValue() == null ? "" : tapField.getDefaultValue().toString();
 		if (StringUtils.isNotBlank(defaultValue)) {
 			fieldSql += " DEFAULT '" + defaultValue + "'";
-		}
+		}*/
 
 		// comment
 		String comment = tapField.getComment();

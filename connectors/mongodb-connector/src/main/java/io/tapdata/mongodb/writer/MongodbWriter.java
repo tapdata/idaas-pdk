@@ -1,5 +1,6 @@
 package io.tapdata.mongodb.writer;
 
+import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -11,9 +12,12 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.utils.cache.KVMap;
+import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.mongodb.reader.MongodbV4StreamReader;
 import io.tapdata.mongodb.util.MapUtil;
+import io.tapdata.mongodb.util.MongodbLookupUtil;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.entity.merge.MergeInfo;
 import org.apache.commons.collections4.CollectionUtils;
@@ -43,14 +47,18 @@ public class MongodbWriter {
 
 		protected MongoClient mongoClient;
 		private MongoDatabase mongoDatabase;
+		private KVMap<Object> globalStateMap;
+		private ConnectionString connectionString;
+
+		public MongodbWriter(KVMap<Object> globalStateMap) {
+				this.globalStateMap = globalStateMap;
+		}
 
 		public void onStart(MongodbConfig mongodbConfig) {
 				if (mongoClient == null) {
-						//TODO watch database from MongoClientFactory.
-						mongoClient = MongoClients.create(mongodbConfig.getUri());
-						CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-										fromProviders(PojoCodecProvider.builder().automatic(true).build()));
-						mongoDatabase = mongoClient.getDatabase(mongodbConfig.getDatabase()).withCodecRegistry(pojoCodecRegistry);
+						mongoClient = MongodbUtil.createMongoClient(mongodbConfig);
+						mongoDatabase = mongoClient.getDatabase(mongodbConfig.getDatabase());
+						this.connectionString = new ConnectionString(mongodbConfig.getUri());
 				}
 		}
 
@@ -84,6 +92,9 @@ public class MongodbWriter {
 				MongoCollection<Document> collection = getMongoCollection(table.getId());
 
 				final Collection<String> pks = table.primaryKeys();
+
+				MongodbLookupUtil.lookUpAndSaveDeleteMessage(tapRecordEvents, this.globalStateMap, this.connectionString, pks, collection);
+
 				for (TapRecordEvent recordEvent : tapRecordEvents) {
 						final Map<String, Object> info = recordEvent.getInfo();
 						if (MapUtils.isNotEmpty(info) && info.containsKey(MergeInfo.EVENT_INFO_KEY)) {

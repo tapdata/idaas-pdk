@@ -12,8 +12,9 @@ import java.io.Serializable;
  */
 public class PostgresConfig extends CommonDbConfig implements Serializable {
 
-    private String logPluginName = "decoderbufs";
+    private String logPluginName = "pgoutput"; //default log plugin for postgres
 
+    //customize
     public PostgresConfig() {
         setDbType("postgresql");
         setJdbcDriver("org.postgresql.Driver");

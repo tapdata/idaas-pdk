@@ -29,6 +29,7 @@ import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.*;
 
@@ -41,11 +42,15 @@ import static java.util.Collections.singletonList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
+import java.io.Closeable;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Different Connector need use different "spec.json" file with different pdk id which specified in Annotation "TapConnectorClass"
@@ -92,58 +97,92 @@ public class MongodbConnector extends ConnectorBase {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
-				final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
-				MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
-				TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
-        //List all the tables under the database.
-				List<TapTable> list = list();
-        for (String collectionName : collectionNames) {
-            //Mongodb is schema free. There is no way for incremental engine to know the default primary key. So need to specify the defaultPrimaryKeys.
-            TapTable table;
-						if (tables != null && CollectionUtils.isNotEmpty(tables)) {
-								if (!tables.contains(collectionName)) {
-										continue;
-								}
-						}
-						table = table(collectionName).defaultPrimaryKeys(singletonList("_id"));
-						if (version.compareTo("3.2") >= 0) {
-								try {
-										MongodbUtil.sampleDataRow(mongoDatabase.getCollection(collectionName), SAMPLE_SIZE_BATCH_SIZE, (dataRow) -> {
-												Set<String> fieldNames = dataRow.keySet();
-												for (String fieldName : fieldNames) {
-														BsonValue value = dataRow.get(fieldName);
-														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
-												}
-										});
-								} catch (Exception e) {
-										TapLogger.error(TAG, "Use $sample load mongo connection {}'s {} schema failed {}, will use first row as data schema.",
-														MongodbUtil.maskUriPassword(mongoConfig.getUri()), collectionName, e.getMessage(), e);
-								}
-						} else {
-								try (MongoCursor<BsonDocument> cursor = mongoDatabase.getCollection(collectionName, BsonDocument.class).find().iterator()){
-										while (cursor.hasNext()) {
-												final BsonDocument document = cursor.next();
-												for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
-														final String fieldName = entry.getKey();
-														final BsonValue value = entry.getValue();
-														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
-												}
-												break;
-										}
-								}
-						}
+        final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
+        MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+        TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
 
-						final LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
-						if (MapUtils.isNotEmpty(nameFieldMap)) {
-								list.add(table);
-						}
-            if(list.size() >= tableSize) {
-                consumer.accept(list);
-                list = list();
-            }
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(10, 30, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(30));
+
+        try (Closeable ignored = executor::shutdown) {
+            List<String> collectionNameList = StreamSupport.stream(collectionNames.spliterator(), false).collect(Collectors.toList());
+            ListUtils.partition(collectionNameList, tableSize).forEach(nameList -> {
+                CountDownLatch countDownLatch = new CountDownLatch(nameList.size());
+
+                if (version.compareTo("3.2") >= 0) {
+                    Map<String, MongoCollection<Document>> documentMap = Collections.synchronizedMap(new HashMap<>());
+
+                    nameList.forEach(name -> executor.execute(() -> {
+                        documentMap.put(name, mongoDatabase.getCollection(name));
+                        countDownLatch.countDown();
+                    }));
+
+                    try {
+                        countDownLatch.await();
+                    } catch (InterruptedException e) {
+                        TapLogger.error(TAG, "MongodbConnector discoverSchema countDownLatch await", e);
+                    }
+
+                    //List all the tables under the database.
+                    List<TapTable> list = list();
+                    nameList.forEach(name -> {
+                        TapTable table = table(name).defaultPrimaryKeys(singletonList("_id"));
+                        try {
+                            MongodbUtil.sampleDataRow(documentMap.get(name), SAMPLE_SIZE_BATCH_SIZE, (dataRow) -> {
+                                Set<String> fieldNames = dataRow.keySet();
+                                for (String fieldName : fieldNames) {
+                                    BsonValue value = dataRow.get(fieldName);
+                                    getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
+                                }
+                            });
+                        } catch (Exception e) {
+                            TapLogger.error(TAG, "Use $sample load mongo connection {}'s {} schema failed {}, will use first row as data schema.",
+                                    MongodbUtil.maskUriPassword(mongoConfig.getUri()), name, e.getMessage(), e);
+                        }
+
+                        if (!Objects.isNull(table.getNameFieldMap()) && !table.getNameFieldMap().isEmpty()) {
+                            list.add(table);
+                        }
+                    });
+
+                    consumer.accept(list);
+                } else {
+                    Map<String, MongoCollection<BsonDocument>> documentMap = Collections.synchronizedMap(new HashMap<>());
+
+                    nameList.forEach(name -> executor.execute(() -> {
+                        documentMap.put(name, mongoDatabase.getCollection(name, BsonDocument.class));
+                        countDownLatch.countDown();
+                    }));
+
+                    try {
+                        countDownLatch.await();
+                    } catch (InterruptedException e) {
+                        TapLogger.error(TAG, "MongodbConnector discoverSchema countDownLatch await", e);
+                    }
+
+                    //List all the tables under the database.
+                    List<TapTable> list = list();
+                    nameList.forEach(name -> {
+                        TapTable table = table(name).defaultPrimaryKeys(singletonList("_id"));
+                        try (MongoCursor<BsonDocument> cursor = documentMap.get(name).find().iterator()){
+                            while (cursor.hasNext()) {
+                                final BsonDocument document = cursor.next();
+                                for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
+                                    final String fieldName = entry.getKey();
+                                    final BsonValue value = entry.getValue();
+                                    getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
+                                }
+                                break;
+                            }
+                        }
+                        if (!Objects.isNull(table.getNameFieldMap()) && !table.getNameFieldMap().isEmpty()) {
+                            list.add(table);
+                        }
+                    });
+
+                    consumer.accept(list);
+                }
+            });
         }
-        if(!list.isEmpty())
-            consumer.accept(list);
     }
 
 		public static void getRelateDatabaseField(TapConnectionContext connectionContext, TableFieldTypesGenerator tableFieldTypesGenerator, BsonValue value, String fieldName, TapTable table) {
@@ -205,7 +244,7 @@ public class MongodbConnector extends ConnectorBase {
             throwable.printStackTrace();
             consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
         } finally {
-						onPause(connectionContext);
+						onStop(connectionContext);
 				}
     }
 
@@ -222,7 +261,7 @@ public class MongodbConnector extends ConnectorBase {
 				} catch (Exception e) {
 						throw e;
 				} finally {
-						onPause(connectionContext);
+						onStop(connectionContext);
 				}
 				return index;
     }
@@ -315,7 +354,7 @@ public class MongodbConnector extends ConnectorBase {
 
     private String memoryFetcher(List<String> mapKeys, String level) {
         ParagraphFormatter paragraphFormatter = new ParagraphFormatter(MongodbConnector.class.getSimpleName());
-        paragraphFormatter.addRow("MongoConfig", mongoConfig != null ? mongoConfig.getCollection() + "@" + mongoConfig.getDatabase() : null);
+        paragraphFormatter.addRow("MongoConfig", mongoConfig != null ? mongoConfig.getDatabase() : null);
         return paragraphFormatter.toString();
     }
 
@@ -330,7 +369,7 @@ public class MongodbConnector extends ConnectorBase {
 				}
 				if (mongoClient == null) {
 						try {
-								mongoClient = MongoClients.create(mongoConfig.getUri());
+								mongoClient = MongodbUtil.createMongoClient(mongoConfig);
 								mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
 						} catch (Throwable e) {
 								throw new RuntimeException(String.format("create mongodb connection failed %s, mongo config %s, connection config %s", e.getMessage(), mongoConfig, connectionConfig), e);
@@ -370,7 +409,7 @@ public class MongodbConnector extends ConnectorBase {
      */
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
 				if(mongodbWriter == null){
-						mongodbWriter = new MongodbWriter();
+						mongodbWriter = new MongodbWriter(connectorContext.getGlobalStateMap());
 						mongodbWriter.onStart(mongoConfig);
 				}
 
@@ -564,12 +603,11 @@ public class MongodbConnector extends ConnectorBase {
 						mongodbStreamReader = createStreamReader();
 				}
 				try {
-						mongodbStreamReader.read(tableList, offset, eventBatchSize, consumer);
+						mongodbStreamReader.read(connectorContext, tableList, offset, eventBatchSize, consumer);
 				} catch (Exception e) {
 						throw new RuntimeException(e);
 				}
 
-//				consumer.asyncMethodAndNoRetry();
     }
     /**
      * The method invocation life circle is below,
@@ -579,9 +617,9 @@ public class MongodbConnector extends ConnectorBase {
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
      */
-    @Override
-    public void onDestroy(TapConnectionContext connectionContext) {
-    }
+//    @Override
+//    public void onDestroy(TapConnectionContext connectionContext) {
+//    }
 
 		private MongodbStreamReader createStreamReader(){
 				final int version = MongodbUtil.getVersion(mongoClient, mongoConfig.getDatabase());
@@ -596,7 +634,7 @@ public class MongodbConnector extends ConnectorBase {
 		}
 
     @Override
-    public void onPause(TapConnectionContext connectionContext) throws Throwable {
+    public void onStop(TapConnectionContext connectionContext) throws Throwable {
 //        if (mongoClient != null) {
 //            mongoClient.close();
 //        }

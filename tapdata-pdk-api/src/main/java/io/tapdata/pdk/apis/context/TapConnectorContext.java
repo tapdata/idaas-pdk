@@ -14,6 +14,7 @@ public class TapConnectorContext extends TapConnectionContext {
     protected DataMap nodeConfig;
     protected KVReadOnlyMap<TapTable> tableMap;
     protected KVMap<Object> stateMap;
+    protected KVMap<Object> globalStateMap;
 
     public TapConnectorContext(TapNodeSpecification specification, DataMap connectionConfig, DataMap nodeConfig) {
         super(specification, connectionConfig);
@@ -43,7 +44,15 @@ public class TapConnectorContext extends TapConnectionContext {
         this.stateMap = stateMap;
     }
 
-    public String toString() {
+		public KVMap<Object> getGlobalStateMap() {
+				return globalStateMap;
+		}
+
+		public void setGlobalStateMap(KVMap<Object> globalStateMap) {
+				this.globalStateMap = globalStateMap;
+		}
+
+		public String toString() {
         return "TapConnectorContext " + "connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " nodeConfig: " + (nodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(nodeConfig) : "") + " spec: " + specification;
     }
 }

@@ -11,6 +11,7 @@ import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.*;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -242,22 +243,37 @@ public abstract class ConnectorBase implements TapConnector {
 
     public abstract void onStart(TapConnectionContext connectionContext) throws Throwable;
 
-    public abstract void onDestroy(TapConnectionContext connectionContext) throws Throwable;
+//    public abstract void onDestroy(TapConnectionContext connectionContext) throws Throwable;
 
-    public abstract void onPause(TapConnectionContext connectionContext) throws Throwable;
+    public abstract void onStop(TapConnectionContext connectionContext) throws Throwable;
+
+//    @Override
+//    public final void destroy(TapConnectionContext connectionContext) throws Throwable {
+//        if (isDestroyed.compareAndSet(false, true)) {
+//            stop(connectionContext);
+//            onDestroy(connectionContext);
+//            isConnectorStarted(connectionContext, tapConnectorContext -> {
+//                KVMap<Object> stateMap = tapConnectorContext.getStateMap();
+//                if(stateMap != null) {
+//                    try {
+//                        stateMap.clear();
+//                    } catch (Throwable ignored) {
+//                        TapLogger.warn(TAG, "destroy, clear stateMap failed, {}, connector {}", ignored.getMessage(), tapConnectorContext.toString());
+//                    }
+//                    try {
+//                        stateMap.reset();
+//                    } catch (Throwable ignored) {
+//                        TapLogger.warn(TAG, "destroy, reset stateMap failed, {}, connector {}", ignored.getMessage(), tapConnectorContext.toString());
+//                    }
+//                }
+//            });
+//        }
+//    }
 
     @Override
-    public final void destroy(TapConnectionContext connectionContext) throws Throwable {
-        if (isDestroyed.compareAndSet(false, true)) {
-            pause(connectionContext);
-            onDestroy(connectionContext);
-        }
-    }
-
-    @Override
-    public void pause(TapConnectionContext connectionContext) throws Throwable {
+    public void stop(TapConnectionContext connectionContext) throws Throwable {
         if (isAlive.compareAndSet(true, false)) {
-            onPause(connectionContext);
+            onStop(connectionContext);
         }
     }
 

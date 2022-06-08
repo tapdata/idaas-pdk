@@ -9,29 +9,33 @@
       "type": "object",
       "properties": {
         "host": {
+          "required": true,
           "type": "string",
-          "title": "Host",
+          "title": "${host}",
           "x-decorator": "FormItem",
           "x-component": "Input",
           "apiServerKey": "database_host"
         },
         "port": {
+          "required": true,
           "type": "string",
-          "title": "Port",
+          "title": "${port}",
           "x-decorator": "FormItem",
           "x-component": "InputNumber",
           "apiServerKey": "database_port"
         },
         "database": {
+          "required": true,
           "type": "string",
-          "title": "Database",
+          "title": "${database}",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "database_name"
         },
         "schema": {
+          "required": true,
           "type": "string",
-          "title": "Schema",
+          "title": "${schema}",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "database_owner"
@@ -45,30 +49,27 @@
         },
         "user": {
           "type": "string",
-          "title": "Username",
+          "title": "${user}",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "database_username"
         },
         "password": {
           "type": "string",
-          "title": "Password",
+          "title": "${password}",
           "x-decorator": "FormItem",
           "x-component": "Password",
 		  "apiServerKey": "database_password"
         },
         "logPluginName": {
+          "required": true,
           "type": "string",
-          "title": "LogPluginName",
-          "default": "DECORDERBUFS",
+          "title": "#{logPluginName}",
+          "default": "PGOUTPUT",
           "x-decorator": "FormItem",
           "x-component": "Select",
           "apiServerKey": "logPlugin",
           "enum": [
-            {
-              "label": "DECORDERBUFS",
-              "value": "decoderbufs"
-            },
             {
               "label": "WAL2JSON",
               "value": "wal2json"
@@ -92,6 +93,39 @@
           ]
         }
       }
+    }
+  },
+  "messages": {
+    "default": "en_US",
+    "en_US": {
+      "host": "Host",
+      "port": "Port",
+      "database" : "database",
+      "schema" : "schema",
+      "extParams" : "extParams",
+      "user" : "user",
+      "password" : "password",
+      "logPluginName" : "logPluginName"
+    },
+    "zh_CN": {
+      "host": "地址",
+      "port": "端口",
+      "database" : "数据库",
+      "schema" : "模型",
+      "extParams" : "额外参数",
+      "user" : "账号",
+      "password" : "密码",
+      "logPluginName" : "日志插件"
+    },
+    "zh_TW": {
+      "host": "地址",
+      "port": "端口",
+      "database" : "數據庫",
+      "schema" : "模型",
+      "extParams" : "額外參數",
+      "user" : "賬號",
+      "password" : "密碼",
+      "logPluginName" : "日誌插件"
     }
   },
   "dataTypes": {

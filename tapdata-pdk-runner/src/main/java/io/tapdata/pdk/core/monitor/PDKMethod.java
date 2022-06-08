@@ -9,7 +9,8 @@ public enum PDKMethod {
 
     DISCOVER_SCHEMA,
     CONNECTION_TEST,
-    DESTROY,
+//    DESTROY,
+    RELEASE_EXTERNAL,
     CONTROL,
     INIT,
     BATCH_OFFSET,
@@ -36,7 +37,7 @@ public enum PDKMethod {
     TARGET_ALTER_TABLE,
     SOURCE_STREAM_READ,
     TARGET_CREATE_INDEX,
-    PAUSED,
+    STOP,
     TIMESTAMP_TO_STREAM_OFFSET,
     ;
 

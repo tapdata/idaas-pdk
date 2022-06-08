@@ -9,11 +9,17 @@ import io.tapdata.kit.EmptyKit;
 import java.io.Serializable;
 import java.util.Map;
 
+/**
+ * common relation database config
+ *
+ * @author Jarad
+ * @date 2022/5/30
+ */
 public class CommonDbConfig implements Serializable {
 
     private static final String TAG = CommonDbConfig.class.getSimpleName();
-    private static final JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
-    private static final BeanUtils beanUtils = InstanceFactory.instance(BeanUtils.class);
+    private static final JsonParser jsonParser = InstanceFactory.instance(JsonParser.class); //json util
+    private static final BeanUtils beanUtils = InstanceFactory.instance(BeanUtils.class); //bean util
 
     private String dbType;
     private String host;
@@ -25,11 +31,13 @@ public class CommonDbConfig implements Serializable {
     private String extParams;
     private String jdbcDriver;
 
+    //pattern for jdbc-url
     public String getDatabaseUrlPattern() {
         // last %s reserved for extend params
         return "jdbc:" + dbType + "://%s:%d/%s%s";
     }
 
+    //deal with extend params no matter there is ?
     public String getDatabaseUrl() {
         if (EmptyKit.isNull(this.getExtParams())) {
             this.setExtParams("");
@@ -51,14 +59,14 @@ public class CommonDbConfig implements Serializable {
         return null;
     }
 
+    /**
+     * load config from map, then need to cast it into its own class
+     *
+     * @param map attributes for config
+     * @return ? extends CommonDbConfig
+     */
     public CommonDbConfig load(Map<String, Object> map) {
-        try {
-            return beanUtils.mapToBean(map, this);
-        } catch (Exception e) {
-            TapLogger.error(TAG, "config map is invalid!");
-            e.printStackTrace();
-        }
-        return null;
+        return beanUtils.mapToBean(map, this);
     }
 
     public String getDbType() {

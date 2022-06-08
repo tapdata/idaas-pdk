@@ -41,7 +41,7 @@ import java.util.function.Consumer;
  * @Description
  * @create 2022-04-25 15:09
  **/
-@TapConnectorClass("spec.json")
+@TapConnectorClass("mysql-spec.json")
 public class MysqlConnector extends ConnectorBase {
 	private static final String TAG = MysqlConnector.class.getSimpleName();
 	private static final int MAX_FILTER_RESULT_SIZE = 100;
@@ -112,16 +112,12 @@ public class MysqlConnector extends ConnectorBase {
 		}
 	}
 
-	@Override
-	public void onDestroy(TapConnectionContext connectionContext) throws Throwable {
-		isConnectorStarted(connectionContext, connectorContext -> {
-			KVMap<Object> stateMap = connectorContext.getStateMap();
-			stateMap.clear();
-		});
-	}
+//	@Override
+//	public void onDestroy(TapConnectionContext connectionContext) throws Throwable {
+//	}
 
 	@Override
-	public void onPause(TapConnectionContext connectionContext) throws Throwable {
+	public void onStop(TapConnectionContext connectionContext) throws Throwable {
 		try {
 			this.mysqlJdbcContext.close();
 		} catch (Exception e) {

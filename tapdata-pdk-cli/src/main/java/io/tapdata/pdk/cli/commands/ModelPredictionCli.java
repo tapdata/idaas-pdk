@@ -138,7 +138,42 @@ public class ModelPredictionCli extends CommonCli {
                 TapNodeSpecification specification = nodeInfo.getTapNodeSpecification();
                 String dagId = UUID.randomUUID().toString();
                 KVMap<TapTable> kvMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(dagId, TapTable.class);
-                KVMap<Object> stateMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(dagId, Object.class);
+                KVMap<Object> stateMap = new KVMap<Object>() {
+                    @Override
+                    public void init(String mapKey, Class<Object> valueClass) {
+
+                    }
+
+                    @Override
+                    public void put(String key, Object o) {
+
+                    }
+
+                    @Override
+                    public Object putIfAbsent(String key, Object o) {
+                        return null;
+                    }
+
+                    @Override
+                    public Object remove(String key) {
+                        return null;
+                    }
+
+                    @Override
+                    public void clear() {
+
+                    }
+
+                    @Override
+                    public void reset() {
+
+                    }
+
+                    @Override
+                    public Object get(String key) {
+                        return null;
+                    }
+                };//InstanceFactory.instance(KVMapFactory.class).getCacheMap(dagId, Object.class);
                 ConnectorNode node = PDKIntegration.createConnectorBuilder()
                         .withDagId(dagId)
                         .withAssociateId("test")
@@ -147,6 +182,7 @@ public class ModelPredictionCli extends CommonCli {
                         .withVersion(specification.getVersion())
                         .withTableMap(kvMap)
                         .withStateMap(stateMap)
+                        .withGlobalStateMap(stateMap)
                         .build();
                 PDKInvocationMonitor.getInstance().invokePDKMethod(node, PDKMethod.REGISTER_CAPABILITIES,
                         node::registerCapabilities,

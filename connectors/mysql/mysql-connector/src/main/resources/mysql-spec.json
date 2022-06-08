@@ -2,7 +2,8 @@
   "properties": {
 	"name": "Mysql",
 	"icon": "icons/mysql.png",
-	"id": "mysql"
+	"id": "mysql",
+	"docs": "${docs}"
   },
   "configOptions": {
 	"connection": {
@@ -10,52 +11,51 @@
 	  "properties": {
 		"host": {
 		  "type": "string",
-		  "title": "Host",
+		  "title": "${host}",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
-		  "default": "127.0.0.1",
 		  "apiServerKey": "database_host"
 		},
 		"port": {
 		  "type": "string",
-		  "title": "Port",
+		  "title": "${port}",
 		  "x-decorator": "FormItem",
 		  "x-component": "InputNumber",
-		  "default": 3306,
 		  "apiServerKey": "database_port"
 		},
 		"database": {
 		  "type": "string",
-		  "title": "Database Name",
+		  "title": "${database}",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_name"
 		},
 		"username": {
 		  "type": "string",
-		  "title": "Username",
+		  "title": "${username}",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_username"
 		},
 		"password": {
 		  "type": "string",
-		  "title": "Password",
+		  "title": "${password}",
 		  "x-decorator": "FormItem",
 		  "x-component": "Password",
 		  "apiServerKey": "database_password"
 		},
 		"addtionalString": {
 		  "type": "string",
-		  "title": "Connection Parameter String",
+		  "title": "${addtionalString}",
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "additionalString"
 		},
 		"timezone": {
 		  "type": "string",
-		  "title": "Timezone",
+		  "title": "${timezone}",
 		  "default": "Database Timezone",
+		  "x-decorator": "FormItem",
 		  "x-component": "Select",
 		  "enum": [
 			{
@@ -169,6 +169,39 @@
 		  ]
 		}
 	  }
+	}
+  },
+  "messages": {
+	"default": "en-US",
+	"en-US": {
+	  "host": "Host",
+	  "port": "Port",
+	  "database": "database",
+	  "username": "username",
+	  "password": "password",
+	  "addtionalString": "Connection Parameter String",
+	  "timezone": "timezone",
+	  "docs": "docs/readme_zh.md"
+	},
+	"zh-CN": {
+	  "host": "地址",
+	  "port": "端口",
+	  "database": "数据库",
+	  "username": "账号",
+	  "password": "密码",
+	  "addtionalString": "连接参数",
+	  "timezone": "时区",
+	  "docs": "docs/readme_zh.md"
+	},
+	"zh-TW": {
+	  "host": "地址",
+	  "port": "端口",
+	  "database": "數據庫",
+	  "username": "賬號",
+	  "password": "密碼",
+	  "addtionalString": "連接參數",
+	  "timezone": "時區",
+	  "docs": "docs/readme_zh.md"
 	}
   },
   "dataTypes": {

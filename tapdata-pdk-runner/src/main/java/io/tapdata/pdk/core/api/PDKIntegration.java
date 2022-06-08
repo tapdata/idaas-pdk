@@ -202,6 +202,7 @@ public class PDKIntegration {
         protected List<String> tables;
         protected KVReadOnlyMap<TapTable> tableMap;
         protected KVMap<Object> stateMap;
+        protected KVMap<Object> globalStateMap;
 
         public String verify() {
             if(associateId == null)
@@ -220,6 +221,8 @@ public class PDKIntegration {
                 return "missing tableMap";
             if(stateMap == null)
                 return "missing stateMap";
+            if(globalStateMap == null)
+                return "missing globalStateMap";
             return null;
         }
 
@@ -253,6 +256,11 @@ public class PDKIntegration {
             return this;
         }
 
+        public ConnectorBuilder<T> withGlobalStateMap(KVMap<Object> globalStateMap) {
+            this.globalStateMap = globalStateMap;
+            return this;
+        }
+
         public ConnectorBuilder<T> withVersion(String version) {
             this.version = version;
             return this;
@@ -277,6 +285,7 @@ public class PDKIntegration {
             mapFactory.getCacheMap("tableMap_" + this.associateId, TapTable.class);
             this.tableMap = mapFactory.createKVReadOnlyMap("tableMap_" + this.associateId);
             this.stateMap = mapFactory.getPersistentMap("stateMap_" + this.associateId, Object.class);
+            this.globalStateMap = mapFactory.getPersistentMap("stateMap", Object.class);
             return this;
         }
 
@@ -346,6 +355,7 @@ public class PDKIntegration {
             connectorNode.connectorContext = new TapConnectorContext(nodeInstance.getTapNodeInfo().getTapNodeSpecification(), connectionConfig, nodeConfig);
             connectorNode.connectorContext.setTableMap(tableMap);
             connectorNode.connectorContext.setStateMap(stateMap);
+            connectorNode.connectorContext.setGlobalStateMap(globalStateMap);
 
             PDKInvocationMonitor.getInstance().invokePDKMethod(connectorNode, PDKMethod.REGISTER_CAPABILITIES,
                     connectorNode::registerCapabilities,

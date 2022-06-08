@@ -1,9 +1,11 @@
 package io.tapdata.pdk.apis.functions;
 
+import io.tapdata.pdk.apis.functions.connector.common.ReleaseExternalFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.*;
 
 public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
+    private ReleaseExternalFunction releaseExternalFunction;
     private BatchReadFunction batchReadFunction;
     private StreamReadFunction streamReadFunction;
     private BatchCountFunction batchCountFunction;
@@ -20,6 +22,10 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private DeleteIndexFunction deleteIndexFunction;
     private QueryIndexesFunction queryIndexesFunction;
 
+    public ConnectorFunctions supportReleaseExternalFunction(ReleaseExternalFunction function) {
+        releaseExternalFunction = function;
+        return this;
+    }
     public ConnectorFunctions supportQueryIndexes(QueryIndexesFunction function) {
         queryIndexesFunction = function;
         return this;
@@ -172,5 +178,9 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public QueryIndexesFunction getQueryIndexesFunction() {
         return queryIndexesFunction;
+    }
+
+    public ReleaseExternalFunction getReleaseExternalFunction() {
+        return releaseExternalFunction;
     }
 }
