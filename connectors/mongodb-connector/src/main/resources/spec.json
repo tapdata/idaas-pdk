@@ -167,8 +167,8 @@
     }
   },
   "messages": {
-    "default": "en-US",
-    "en-US": {
+    "default": "en_US",
+    "en_US": {
       "doc": "docs/readme_en.md",
       "isUri": "Connection method",
       "dataForm_form_options_URIMode": "URI Mode",
@@ -188,7 +188,7 @@
       "dataForm_form_sslValidate": "Validate server certificate",
       "dataForm_form_sslCA": "Certificate Authority"
     },
-    "zh-CN": {
+    "zh_CN": {
       "doc": "docs/readme_zh_CN.md",
       "isUri": "连接方式",
       "dataForm_form_options_URIMode": "URI模式",
@@ -208,7 +208,7 @@
       "dataForm_form_sslValidate": "验证服务端证书",
       "dataForm_form_sslCA": "证书颁发机构"
     },
-    "zh-TW": {
+    "zh_TW": {
       "doc": "docs/readme_zh_TW.md",
       "isUri": "連接方式",
       "dataForm_form_options_URIMode": "URI模式",
@@ -242,7 +242,7 @@
     },
     "STRING": {
       "to": "TapString",
-      "preferByte": "1m",
+      "preferByte": "1024",
       "byte": "16m"
     },
     "DOCUMENT": {
