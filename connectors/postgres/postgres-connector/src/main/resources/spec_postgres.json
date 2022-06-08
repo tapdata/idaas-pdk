@@ -9,6 +9,7 @@
       "type": "object",
       "properties": {
         "host": {
+          "required": true,
           "type": "string",
           "title": "${host}",
           "x-decorator": "FormItem",
@@ -16,6 +17,7 @@
           "apiServerKey": "database_host"
         },
         "port": {
+          "required": true,
           "type": "string",
           "title": "${port}",
           "x-decorator": "FormItem",
@@ -23,6 +25,7 @@
           "apiServerKey": "database_port"
         },
         "database": {
+          "required": true,
           "type": "string",
           "title": "${database}",
           "x-decorator": "FormItem",
@@ -30,6 +33,7 @@
 		  "apiServerKey": "database_name"
         },
         "schema": {
+          "required": true,
           "type": "string",
           "title": "${schema}",
           "x-decorator": "FormItem",
@@ -58,6 +62,7 @@
 		  "apiServerKey": "database_password"
         },
         "logPluginName": {
+          "required": true,
           "type": "string",
           "title": "#{logPluginName}",
           "default": "PGOUTPUT",

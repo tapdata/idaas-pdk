@@ -1,8 +1,8 @@
 package io.tapdata.connector.postgres;
 
-import io.tapdata.kit.EmptyKit;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
 import java.util.Comparator;
@@ -44,7 +44,12 @@ public class PostgresSqlMaker {
             }
             //null to omit
             if (tapField.getDefaultValue() != null) {
-                builder.append("DEFAULT").append(' ').append(tapField.getDefaultValue()).append(' ');
+                builder.append("DEFAULT").append(' ');
+                if (tapField.getDefaultValue() instanceof Number) {
+                    builder.append(tapField.getDefaultValue()).append(' ');
+                } else {
+                    builder.append("'").append(tapField.getDefaultValue()).append("' ");
+                }
             }
             return builder.toString();
         }).collect(Collectors.joining(", "));
