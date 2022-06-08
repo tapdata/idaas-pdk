@@ -49,7 +49,7 @@ public class AllLayerMapIteratorFromTapValue implements MapIteratorEx {
                 Object newValue = filter.apply(prefix + entry.getKey(), value);
                 if(newValue != null) {
                     if(newValue instanceof Map) {
-                        iterateWithPrefix(prefix + entry.getKey() + ".", (Map<String, Object>) newValue, filter);
+                        iterateWithPrefix(prefix + entry.getKey() + MAP_KEY_SEPARATOR, (Map<String, Object>) newValue, filter);
                         entry.setValue(newValue);
                     } else {
                         entry.setValue(newValue);
@@ -61,7 +61,7 @@ public class AllLayerMapIteratorFromTapValue implements MapIteratorEx {
                 if(newValue != null) {
                     if(newValue instanceof Collection) {
                         Collection<Object> newList = new ArrayList<>();
-                        iterateListWithPrefix(prefix + entry.getKey() + ".#", (Collection<Object>) newValue, newList, filter);
+                        iterateListWithPrefix(prefix + entry.getKey() + ARRAY_KEY_SEPARATOR, (Collection<Object>) newValue, newList, filter);
                         entry.setValue(newList);
                     } else {
                         entry.setValue(newValue);
@@ -85,7 +85,7 @@ public class AllLayerMapIteratorFromTapValue implements MapIteratorEx {
                 if(newValue != null) {
                     if(newValue instanceof Map) {
                         newList.add(newValue);
-                        iterateWithPrefix(prefix + i + ".", (Map<String, Object>) newValue, filter);
+                        iterateWithPrefix(prefix + i + MAP_KEY_SEPARATOR, (Map<String, Object>) newValue, filter);
                     } else {
                         newList.add(newValue);
                     }
@@ -96,7 +96,7 @@ public class AllLayerMapIteratorFromTapValue implements MapIteratorEx {
                 if(newValue != null) {
                     if(newValue instanceof Collection) {
                         Collection<Object> newList1 = new ArrayList<>();
-                        iterateListWithPrefix(prefix + i + ".#", (Collection<Object>) newValue, newList1, filter);
+                        iterateListWithPrefix(prefix + i + ARRAY_KEY_SEPARATOR, (Collection<Object>) newValue, newList1, filter);
                         newList.add(newList1);
                     } else {
                         newList.add(newValue);
@@ -127,7 +127,7 @@ public class AllLayerMapIteratorFromTapValue implements MapIteratorEx {
                 if(newValue != null) {
                     if(newValue instanceof Map) {
                         entry.setValue(newValue);
-                        iterateWithPrefix(entry.getKey() + ".", (Map<String, Object>) newValue, filter);
+                        iterateWithPrefix(entry.getKey() + MAP_KEY_SEPARATOR, (Map<String, Object>) newValue, filter);
                     } else {
                         entry.setValue(newValue);
                     }
@@ -137,7 +137,7 @@ public class AllLayerMapIteratorFromTapValue implements MapIteratorEx {
                 if(newValue != null) {
                     if(newValue instanceof Collection) {
                         Collection<Object> newList = new ArrayList<>();
-                        iterateListWithPrefix(entry.getKey() + ".#", (Collection<Object>) newValue, newList, filter);
+                        iterateListWithPrefix(entry.getKey() + ARRAY_KEY_SEPARATOR, (Collection<Object>) newValue, newList, filter);
                         entry.setValue(newList);
                     } else {
                         entry.setValue(newValue);
