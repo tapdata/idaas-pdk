@@ -66,13 +66,7 @@ public class CommonDbConfig implements Serializable {
      * @return ? extends CommonDbConfig
      */
     public CommonDbConfig load(Map<String, Object> map) {
-        try {
-            return beanUtils.mapToBean(map, this);
-        } catch (Exception e) {
-            TapLogger.error(TAG, "config map is invalid!");
-            e.printStackTrace();
-        }
-        return null;
+        return beanUtils.mapToBean(map, this);
     }
 
     public String getDbType() {
