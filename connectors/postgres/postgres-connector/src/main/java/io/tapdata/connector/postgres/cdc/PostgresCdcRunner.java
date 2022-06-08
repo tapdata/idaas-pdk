@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -46,7 +47,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     private PostgresOffset postgresOffset;
     private int recordSize;
     private StreamReadConsumer consumer;
-    private Throwable throwable = null;
+    private final AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
 
     public PostgresCdcRunner() {
 
@@ -89,8 +90,8 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
         return this;
     }
 
-    public Throwable getThrowable() {
-        return throwable;
+    public AtomicReference<Throwable> getThrowable() {
+        return throwableAtomicReference;
     }
 
     public PostgresCdcRunner registerConsumer(StreamReadConsumer consumer, int recordSize) {
@@ -127,12 +128,12 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                     } else {
                         if (null != throwable) {
                             if (StringUtils.isNotBlank(message)) {
-                                throwable = new RuntimeException(message, throwable);
+                                throwableAtomicReference.set(new RuntimeException(message, throwable));
                             } else {
-                                throwable = new RuntimeException(throwable);
+                                throwableAtomicReference.set(new RuntimeException(throwable));
                             }
                         } else {
-                            throwable = new RuntimeException(message);
+                            throwableAtomicReference.set(new RuntimeException(message));
                         }
                     }
                     consumer.streamReadEnded();

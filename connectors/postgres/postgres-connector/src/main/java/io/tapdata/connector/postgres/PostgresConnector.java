@@ -461,8 +461,8 @@ public class PostgresConnector extends ConnectorBase {
             }
         }
         cdcRunner.startCdcRunner();
-        if (EmptyKit.isNotNull(cdcRunner) && EmptyKit.isNotNull(cdcRunner.getThrowable())) {
-            throw cdcRunner.getThrowable();
+        if (EmptyKit.isNotNull(cdcRunner) && EmptyKit.isNotNull(cdcRunner.getThrowable().get())) {
+            throw cdcRunner.getThrowable().get();
         }
     }
 
