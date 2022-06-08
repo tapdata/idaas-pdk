@@ -96,8 +96,8 @@
     }
   },
   "messages": {
-    "default": "en-US",
-    "en-US": {
+    "default": "en_US",
+    "en_US": {
       "host": "Host",
       "port": "Port",
       "database" : "database",
@@ -107,7 +107,7 @@
       "password" : "password",
       "logPluginName" : "logPluginName"
     },
-    "zh-CN": {
+    "zh_CN": {
       "host": "地址",
       "port": "端口",
       "database" : "数据库",
@@ -117,7 +117,7 @@
       "password" : "密码",
       "logPluginName" : "日志插件"
     },
-    "zh-TW": {
+    "zh_TW": {
       "host": "地址",
       "port": "端口",
       "database" : "數據庫",
