@@ -21,33 +21,33 @@ public class PostgresSqlMaker {
     /**
      * combine column definition for creating table
      * e.g.
-     * id text NULL ,
-     * tapString text NULL ,
-     * tddUser text NULL ,
-     * tapString10 VARCHAR(10) NULL
+     * id text ,
+     * tapString text NOT NULL ,
+     * tddUser text ,
+     * tapString10 VARCHAR(10) NOT NULL
      *
      * @param tapTable Table Object
      * @return substring of SQL
      */
     public static String buildColumnDefinition(TapTable tapTable) {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        StringBuilder builder = new StringBuilder();
-        nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPos())).forEach(v -> {
+        return nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPos())).map(v -> {
+            StringBuilder builder = new StringBuilder();
             TapField tapField = v.getValue();
             if (tapField.getDataType() == null) {
-                return;
+                return "";
             }
             builder.append('\"').append(tapField.getName()).append("\" ").append(tapField.getDataType()).append(' ');
+            //null to omit
             if (tapField.getNullable() != null && !tapField.getNullable()) {
                 builder.append("NOT NULL").append(' ');
             }
+            //null to omit
             if (tapField.getDefaultValue() != null) {
                 builder.append("DEFAULT").append(' ').append(tapField.getDefaultValue()).append(' ');
             }
-            builder.append(',');
-        });
-        builder.delete(builder.length() - 1, builder.length());
-        return builder.toString();
+            return builder.toString();
+        }).collect(Collectors.joining(", "));
     }
 
     /**

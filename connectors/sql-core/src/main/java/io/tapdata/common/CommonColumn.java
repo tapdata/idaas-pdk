@@ -27,24 +27,4 @@ public class CommonColumn {
         return new TapField(this.columnName, this.dataType).nullable(this.isNullable()).
                 defaultValue(columnDefaultValue).comment(this.remarks);
     }
-
-    public String getColumnName() {
-        return columnName;
-    }
-
-    public String getDataType() {
-        return dataType;
-    }
-
-    public String getNullable() {
-        return nullable;
-    }
-
-    public String getRemarks() {
-        return remarks;
-    }
-
-    public String getColumnDefaultValue() {
-        return columnDefaultValue;
-    }
 }

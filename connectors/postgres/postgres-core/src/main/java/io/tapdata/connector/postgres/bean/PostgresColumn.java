@@ -17,7 +17,9 @@ public class PostgresColumn extends CommonColumn {
 //        this.dataType = dataMap.getString("data_type"); //'data_type' without precision or scale
         this.nullable = dataMap.getString("is_nullable");
         this.remarks = dataMap.getString("remark");
-        this.columnDefaultValue = getDefaultValue(dataMap.getString("column_default"));
+        //create table in target has no need to set default value
+        this.columnDefaultValue = null;
+//        this.columnDefaultValue = getDefaultValue(dataMap.getString("column_default"));
     }
 
     @Override
