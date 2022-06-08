@@ -10,13 +10,26 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * tools for ResultSet
+ *
+ * @author Jarad
+ * @date 2022/5/29
+ */
 public class DbKit {
 
+    /**
+     * get all data from ResultSet starting with current row
+     *
+     * @param resultSet ResultSet
+     * @return list<Map>
+     */
     public static List<DataMap> getDataFromResultSet(ResultSet resultSet) {
         List<DataMap> list = TapSimplify.list();
         try {
             if (EmptyKit.isNotNull(resultSet)) {
                 List<String> columnNames = getColumnsFromResultSet(resultSet);
+                //cannot replace with while resultSet.next()
                 while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
                     list.add(getRowFromResultSet(resultSet, columnNames));
                     resultSet.next();
@@ -28,23 +41,13 @@ public class DbKit {
         return list;
     }
 
-    public static List<DataMap> getPageDataFromResultSet(ResultSet resultSet, int page, int pageSize) {
-        List<DataMap> list = TapSimplify.list();
-        try {
-            if (EmptyKit.isNotNull(resultSet)) {
-                List<String> columnNames = getColumnsFromResultSet(resultSet);
-                resultSet.absolute((page - 1) * pageSize + 1);
-                while (!resultSet.isAfterLast() && resultSet.getRow() > 0 && resultSet.getRow() <= page * pageSize) {
-                    list.add(getRowFromResultSet(resultSet, columnNames));
-                    resultSet.next();
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
+    /**
+     * get current row
+     *
+     * @param resultSet   ResultSet
+     * @param columnNames column names of ResultSet
+     * @return Map
+     */
     public static DataMap getRowFromResultSet(ResultSet resultSet, Collection<String> columnNames) {
         DataMap map = DataMap.create();
         try {
@@ -60,6 +63,12 @@ public class DbKit {
         return null;
     }
 
+    /**
+     * get column names from ResultSet
+     *
+     * @param resultSet ResultSet
+     * @return List<String>
+     */
     public static List<String> getColumnsFromResultSet(ResultSet resultSet) {
         //get all column names
         List<String> columnNames = new ArrayList<>();

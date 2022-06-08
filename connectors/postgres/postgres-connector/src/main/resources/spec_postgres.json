@@ -60,15 +60,11 @@
         "logPluginName": {
           "type": "string",
           "title": "#{logPluginName}",
-          "default": "DECORDERBUFS",
+          "default": "PGOUTPUT",
           "x-decorator": "FormItem",
           "x-component": "Select",
           "apiServerKey": "logPlugin",
           "enum": [
-            {
-              "label": "DECORDERBUFS",
-              "value": "decoderbufs"
-            },
             {
               "label": "WAL2JSON",
               "value": "wal2json"

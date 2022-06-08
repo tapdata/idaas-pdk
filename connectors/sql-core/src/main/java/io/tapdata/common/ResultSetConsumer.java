@@ -4,9 +4,8 @@ import java.sql.ResultSet;
 
 /**
  * @author samuel
- * @Description
- * @create 2022-04-28 17:24
+ * @date 2022-04-28 17:24
  **/
 public interface ResultSetConsumer {
-	void accept(ResultSet rs) throws Throwable;
+    void accept(ResultSet rs) throws Throwable;
 }

@@ -9,6 +9,13 @@ public class DataSourcePool {
 
     private final static ConcurrentHashMap<String, JdbcContext> dataPool = new ConcurrentHashMap<>(16);
 
+    /**
+     * get jdbc context from database config
+     *
+     * @param config DatabaseConfig
+     * @param clazz  Class<? extends JdbcContext>
+     * @return jdbcContext
+     */
     public static JdbcContext getJdbcContext(CommonDbConfig config, Class<? extends JdbcContext> clazz) {
         String key = uniqueKeyForDb(config);
         if (dataPool.containsKey(key)) {
@@ -24,6 +31,11 @@ public class DataSourcePool {
         }
     }
 
+    /**
+     * remove jdbcContext from pool
+     *
+     * @param config DatabaseConfig
+     */
     public static void removeJdbcContext(CommonDbConfig config) {
         dataPool.remove(uniqueKeyForDb(config));
     }
@@ -32,6 +44,7 @@ public class DataSourcePool {
         return config.getHost() + config.getPort() + config.getDatabase() + config.getSchema();
     }
 
+    //static Hikari connection
     static class HikariConnection {
         public static HikariDataSource getHikariDataSource(CommonDbConfig config) throws IllegalArgumentException {
             HikariDataSource hikariDataSource;
@@ -39,6 +52,7 @@ public class DataSourcePool {
                 throw new IllegalArgumentException("Config cannot be null");
             }
             hikariDataSource = new HikariDataSource();
+            //need 4 attributes
             hikariDataSource.setDriverClassName(config.getJdbcDriver());
             hikariDataSource.setJdbcUrl(config.getDatabaseUrl());
             hikariDataSource.setUsername(config.getUser());

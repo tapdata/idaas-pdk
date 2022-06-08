@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
+ * Empty tools for String, Collection, Map, String, Array (Blank > Empty > Null)
+ *
  * @author Jarad
  * @date 2022/4/29
  */
