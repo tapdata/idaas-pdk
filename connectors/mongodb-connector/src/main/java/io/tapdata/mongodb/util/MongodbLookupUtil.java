@@ -43,7 +43,7 @@ public class MongodbLookupUtil {
 				}
 
 				for (Document lookupDocument : lookupDocuments) {
-						globalStateMap.put(DELETE_CACHE_KEY_PREFIX + "_" + lookupDocument.getString("mongodbUri") + "_" + lookupDocument.getString("collectionName") + "_" + lookupDocument.get("_id"), lookupDocument);
+						globalStateMap.put(DELETE_CACHE_KEY_PREFIX + "_" + lookupDocument.getString("mongodbUri") + "_" + lookupDocument.getString("collectionName") + "_" + lookupDocument.get("_id"), lookupDocument.toJson());
 				}
 		}
 
@@ -124,7 +124,11 @@ public class MongodbLookupUtil {
 
 				String mongodbUri = MongodbUtil.getSimpleMongodbUri(connectionString);
 
-				return (Map) globalStateMap.get(DELETE_CACHE_KEY_PREFIX + "_" +mongodbUri + "_" + collectionName + "_" + id);
+				final String json = (String) globalStateMap.get(DELETE_CACHE_KEY_PREFIX + "_" + mongodbUri + "_" + collectionName + "_" + id);
+				if (EmptyKit.isNotBlank(json)) {
+						return Document.parse(json);
+				}
+				return null;
 
 		}
 
