@@ -182,11 +182,29 @@
     "real": {
       "bit": 32,
       "priority": 2,
+      "precision": [
+        1,
+        6
+      ],
+      "scale": [
+        0,
+        6
+      ],
+      "fixed": false,
       "to": "TapNumber"
     },
     "double precision": {
       "bit": 64,
       "priority": 2,
+      "precision": [
+        1,
+        15
+      ],
+      "scale": [
+        0,
+        15
+      ],
+      "fixed": false,
       "to": "TapNumber"
     },
     "character[($byte)]": {
