@@ -587,6 +587,7 @@ public class MongodbConnector extends ConnectorBase {
         Document lastDocument = null;
 
         while (mongoCursor.hasNext()) {
+			if(!isAlive()) return;
             lastDocument = mongoCursor.next();
             tapEvents.add(insertRecordEvent(lastDocument, table.getId()));
 
