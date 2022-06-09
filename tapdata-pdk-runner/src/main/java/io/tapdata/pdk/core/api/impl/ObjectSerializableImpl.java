@@ -137,7 +137,7 @@ public class ObjectSerializableImpl implements ObjectSerializable {
 					String json = oos.readUTF();
 					if(documentParseMethod == null) {
 						try {
-							documentClass = Class.forName("org.bson.Document");
+							documentClass = findClass(options, "org.bson.Document");
 							documentParseMethod = documentClass.getMethod("parse", String.class);
 						} catch (Throwable throwable) {
 							throwable.printStackTrace();
