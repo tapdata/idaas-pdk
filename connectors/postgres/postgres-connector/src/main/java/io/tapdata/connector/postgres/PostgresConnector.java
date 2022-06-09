@@ -255,7 +255,9 @@ public class PostgresConnector extends ConnectorBase {
                 filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
                 if (filterResults.getResults().size() == BATCH_ADVANCE_READ_LIMIT) {
                     consumer.accept(filterResults);
+                    filterResults.getResults().clear();
                 }
+                resultSet.next();
             }
             if (EmptyKit.isNotEmpty(filterResults.getResults())) {
                 consumer.accept(filterResults);
