@@ -1,18 +1,21 @@
 package io.tapdata.connector.postgres;
 
-import io.tapdata.kit.EmptyKit;
-import io.tapdata.kit.StringKit;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.StringKit;
 import io.tapdata.pdk.apis.entity.WriteListResult;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,9 +28,10 @@ public class PostgresWriteRecorder {
     private final String schema;
     private List<String> uniqueCondition;
     private boolean hasPk = false;
+
     private PreparedStatement preparedStatement = null;
-    private AtomicLong atomicLong = new AtomicLong(0);
-    private List<TapRecordEvent> batchCache = TapSimplify.list();
+    private final AtomicLong atomicLong = new AtomicLong(0);
+    private final List<TapRecordEvent> batchCache = TapSimplify.list();
     private String postgresVersion = "PostgreSQL 9.6";
 
     public PostgresWriteRecorder(Connection connection, TapTable tapTable, String schema) {
@@ -133,7 +137,7 @@ public class PostgresWriteRecorder {
     }
 
     //before is always empty
-    public void addUpdateBatch(Map<String, Object> nullBefore, Map<String, Object> after) throws SQLException {
+    public void addUpdateBatch(Map<String, Object> after) throws SQLException {
         if (EmptyKit.isEmpty(after) || EmptyKit.isEmpty(uniqueCondition)) {
             return;
         }
@@ -212,32 +216,8 @@ public class PostgresWriteRecorder {
         }
     }
 
-    public PreparedStatement getPreparedStatement() {
-        return preparedStatement;
-    }
-
-    public void setPreparedStatement(PreparedStatement preparedStatement) {
-        this.preparedStatement = preparedStatement;
-    }
-
     public AtomicLong getAtomicLong() {
         return atomicLong;
-    }
-
-    public void setAtomicLong(AtomicLong atomicLong) {
-        this.atomicLong = atomicLong;
-    }
-
-    public List<TapRecordEvent> getBatchCache() {
-        return batchCache;
-    }
-
-    public void setBatchCache(List<TapRecordEvent> batchCache) {
-        this.batchCache = batchCache;
-    }
-
-    public String getPostgresVersion() {
-        return postgresVersion;
     }
 
     public void setPostgresVersion(String postgresVersion) {

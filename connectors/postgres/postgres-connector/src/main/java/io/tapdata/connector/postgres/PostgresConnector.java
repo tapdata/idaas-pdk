@@ -53,7 +53,7 @@ public class PostgresConnector extends ConnectorBase {
     private PostgresConfig postgresConfig;
     private PostgresJdbcContext postgresJdbcContext;
     private PostgresCdcRunner cdcRunner; //only when task start-pause this variable can be shared
-    private Object slotName;
+    private Object slotName; //must be stored in stateMap
     private String postgresVersion;
     private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
 
@@ -79,7 +79,7 @@ public class PostgresConnector extends ConnectorBase {
                 String table = subTable.getString("table_name");
                 TapTable tapTable = table(table);
                 tapTable.setComment(subTable.getString("comment"));
-                //2、primary key and table index
+                //2、primary key and table index (find primary key from index info)
                 List<String> primaryKey = TapSimplify.list();
                 List<TapIndex> tapIndexList = TapSimplify.list();
                 Map<String, List<DataMap>> indexMap = indexList.stream().filter(idx -> table.equals(idx.getString("table_name")))
@@ -106,7 +106,7 @@ public class PostgresConnector extends ConnectorBase {
                 AtomicInteger keyPos = new AtomicInteger(0);
                 columnList.stream().filter(col -> table.equals(col.getString("table_name")))
                         .forEach(col -> {
-                            TapField tapField = new PostgresColumn(col).getTapField();
+                            TapField tapField = new PostgresColumn(col).getTapField(); //make up fields
                             tapField.setPos(keyPos.incrementAndGet());
                             tapField.setPrimaryKey(primaryKey.contains(tapField.getName()));
                             tapField.setPrimaryKeyPos(primaryKey.indexOf(tapField.getName()) + 1);
@@ -119,6 +119,7 @@ public class PostgresConnector extends ConnectorBase {
         });
     }
 
+    // TODO: 2022/6/9 need to improve test items
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectionContext.getConnectionConfig());
@@ -146,16 +147,21 @@ public class PostgresConnector extends ConnectorBase {
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 
+        //need to clear resource outer
         connectorFunctions.supportReleaseExternalFunction(this::onDestroy);
+        //target
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportCreateTable(this::createTable);
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportDropTable(this::dropTable);
-        connectorFunctions.supportQueryByFilter(this::queryByFilter);
+//        connectorFunctions.supportCreateIndex(this::createIndex);
+        //source
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
+        //query
+        connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
@@ -356,7 +362,7 @@ public class PostgresConnector extends ConnectorBase {
                 insertRecorder.executeBatch(listResult);
                 deleteRecorder.executeBatch(listResult);
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
-                updateRecorder.addUpdateBatch(updateRecordEvent.getBefore(), updateRecordEvent.getAfter());
+                updateRecorder.addUpdateBatch(updateRecordEvent.getAfter());
                 updateRecorder.addAndCheckCommit(recordEvent, listResult);
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 insertRecorder.executeBatch(listResult);

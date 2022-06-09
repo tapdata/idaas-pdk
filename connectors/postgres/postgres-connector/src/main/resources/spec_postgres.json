@@ -42,7 +42,7 @@
         },
         "extParams": {
           "type": "string",
-          "title": "Connection Parameter String",
+          "title": "${extParams}",
           "x-decorator": "FormItem",
           "x-component": "Input",
 		  "apiServerKey": "additionalString"
@@ -64,7 +64,7 @@
         "logPluginName": {
           "required": true,
           "type": "string",
-          "title": "#{logPluginName}",
+          "title": "${logPluginName}",
           "default": "PGOUTPUT",
           "x-decorator": "FormItem",
           "x-component": "Select",
