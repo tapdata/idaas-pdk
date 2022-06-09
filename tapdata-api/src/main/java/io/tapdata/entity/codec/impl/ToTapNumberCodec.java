@@ -26,8 +26,10 @@ public class ToTapNumberCodec implements ToTapValueCodec<TapNumberValue> {
             } catch(Throwable throwable) {
                 TapLogger.error(TAG, "Parse string {} to number failed, {}, will mapping other codecs", value, throwable.getMessage());
             }
+        } else if(value instanceof Boolean) {
+            Boolean bool = (Boolean) value;
+            numberValue = new TapNumberValue(bool ? 1d : 0d);
         }
-
         return numberValue;
     }
 }

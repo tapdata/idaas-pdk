@@ -118,6 +118,27 @@ public class RegisterCli extends CommonCli {
                     o.put("group", nodeInfo.getNodeClass().getPackage().getImplementationVendor());
 
                     TapNodeContainer nodeContainer = JSON.parseObject(IOUtils.toString(nodeInfo.readResource(nodeInfo.getNodeClass().getAnnotation(TapConnectorClass.class).value())), TapNodeContainer.class);
+                    Map<String, Object> messsages = nodeContainer.getMessages();
+                    if(messsages != null) {
+                        Set<String> keys = messsages.keySet();
+                        for(String key : keys) {
+                            if(!key.equalsIgnoreCase("default")) {
+                                Map<String, Object> messagesForLan = (Map<String, Object>) messsages.get(key);
+                                if(messagesForLan != null) {
+                                    Object docPath = messagesForLan.get("doc");
+                                    if(docPath instanceof String) {
+                                        String docPathStr = (String) docPath;
+                                        if(!inputStreamMap.containsKey(docPathStr)) {
+                                            InputStream is = nodeInfo.readResource(docPathStr);
+//                                            if(is != null)
+//                                                inputStreamMap.put(docPathStr, is);
+                                            //TODO uncomment above to continue upload resources. 
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     o.put("expression", JSON.toJSONString(nodeContainer.getDataTypes()));
                     if (nodeContainer.getMessages() != null) {
                         o.put("messages", nodeContainer.getMessages());

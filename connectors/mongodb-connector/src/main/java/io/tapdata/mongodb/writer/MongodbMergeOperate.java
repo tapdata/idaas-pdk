@@ -30,6 +30,13 @@ public class MongodbMergeOperate {
 				List<WriteModel<Document>> writeModels = new ArrayList<>();
 				final MergeBundle mergeBundle = mergeBundle(tapRecordEvent);
 				final Map<String, Object> info = tapRecordEvent.getInfo();
+				if (tapRecordEvent instanceof TapInsertRecordEvent) {
+						inserted.incrementAndGet();
+				} else if (tapRecordEvent instanceof TapUpdateRecordEvent) {
+						updated.incrementAndGet();
+				} else if (tapRecordEvent instanceof TapDeleteRecordEvent) {
+						deleted.incrementAndGet();
+				}
 				if (MapUtils.isNotEmpty(info) && info.containsKey(MergeInfo.EVENT_INFO_KEY)) {
 
 						List<MergeResult> mergeResults = new ArrayList<>();
@@ -44,15 +51,12 @@ public class MongodbMergeOperate {
 										switch (operation) {
 												case INSERT:
 														writeModels.add(new InsertOneModel<>(mergeResult.getInsert()));
-														inserted.incrementAndGet();
 														break;
 												case UPDATE:
-														writeModels.add(new UpdateManyModel<Document>(mergeResult.getFilter(), mergeResult.getUpdate(), mergeResult.getUpdateOptions()));
-														updated.incrementAndGet();
+														writeModels.add(new UpdateManyModel<>(mergeResult.getFilter(), mergeResult.getUpdate(), mergeResult.getUpdateOptions()));
 														break;
 												case DELETE:
 														writeModels.add(new DeleteOneModel<>(mergeResult.getFilter()));
-														deleted.incrementAndGet();
 														break;
 										}
 								}

@@ -12,4 +12,9 @@ public class TapBooleanValue extends TapValue<Boolean, TapBoolean> {
     public TapType createDefaultTapType() {
         return new TapBoolean();
     }
+
+    @Override
+    public Class<? extends TapType> tapTypeClass() {
+        return TapBoolean.class;
+    }
 }

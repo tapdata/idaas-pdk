@@ -12,7 +12,6 @@ public class FromTapBooleanCodec implements FromTapValueCodec<TapBooleanValue> {
     public Object fromTapValue(TapBooleanValue tapValue) {
         if(tapValue == null)
             return null;
-        TapBoolean tapNumber = tapValue.getTapType();
         //TODO need more code
         return tapValue.getValue();
     }

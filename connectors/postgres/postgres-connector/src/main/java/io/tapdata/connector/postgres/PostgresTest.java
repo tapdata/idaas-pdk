@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.tapdata.base.ConnectorBase.testItem;
 
+// TODO: 2022/6/9 need to improve test items 
 public class PostgresTest implements AutoCloseable {
 
     private final PostgresConfig postgresConfig;

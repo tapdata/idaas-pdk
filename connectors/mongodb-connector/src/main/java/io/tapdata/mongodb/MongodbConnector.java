@@ -1,14 +1,18 @@
 package io.tapdata.mongodb;
 
 import com.mongodb.client.*;
+import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Sorts;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 
 import io.tapdata.entity.schema.value.*;
@@ -16,6 +20,7 @@ import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.ParagraphFormatter;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.mongodb.reader.MongodbStreamReader;
 import io.tapdata.mongodb.reader.MongodbV4StreamReader;
@@ -347,12 +352,34 @@ public class MongodbConnector extends ConnectorBase {
         //TO be as a source, need to implement below methods.
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportBatchCount(this::batchCount);
+        connectorFunctions.supportCreateIndex(this::createIndex);
         connectorFunctions.supportStreamRead(this::streamRead);
 				connectorFunctions.supportTimestampToStreamOffset(this::streamOffset);
 //        connectorFunctions.supportStreamOffset((connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer) -> streamOffset(connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer));
     }
 
-    private String memoryFetcher(List<String> mapKeys, String level) {
+		private void createIndex(TapConnectorContext tapConnectorContext, TapTable table, TapCreateIndexEvent tapCreateIndexEvent) {
+				final List<TapIndex> indexList = tapCreateIndexEvent.getIndexList();
+				if (CollectionUtils.isNotEmpty(indexList)) {
+						for (TapIndex tapIndex : indexList) {
+								final List<TapIndexField> indexFields = tapIndex.getIndexFields();
+								if (CollectionUtils.isNotEmpty(indexFields)) {
+										final MongoCollection<Document> collection = mongoDatabase.getCollection(table.getName());
+										Document keys = new Document();
+										for (TapIndexField indexField : indexFields) {
+												keys.append(indexField.getName(), 1);
+										}
+										final IndexOptions indexOptions = new IndexOptions();
+										if (EmptyKit.isNotEmpty(tapIndex.getName())) {
+												indexOptions.name(tapIndex.getName());
+										}
+										collection.createIndex(keys, indexOptions);
+								}
+						}
+				}
+		}
+
+		private String memoryFetcher(List<String> mapKeys, String level) {
         ParagraphFormatter paragraphFormatter = new ParagraphFormatter(MongodbConnector.class.getSimpleName());
         paragraphFormatter.addRow("MongoConfig", mongoConfig != null ? mongoConfig.getDatabase() : null);
         return paragraphFormatter.toString();

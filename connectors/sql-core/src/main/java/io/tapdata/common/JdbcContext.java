@@ -68,7 +68,7 @@ public abstract class JdbcContext {
                 Connection connection = getConnection();
                 Statement statement = connection.createStatement()
         ) {
-            statement.setFetchSize(1000);
+            statement.setFetchSize(1000); //protected from OM
             ResultSet resultSet = statement.executeQuery(sql);
             if (EmptyKit.isNotNull(resultSet)) {
                 resultSet.next(); //move to first row

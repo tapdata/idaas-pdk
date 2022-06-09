@@ -13,4 +13,9 @@ public class TapYearValue extends TapValue<DateTime, TapYear> {
     public TapType createDefaultTapType() {
         return new TapYear();
     }
+
+    @Override
+    public Class<? extends TapType> tapTypeClass() {
+        return TapYear.class;
+    }
 }

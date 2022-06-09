@@ -12,7 +12,7 @@ import java.io.Serializable;
  */
 public class PostgresConfig extends CommonDbConfig implements Serializable {
 
-    private String logPluginName = "pgoutput"; //default log plugin for postgres
+    private String logPluginName = "pgoutput"; //default log plugin for postgres, pay attention to lower version
 
     //customize
     public PostgresConfig() {

@@ -123,7 +123,13 @@ public class TapTable extends TapItem<TapField> {
 	}
 
 	public Collection<String> primaryKeys() {
-		if (null != logicPrimaries && logicPrimaries.size() > 0) return logicPrimaries;
+		return primaryKeys(false);
+	}
+
+	public Collection<String> primaryKeys(boolean isLogic) {
+		if (isLogic) {
+			if (null != logicPrimaries && logicPrimaries.size() > 0) return logicPrimaries;
+		}
 		LinkedHashMap<String, TapField> nameFieldMapCopyRef = this.nameFieldMap;
 		if (nameFieldMapCopyRef == null)
 			return Collections.emptyList();
@@ -131,25 +137,29 @@ public class TapTable extends TapItem<TapField> {
 		Map<Integer, String> posPrimaryKeyName = new TreeMap<>();
 		for (String key : nameFieldMapCopyRef.keySet()) {
 			TapField field = nameFieldMapCopyRef.get(key);
-			if (field != null && field.getPrimaryKey() != null && field.getPrimaryKey()) {
+			if (field != null && ((field.getPrimaryKey() != null && field.getPrimaryKey())
+					|| (field.getPrimaryKeyPos() != null && field.getPrimaryKeyPos() > 0))) {
 				posPrimaryKeyName.put(field.getPrimaryKeyPos(), field.getName());
 			}
 		}
 
-		if(!posPrimaryKeyName.isEmpty())
+		if (!posPrimaryKeyName.isEmpty())
 			return posPrimaryKeyName.values();
 
-		if(indexList != null) {
-			List<String> primaryKeys = new ArrayList<>();
-			for(TapIndex tapIndex : indexList) {
-				if(tapIndex.isUnique() && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
-					for(TapIndexField indexField : tapIndex.getIndexFields()) {
-						primaryKeys.add(indexField.getName());
+		if (isLogic) {
+			if (indexList != null) {
+				List<String> primaryKeys = new ArrayList<>();
+				for (TapIndex tapIndex : indexList) {
+					if ((tapIndex.isUnique() || tapIndex.isPrimary()) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+						for (TapIndexField indexField : tapIndex.getIndexFields()) {
+							primaryKeys.add(indexField.getName());
+						}
+						break;
 					}
 				}
+				if (!primaryKeys.isEmpty())
+					return primaryKeys;
 			}
-			if(!primaryKeys.isEmpty())
-				return primaryKeys;
 		}
 		return Collections.emptyList();
 	}

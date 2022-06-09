@@ -9,6 +9,7 @@ import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
@@ -53,7 +54,7 @@ public class PostgresConnector extends ConnectorBase {
     private PostgresConfig postgresConfig;
     private PostgresJdbcContext postgresJdbcContext;
     private PostgresCdcRunner cdcRunner; //only when task start-pause this variable can be shared
-    private Object slotName;
+    private Object slotName; //must be stored in stateMap
     private String postgresVersion;
     private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
 
@@ -79,7 +80,7 @@ public class PostgresConnector extends ConnectorBase {
                 String table = subTable.getString("table_name");
                 TapTable tapTable = table(table);
                 tapTable.setComment(subTable.getString("comment"));
-                //2、primary key and table index
+                //2、primary key and table index (find primary key from index info)
                 List<String> primaryKey = TapSimplify.list();
                 List<TapIndex> tapIndexList = TapSimplify.list();
                 Map<String, List<DataMap>> indexMap = indexList.stream().filter(idx -> table.equals(idx.getString("table_name")))
@@ -106,7 +107,7 @@ public class PostgresConnector extends ConnectorBase {
                 AtomicInteger keyPos = new AtomicInteger(0);
                 columnList.stream().filter(col -> table.equals(col.getString("table_name")))
                         .forEach(col -> {
-                            TapField tapField = new PostgresColumn(col).getTapField();
+                            TapField tapField = new PostgresColumn(col).getTapField(); //make up fields
                             tapField.setPos(keyPos.incrementAndGet());
                             tapField.setPrimaryKey(primaryKey.contains(tapField.getName()));
                             tapField.setPrimaryKeyPos(primaryKey.indexOf(tapField.getName()) + 1);
@@ -119,6 +120,7 @@ public class PostgresConnector extends ConnectorBase {
         });
     }
 
+    // TODO: 2022/6/9 need to improve test items
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectionContext.getConnectionConfig());
@@ -146,16 +148,21 @@ public class PostgresConnector extends ConnectorBase {
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 
+        //need to clear resource outer
         connectorFunctions.supportReleaseExternalFunction(this::onDestroy);
+        //target
         connectorFunctions.supportWriteRecord(this::writeRecord);
         connectorFunctions.supportCreateTable(this::createTable);
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportDropTable(this::dropTable);
-        connectorFunctions.supportQueryByFilter(this::queryByFilter);
+        connectorFunctions.supportCreateIndex(this::createIndex);
+        //source
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
         connectorFunctions.supportStreamRead(this::streamRead);
         connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
+        //query
+        connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "text", tapRawValue -> {
@@ -241,14 +248,16 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<FilterResults> consumer) throws Throwable {
-        FilterResults filterResults = new FilterResults();
         String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + table.getId() + "\" " + PostgresSqlMaker.buildSqlByAdvanceFilter(filter);
-        postgresJdbcContext.query(sql, resultSet -> {
-            while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
-                filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
+				postgresJdbcContext.query(sql, resultSet -> {
+						FilterResults filterResults = new FilterResults();
+						while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
+								filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
                 if (filterResults.getResults().size() == BATCH_ADVANCE_READ_LIMIT) {
                     consumer.accept(filterResults);
+										filterResults = new FilterResults();
                 }
+                resultSet.next();
             }
             if (EmptyKit.isNotEmpty(filterResults.getResults())) {
                 consumer.accept(filterResults);
@@ -280,24 +289,6 @@ public class PostgresConnector extends ConnectorBase {
                     sqls.add("COMMENT ON COLUMN \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\".\"" + fieldName + "\" IS '" + fieldComment + "'");
                 }
             }
-            //create index with different versions
-            if (EmptyKit.isNotEmpty(tapTable.getIndexList())) {
-                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
-                    tapTable.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
-                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
-                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
-                                            .collect(Collectors.joining(",")) + ')'));
-                } else {
-                    List<String> existsIndexes = TapSimplify.list();
-                    postgresJdbcContext.query("SELECT relname FROM pg_class WHERE relname IN (" +
-                                    tapTable.getIndexList().stream().map(i -> "'" + i.getName() + "'").collect(Collectors.joining(",")) + ") AND relkind = 'i'",
-                            resultSet -> existsIndexes.addAll(DbKit.getDataFromResultSet(resultSet).stream().map(v -> v.getString("relname")).collect(Collectors.toList())));
-                    tapTable.getIndexList().stream().filter(i -> !i.isPrimary() && !existsIndexes.contains(i.getName())).forEach(i ->
-                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
-                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
-                                            .collect(Collectors.joining(",")) + ')'));
-                }
-            }
             postgresJdbcContext.batchExecute(sqls);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -325,6 +316,34 @@ public class PostgresConnector extends ConnectorBase {
             e.printStackTrace();
             throw new RuntimeException("Drop Table " + tapDropTableEvent.getTableId() + " Failed! \n ");
         }
+    }
+
+    private void createIndex(TapConnectorContext connectorContext, TapTable tapTable, TapCreateIndexEvent createIndexEvent) {
+        try {
+            List<String> sqls = TapSimplify.list();
+            if (EmptyKit.isNotEmpty(createIndexEvent.getIndexList())) {
+                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+                    createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
+                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
+                                            .collect(Collectors.joining(",")) + ')'));
+                } else {
+                    List<String> existsIndexes = TapSimplify.list();
+                    postgresJdbcContext.query("SELECT relname FROM pg_class WHERE relname IN (" +
+                                    createIndexEvent.getIndexList().stream().map(i -> "'" + i.getName() + "'").collect(Collectors.joining(",")) + ") AND relkind = 'i'",
+                            resultSet -> existsIndexes.addAll(DbKit.getDataFromResultSet(resultSet).stream().map(v -> v.getString("relname")).collect(Collectors.toList())));
+                    createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary() && !existsIndexes.contains(i.getName())).forEach(i ->
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
+                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
+                                            .collect(Collectors.joining(",")) + ')'));
+                }
+            }
+            postgresJdbcContext.batchExecute(sqls);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw new RuntimeException("Create Indexes for " + tapTable.getId() + " Failed! " + e.getMessage());
+        }
+
     }
 
     //write records as all events, prepared
@@ -356,7 +375,7 @@ public class PostgresConnector extends ConnectorBase {
                 insertRecorder.executeBatch(listResult);
                 deleteRecorder.executeBatch(listResult);
                 TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
-                updateRecorder.addUpdateBatch(updateRecordEvent.getBefore(), updateRecordEvent.getAfter());
+                updateRecorder.addUpdateBatch(updateRecordEvent.getAfter());
                 updateRecorder.addAndCheckCommit(recordEvent, listResult);
             } else if (recordEvent instanceof TapDeleteRecordEvent) {
                 insertRecorder.executeBatch(listResult);
@@ -388,7 +407,6 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, Object offsetState, int eventBatchSize, BiConsumer<List<TapEvent>, Object> eventsOffsetConsumer) throws Throwable {
-        List<TapEvent> tapEvents = list();
         PostgresOffset postgresOffset;
         //beginning
         if (null == offsetState) {
@@ -400,6 +418,7 @@ public class PostgresConnector extends ConnectorBase {
         }
         String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue();
         postgresJdbcContext.query(sql, resultSet -> {
+            List<TapEvent> tapEvents = list();
             //get all column names
             List<String> columnNames = DbKit.getColumnsFromResultSet(resultSet);
             while (isAlive() && !resultSet.isAfterLast() && resultSet.getRow() > 0) {
@@ -407,7 +426,7 @@ public class PostgresConnector extends ConnectorBase {
                 if (tapEvents.size() == eventBatchSize) {
                     postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + eventBatchSize);
                     eventsOffsetConsumer.accept(tapEvents, postgresOffset);
-                    tapEvents.clear();
+                    tapEvents = list();
                 }
                 resultSet.next();
             }

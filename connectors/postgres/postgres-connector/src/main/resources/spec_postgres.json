@@ -14,7 +14,8 @@
           "title": "${host}",
           "x-decorator": "FormItem",
           "x-component": "Input",
-          "apiServerKey": "database_host"
+          "apiServerKey": "database_host",
+          "x-index": 1
         },
         "port": {
           "required": true,
@@ -22,7 +23,8 @@
           "title": "${port}",
           "x-decorator": "FormItem",
           "x-component": "InputNumber",
-          "apiServerKey": "database_port"
+          "apiServerKey": "database_port",
+          "x-index": 2
         },
         "database": {
           "required": true,
@@ -30,7 +32,8 @@
           "title": "${database}",
           "x-decorator": "FormItem",
           "x-component": "Input",
-		  "apiServerKey": "database_name"
+		  "apiServerKey": "database_name",
+          "x-index": 3
         },
         "schema": {
           "required": true,
@@ -38,37 +41,42 @@
           "title": "${schema}",
           "x-decorator": "FormItem",
           "x-component": "Input",
-		  "apiServerKey": "database_owner"
+		  "apiServerKey": "database_owner",
+          "x-index": 4
         },
         "extParams": {
           "type": "string",
-          "title": "Connection Parameter String",
+          "title": "${extParams}",
           "x-decorator": "FormItem",
           "x-component": "Input",
-		  "apiServerKey": "additionalString"
+		  "apiServerKey": "additionalString",
+          "x-index": 5
         },
         "user": {
           "type": "string",
           "title": "${user}",
           "x-decorator": "FormItem",
           "x-component": "Input",
-		  "apiServerKey": "database_username"
+		  "apiServerKey": "database_username",
+          "x-index": 6
         },
         "password": {
           "type": "string",
           "title": "${password}",
           "x-decorator": "FormItem",
           "x-component": "Password",
-		  "apiServerKey": "database_password"
+		  "apiServerKey": "database_password",
+          "x-index": 7
         },
         "logPluginName": {
           "required": true,
           "type": "string",
-          "title": "#{logPluginName}",
+          "title": "${logPluginName}",
           "default": "PGOUTPUT",
           "x-decorator": "FormItem",
           "x-component": "Select",
           "apiServerKey": "logPlugin",
+          "x-index": 8,
           "enum": [
             {
               "label": "WAL2JSON",

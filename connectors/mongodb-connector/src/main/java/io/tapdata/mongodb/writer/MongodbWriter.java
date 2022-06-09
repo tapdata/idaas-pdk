@@ -110,8 +110,10 @@ public class MongodbWriter {
 						}
 				}
 
-				final MongoCollection<Document> mongoCollection = getMongoCollection(table.getId());
-				mongoCollection.bulkWrite(writeModels, new BulkWriteOptions().ordered(true));
+				if (CollectionUtils.isNotEmpty(writeModels)) {
+						final MongoCollection<Document> mongoCollection = getMongoCollection(table.getId());
+						mongoCollection.bulkWrite(writeModels, new BulkWriteOptions().ordered(true));
+				}
 				//Need to tell incremental engine the write result
 				writeListResultConsumer.accept(writeListResult
 								.insertedCount(inserted.get())

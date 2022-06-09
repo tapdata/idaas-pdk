@@ -12,4 +12,9 @@ public class TapDateTimeValue extends TapValue<DateTime, TapDateTime> {
     public TapType createDefaultTapType() {
         return new TapDateTime();
     }
+
+    @Override
+    public Class<? extends TapType> tapTypeClass() {
+        return TapDateTime.class;
+    }
 }

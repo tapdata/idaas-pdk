@@ -15,4 +15,9 @@ public class TapArrayValue extends TapValue<List<?>, TapArray> {
     public TapType createDefaultTapType() {
         return new TapArray();
     }
+
+    @Override
+    public Class<? extends TapType> tapTypeClass() {
+        return TapArray.class;
+    }
 }
