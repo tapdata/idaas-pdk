@@ -9,6 +9,7 @@ import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
 import io.tapdata.connector.postgres.config.PostgresConfig;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
@@ -331,6 +332,12 @@ public class PostgresConnector extends ConnectorBase {
             e.printStackTrace();
             throw new RuntimeException("Drop Table " + tapDropTableEvent.getTableId() + " Failed! \n ");
         }
+    }
+
+    private void createIndex(TapConnectorContext connectorContext, TapTable table, TapCreateIndexEvent createIndexEvent) {
+        createIndexEvent.getIndexList().forEach(in -> {
+            String createIndexSql = "Create Index " + (EmptyKit.isNull(in.getName()) ? "" : "\"" + in.getName() + "\" ") + "ON";
+        });
     }
 
     //write records as all events, prepared

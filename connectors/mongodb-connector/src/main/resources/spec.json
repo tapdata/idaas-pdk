@@ -49,14 +49,16 @@
                 }
               }
             }
-          ]
+          ],
+          "x-index": 1
         },
         "uri": {
           "type": "string",
           "title": "${dataForm_form_databaseUri}",
           "x-decorator": "FormItem",
           "x-component": "Input",
-          "apiServerKey": "database_uri"
+          "apiServerKey": "database_uri",
+          "x-index": 2
         },
         "host": {
           "type": "string",
@@ -66,32 +68,37 @@
           "x-component-props": {
             "placeholder": "${connection_form_database_host_placeholder}"
           },
-          "required": true
+          "required": true,
+          "x-index": 3
         },
         "database": {
           "type": "string",
           "title": "${dataForm_form_databaseName}",
           "x-decorator": "FormItem",
           "x-component": "Input",
-          "required": true
+          "required": true,
+          "x-index": 4
         },
         "user": {
           "type": "string",
           "title": "${dataForm_form_userName}",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+          "x-index": 5
         },
         "password": {
           "type": "string",
           "title": "${dataForm_form_password}",
           "x-decorator": "FormItem",
-          "x-component": "Password"
+          "x-component": "Password",
+          "x-index": 6
         },
         "additionalString": {
           "type": "string",
           "title": "${dataForm_form_additionalString}",
           "x-decorator": "FormItem",
-          "x-component": "Input"
+          "x-component": "Input",
+          "x-index": 7
         },
         "ssl": {
           "type": "boolean",
@@ -102,6 +109,7 @@
             "optionType": "button"
           },
           "default": false,
+          "x-index": 8,
           "enum": [
             {
               "label": "${dataForm_form_options_sslTSL}",
@@ -129,13 +137,15 @@
           "x-decorator": "FormItem",
           "x-component": "TextFileReader",
           "fileNameField": "sslKeyFile",
-          "required": true
+          "required": true,
+          "x-index": 9
         },
         "sslPass": {
           "type": "string",
           "title": "${dataForm_form_sslPass}",
           "x-decorator": "FormItem",
-          "x-component": "Password"
+          "x-component": "Password",
+          "x-index": 10
         },
         "sslValidate": {
           "type": "boolean",
@@ -153,7 +163,8 @@
                 }
               }
             }
-          ]
+          ],
+          "x-index": 11
         },
         "sslCA": {
           "type": "string",
@@ -161,7 +172,8 @@
           "x-decorator": "FormItem",
           "x-component": "TextFileReader",
           "fileNameField": "sslCAFile",
-          "required": true
+          "required": true,
+          "x-index": 12
         }
       }
     }
