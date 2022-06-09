@@ -248,14 +248,14 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<FilterResults> consumer) throws Throwable {
-        FilterResults filterResults = new FilterResults();
         String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + table.getId() + "\" " + PostgresSqlMaker.buildSqlByAdvanceFilter(filter);
-        postgresJdbcContext.query(sql, resultSet -> {
-            while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
-                filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
+				postgresJdbcContext.query(sql, resultSet -> {
+						FilterResults filterResults = new FilterResults();
+						while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
+								filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
                 if (filterResults.getResults().size() == BATCH_ADVANCE_READ_LIMIT) {
                     consumer.accept(filterResults);
-                    filterResults.getResults().clear();
+										filterResults = new FilterResults();
                 }
                 resultSet.next();
             }
