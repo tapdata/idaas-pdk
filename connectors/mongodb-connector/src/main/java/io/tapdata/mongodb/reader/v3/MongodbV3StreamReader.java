@@ -2,6 +2,7 @@ package io.tapdata.mongodb.reader.v3;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.CursorType;
+import com.mongodb.MongoInterruptedException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -236,7 +237,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 //														Thread.sleep(500L);
 //												}
 										}
-								} catch (InterruptedException e) {
+								} catch (InterruptedException | MongoInterruptedException e) {
 										running.compareAndSet(true, false);
 								}
 						}
