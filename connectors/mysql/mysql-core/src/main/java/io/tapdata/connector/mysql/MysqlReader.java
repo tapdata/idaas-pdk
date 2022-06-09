@@ -83,10 +83,7 @@ public class MysqlReader implements Closeable {
 		AtomicLong row = new AtomicLong(0L);
 		this.mysqlJdbcContext.queryWithStream(sql, rs -> {
 			ResultSetMetaData metaData = rs.getMetaData();
-			while (rs.next()) {
-				if (null != stop && stop.test(null)) {
-					break;
-				}
+			while ((null == stop || !stop.test(null)) && rs.next()) {
 				row.incrementAndGet();
 				Map<String, Object> data = new HashMap<>();
 				for (int i = 0; i < metaData.getColumnCount(); i++) {
