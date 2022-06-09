@@ -66,13 +66,15 @@ public abstract class JdbcContext {
         TapLogger.debug(TAG, "Execute query, sql: " + sql);
         try (
                 Connection connection = getConnection();
-                Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery(sql)
+                Statement statement = connection.createStatement()
         ) {
+            statement.setFetchSize(1000);
+            ResultSet resultSet = statement.executeQuery(sql);
             if (EmptyKit.isNotNull(resultSet)) {
                 resultSet.next(); //move to first row
                 resultSetConsumer.accept(resultSet);
             }
+            resultSet.close();
         } catch (SQLException e) {
             throw new SQLException("Execute query failed, sql: " + sql + ", code: " + e.getSQLState() + "(" + e.getErrorCode() + "), error: " + e.getMessage(), e);
         }
@@ -145,6 +147,7 @@ public abstract class JdbcContext {
 
     /**
      * query all index info from some tables
+     *
      * @param tableNames some tables(all tables if tableName is empty or null)
      * @return List<index info>
      */

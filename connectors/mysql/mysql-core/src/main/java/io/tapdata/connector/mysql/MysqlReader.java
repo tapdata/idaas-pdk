@@ -17,6 +17,7 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.schema.type.TapDate;
 import io.tapdata.entity.schema.type.TapDateTime;
 import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.simplify.TapSimplify;
@@ -175,7 +176,8 @@ public class MysqlReader implements Closeable {
 					.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
 					.with("max.queue.size", batchSize * 8)
 					.with("max.batch.size", batchSize)
-					.with(MySqlConnectorConfig.SERVER_ID, randomServerId());
+					.with(MySqlConnectorConfig.SERVER_ID, randomServerId())
+					.with("time.precision.mode", "adaptive_time_microseconds");
 			List<String> dbTableNames = tables.stream().map(t -> database + "." + t).collect(Collectors.toList());
 			builder.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, database);
 			builder.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, String.join(",", dbTableNames));
@@ -395,6 +397,10 @@ public class MysqlReader implements Closeable {
 		if (tapType instanceof TapDateTime) {
 			if (((TapDateTime) tapType).getFraction().equals(0) && value instanceof Long) {
 				value = ((Long) value) / 1000;
+			}
+		} else if (tapType instanceof TapDate) {
+			if (value instanceof Integer) {
+				value = (Integer) value * 24 * 60 * 60 * 1000L;
 			}
 		}
 		return value;

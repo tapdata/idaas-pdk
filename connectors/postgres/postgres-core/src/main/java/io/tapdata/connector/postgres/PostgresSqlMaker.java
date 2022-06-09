@@ -31,7 +31,8 @@ public class PostgresSqlMaker {
      */
     public static String buildColumnDefinition(TapTable tapTable) {
         LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-        return nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v -> v.getValue().getPos())).map(v -> {
+        return nameFieldMap.entrySet().stream().sorted(Comparator.comparing(v ->
+                EmptyKit.isNull(v.getValue().getPos()) ? 99999 : v.getValue().getPos())).map(v -> {
             StringBuilder builder = new StringBuilder();
             TapField tapField = v.getValue();
             if (tapField.getDataType() == null) {
