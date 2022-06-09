@@ -77,6 +77,10 @@ public class TapCodecsFilterManager {
                             tapValue = valueCodec.toTapValue(theValue, typeFromSchema);
                             if(tapValue == null) {
                                 TapLogger.warn(TAG, "Value Codec {} from type convert TapValue failed, value {}", valueCodec.getClass().getSimpleName(), theValue);
+                            } else {
+                                if(typeFromSchema != null && !typeFromSchema.getClass().equals(tapValue.tapTypeClass())) {
+                                    typeFromSchema = null;
+                                }
                             }
                         }
                     }

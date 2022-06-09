@@ -40,6 +40,8 @@ public abstract class TapValue<T, P extends TapType> {
 
     public abstract TapType createDefaultTapType();
 
+    public abstract Class<? extends TapType> tapTypeClass();
+
     public P getTapType() {
         return tapType;
     }
