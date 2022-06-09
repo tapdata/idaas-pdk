@@ -1004,4 +1004,55 @@ class TargetTypesGeneratorTest {
         assertEquals("double(255,0)", numeric1000_0Field.getDataType());
 
     }
+
+    @Test
+    public void mongoDoubleToPGNumericTest() {
+        String sourceTypeExpression = "{\n" +
+                "    \"DOUBLE\": {\"to\": \"TapNumber\",\"value\": [\"-1.7976931348623157E+308\",\"1.7976931348623157E+308\"],\"scale\": 17,\"precision\": 309}" +
+                "}";
+
+        String targetTypeExpression = "{" +
+                "    \"numeric[($precision,$scale)]\": {\"precision\": [1,1000],\"scale\": [0,1000],\"fixed\": false,\"preferPrecision\": 20,\"preferScale\": 8,\"priority\": 1,\"to\": \"TapNumber\"}\n"
+                + "}";
+
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("double", "double"))
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+
+        TapField doubleField = nameFieldMap.get("double");
+        assertEquals("numeric(309,17)", doubleField.getDataType());
+    }
+
+    @Test
+    public void MySQLDoubleTomongoDoubleTest() {
+
+        String sourceTypeExpression = "{" +
+                " \"double\": {\"to\": \"TapNumber\",\"precision\": [1,11],\"scale\": [0,11],\"fixed\": false}"
+                + "}";
+
+        String targetTypeExpression = "{\n" +
+                "    \"DOUBLE\": {\"to\": \"TapNumber\",\"value\": [\"-1.7976931348623157E+308\",\"1.7976931348623157E+308\"],\"scale\": 17,\"precision\": 309}," +
+                "\"DECIMAL128\": {\"to\": \"TapNumber\",\"value\": [-1E+6145,1E+6145],\"scale\": 1000}" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("double", "double"))
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+
+        TapField doubleField = nameFieldMap.get("double");
+        assertEquals("double", doubleField.getDataType());
+    }
 }

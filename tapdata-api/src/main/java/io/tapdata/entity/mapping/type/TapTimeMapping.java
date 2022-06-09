@@ -57,7 +57,7 @@ public class TapTimeMapping extends TapDateBase {
 
             //field is primary key, but this type is not able to be primary type.
             if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
-                return BigDecimal.valueOf(-Double.MAX_VALUE);
+                return TapMapping.MIN_SCORE;
             }
 
             BigDecimal score = BigDecimal.ZERO;
@@ -80,6 +80,6 @@ public class TapTimeMapping extends TapDateBase {
             return score;
         }
 
-        return BigDecimal.valueOf(-Double.MAX_VALUE);
+        return TapMapping.MIN_SCORE;
     }
 }

@@ -56,7 +56,7 @@ public class TapStringMapping extends TapBytesBase {
 
             //field is primary key, but this type is not able to be primary type.
             if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
-                return BigDecimal.valueOf(-Double.MAX_VALUE);
+                return TapMapping.MIN_SCORE;
             }
 
             Boolean comingFixed = tapString.getFixed();
@@ -98,6 +98,6 @@ public class TapStringMapping extends TapBytesBase {
             }
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(-Double.MAX_VALUE);
+        return TapMapping.MIN_SCORE;
     }
 }

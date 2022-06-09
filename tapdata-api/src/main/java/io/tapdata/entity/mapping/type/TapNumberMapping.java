@@ -318,11 +318,11 @@ public class TapNumberMapping extends TapMapping {
                 .unsigned(theUnsigned)
                 .zerofill(theZerofill);
     }
-    final BigDecimal theMaxValue = BigDecimal.valueOf(10).pow(246);
-    final BigDecimal valueValue = BigDecimal.valueOf(10).pow(245);
-    final BigDecimal scaleValue = BigDecimal.valueOf(10).pow(245);
-    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(60);
-    final BigDecimal unsignedValue = BigDecimal.valueOf(10).pow(244);
+    final BigDecimal theMaxValue = BigDecimal.valueOf(10).pow(2406);
+    final BigDecimal valueValue = BigDecimal.valueOf(10).pow(2405);
+    final BigDecimal scaleValue = BigDecimal.valueOf(10).pow(2405);
+    final BigDecimal fixedValue = BigDecimal.valueOf(10).pow(600);
+    final BigDecimal unsignedValue = BigDecimal.valueOf(10).pow(2404);
 
     @Override
     public BigDecimal matchingScore(TapField field) {
@@ -331,7 +331,7 @@ public class TapNumberMapping extends TapMapping {
 
             //field is primary key, but this type is not able to be primary type.
             if(field.getPrimaryKey() != null && field.getPrimaryKey() && pkEnablement != null && !pkEnablement) {
-                return BigDecimal.valueOf(-Double.MAX_VALUE);
+                return TapMapping.MIN_SCORE;
             }
 
             BigDecimal score = BigDecimal.ZERO;
@@ -435,7 +435,7 @@ public class TapNumberMapping extends TapMapping {
             return score;
         }
 
-        return BigDecimal.valueOf(-Double.MAX_VALUE);
+        return TapMapping.MIN_SCORE;
     }
 
     private BigDecimal calculateScoreForValue(BigDecimal comingMinValue, BigDecimal comingMaxValue, BigDecimal minValue, BigDecimal maxValue, BigDecimal valueValue) {

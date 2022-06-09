@@ -32,6 +32,6 @@ public class TapMapMapping extends TapSizeBase {
         if (field.getTapType() instanceof TapMap) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(-Double.MAX_VALUE);
+        return TapMapping.MIN_SCORE;
     }
 }
