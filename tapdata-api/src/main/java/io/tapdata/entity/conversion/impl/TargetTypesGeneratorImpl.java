@@ -129,7 +129,7 @@ public class TargetTypesGeneratorImpl implements TargetTypesGenerator {
     static class HitTapMapping {
         String hitExpression;
         TapMapping tapMapping;
-        BigDecimal score = BigDecimal.valueOf(-Double.MAX_VALUE);
+        BigDecimal score = TapMapping.MIN_SCORE;
 
         public HitTapMapping(String hitExpression, TapMapping tapMapping, BigDecimal score) {
             this.hitExpression = hitExpression;

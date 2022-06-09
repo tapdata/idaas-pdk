@@ -36,6 +36,6 @@ public class TapBooleanMapping extends TapMapping {
         if (field.getTapType() instanceof TapBoolean) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(-Double.MAX_VALUE);
+        return TapMapping.MIN_SCORE;
     }
 }

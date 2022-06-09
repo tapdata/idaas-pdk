@@ -36,6 +36,6 @@ public class TapRawMapping extends TapMapping {
         if (field.getTapType() instanceof TapRaw) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(-Double.MAX_VALUE);
+        return TapMapping.MIN_SCORE;
     }
 }
