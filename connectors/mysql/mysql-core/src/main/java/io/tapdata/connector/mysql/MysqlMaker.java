@@ -205,7 +205,7 @@ public class MysqlMaker implements SqlMaker {
 		}
 
 		// nullable
-		if (null != tapField.getNullable() && !tapField.getNullable()) {
+		if ((null != tapField.getNullable() && !tapField.getNullable()) || tapField.getPrimaryKeyPos() > 0) {
 			fieldSql += " NOT NULL";
 		} else {
 			fieldSql += " NULL";
