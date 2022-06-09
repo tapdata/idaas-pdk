@@ -135,7 +135,7 @@ public class MongodbV3StreamReader implements MongodbStreamReader {
 		@Override
 		public Object streamOffset(Long offsetStartTime) {
 				if (offsetStartTime == null) {
-						return null;
+					offsetStartTime = MongodbUtil.mongodbServerTimestamp(mongoClient.getDatabase(mongodbConfig.getDatabase()));
 				}
 			ConcurrentHashMap<Object, Object> offset = new ConcurrentHashMap<>();
 			for (String rs : nodesURI.keySet()) {
