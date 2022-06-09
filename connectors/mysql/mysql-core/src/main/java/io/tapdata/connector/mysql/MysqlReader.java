@@ -79,7 +79,7 @@ public class MysqlReader implements Closeable {
 							   Predicate<?> stop, BiConsumer<Map<String, Object>, MysqlSnapshotOffset> consumer) throws Throwable {
 		SqlMaker sqlMaker = new MysqlMaker();
 		String sql = sqlMaker.selectSql(tapConnectorContext, tapTable, mysqlSnapshotOffset);
-		Collection<String> pks = tapTable.primaryKeys();
+		Collection<String> pks = tapTable.primaryKeys(true);
 		AtomicLong row = new AtomicLong(0L);
 		this.mysqlJdbcContext.queryWithStream(sql, rs -> {
 			ResultSetMetaData metaData = rs.getMetaData();

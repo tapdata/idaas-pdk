@@ -91,7 +91,7 @@ public class MongodbWriter {
 
 				MongoCollection<Document> collection = getMongoCollection(table.getId());
 
-				final Collection<String> pks = table.primaryKeys();
+				final Collection<String> pks = table.primaryKeys(true);
 
 				MongodbLookupUtil.lookUpAndSaveDeleteMessage(tapRecordEvents, this.globalStateMap, this.connectionString, pks, collection);
 

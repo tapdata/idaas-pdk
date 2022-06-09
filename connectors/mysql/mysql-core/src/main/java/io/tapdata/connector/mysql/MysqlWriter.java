@@ -239,7 +239,7 @@ public abstract class MysqlWriter {
 	}
 
 	protected Collection<String> getUniqueKeys(TapTable tapTable) {
-		return tapTable.primaryKeys();
+		return tapTable.primaryKeys(true);
 	}
 
 	protected boolean needAddIntoPreparedStatementValues(TapField field, TapRecordEvent tapRecordEvent) {
