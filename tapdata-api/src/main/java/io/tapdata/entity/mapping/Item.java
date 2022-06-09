@@ -121,7 +121,7 @@ public class Item {
     }
 
     public boolean isMatchAll() {
-        return origin.equals(regExpr);
+        return cleanPrefix.equals(origin) || origin.equals(regExpr);
     }
 
     public String getCleanPrefix() {

@@ -1,9 +1,6 @@
 package io.tapdata.entity.mapping;
 
-import io.tapdata.entity.mapping.type.TapBinaryMapping;
-import io.tapdata.entity.mapping.type.TapMapping;
-import io.tapdata.entity.mapping.type.TapNumberMapping;
-import io.tapdata.entity.mapping.type.TapStringMapping;
+import io.tapdata.entity.mapping.type.*;
 import io.tapdata.entity.schema.type.TapBinary;
 import io.tapdata.entity.schema.type.TapNumber;
 import io.tapdata.entity.schema.type.TapString;
@@ -95,18 +92,18 @@ class ExpressionMatchingMapTest {
             assertNotNull(exprResult, "Expression is not matched");
             assertNull(exprResult.getParams());
         }, tapBinaryMapping -> {
-            assertEquals(tapBinaryMapping.getBytes(), 16777216 );
+            assertEquals(tapBinaryMapping.getBytes(), 16777215 );
         }, tapBinary -> {
-            assertEquals(tapBinary.getBytes(), 16777216);
+            assertEquals(tapBinary.getBytes(), 16777215);
         });
 
         validateTapMapping(matchingMap, "MEDIUMBLOB", TapBinaryMapping.class, TapBinary.class, exprResult -> {
             assertNotNull(exprResult, "Expression is not matched");
             assertNull(exprResult.getParams());
         }, tapBinaryMapping -> {
-            assertEquals(tapBinaryMapping.getBytes(), 16777216 );
+            assertEquals(tapBinaryMapping.getBytes(), 16777215 );
         }, tapBinary -> {
-            assertEquals(tapBinary.getBytes(), 16777216);
+            assertEquals(tapBinary.getBytes(), 16777215);
         });
 
         //"    \"decimal($precision, $scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [0, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"to\": \"TapNumber\"},\n" +
@@ -116,8 +113,6 @@ class ExpressionMatchingMapTest {
             assertEquals(tapNumberMapping.getMaxPrecision(), 65 );
             assertEquals(tapNumberMapping.getMinScale(), 0 );
             assertEquals(tapNumberMapping.getMaxScale(), 30 );
-            assertEquals(tapNumberMapping.getDefaultPrecision(), 10 );
-            assertEquals(tapNumberMapping.getDefaultScale(), 0 );
         };
         Consumer<TapNumber> decimal4020TapTypeConsumer = tapNumber -> {
             assertEquals(tapNumber.getPrecision(), 40);
@@ -196,4 +191,5 @@ class ExpressionMatchingMapTest {
                 tapTypeValidator.accept((R) tapMapping.toTapType(dataType, exprResult.getParams()));
         }
     }
+
 }
