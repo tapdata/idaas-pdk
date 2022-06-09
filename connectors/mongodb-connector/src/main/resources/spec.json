@@ -50,6 +50,7 @@
               }
             }
           ],
+          "required": true,
           "x-index": 1
         },
         "uri": {
@@ -58,6 +59,7 @@
           "x-decorator": "FormItem",
           "x-component": "Input",
           "apiServerKey": "database_uri",
+          "required": true,
           "x-index": 2
         },
         "host": {
