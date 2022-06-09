@@ -1,8 +1,6 @@
 package io.tapdata.connector.postgres;
 
 import io.tapdata.entity.event.dml.TapRecordEvent;
-import io.tapdata.entity.schema.TapIndex;
-import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.kit.EmptyKit;
@@ -44,24 +42,13 @@ public class PostgresWriteRecorder {
 
     private void analyzeTable() {
         //1、primaryKeys has first priority
-        if (EmptyKit.isNotEmpty(tapTable.primaryKeys())) {
+        if (EmptyKit.isNotEmpty(tapTable.primaryKeys(false))) {
             hasPk = true;
-            uniqueCondition = new ArrayList<>(tapTable.primaryKeys());
+            uniqueCondition = new ArrayList<>(tapTable.primaryKeys(false));
         }
         //2、second priority: analyze table with its indexes
         else {
-            if (EmptyKit.isEmpty(tapTable.getIndexList())) {
-                uniqueCondition = TapSimplify.list();
-            } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isPrimary)) {
-                hasPk = true;
-                uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isPrimary)
-                        .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
-            } else if (tapTable.getIndexList().stream().anyMatch(TapIndex::isUnique)) {
-                uniqueCondition = tapTable.getIndexList().stream().filter(TapIndex::isUnique)
-                        .findFirst().orElseGet(TapIndex::new).getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
-            } else {
-                uniqueCondition = TapSimplify.list();
-            }
+            uniqueCondition = new ArrayList<>(tapTable.primaryKeys(true));
         }
     }
 
