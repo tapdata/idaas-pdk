@@ -221,8 +221,8 @@ public class MysqlSchemaLoader {
 				field.primaryKeyPos(primaryPos.getAndIncrement());
 			}
 
-			String columnDefault = dataMap.getString("COLUMN_DEFAULT");
-			field.defaultValue(columnDefault);
+//			String columnDefault = dataMap.getString("COLUMN_DEFAULT");
+//			field.defaultValue(columnDefault);
 			tapTable.add(field);
 		});
 	}
