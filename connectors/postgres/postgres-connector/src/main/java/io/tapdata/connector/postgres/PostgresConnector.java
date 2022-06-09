@@ -325,8 +325,8 @@ public class PostgresConnector extends ConnectorBase {
             if (EmptyKit.isNotEmpty(createIndexEvent.getIndexList())) {
                 if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
                     createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
-                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS " +
-                                    (EmptyKit.isNotNull(i.getName()) ? "\"" + i.getName() + "\"" : "") + " ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX " +
+                                    (EmptyKit.isNotNull(i.getName()) ? "IF NOT EXISTS \"" + i.getName() + "\"" : "") + " ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
                                     i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
                                             .collect(Collectors.joining(",")) + ')'));
                 } else {
