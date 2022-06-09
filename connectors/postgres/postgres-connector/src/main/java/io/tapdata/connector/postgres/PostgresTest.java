@@ -2,12 +2,14 @@ package io.tapdata.connector.postgres;
 
 import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.postgres.config.PostgresConfig;
+import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.util.NetUtil;
 
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -18,9 +20,6 @@ public class PostgresTest implements AutoCloseable {
 
     private final PostgresConfig postgresConfig;
     private final PostgresJdbcContext postgresJdbcContext;
-
-    private final static String PG_ROLE_INFO = "SELECT * FROM pg_roles WHERE rolname='%s'";
-    private final static String PG_TABLE_NUM = "SELECT COUNT(*) FROM pg_tables WHERE schemaname='%s'";
 
     public PostgresTest(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
@@ -88,6 +87,22 @@ public class PostgresTest implements AutoCloseable {
         }
     }
 
+//    public TestItem testLogPlugin() {
+//        try {
+//            List<String> testSqls = TapSimplify.list();
+//            postgresJdbcContext.execute(String.format(PG_LOG_PLUGIN_CREATE_TEST, postgresConfig.getLogPluginName()));
+//
+//            if (rolReplication.get()) {
+//                return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY);
+//            } else {
+//                return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
+//                        "Current user have no privileges to create Replication Slot!");
+//            }
+//        } catch (Throwable e) {
+//            return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_FAILED, e.getMessage());
+//        }
+//    }
+
     private int tableCount() throws Throwable {
         AtomicInteger tableCount = new AtomicInteger();
         postgresJdbcContext.query(PG_TABLE_NUM, resultSet -> tableCount.set(resultSet.getInt(1)));
@@ -101,6 +116,11 @@ public class PostgresTest implements AutoCloseable {
         } catch (Exception ignored) {
         }
     }
+
+    private final static String PG_ROLE_INFO = "SELECT * FROM pg_roles WHERE rolname='%s'";
+    private final static String PG_TABLE_NUM = "SELECT COUNT(*) FROM pg_tables WHERE schemaname='%s'";
+    private final static String PG_LOG_PLUGIN_CREATE_TEST = "SELECT pg_create_logical_replication_slot('pg_slot_test','%s')";
+    private final static String PG_LOG_PLUGIN_DROP_TEST = "SELECT pg_drop_replication_slot('pg_slot_test')";
 }
 
 enum PostgresTestItem {
