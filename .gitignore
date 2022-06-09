@@ -37,8 +37,8 @@ src/main/resources/gitignore/*
 
 dist/
 
-cacheData/
 **.puml
-
 *.xlsx
+cacheData/
 tap-dumping/
+output/

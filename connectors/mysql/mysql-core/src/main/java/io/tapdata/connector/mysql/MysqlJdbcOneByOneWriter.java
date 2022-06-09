@@ -91,7 +91,7 @@ public class MysqlJdbcOneByOneWriter extends MysqlWriter {
 			row = insertPreparedStatement.executeUpdate();
 		} catch (Exception e) {
 			if (e instanceof SQLIntegrityConstraintViolationException
-					&& CollectionUtils.isNotEmpty(tapTable.primaryKeys())) {
+					&& CollectionUtils.isNotEmpty(tapTable.primaryKeys(true))) {
 				TapLogger.warn(TAG, "Execute insert failed, will retry update or insert after check record exists");
 				if (rowExists(tapConnectorContext, tapTable, tapRecordEvent)) {
 					row = doUpdateOne(tapConnectorContext, tapTable, tapRecordEvent, writeListResult);

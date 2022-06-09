@@ -407,7 +407,6 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, Object offsetState, int eventBatchSize, BiConsumer<List<TapEvent>, Object> eventsOffsetConsumer) throws Throwable {
-        List<TapEvent> tapEvents = list();
         PostgresOffset postgresOffset;
         //beginning
         if (null == offsetState) {
@@ -419,6 +418,7 @@ public class PostgresConnector extends ConnectorBase {
         }
         String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"" + postgresOffset.getSortString() + " OFFSET " + postgresOffset.getOffsetValue();
         postgresJdbcContext.query(sql, resultSet -> {
+            List<TapEvent> tapEvents = list();
             //get all column names
             List<String> columnNames = DbKit.getColumnsFromResultSet(resultSet);
             while (isAlive() && !resultSet.isAfterLast() && resultSet.getRow() > 0) {
@@ -426,7 +426,7 @@ public class PostgresConnector extends ConnectorBase {
                 if (tapEvents.size() == eventBatchSize) {
                     postgresOffset.setOffsetValue(postgresOffset.getOffsetValue() + eventBatchSize);
                     eventsOffsetConsumer.accept(tapEvents, postgresOffset);
-                    tapEvents.clear();
+                    tapEvents = list();
                 }
                 resultSet.next();
             }
