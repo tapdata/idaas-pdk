@@ -44,7 +44,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 		put("allowPublicKeyRetrieval", "true");
 		put("useTimezone", "false");
 		// mysql的布尔类型，实际存储是tinyint(1)，该参数控制mysql客户端接收tinyint(1)的数据类型，默认true，接收为布尔类型，false则为数字:1,0
-		put("tinyInt1isBit", "true");
+		put("tinyInt1isBit", "false");
 	}};
 
 	private static final List<String> ignoreSqlModes = new ArrayList<String>() {{
@@ -175,6 +175,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 				Statement statement = connection.createStatement();
 				ResultSet resultSet = statement.executeQuery(sql)
 		) {
+			statement.setFetchSize(1000);
 			if (null != resultSet) {
 				resultSetConsumer.accept(resultSet);
 			}
@@ -185,6 +186,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 
 	public void query(PreparedStatement preparedStatement, ResultSetConsumer resultSetConsumer) throws Throwable {
 		TapLogger.debug(TAG, "Execute query, sql: " + preparedStatement);
+		preparedStatement.setFetchSize(1000);
 		try (
 				ResultSet resultSet = preparedStatement.executeQuery()
 		) {
@@ -205,6 +207,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 			if (statement instanceof StatementImpl) {
 				((StatementImpl) statement).enableStreamingResults();
 			}
+			statement.setFetchSize(1000);
 			try (
 					ResultSet resultSet = statement.executeQuery(sql)
 			) {

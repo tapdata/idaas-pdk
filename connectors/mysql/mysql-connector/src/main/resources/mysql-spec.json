@@ -301,12 +301,6 @@
 	  ],
 	  "unsigned": "unsigned"
 	},
-	"tinyint(1)": {
-	  "to": "TapBoolean"
-	},
-	"bit(1)": {
-	  "to": "TapBoolean"
-	},
 	"smallint[($zerofill)]": {
 	  "to": "TapNumber",
 	  "bit": 16,
