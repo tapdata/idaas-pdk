@@ -2,7 +2,11 @@ package io.tapdata.mongodb;
 
 import org.bson.types.ObjectId;
 
-public class MongoBatchOffset {
+import java.io.Serializable;
+
+public class MongoBatchOffset implements Serializable {
+
+    private static final long serialVersionUID = -6192500357089533037L;
     private String sortKey;
     private Object value;
     private Boolean objectId;
