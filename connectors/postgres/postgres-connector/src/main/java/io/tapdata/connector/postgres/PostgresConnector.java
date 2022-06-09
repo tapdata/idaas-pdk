@@ -137,6 +137,7 @@ public class PostgresConnector extends ConnectorBase {
         }
         consumer.accept(postgresTest.testPrivilege());
         consumer.accept(postgresTest.testReplication());
+        consumer.accept(postgresTest.testLogPlugin());
         postgresTest.close();
     }
 

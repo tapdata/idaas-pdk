@@ -87,21 +87,18 @@ public class PostgresTest implements AutoCloseable {
         }
     }
 
-//    public TestItem testLogPlugin() {
-//        try {
-//            List<String> testSqls = TapSimplify.list();
-//            postgresJdbcContext.execute(String.format(PG_LOG_PLUGIN_CREATE_TEST, postgresConfig.getLogPluginName()));
-//
-//            if (rolReplication.get()) {
-//                return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY);
-//            } else {
-//                return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
-//                        "Current user have no privileges to create Replication Slot!");
-//            }
-//        } catch (Throwable e) {
-//            return testItem(PostgresTestItem.CHECK_CDC_PRIVILEGES.getContent(), TestItem.RESULT_FAILED, e.getMessage());
-//        }
-//    }
+    public TestItem testLogPlugin() {
+        try {
+            List<String> testSqls = TapSimplify.list();
+            testSqls.add(String.format(PG_LOG_PLUGIN_CREATE_TEST, postgresConfig.getLogPluginName()));
+            testSqls.add(PG_LOG_PLUGIN_DROP_TEST);
+            postgresJdbcContext.batchExecute(testSqls);
+            return testItem(PostgresTestItem.CHECK_LOG_PLUGIN.getContent(), TestItem.RESULT_SUCCESSFULLY);
+        } catch (Throwable e) {
+            return testItem(PostgresTestItem.CHECK_LOG_PLUGIN.getContent(), TestItem.RESULT_SUCCESSFULLY_WITH_WARN,
+                    "Invalid log plugin, Maybe cdc events cannot work!");
+        }
+    }
 
     private int tableCount() throws Throwable {
         AtomicInteger tableCount = new AtomicInteger();
@@ -129,6 +126,7 @@ enum PostgresTestItem {
     //    CHECK_VERSION("Check database version"),
     CHECK_CDC_PRIVILEGES("Check replication privileges"),
     CHECK_TABLE_PRIVILEGE("Check all for table privilege"),
+    CHECK_LOG_PLUGIN("Check log plugin for database"),
     ;
 
     private final String content;
