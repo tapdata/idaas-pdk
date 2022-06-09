@@ -2,6 +2,7 @@ package io.tapdata.connector.mysql;
 
 import com.mysql.cj.jdbc.StatementImpl;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.pool.HikariProxyStatement;
 import io.tapdata.connector.mysql.entity.MysqlBinlogPosition;
 import io.tapdata.connector.mysql.util.JdbcUtil;
 import io.tapdata.entity.logger.TapLogger;
@@ -204,8 +205,11 @@ public class MysqlJdbcContext implements AutoCloseable {
 				Connection connection = getConnection();
 				Statement statement = connection.createStatement()
 		) {
-			if (statement instanceof StatementImpl) {
-				((StatementImpl) statement).enableStreamingResults();
+			if (statement instanceof HikariProxyStatement) {
+				StatementImpl statementImpl = statement.unwrap(StatementImpl.class);
+				if (null != statementImpl) {
+					statementImpl.enableStreamingResults();
+				}
 			}
 			statement.setFetchSize(1000);
 			try (
