@@ -85,8 +85,8 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 						if (offset != null) {
 								//报错之后， 再watch一遍
 								//如果完全没事件， 就需要从当前时间开始watch
-								if (offset instanceof BsonTimestamp) {
-										changeStream = mongoDatabase.watch(pipeline).startAtOperationTime((BsonTimestamp) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+								if (offset instanceof Integer) {
+									changeStream = mongoDatabase.watch(pipeline).startAtOperationTime(new BsonTimestamp((Integer) offset, 0)).fullDocument(FullDocument.UPDATE_LOOKUP);
 								} else {
 										changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
 								}
@@ -185,7 +185,8 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 
 				if (offset == null) {
 						final long serverTimestamp = MongodbUtil.mongodbServerTimestamp(mongoDatabase);
-						offset = new BsonTimestamp((int) (serverTimestamp / 1000), 0);
+					offset = (int)(serverTimestamp/1000);
+//						offset = new BsonTimestamp((int) (serverTimestamp / 1000), 0);
 				}
 
 				return offset;
