@@ -256,7 +256,7 @@
     },
     "STRING": {
       "to": "TapString",
-      "preferByte": "1024",
+      "preferByte": "500",
       "byte": "16m"
     },
     "DOCUMENT": {
