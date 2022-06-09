@@ -155,7 +155,7 @@ public class PostgresConnector extends ConnectorBase {
         connectorFunctions.supportCreateTable(this::createTable);
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportDropTable(this::dropTable);
-//        connectorFunctions.supportCreateIndex(this::createIndex);
+        connectorFunctions.supportCreateIndex(this::createIndex);
         //source
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
@@ -287,24 +287,6 @@ public class PostgresConnector extends ConnectorBase {
                     sqls.add("COMMENT ON COLUMN \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\".\"" + fieldName + "\" IS '" + fieldComment + "'");
                 }
             }
-            //create index with different versions
-            if (EmptyKit.isNotEmpty(tapTable.getIndexList())) {
-                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
-                    tapTable.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
-                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
-                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
-                                            .collect(Collectors.joining(",")) + ')'));
-                } else {
-                    List<String> existsIndexes = TapSimplify.list();
-                    postgresJdbcContext.query("SELECT relname FROM pg_class WHERE relname IN (" +
-                                    tapTable.getIndexList().stream().map(i -> "'" + i.getName() + "'").collect(Collectors.joining(",")) + ") AND relkind = 'i'",
-                            resultSet -> existsIndexes.addAll(DbKit.getDataFromResultSet(resultSet).stream().map(v -> v.getString("relname")).collect(Collectors.toList())));
-                    tapTable.getIndexList().stream().filter(i -> !i.isPrimary() && !existsIndexes.contains(i.getName())).forEach(i ->
-                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
-                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
-                                            .collect(Collectors.joining(",")) + ')'));
-                }
-            }
             postgresJdbcContext.batchExecute(sqls);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -334,10 +316,32 @@ public class PostgresConnector extends ConnectorBase {
         }
     }
 
-    private void createIndex(TapConnectorContext connectorContext, TapTable table, TapCreateIndexEvent createIndexEvent) {
-        createIndexEvent.getIndexList().forEach(in -> {
-            String createIndexSql = "Create Index " + (EmptyKit.isNull(in.getName()) ? "" : "\"" + in.getName() + "\" ") + "ON";
-        });
+    private void createIndex(TapConnectorContext connectorContext, TapTable tapTable, TapCreateIndexEvent createIndexEvent) {
+        try {
+            List<String> sqls = TapSimplify.list();
+            if (EmptyKit.isNotEmpty(createIndexEvent.getIndexList())) {
+                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+                    createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
+                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
+                                            .collect(Collectors.joining(",")) + ')'));
+                } else {
+                    List<String> existsIndexes = TapSimplify.list();
+                    postgresJdbcContext.query("SELECT relname FROM pg_class WHERE relname IN (" +
+                                    createIndexEvent.getIndexList().stream().map(i -> "'" + i.getName() + "'").collect(Collectors.joining(",")) + ") AND relkind = 'i'",
+                            resultSet -> existsIndexes.addAll(DbKit.getDataFromResultSet(resultSet).stream().map(v -> v.getString("relname")).collect(Collectors.toList())));
+                    createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary() && !existsIndexes.contains(i.getName())).forEach(i ->
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
+                                    i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
+                                            .collect(Collectors.joining(",")) + ')'));
+                }
+            }
+            postgresJdbcContext.batchExecute(sqls);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw new RuntimeException("Create Indexes for " + tapTable.getId() + " Failed! " + e.getMessage());
+        }
+
     }
 
     //write records as all events, prepared
