@@ -29,6 +29,7 @@ import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.*;
 
@@ -41,11 +42,15 @@ import static java.util.Collections.singletonList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
+import java.io.Closeable;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Different Connector need use different "spec.json" file with different pdk id which specified in Annotation "TapConnectorClass"
@@ -92,58 +97,92 @@ public class MongodbConnector extends ConnectorBase {
      */
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
-				final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
-				MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
-				TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
-        //List all the tables under the database.
-				List<TapTable> list = list();
-        for (String collectionName : collectionNames) {
-            //Mongodb is schema free. There is no way for incremental engine to know the default primary key. So need to specify the defaultPrimaryKeys.
-            TapTable table;
-						if (tables != null && CollectionUtils.isNotEmpty(tables)) {
-								if (!tables.contains(collectionName)) {
-										continue;
-								}
-						}
-						table = table(collectionName).defaultPrimaryKeys(singletonList("_id"));
-						if (version.compareTo("3.2") >= 0) {
-								try {
-										MongodbUtil.sampleDataRow(mongoDatabase.getCollection(collectionName), SAMPLE_SIZE_BATCH_SIZE, (dataRow) -> {
-												Set<String> fieldNames = dataRow.keySet();
-												for (String fieldName : fieldNames) {
-														BsonValue value = dataRow.get(fieldName);
-														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
-												}
-										});
-								} catch (Exception e) {
-										TapLogger.error(TAG, "Use $sample load mongo connection {}'s {} schema failed {}, will use first row as data schema.",
-														MongodbUtil.maskUriPassword(mongoConfig.getUri()), collectionName, e.getMessage(), e);
-								}
-						} else {
-								try (MongoCursor<BsonDocument> cursor = mongoDatabase.getCollection(collectionName, BsonDocument.class).find().iterator()){
-										while (cursor.hasNext()) {
-												final BsonDocument document = cursor.next();
-												for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
-														final String fieldName = entry.getKey();
-														final BsonValue value = entry.getValue();
-														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
-												}
-												break;
-										}
-								}
-						}
+        final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
+        MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+        TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
 
-						final LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
-						if (MapUtils.isNotEmpty(nameFieldMap)) {
-								list.add(table);
-						}
-            if(list.size() >= tableSize) {
-                consumer.accept(list);
-                list = list();
-            }
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(10, 30, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(30));
+
+        try (Closeable ignored = executor::shutdown) {
+            List<String> collectionNameList = StreamSupport.stream(collectionNames.spliterator(), false).collect(Collectors.toList());
+            ListUtils.partition(collectionNameList, tableSize).forEach(nameList -> {
+                CountDownLatch countDownLatch = new CountDownLatch(nameList.size());
+
+                if (version.compareTo("3.2") >= 0) {
+                    Map<String, MongoCollection<Document>> documentMap = Collections.synchronizedMap(new HashMap<>());
+
+                    nameList.forEach(name -> executor.execute(() -> {
+                        documentMap.put(name, mongoDatabase.getCollection(name));
+                        countDownLatch.countDown();
+                    }));
+
+                    try {
+                        countDownLatch.await();
+                    } catch (InterruptedException e) {
+                        TapLogger.error(TAG, "MongodbConnector discoverSchema countDownLatch await", e);
+                    }
+
+                    //List all the tables under the database.
+                    List<TapTable> list = list();
+                    nameList.forEach(name -> {
+                        TapTable table = table(name).defaultPrimaryKeys(singletonList("_id"));
+                        try {
+                            MongodbUtil.sampleDataRow(documentMap.get(name), SAMPLE_SIZE_BATCH_SIZE, (dataRow) -> {
+                                Set<String> fieldNames = dataRow.keySet();
+                                for (String fieldName : fieldNames) {
+                                    BsonValue value = dataRow.get(fieldName);
+                                    getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
+                                }
+                            });
+                        } catch (Exception e) {
+                            TapLogger.error(TAG, "Use $sample load mongo connection {}'s {} schema failed {}, will use first row as data schema.",
+                                    MongodbUtil.maskUriPassword(mongoConfig.getUri()), name, e.getMessage(), e);
+                        }
+
+                        if (!Objects.isNull(table.getNameFieldMap()) && !table.getNameFieldMap().isEmpty()) {
+                            list.add(table);
+                        }
+                    });
+
+                    consumer.accept(list);
+                } else {
+                    Map<String, MongoCollection<BsonDocument>> documentMap = Collections.synchronizedMap(new HashMap<>());
+
+                    nameList.forEach(name -> executor.execute(() -> {
+                        documentMap.put(name, mongoDatabase.getCollection(name, BsonDocument.class));
+                        countDownLatch.countDown();
+                    }));
+
+                    try {
+                        countDownLatch.await();
+                    } catch (InterruptedException e) {
+                        TapLogger.error(TAG, "MongodbConnector discoverSchema countDownLatch await", e);
+                    }
+
+                    //List all the tables under the database.
+                    List<TapTable> list = list();
+                    nameList.forEach(name -> {
+                        TapTable table = table(name).defaultPrimaryKeys(singletonList("_id"));
+                        try (MongoCursor<BsonDocument> cursor = documentMap.get(name).find().iterator()){
+                            while (cursor.hasNext()) {
+                                final BsonDocument document = cursor.next();
+                                for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
+                                    final String fieldName = entry.getKey();
+                                    final BsonValue value = entry.getValue();
+                                    getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
+                                }
+                                break;
+                            }
+                        }
+                        if (!Objects.isNull(table.getNameFieldMap()) && !table.getNameFieldMap().isEmpty()) {
+                            list.add(table);
+                        }
+                    });
+
+                    consumer.accept(list);
+                }
+            });
         }
-        if(!list.isEmpty())
-            consumer.accept(list);
     }
 
 		public static void getRelateDatabaseField(TapConnectionContext connectionContext, TableFieldTypesGenerator tableFieldTypesGenerator, BsonValue value, String fieldName, TapTable table) {
