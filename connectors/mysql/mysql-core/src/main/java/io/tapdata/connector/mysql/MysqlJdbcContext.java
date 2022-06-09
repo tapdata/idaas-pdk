@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MysqlJdbcContext implements AutoCloseable {
 
 	private static final String TAG = MysqlJdbcContext.class.getSimpleName();
+		public static final String DATABASE_TIMEZON_SQL = "SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP()) as timezone";
 	private TapConnectionContext tapConnectionContext;
 	private String jdbcUrl;
 	private HikariDataSource hikariDataSource;
@@ -299,6 +300,49 @@ public class MysqlJdbcContext implements AutoCloseable {
 		return serverId.get();
 	}
 
+		public String timezone() throws Exception {
+
+				String formatTimezone = null;
+				TapLogger.debug(TAG, "Get timezone sql: " + DATABASE_TIMEZON_SQL);
+				try (
+								Connection connection = getConnection();
+								Statement statement = connection.createStatement();
+								ResultSet resultSet = statement.executeQuery(DATABASE_TIMEZON_SQL)
+				) {
+						while (resultSet.next()) {
+								String timezone = resultSet.getString(1);
+								formatTimezone = formatTimezone(timezone);
+						}
+				}
+				return formatTimezone;
+		}
+
+		private static String formatTimezone(String timezone) {
+				StringBuilder sb = new StringBuilder("GMT");
+				String[] split = timezone.split(":");
+				String str = split[0];
+				if (str.contains("-")) {
+						if (str.length() == 3) {
+								sb.append(str);
+						} else {
+								sb.append("-0").append(StringUtils.right(str, 1));
+						}
+				} else if (str.contains("+")) {
+						if (str.length() == 3) {
+								sb.append(str);
+						} else {
+								sb.append("+0").append(StringUtils.right(str, 1));
+						}
+				} else {
+						sb.append("+");
+						if (str.length() == 2) {
+								sb.append(str);
+						} else {
+								sb.append("0").append(StringUtils.right(str, 1));
+						}
+				}
+				return sb.toString();
+	}
 	@Override
 	public void close() throws Exception {
 		JdbcUtil.closeQuietly(hikariDataSource);

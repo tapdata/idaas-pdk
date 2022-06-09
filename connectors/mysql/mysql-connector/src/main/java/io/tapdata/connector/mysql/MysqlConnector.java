@@ -26,11 +26,9 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -48,14 +46,26 @@ public class MysqlConnector extends ConnectorBase {
 	private MysqlReader mysqlReader;
 	private MysqlWriter mysqlWriter;
 	private String version;
+	private String connectionTimezone;
 
-	@Override
+
+		@Override
 	public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 		codecRegistry.registerFromTapValue(TapMapValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapArrayValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> formatTapDateTime(tapTimeValue.getValue(), "HH:mm:ss.SSSSSS"));
-		codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> formatTapDateTime(tapDateTimeValue.getValue(), "yyyy-MM-dd HH:mm:ss.SSSSSS"));
-		codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> formatTapDateTime(tapDateValue.getValue(), "yyyy-MM-dd"));
+		codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> {
+				if (tapDateTimeValue.getValue() != null && tapDateTimeValue.getValue().getTimeZone() == null) {
+						tapDateTimeValue.getValue().setTimeZone(TimeZone.getTimeZone(this.connectionTimezone));
+				}
+				return formatTapDateTime(tapDateTimeValue.getValue(), "yyyy-MM-dd HH:mm:ss.SSSSSS");
+		});
+		codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> {
+				if (tapDateValue.getValue() != null && tapDateValue.getValue().getTimeZone() == null) {
+						tapDateValue.getValue().setTimeZone(TimeZone.getTimeZone(this.connectionTimezone));
+				}
+				return formatTapDateTime(tapDateValue.getValue(), "yyyy-MM-dd");
+		});
 		codecRegistry.registerFromTapValue(TapBooleanValue.class, "tinyint(1)", TapValue::getValue);
 
 		connectorFunctions.supportCreateTable(this::createTable);
@@ -108,6 +118,10 @@ public class MysqlConnector extends ConnectorBase {
 			this.mysqlWriter = new MysqlJdbcOneByOneWriter(mysqlJdbcContext);
 			this.mysqlReader = new MysqlReader(mysqlJdbcContext);
 			this.version = mysqlJdbcContext.getMysqlVersion();
+			this.connectionTimezone = tapConnectionContext.getConnectionConfig().getString("timezone");
+				if ("Database Timezone".equals(this.connectionTimezone) || StringUtils.isBlank(this.connectionTimezone)) {
+						this.connectionTimezone = mysqlJdbcContext.timezone();
+				}
 		}
 	}
 
