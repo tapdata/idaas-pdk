@@ -51,6 +51,7 @@
               }
             }
           ],
+          "required": true,
           "x-index": 1
         },
         "uri": {
@@ -59,6 +60,7 @@
           "x-decorator": "FormItem",
           "x-component": "Input",
           "apiServerKey": "database_uri",
+          "required": true,
           "x-index": 2
         },
         "host": {
@@ -173,7 +175,6 @@
           "x-decorator": "FormItem",
           "x-component": "TextFileReader",
           "fileNameField": "sslCAFile",
-          "required": true,
           "x-index": 12
         }
       }
