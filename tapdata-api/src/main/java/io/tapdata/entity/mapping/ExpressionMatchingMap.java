@@ -50,8 +50,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ExpressionMatchingMap<T> {
     private ValueFilter<T> valueFilter;
-    private Map<String, T> exactlyMatchMap = new ConcurrentHashMap<>();
-    private Map<String, List<TypeExpr<T>>> prefixTypeExprListMap = new ConcurrentHashMap<>();
+    private Map<String, T> exactlyMatchMap = new LinkedHashMap<>();
+    private Map<String, List<TypeExpr<T>>> prefixTypeExprListMap = new LinkedHashMap<>();
 
     public static <T> ExpressionMatchingMap<T> map(String json, TypeHolder<Map<String, T>> typeHolder) {
         return new ExpressionMatchingMap<>(json, typeHolder);
