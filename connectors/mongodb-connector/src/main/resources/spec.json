@@ -2,6 +2,7 @@
   "properties": {
     "name": "MongoDB",
     "icon": "icons/mongodb.png",
+    "doc" : "${doc}",
     "id": "mongodb"
   },
   "configOptions": {
@@ -182,7 +183,7 @@
   "messages": {
     "default": "en_US",
     "en_US": {
-      "doc": "docs/readme_en.md",
+      "doc": "docs/mongodb_zh_CN.md",
       "isUri": "Connection method",
       "dataForm_form_options_URIMode": "URI Mode",
       "dataForm_form_options_standardMode": "Standard Mode",
@@ -202,7 +203,7 @@
       "dataForm_form_sslCA": "Certificate Authority"
     },
     "zh_CN": {
-      "doc": "docs/readme_zh_CN.md",
+      "doc": "docs/mongodb_zh_CN.md",
       "isUri": "连接方式",
       "dataForm_form_options_URIMode": "URI模式",
       "dataForm_form_options_standardMode": "标准模式",
@@ -222,7 +223,7 @@
       "dataForm_form_sslCA": "证书颁发机构"
     },
     "zh_TW": {
-      "doc": "docs/readme_zh_TW.md",
+      "doc": "docs/mongodb_zh_CN.md",
       "isUri": "連接方式",
       "dataForm_form_options_URIMode": "URI模式",
       "dataForm_form_options_standardMode": "標準模式",
