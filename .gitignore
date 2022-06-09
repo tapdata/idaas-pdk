@@ -37,3 +37,6 @@ src/main/resources/gitignore/*
 
 dist/
 
+output/
+tap-dumping/
+cacheData/
