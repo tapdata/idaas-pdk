@@ -174,7 +174,6 @@
           "x-decorator": "FormItem",
           "x-component": "TextFileReader",
           "fileNameField": "sslCAFile",
-          "required": true,
           "x-index": 12
         }
       }
