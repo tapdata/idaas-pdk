@@ -2,6 +2,7 @@ package io.tapdata.mongodb.reader;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoCommandException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Aggregates;
@@ -88,37 +89,36 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 								if (offset instanceof Integer) {
 									changeStream = mongoDatabase.watch(pipeline).startAtOperationTime(new BsonTimestamp((Integer) offset, 0)).fullDocument(FullDocument.UPDATE_LOOKUP);
 								} else {
-										changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
+									changeStream = mongoDatabase.watch(pipeline).resumeAfter((BsonDocument) offset).fullDocument(FullDocument.UPDATE_LOOKUP);
 								}
 						} else {
 								changeStream = mongoDatabase.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP);
 						}
-						final MongoChangeStreamCursor<ChangeStreamDocument<Document>> streamCursor = changeStream.cursor();
 						consumer.streamReadStarted();
-						while (!running.get()) {
-								try {
+						try (final MongoChangeStreamCursor<ChangeStreamDocument<Document>> streamCursor = changeStream.cursor()) {
+								while (!running.get()) {
 										ChangeStreamDocument<Document> event = streamCursor.tryNext();
-										if(event == null) {
+										if (event == null) {
 												if (!tapEvents.isEmpty()) {
-														consumer.accept(tapEvents, resumeToken);
+														consumer.accept(tapEvents, offset);
 														tapEvents = list();
 												}
 												continue;
 										}
-										if(tapEvents.size() >= eventBatchSize) {
-												consumer.accept(tapEvents, resumeToken);
+										if (tapEvents.size() >= eventBatchSize) {
+												consumer.accept(tapEvents, offset);
 												tapEvents = list();
 										}
 
 										MongoNamespace mongoNamespace = event.getNamespace();
 
 										String collectionName = null;
-										if(mongoNamespace != null) {
+										if (mongoNamespace != null) {
 												collectionName = mongoNamespace.getCollectionName();
 										}
-										if(collectionName == null)
+										if (collectionName == null)
 												continue;
-										resumeToken = event.getResumeToken();
+										offset = event.getResumeToken();
 										OperationType operationType = event.getOperationType();
 										Document fullDocument = event.getFullDocument();
 										if (operationType == OperationType.INSERT) {
@@ -155,15 +155,23 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 														throw new RuntimeException(String.format("Document key is null, failed to update. %s", event));
 												}
 										}
-								} catch (Throwable throwable) {
-										if (!running.get() && throwable instanceof IllegalStateException) {
-												if (throwable.getMessage().contains("state should be: open") || throwable.getMessage().contains("Cursor has been closed")) {
-												}
-												return;
-										}
-										TapLogger.error(TAG, "Read change stream from {}, failed {}", MongodbUtil.maskUriPassword(mongodbConfig.getUri()), throwable.getMessage(), throwable);
-										throw throwable;
 								}
+						} catch (Throwable throwable) {
+								if (!running.get() && throwable instanceof IllegalStateException) {
+										if (throwable.getMessage().contains("state should be: open") || throwable.getMessage().contains("Cursor has been closed")) {
+										}
+										return;
+								}
+
+								if (throwable instanceof MongoCommandException) {
+										MongoCommandException mongoCommandException = (MongoCommandException) throwable;
+										if (mongoCommandException.getErrorCode() == 286) {
+												TapLogger.error(TAG, "offset " + offset + " is too old, will stop, error " + getStackString(throwable));
+										}
+								} else {
+										TapLogger.error(TAG, "Read change stream from {}, failed {}, error {}", MongodbUtil.maskUriPassword(mongodbConfig.getUri()), throwable.getMessage(), getStackString(throwable));
+								}
+								throw throwable;
 						}
 				}
 		}

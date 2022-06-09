@@ -668,17 +668,14 @@ public class MongodbConnector extends ConnectorBase {
 				isShutDown.set(true);
 				if(mongodbStreamReader != null) {
 						mongodbStreamReader.onDestroy();
-						mongodbStreamReader = null;
 				}
 
 				if (mongoClient != null) {
 						mongoClient.close();
-						mongoClient = null;
 				}
 
 				if (mongodbWriter != null) {
 						mongodbWriter.onDestroy();
-						mongodbWriter = null;
 				}
 		}
 }
