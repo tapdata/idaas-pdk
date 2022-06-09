@@ -2,9 +2,14 @@ package io.tapdata.entity.event.ddl.field;
 
 public class UpdateFieldItem extends TapFieldItem {
     public static final int TYPE = 100;
-    private String field;
-    public UpdateFieldItem field(String field) {
-        this.field = field;
+    private String name;
+    public UpdateFieldItem name(String name) {
+        this.name = name;
+        return this;
+    }
+    private String tapFieldKey;
+    public UpdateFieldItem tapFieldKey(String field) {
+        this.tapFieldKey = field;
         return this;
     }
     private String oldValue;
@@ -27,12 +32,12 @@ public class UpdateFieldItem extends TapFieldItem {
         super(TYPE);
     }
 
-    public String getField() {
-        return field;
+    public String getTapFieldKey() {
+        return tapFieldKey;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public void setTapFieldKey(String tapFieldKey) {
+        this.tapFieldKey = tapFieldKey;
     }
 
     public String getOldValue() {
@@ -57,5 +62,13 @@ public class UpdateFieldItem extends TapFieldItem {
 
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
