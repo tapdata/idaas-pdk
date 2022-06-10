@@ -2,6 +2,7 @@
   "properties": {
     "name": "PostgreSQL",
     "icon": "icons/postgres.png",
+    "doc" : "${doc}",
     "id": "postgres"
   },
   "configOptions": {
@@ -106,6 +107,7 @@
   "messages": {
     "default": "en_US",
     "en_US": {
+      "doc": "docs/postgres_zh_CN.md",
       "host": "Host",
       "port": "Port",
       "database" : "database",
@@ -116,6 +118,7 @@
       "logPluginName" : "logPluginName"
     },
     "zh_CN": {
+      "doc": "docs/postgres_zh_CN.md",
       "host": "地址",
       "port": "端口",
       "database" : "数据库",
@@ -126,6 +129,7 @@
       "logPluginName" : "日志插件"
     },
     "zh_TW": {
+      "doc": "docs/postgres_zh_CN.md",
       "host": "地址",
       "port": "端口",
       "database" : "數據庫",
