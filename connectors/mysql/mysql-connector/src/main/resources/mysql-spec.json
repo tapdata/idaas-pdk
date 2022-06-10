@@ -3,7 +3,7 @@
 	"name": "Mysql",
 	"icon": "icons/mysql.png",
 	"id": "mysql",
-	"docs": "${docs}"
+	"doc": "${doc}"
   },
   "configOptions": {
 	"connection": {
@@ -51,8 +51,7 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Password",
 		  "apiServerKey": "database_password",
-		  "x-index": 5,
-		  "required": true
+		  "x-index": 5
 		},
 		"addtionalString": {
 		  "type": "string",
@@ -65,7 +64,7 @@
 		"timezone": {
 		  "type": "string",
 		  "title": "${timezone}",
-		  "default": "Database Timezone",
+		  "default": "",
 		  "x-decorator": "FormItem",
 		  "x-component": "Select",
 		  "x-index": 7,
@@ -193,7 +192,7 @@
 	  "password": "password",
 	  "addtionalString": "Connection Parameter String",
 	  "timezone": "timezone",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_en_US.md"
 	},
 	"zh_CN": {
 	  "host": "地址",
@@ -203,7 +202,7 @@
 	  "password": "密码",
 	  "addtionalString": "连接参数",
 	  "timezone": "时区",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_zh_CN.md"
 	},
 	"zh_TW": {
 	  "host": "地址",
@@ -213,7 +212,7 @@
 	  "password": "密碼",
 	  "addtionalString": "連接參數",
 	  "timezone": "時區",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_zh_TW.md"
 	}
   },
   "dataTypes": {

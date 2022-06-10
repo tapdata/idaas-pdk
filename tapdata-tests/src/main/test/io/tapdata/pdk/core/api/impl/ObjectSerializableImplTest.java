@@ -80,6 +80,23 @@ public class ObjectSerializableImplTest {
         jsonObject.put("aaa", "BBB");
         JSONObject newJsonObject = (JSONObject) objectSerializable.toObject(objectSerializable.fromObject(jsonObject));
         assertEquals(jsonObject.get("aaa"), newJsonObject.get("aaa"));
+
+        JSONObject jsonObject1 = new JSONObject();
+        jsonObject1.put("aaa", "BBB");
+        jsonObject1.put("documentMap", documentMap);
+        jsonObject1.put("documents", documents);
+        jsonObject1.put("userMap", userMap);
+        jsonObject1.put("users", users);
+        jsonObject1.put("document", document);
+        JSONObject newJsonObject1 = (JSONObject) objectSerializable.toObject(objectSerializable.fromObject(jsonObject1));
+        assertEquals(jsonObject1.get("aaa"), newJsonObject1.get("aaa"));
+        TDDUser userKey1 = ((Map<TDDUser, Document>)newJsonObject1.get("documentMap")).keySet().stream().findFirst().get();
+        assertEquals(user.getName(), userKey1.getName());
+        Document doc3 = documentMap.get(userKey);
+        assertEquals(((BsonTimestamp)doc3.get("timestamp")).getValue(), bsonTimestamp.getValue());
+        assertEquals(doc3.get("oid").toString(), objectId.toString());
+        assertEquals(((Document)doc3.get("doc")).get("aaa"), 123);
+
     }
 
 }
