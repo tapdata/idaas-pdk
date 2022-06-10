@@ -194,15 +194,14 @@
       "to": "TapNumber"
     },
     "double precision": {
-      "bit": 64,
       "priority": 2,
       "precision": [
         1,
-        15
+        1000
       ],
       "scale": [
         0,
-        15
+        17
       ],
       "fixed": false,
       "to": "TapNumber"

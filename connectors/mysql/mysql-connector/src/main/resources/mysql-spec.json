@@ -15,7 +15,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_host",
-			"x-index": 1
+		  "x-index": 1,
+		  "required": true
 		},
 		"port": {
 		  "type": "string",
@@ -23,7 +24,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "InputNumber",
 		  "apiServerKey": "database_port",
-			"x-index": 2
+		  "x-index": 2,
+		  "required": true
 		},
 		"database": {
 		  "type": "string",
@@ -31,7 +33,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_name",
-			"x-index": 3
+		  "x-index": 3,
+		  "required": true
 		},
 		"username": {
 		  "type": "string",
@@ -39,7 +42,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_username",
-			"x-index": 4
+		  "x-index": 4,
+		  "required": true
 		},
 		"password": {
 		  "type": "string",
@@ -47,7 +51,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Password",
 		  "apiServerKey": "database_password",
-			"x-index": 5
+		  "x-index": 5,
+		  "required": true
 		},
 		"addtionalString": {
 		  "type": "string",
@@ -55,7 +60,7 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "additionalString",
-			"x-index": 6
+		  "x-index": 6
 		},
 		"timezone": {
 		  "type": "string",
@@ -63,7 +68,7 @@
 		  "default": "Database Timezone",
 		  "x-decorator": "FormItem",
 		  "x-component": "Select",
-			"x-index": 7,
+		  "x-index": 7,
 		  "enum": [
 			{
 			  "label": "Database Timezone",
