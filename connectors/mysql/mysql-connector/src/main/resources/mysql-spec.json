@@ -51,8 +51,7 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Password",
 		  "apiServerKey": "database_password",
-		  "x-index": 5,
-		  "required": true
+		  "x-index": 5
 		},
 		"addtionalString": {
 		  "type": "string",
@@ -65,7 +64,7 @@
 		"timezone": {
 		  "type": "string",
 		  "title": "${timezone}",
-		  "default": "Database Timezone",
+		  "default": "",
 		  "x-decorator": "FormItem",
 		  "x-component": "Select",
 		  "x-index": 7,
