@@ -228,20 +228,22 @@
     },
     "bytea": {
       "byte": "4g",
-      "priority": 2,
+      "priority": 1,
       "to": "TapBinary"
     },
     "bit[($byte)]": {
       "byte": 64,
       "defaultByte": 1,
-      "priority": 1,
+      "priority": 3,
       "fixed": true,
+      "queryOnly": true,
       "to": "TapBinary"
     },
     "bit varying[($byte)]": {
       "byte": 64,
       "defaultByte": 64,
       "priority": 1,
+      "queryOnly": true,
       "to": "TapBinary"
     },
     "boolean": {
