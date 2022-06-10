@@ -47,6 +47,15 @@ public abstract class JdbcContext {
         return hikariDataSource.getConnection();
     }
 
+    public boolean testValid() {
+        try {
+            getConnection().close();
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
     /**
      * query version of database
      *
