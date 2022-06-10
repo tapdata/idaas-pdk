@@ -201,8 +201,10 @@
       "priority": 2,
       "precision": [
         1,
-        1000
+        17
       ],
+      "preferPrecision": 11,
+      "preferScale": 4,
       "scale": [
         0,
         17
