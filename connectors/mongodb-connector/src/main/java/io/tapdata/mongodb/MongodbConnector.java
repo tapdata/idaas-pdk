@@ -386,6 +386,7 @@ public class MongodbConnector extends ConnectorBase {
     }
 
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
+        isShutDown.set(false);
 				final DataMap connectionConfig = connectionContext.getConnectionConfig();
 				if (MapUtils.isEmpty(connectionConfig)) {
 						throw new RuntimeException(String.format("connection config cannot be empty %s", connectionConfig));
@@ -673,6 +674,7 @@ public class MongodbConnector extends ConnectorBase {
 
 				if (mongoClient != null) {
 						mongoClient.close();
+                        mongoClient = null;
 				}
 
 				if (mongodbWriter != null) {
