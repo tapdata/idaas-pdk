@@ -428,11 +428,13 @@
 	  "to": "TapNumber",
 	  "precision": [
 		1,
-		11
+		17
 	  ],
+		"preferPrecision": 11,
+		"preferScale": 4,
 	  "scale": [
 		0,
-		11
+		17
 	  ],
 	  "fixed": false
 	},

@@ -26,13 +26,13 @@ public class JavaTypesToTapTypes {
             case JAVA_Array:
                 return tapArray();
             case JAVA_Float:
-                return tapNumber().maxValue(BigDecimal.valueOf(Float.MAX_VALUE)).minValue(BigDecimal.valueOf(Float.MIN_VALUE)).fixed(false).scale(8).precision(9);
+                return tapNumber().maxValue(BigDecimal.valueOf(Float.MAX_VALUE)).minValue(BigDecimal.valueOf(Float.MIN_VALUE)).fixed(false).scale(8).precision(38);
             case JAVA_Date:
                 return tapDateTime().fraction(3);
             case JAVA_BigDecimal:
-                return tapNumber().precision(10000).scale(10000).fixed(true);
+                return tapNumber().precision(10000).scale(100).fixed(true);
             case JAVA_Double:
-                return tapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(Double.MIN_VALUE)).scale(17).precision(18).fixed(false);
+                return tapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(Double.MIN_VALUE)).scale(17).precision(309).fixed(false);
             case JAVA_Long:
                 return tapNumber().maxValue(BigDecimal.valueOf(Long.MAX_VALUE)).minValue(BigDecimal.valueOf(Long.MIN_VALUE));
             case JAVA_Map:
@@ -46,7 +46,7 @@ public class JavaTypesToTapTypes {
 
     public static void main(String[] args) {
         float a = 12.32232132132132432432423423423432432432423423432432432874324329847932847234f;
-        float b = 123213213213211f;
+        float b = 123213213213211123213213213211123456789.000000000000000000123213123123123123f;
         float c = 0.32232132132132432432423423423432432432423423432432432874324329847932847234f;
         System.out.println("a " + a);
         System.out.println("b " + b);

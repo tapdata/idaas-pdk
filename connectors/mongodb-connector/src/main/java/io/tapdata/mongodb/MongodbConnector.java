@@ -487,16 +487,20 @@ public class MongodbConnector extends ConnectorBase {
 		}
 
 		List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
-		if (sortOnList != null) {
-			for (SortOn sortOn : sortOnList) {
-				switch (sortOn.getSort()) {
-					case SortOn.ASCENDING:
-						iterable.sort(Sorts.ascending(sortOn.getKey()));
-						break;
-					case SortOn.DESCENDING:
-						iterable.sort(Sorts.descending(sortOn.getKey()));
-						break;
-				}
+		if (CollectionUtils.isNotEmpty(sortOnList)) {
+			List<String> ascKeys = sortOnList.stream()
+					.filter(s -> s.getSort() == SortOn.ASCENDING)
+					.map(SortOn::getKey)
+					.collect(Collectors.toList());
+			if (CollectionUtils.isNotEmpty(ascKeys)) {
+				iterable.sort(Sorts.ascending(ascKeys));
+			}
+			List<String> descKeys = sortOnList.stream()
+					.filter(s -> s.getSort() == SortOn.DESCENDING)
+					.map(SortOn::getKey)
+					.collect(Collectors.toList());
+			if (CollectionUtils.isNotEmpty(descKeys)) {
+				iterable.sort(Sorts.descending(descKeys));
 			}
 		}
 		try (final MongoCursor<Document> mongoCursor = iterable.iterator()) {
