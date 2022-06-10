@@ -249,8 +249,6 @@ public class MongodbConnector extends ConnectorBase {
 		} catch (Throwable throwable) {
 			throwable.printStackTrace();
 			consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
-		} finally {
-			onStop(connectionContext);
 		}
 	}
 
@@ -258,7 +256,6 @@ public class MongodbConnector extends ConnectorBase {
 	public int tableCount(TapConnectionContext connectionContext) throws Throwable {
 		int index = 0;
 		try {
-			onStart(connectionContext);
 			MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
 			index = 0;
 			for (String collectionName : collectionNames) {
@@ -266,8 +263,6 @@ public class MongodbConnector extends ConnectorBase {
 			}
 		} catch (Exception e) {
 			throw e;
-		} finally {
-			onStop(connectionContext);
 		}
 		return index;
 	}
@@ -676,7 +671,6 @@ public class MongodbConnector extends ConnectorBase {
 
 		if (mongoClient != null) {
 			mongoClient.close();
-			mongoClient = null;
 		}
 
 		if (mongodbWriter != null) {
