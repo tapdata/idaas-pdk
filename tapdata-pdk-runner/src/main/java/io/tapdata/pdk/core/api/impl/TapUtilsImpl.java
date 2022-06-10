@@ -34,14 +34,24 @@ public class TapUtilsImpl implements TapUtils {
     public Object clone(Object obj) {
         if(obj instanceof Map) {
             Map<?, ?> map = (Map<?, ?>) obj;
-            Map<Object, Object> cloneMap = new LinkedHashMap<>();
+            Map<Object, Object> cloneMap = null;
+            try {
+                cloneMap = map.getClass().newInstance();
+            } catch (Throwable ignored) {
+                cloneMap = new LinkedHashMap<>();
+            }
             for (Map.Entry<?, ?> entry : map.entrySet()) {
                 cloneMap.put(entry.getKey(), clone(entry.getValue()));
             }
             return cloneMap;
         } else if(obj instanceof Collection) {
             Collection<?> list = (Collection<?>) obj;
-            Collection<Object> cloneList = new ArrayList<>();
+            Collection<Object> cloneList = null;
+            try {
+                cloneList = list.getClass().newInstance();
+            } catch (Throwable ignored) {
+                cloneList = new ArrayList<>();
+            }
             for(Object o : list) {
                 cloneList.add(clone(o));
             }

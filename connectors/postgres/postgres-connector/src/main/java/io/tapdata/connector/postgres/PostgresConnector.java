@@ -137,6 +137,7 @@ public class PostgresConnector extends ConnectorBase {
         }
         consumer.accept(postgresTest.testPrivilege());
         consumer.accept(postgresTest.testReplication());
+        consumer.accept(postgresTest.testLogPlugin());
         postgresTest.close();
     }
 
@@ -249,13 +250,13 @@ public class PostgresConnector extends ConnectorBase {
 
     private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<FilterResults> consumer) throws Throwable {
         String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + table.getId() + "\" " + PostgresSqlMaker.buildSqlByAdvanceFilter(filter);
-				postgresJdbcContext.query(sql, resultSet -> {
-						FilterResults filterResults = new FilterResults();
-						while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
-								filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
+        postgresJdbcContext.query(sql, resultSet -> {
+            FilterResults filterResults = new FilterResults();
+            while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
+                filterResults.add(DbKit.getRowFromResultSet(resultSet, DbKit.getColumnsFromResultSet(resultSet)));
                 if (filterResults.getResults().size() == BATCH_ADVANCE_READ_LIMIT) {
                     consumer.accept(filterResults);
-										filterResults = new FilterResults();
+                    filterResults = new FilterResults();
                 }
                 resultSet.next();
             }
@@ -324,16 +325,18 @@ public class PostgresConnector extends ConnectorBase {
             if (EmptyKit.isNotEmpty(createIndexEvent.getIndexList())) {
                 if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
                     createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
-                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX IF NOT EXISTS \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX " +
+                                    (EmptyKit.isNotNull(i.getName()) ? "IF NOT EXISTS \"" + i.getName() + "\"" : "") + " ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
                                     i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
                                             .collect(Collectors.joining(",")) + ')'));
                 } else {
                     List<String> existsIndexes = TapSimplify.list();
                     postgresJdbcContext.query("SELECT relname FROM pg_class WHERE relname IN (" +
-                                    createIndexEvent.getIndexList().stream().map(i -> "'" + i.getName() + "'").collect(Collectors.joining(",")) + ") AND relkind = 'i'",
+                                    createIndexEvent.getIndexList().stream().map(i -> "'" + (EmptyKit.isNotNull(i.getName()) ? i.getName() : "") + "'").collect(Collectors.joining(",")) + ") AND relkind = 'i'",
                             resultSet -> existsIndexes.addAll(DbKit.getDataFromResultSet(resultSet).stream().map(v -> v.getString("relname")).collect(Collectors.toList())));
                     createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary() && !existsIndexes.contains(i.getName())).forEach(i ->
-                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX \"" + i.getName() + "\" " + "ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
+                            sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX " +
+                                    (EmptyKit.isNotNull(i.getName()) ? "\"" + i.getName() + "\"" : "") + " ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
                                     i.getIndexFields().stream().map(f -> "\"" + f.getName() + "\" " + (f.getFieldAsc() ? "ASC" : "DESC"))
                                             .collect(Collectors.joining(",")) + ')'));
                 }

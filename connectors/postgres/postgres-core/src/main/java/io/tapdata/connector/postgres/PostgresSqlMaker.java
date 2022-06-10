@@ -45,7 +45,7 @@ public class PostgresSqlMaker {
                 builder.append("NOT NULL").append(' ');
             }
             //null to omit
-            if (tapField.getDefaultValue() != null) {
+            if (tapField.getDefaultValue() != null && !"".equals(tapField.getDefaultValue())) {
                 builder.append("DEFAULT").append(' ');
                 if (tapField.getDefaultValue() instanceof Number) {
                     builder.append(tapField.getDefaultValue()).append(' ');

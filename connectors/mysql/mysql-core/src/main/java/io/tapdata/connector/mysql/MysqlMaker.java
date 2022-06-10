@@ -44,7 +44,7 @@ public class MysqlMaker implements SqlMaker {
 		// append field
 		String fieldSql = nameFieldMap.values().stream().map(this::createTableAppendField).collect(Collectors.joining(",\n"));
 		// primary key
-		if (CollectionUtils.isNotEmpty(tapTable.getDefaultPrimaryKeys())) {
+		if (CollectionUtils.isNotEmpty(tapTable.primaryKeys())) {
 			fieldSql += ",\n  " + createTableAppendPrimaryKey(tapTable);
 		}
 		String tablePropertiesSql = "";
@@ -63,7 +63,7 @@ public class MysqlMaker implements SqlMaker {
 		String database = connectionConfig.getString("database");
 		String tableId = tapTable.getId();
 		String sql = String.format(MysqlJdbcContext.SELECT_TABLE, database, tableId);
-		Collection<String> pks = tapTable.primaryKeys();
+		Collection<String> pks = tapTable.primaryKeys(true);
 		List<String> whereList = new ArrayList<>();
 		List<String> orderList = new ArrayList<>();
 		if (MapUtils.isNotEmpty(mysqlSnapshotOffset.getOffset())) {
@@ -205,7 +205,7 @@ public class MysqlMaker implements SqlMaker {
 		}
 
 		// nullable
-		if (null != tapField.getNullable() && !tapField.getNullable()) {
+		if ((null != tapField.getNullable() && !tapField.getNullable()) || (null != tapField.getPrimaryKeyPos() && tapField.getPrimaryKeyPos() > 0)) {
 			fieldSql += " NOT NULL";
 		} else {
 			fieldSql += " NULL";
@@ -241,7 +241,8 @@ public class MysqlMaker implements SqlMaker {
 		}
 
 		// pk fields
-		String pkFieldString = nameFieldMap.values().stream().filter(f -> f.getPrimaryKeyPos() > 0).map(f -> "`" + f.getName() + "`").collect(Collectors.joining(","));
+		Collection<String> primaryKeys = tapTable.primaryKeys();
+		String pkFieldString = "`" + String.join("`,`", primaryKeys) + "`";
 
 		pkSql += pkFieldString + ")";
 		return pkSql;

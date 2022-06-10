@@ -3,7 +3,7 @@
 	"name": "Mysql",
 	"icon": "icons/mysql.png",
 	"id": "mysql",
-	"docs": "${docs}"
+	"doc": "${doc}"
   },
   "configOptions": {
 	"connection": {
@@ -15,7 +15,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_host",
-			"x-index": 1
+		  "x-index": 1,
+		  "required": true
 		},
 		"port": {
 		  "type": "string",
@@ -23,7 +24,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "InputNumber",
 		  "apiServerKey": "database_port",
-			"x-index": 2
+		  "x-index": 2,
+		  "required": true
 		},
 		"database": {
 		  "type": "string",
@@ -31,7 +33,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_name",
-			"x-index": 3
+		  "x-index": 3,
+		  "required": true
 		},
 		"username": {
 		  "type": "string",
@@ -39,7 +42,8 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "database_username",
-			"x-index": 4
+		  "x-index": 4,
+		  "required": true
 		},
 		"password": {
 		  "type": "string",
@@ -47,7 +51,7 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Password",
 		  "apiServerKey": "database_password",
-			"x-index": 5
+		  "x-index": 5
 		},
 		"addtionalString": {
 		  "type": "string",
@@ -55,15 +59,15 @@
 		  "x-decorator": "FormItem",
 		  "x-component": "Input",
 		  "apiServerKey": "additionalString",
-			"x-index": 6
+		  "x-index": 6
 		},
 		"timezone": {
 		  "type": "string",
 		  "title": "${timezone}",
-		  "default": "Database Timezone",
+		  "default": "",
 		  "x-decorator": "FormItem",
 		  "x-component": "Select",
-			"x-index": 7,
+		  "x-index": 7,
 		  "enum": [
 			{
 			  "label": "Database Timezone",
@@ -188,7 +192,7 @@
 	  "password": "password",
 	  "addtionalString": "Connection Parameter String",
 	  "timezone": "timezone",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_en_US.md"
 	},
 	"zh_CN": {
 	  "host": "地址",
@@ -198,7 +202,7 @@
 	  "password": "密码",
 	  "addtionalString": "连接参数",
 	  "timezone": "时区",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_zh_CN.md"
 	},
 	"zh_TW": {
 	  "host": "地址",
@@ -208,7 +212,7 @@
 	  "password": "密碼",
 	  "addtionalString": "連接參數",
 	  "timezone": "時區",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_zh_TW.md"
 	}
   },
   "dataTypes": {
@@ -300,12 +304,6 @@
 		127
 	  ],
 	  "unsigned": "unsigned"
-	},
-	"tinyint(1)": {
-	  "to": "TapBoolean"
-	},
-	"bit(1)": {
-	  "to": "TapBoolean"
 	},
 	"smallint[($zerofill)]": {
 	  "to": "TapNumber",
@@ -430,11 +428,13 @@
 	  "to": "TapNumber",
 	  "precision": [
 		1,
-		11
+		17
 	  ],
+		"preferPrecision": 11,
+		"preferScale": 4,
 	  "scale": [
 		0,
-		11
+		17
 	  ],
 	  "fixed": false
 	},

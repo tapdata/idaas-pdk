@@ -64,7 +64,7 @@ public class PostgresJdbcContext extends JdbcContext {
 
     private final static String PG_ALL_TABLE =
             "SELECT t.table_name,\n" +
-                    "       (select cast(obj_description(relfilenode, 'pg_class') as varchar) as comment\n" +
+                    "       (select max(cast(obj_description(relfilenode, 'pg_class') as varchar)) as comment\n" +
                     "        from pg_class c\n" +
                     "        where relname = t.table_name)\n" +
                     "FROM information_schema.tables t WHERE t.table_catalog='%s' AND t.table_schema='%s' %s ORDER BY t.table_name";

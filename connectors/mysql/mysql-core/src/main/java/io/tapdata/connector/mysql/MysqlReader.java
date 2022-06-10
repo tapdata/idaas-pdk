@@ -30,12 +30,12 @@ import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.storage.OffsetUtils;
-import org.codehaus.plexus.util.StringUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -79,14 +79,11 @@ public class MysqlReader implements Closeable {
 							   Predicate<?> stop, BiConsumer<Map<String, Object>, MysqlSnapshotOffset> consumer) throws Throwable {
 		SqlMaker sqlMaker = new MysqlMaker();
 		String sql = sqlMaker.selectSql(tapConnectorContext, tapTable, mysqlSnapshotOffset);
-		Collection<String> pks = tapTable.primaryKeys();
+		Collection<String> pks = tapTable.primaryKeys(true);
 		AtomicLong row = new AtomicLong(0L);
 		this.mysqlJdbcContext.queryWithStream(sql, rs -> {
 			ResultSetMetaData metaData = rs.getMetaData();
-			while (rs.next()) {
-				if (null != stop && stop.test(null)) {
-					break;
-				}
+			while ((null == stop || !stop.test(null)) && rs.next()) {
 				row.incrementAndGet();
 				Map<String, Object> data = new HashMap<>();
 				for (int i = 0; i < metaData.getColumnCount(); i++) {

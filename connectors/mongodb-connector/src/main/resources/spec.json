@@ -155,7 +155,6 @@
           "title": "${dataForm_form_sslValidate}",
           "x-decorator": "FormItem",
           "x-component": "Switch",
-          "required": true,
           "show": false,
           "x-reactions": [
             {
@@ -175,6 +174,7 @@
           "x-decorator": "FormItem",
           "x-component": "TextFileReader",
           "fileNameField": "sslCAFile",
+          "required": true,
           "x-index": 12
         }
       }
@@ -246,17 +246,16 @@
   "dataTypes": {
     "DOUBLE": {
       "to": "TapNumber",
-      "bit": 64,
       "value": [
-        -9223372036854775808,
-        9223372036854775807
+        "-1.7976931348623157E+308",
+        "1.7976931348623157E+308"
       ],
       "scale": 17,
       "precision": 309
     },
     "STRING": {
       "to": "TapString",
-      "preferByte": "1024",
+      "preferByte": "100",
       "byte": "16m"
     },
     "DOCUMENT": {
@@ -290,7 +289,7 @@
         0,
         3
       ],
-      "defaultFraction": 0
+      "defaultFraction": 3
     },
     "JAVASCRIPT": {
       "to": "TapString",

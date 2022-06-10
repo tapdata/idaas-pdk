@@ -2,6 +2,7 @@
   "properties": {
     "name": "PostgreSQL",
     "icon": "icons/postgres.png",
+    "doc" : "${doc}",
     "id": "postgres"
   },
   "configOptions": {
@@ -106,6 +107,7 @@
   "messages": {
     "default": "en_US",
     "en_US": {
+      "doc": "docs/postgres_zh_CN.md",
       "host": "Host",
       "port": "Port",
       "database" : "database",
@@ -116,6 +118,7 @@
       "logPluginName" : "logPluginName"
     },
     "zh_CN": {
+      "doc": "docs/postgres_zh_CN.md",
       "host": "地址",
       "port": "端口",
       "database" : "数据库",
@@ -126,6 +129,7 @@
       "logPluginName" : "日志插件"
     },
     "zh_TW": {
+      "doc": "docs/postgres_zh_CN.md",
       "host": "地址",
       "port": "端口",
       "database" : "數據庫",
@@ -182,11 +186,30 @@
     "real": {
       "bit": 32,
       "priority": 2,
+      "precision": [
+        1,
+        6
+      ],
+      "scale": [
+        0,
+        6
+      ],
+      "fixed": false,
       "to": "TapNumber"
     },
     "double precision": {
-      "bit": 64,
       "priority": 2,
+      "precision": [
+        1,
+        17
+      ],
+      "preferPrecision": 11,
+      "preferScale": 4,
+      "scale": [
+        0,
+        17
+      ],
+      "fixed": false,
       "to": "TapNumber"
     },
     "character[($byte)]": {
@@ -210,20 +233,22 @@
     },
     "bytea": {
       "byte": "4g",
-      "priority": 2,
+      "priority": 1,
       "to": "TapBinary"
     },
     "bit[($byte)]": {
       "byte": 64,
       "defaultByte": 1,
-      "priority": 1,
+      "priority": 3,
       "fixed": true,
+      "queryOnly": true,
       "to": "TapBinary"
     },
     "bit varying[($byte)]": {
       "byte": 64,
       "defaultByte": 64,
       "priority": 1,
+      "queryOnly": true,
       "to": "TapBinary"
     },
     "boolean": {

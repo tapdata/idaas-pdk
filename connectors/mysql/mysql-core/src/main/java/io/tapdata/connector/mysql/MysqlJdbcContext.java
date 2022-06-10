@@ -2,6 +2,7 @@ package io.tapdata.connector.mysql;
 
 import com.mysql.cj.jdbc.StatementImpl;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.pool.HikariProxyStatement;
 import io.tapdata.connector.mysql.entity.MysqlBinlogPosition;
 import io.tapdata.connector.mysql.util.JdbcUtil;
 import io.tapdata.entity.logger.TapLogger;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MysqlJdbcContext implements AutoCloseable {
 
 	private static final String TAG = MysqlJdbcContext.class.getSimpleName();
+	public static final String DATABASE_TIMEZON_SQL = "SELECT TIMEDIFF(NOW(), UTC_TIMESTAMP()) as timezone";
 	private TapConnectionContext tapConnectionContext;
 	private String jdbcUrl;
 	private HikariDataSource hikariDataSource;
@@ -44,7 +46,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 		put("allowPublicKeyRetrieval", "true");
 		put("useTimezone", "false");
 		// mysql的布尔类型，实际存储是tinyint(1)，该参数控制mysql客户端接收tinyint(1)的数据类型，默认true，接收为布尔类型，false则为数字:1,0
-		put("tinyInt1isBit", "true");
+		put("tinyInt1isBit", "false");
 	}};
 
 	private static final List<String> ignoreSqlModes = new ArrayList<String>() {{
@@ -119,7 +121,8 @@ public class MysqlJdbcContext implements AutoCloseable {
 		if (StringUtils.isNotBlank(timezone)) {
 			try {
 				ZoneId.of(timezone);
-				String serverTimezone = timezone.replace("+", "%2B");
+				timezone = "GMT" + timezone;
+				String serverTimezone = timezone.replace("+", "%2B").replace(":00", "");
 				properties.put("serverTimezone", serverTimezone);
 			} catch (Exception ignored) {
 			}
@@ -175,6 +178,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 				Statement statement = connection.createStatement();
 				ResultSet resultSet = statement.executeQuery(sql)
 		) {
+			statement.setFetchSize(1000);
 			if (null != resultSet) {
 				resultSetConsumer.accept(resultSet);
 			}
@@ -185,6 +189,7 @@ public class MysqlJdbcContext implements AutoCloseable {
 
 	public void query(PreparedStatement preparedStatement, ResultSetConsumer resultSetConsumer) throws Throwable {
 		TapLogger.debug(TAG, "Execute query, sql: " + preparedStatement);
+		preparedStatement.setFetchSize(1000);
 		try (
 				ResultSet resultSet = preparedStatement.executeQuery()
 		) {
@@ -202,9 +207,13 @@ public class MysqlJdbcContext implements AutoCloseable {
 				Connection connection = getConnection();
 				Statement statement = connection.createStatement()
 		) {
-			if (statement instanceof StatementImpl) {
-				((StatementImpl) statement).enableStreamingResults();
+			if (statement instanceof HikariProxyStatement) {
+				StatementImpl statementImpl = statement.unwrap(StatementImpl.class);
+				if (null != statementImpl) {
+					statementImpl.enableStreamingResults();
+				}
 			}
+			statement.setFetchSize(1000);
 			try (
 					ResultSet resultSet = statement.executeQuery(sql)
 			) {
@@ -290,6 +299,50 @@ public class MysqlJdbcContext implements AutoCloseable {
 			}
 		});
 		return serverId.get();
+	}
+
+	public String timezone() throws Exception {
+
+		String formatTimezone = null;
+		TapLogger.debug(TAG, "Get timezone sql: " + DATABASE_TIMEZON_SQL);
+		try (
+				Connection connection = getConnection();
+				Statement statement = connection.createStatement();
+				ResultSet resultSet = statement.executeQuery(DATABASE_TIMEZON_SQL)
+		) {
+			while (resultSet.next()) {
+				String timezone = resultSet.getString(1);
+				formatTimezone = formatTimezone(timezone);
+			}
+		}
+		return formatTimezone;
+	}
+
+	private static String formatTimezone(String timezone) {
+		StringBuilder sb = new StringBuilder("GMT");
+		String[] split = timezone.split(":");
+		String str = split[0];
+		if (str.contains("-")) {
+			if (str.length() == 3) {
+				sb.append(str);
+			} else {
+				sb.append("-0").append(StringUtils.right(str, 1));
+			}
+		} else if (str.contains("+")) {
+			if (str.length() == 3) {
+				sb.append(str);
+			} else {
+				sb.append("+0").append(StringUtils.right(str, 1));
+			}
+		} else {
+			sb.append("+");
+			if (str.length() == 2) {
+				sb.append(str);
+			} else {
+				sb.append("0").append(StringUtils.right(str, 1));
+			}
+		}
+		return sb.toString();
 	}
 
 	@Override

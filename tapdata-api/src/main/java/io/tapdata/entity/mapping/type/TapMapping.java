@@ -14,6 +14,9 @@ public abstract class TapMapping {
     public static final String FIELD_TYPE_MAPPING = "_tapMapping";
     private static final String TAG = TapMapping.class.getSimpleName();
 
+    public static final BigDecimal MIN_SCORE = BigDecimal.valueOf(10).pow(10000).negate();
+    public static final BigDecimal MAX_SCORE = BigDecimal.valueOf(10).pow(10000);
+
     protected String name;
     protected String to;
     protected Boolean queryOnly = false;

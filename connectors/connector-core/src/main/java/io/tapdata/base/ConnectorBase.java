@@ -204,7 +204,8 @@ public abstract class ConnectorBase implements TapConnector {
     public static String formatTapDateTime(DateTime dateTime, String pattern) {
         try {
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(pattern);
-            LocalDateTime localDateTime = LocalDateTime.ofInstant(dateTime.toInstant(), ZoneId.of("GMT"));
+						final ZoneId zoneId = dateTime.getTimeZone() != null ? dateTime.getTimeZone().toZoneId() : ZoneId.of("GMT");
+						LocalDateTime localDateTime = LocalDateTime.ofInstant(dateTime.toInstant(), zoneId);
             return dateTimeFormatter.format(localDateTime);
         } catch (Throwable e) {
             e.printStackTrace();
