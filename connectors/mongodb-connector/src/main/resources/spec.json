@@ -289,7 +289,7 @@
         0,
         3
       ],
-      "defaultFraction": 0
+      "defaultFraction": 3
     },
     "JAVASCRIPT": {
       "to": "TapString",
