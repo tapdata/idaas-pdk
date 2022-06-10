@@ -106,13 +106,16 @@ Some TapType have extra fields
   
     "bit": 64, //max bit
     "defaultBit" : 10, //default bit
+    "preferBit" : 32, //prefer bit by developer experience, only used for limit bit as a source.
     "bitRatio" : 1, //1 is default. Some databases, bit means bit, but some bit means byte, then "bitRatio" should be 8. 
     
     "precision" : [1, 30], //precision range, [min, max]
-    "precisionDefault" : 10, //default precision
+    "defaultPrecision" : 10, //default precision
+    "preferPrecision" : 12, //prefer precision by developer experience, only used for limit bit as a source. 
     
     "scale" : [0, 30], //scale range, [min, max], distinguish int, long and float, double.  
-    "scaleDefault" : 3, //default scale
+    "defaultScale" : 3, //default scale
+    "preferScale" : 6, //prefer scale by developer experience, only used for limit scale as a source.
     
     "value": [-128, 127], //Also support like [ "-3.402823466E+38", "3.402823466E+38"], the min/max value of this data type.
     "unsignedValue": [0, 255], //Also support like [ "-3.402823466E+38", "3.402823466E+38"], the min/max value of this data type when unsigned. 
@@ -150,6 +153,7 @@ for example
 {
     "byte" : "16m", //Max length of string, support string with suffix "k", "m", "g", "t", "p", also number
     "defaultByte" : "1m", //Default byte when no byte variable is specified
+    "preferByte" : 100, //prefer byte by developer experience, only used for limit byte as a source.
     "byteRatio" : 1, // 1 is default. Some databases, byte means byte, but some byte means char, like utf8 1 char mean 3 bytes, then "bitRatio" should be 3 
     "fixed" : false //false is default, length is fixed or not. When length is fixed, space will be placed to fulfill the length 
 }
@@ -169,7 +173,8 @@ for example
 ```text
 {
     "byte" : "16m", //Max length of binary, support string with suffix "k", "m", "g", "t", "p", also number
-    "defaultByte" : "1m", //Default byte when no byte variable is specified 
+    "defaultByte" : "1m", //Default byte when no byte variable is specified
+    "preferByte" : 100, //prefer byte by developer experience, only used for limit byte as a source. 
     "fixed" : false //false is default, length is fixed or not. When length is fixed, space will be placed to fulfill the length 
 }
 ```

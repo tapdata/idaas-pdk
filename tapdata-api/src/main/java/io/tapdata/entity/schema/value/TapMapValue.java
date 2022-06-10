@@ -14,4 +14,9 @@ public class TapMapValue extends TapValue<Map<?, ?>, TapMap> {
     public TapType createDefaultTapType() {
         return new TapMap();
     }
+
+    @Override
+    public Class<? extends TapType> tapTypeClass() {
+        return TapMap.class;
+    }
 }

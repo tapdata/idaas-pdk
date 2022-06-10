@@ -11,6 +11,7 @@ import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.schema.value.DateTime;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.*;
+import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.TapConnector;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
@@ -27,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public abstract class ConnectorBase implements TapConnector {
     private static final TypeConverter typeConverter = InstanceFactory.instance(TypeConverter.class);
@@ -77,10 +79,16 @@ public abstract class ConnectorBase implements TapConnector {
         return TapSimplify.toJson(obj, features);
     }
 
-    public static DataMap fromJson(String json) {
+    public static Object fromJson(String json) {
         return TapSimplify.fromJson(json);
     }
+    public static DataMap fromJsonObject(String json) {
+        return TapSimplify.fromJsonObject(json);
+    }
 
+    public static List<?> fromJsonArray(String json) {
+        return TapSimplify.fromJsonArray(json);
+    }
     public static <T> T fromJson(String json, Class<T> clazz) {
         return TapSimplify.fromJson(json, clazz);
     }
@@ -196,7 +204,8 @@ public abstract class ConnectorBase implements TapConnector {
     public static String formatTapDateTime(DateTime dateTime, String pattern) {
         try {
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(pattern);
-            LocalDateTime localDateTime = LocalDateTime.ofInstant(dateTime.toInstant(), ZoneId.of("GMT"));
+						final ZoneId zoneId = dateTime.getTimeZone() != null ? dateTime.getTimeZone().toZoneId() : ZoneId.of("GMT");
+						LocalDateTime localDateTime = LocalDateTime.ofInstant(dateTime.toInstant(), zoneId);
             return dateTimeFormatter.format(localDateTime);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -235,22 +244,45 @@ public abstract class ConnectorBase implements TapConnector {
 
     public abstract void onStart(TapConnectionContext connectionContext) throws Throwable;
 
-    public abstract void onDestroy(TapConnectionContext connectorContext) throws Throwable;
+//    public abstract void onDestroy(TapConnectionContext connectionContext) throws Throwable;
 
-    public abstract void onPause(TapConnectionContext connectorContext) throws Throwable;
+    public abstract void onStop(TapConnectionContext connectionContext) throws Throwable;
+
+//    @Override
+//    public final void destroy(TapConnectionContext connectionContext) throws Throwable {
+//        if (isDestroyed.compareAndSet(false, true)) {
+//            stop(connectionContext);
+//            onDestroy(connectionContext);
+//            isConnectorStarted(connectionContext, tapConnectorContext -> {
+//                KVMap<Object> stateMap = tapConnectorContext.getStateMap();
+//                if(stateMap != null) {
+//                    try {
+//                        stateMap.clear();
+//                    } catch (Throwable ignored) {
+//                        TapLogger.warn(TAG, "destroy, clear stateMap failed, {}, connector {}", ignored.getMessage(), tapConnectorContext.toString());
+//                    }
+//                    try {
+//                        stateMap.reset();
+//                    } catch (Throwable ignored) {
+//                        TapLogger.warn(TAG, "destroy, reset stateMap failed, {}, connector {}", ignored.getMessage(), tapConnectorContext.toString());
+//                    }
+//                }
+//            });
+//        }
+//    }
 
     @Override
-    public final void destroy(TapConnectionContext connectorContext) throws Throwable {
-        if (isDestroyed.compareAndSet(true, false)) {
-            pause(connectorContext);
-            onDestroy(connectorContext);
+    public void stop(TapConnectionContext connectionContext) throws Throwable {
+        if (isAlive.compareAndSet(true, false)) {
+            onStop(connectionContext);
         }
     }
 
-    @Override
-    public void pause(TapConnectionContext connectorContext) throws Throwable {
-        if (isAlive.compareAndSet(true, false)) {
-            onPause(connectorContext);
+    protected void isConnectorStarted(TapConnectionContext connectionContext, Consumer<TapConnectorContext> contextConsumer) {
+        if(connectionContext instanceof TapConnectorContext) {
+            if(contextConsumer != null) {
+                contextConsumer.accept((TapConnectorContext) connectionContext);
+            }
         }
     }
 }

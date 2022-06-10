@@ -15,4 +15,9 @@ public class TapNumberValue extends TapValue<Double, TapNumber> {
     public TapType createDefaultTapType() {
         return new TapNumber().maxValue(BigDecimal.valueOf(Double.MAX_VALUE)).minValue(BigDecimal.valueOf(-Double.MAX_VALUE));
     }
+
+    @Override
+    public Class<? extends TapType> tapTypeClass() {
+        return TapNumber.class;
+    }
 }

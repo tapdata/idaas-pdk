@@ -1,21 +1,27 @@
 package io.tapdata.mongodb;
 
 import com.mongodb.client.*;
+import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Sorts;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.event.TapEvent;
+import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
-import io.tapdata.mongodb.bean.MongodbConfig;
+import io.tapdata.entity.utils.ParagraphFormatter;
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.mongodb.reader.MongodbStreamReader;
 import io.tapdata.mongodb.reader.MongodbV4StreamReader;
 import io.tapdata.mongodb.reader.v3.MongodbV3StreamReader;
@@ -28,6 +34,7 @@ import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.*;
 
@@ -40,11 +47,15 @@ import static java.util.Collections.singletonList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
+import java.io.Closeable;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Different Connector need use different "spec.json" file with different pdk id which specified in Annotation "TapConnectorClass"
@@ -53,287 +64,346 @@ import java.util.function.Consumer;
 @TapConnectorClass("spec.json")
 public class MongodbConnector extends ConnectorBase {
 
-		private static final int SAMPLE_SIZE_BATCH_SIZE = 100;
-		private static final String COLLECTION_ID_FIELD = "_id";
-    public static final String TAG = MongodbConnector.class.getSimpleName();
-    private final AtomicLong counter = new AtomicLong();
-    private final AtomicBoolean isShutDown = new AtomicBoolean(false);
-    private MongodbConfig mongoConfig;
-    private MongoClient mongoClient;
-    private MongoDatabase mongoDatabase;
-    private final int[] lock = new int[0];
-    MongoCollection<Document> mongoCollection;
-    private MongoBatchOffset batchOffset = null;
+	private static final int SAMPLE_SIZE_BATCH_SIZE = 100;
+	private static final String COLLECTION_ID_FIELD = "_id";
+	public static final String TAG = MongodbConnector.class.getSimpleName();
+	private final AtomicLong counter = new AtomicLong();
+	private final AtomicBoolean isShutDown = new AtomicBoolean(false);
+	private MongodbConfig mongoConfig;
+	private MongoClient mongoClient;
+	private MongoDatabase mongoDatabase;
+	private final int[] lock = new int[0];
+	MongoCollection<Document> mongoCollection;
+	private MongoBatchOffset batchOffset = null;
 
-		private MongodbStreamReader mongodbStreamReader;
+	private MongodbStreamReader mongodbStreamReader;
 
-		private MongodbWriter mongodbWriter;
+	private MongodbWriter mongodbWriter;
 
-    private Bson queryCondition(String firstPrimaryKey, Object value) {
-        return gte(firstPrimaryKey, value);
-    }
+	private Bson queryCondition(String firstPrimaryKey, Object value) {
+		return gte(firstPrimaryKey, value);
+	}
 
-    private MongoCollection<Document> getMongoCollection(String table) {
-        return mongoDatabase.getCollection(table);
-    }
-    /**
-     * The method invocation life circle is below,
-     * initiated -> discoverSchema -> destroy -> ended
-     * <p>
-     * You need to create the connection to your data source and release the connection in destroy method.
-     * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     * <p>
-     * Consumer can accept multiple times, especially huge number of table list.
-     * This is sync method, once the method return, Incremental engine will consider schema has been discovered.
-     *
-     * @param connectionContext
-     * @param consumer
-     */
-    @Override
-    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
-				final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
-				MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
-				TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
-        //List all the tables under the database.
-				List<TapTable> list = list();
-        for (String collectionName : collectionNames) {
-            //Mongodb is schema free. There is no way for incremental engine to know the default primary key. So need to specify the defaultPrimaryKeys.
-            TapTable table;
-						if (tables != null && CollectionUtils.isNotEmpty(tables)) {
-								if (!tables.contains(collectionName)) {
-										continue;
+	private MongoCollection<Document> getMongoCollection(String table) {
+		return mongoDatabase.getCollection(table);
+	}
+
+	/**
+	 * The method invocation life circle is below,
+	 * initiated -> discoverSchema -> destroy -> ended
+	 * <p>
+	 * You need to create the connection to your data source and release the connection in destroy method.
+	 * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
+	 * <p>
+	 * Consumer can accept multiple times, especially huge number of table list.
+	 * This is sync method, once the method return, Incremental engine will consider schema has been discovered.
+	 *
+	 * @param connectionContext
+	 * @param consumer
+	 */
+	@Override
+	public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
+		final String version = MongodbUtil.getVersionString(mongoClient, mongoConfig.getDatabase());
+		MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+		TableFieldTypesGenerator tableFieldTypesGenerator = InstanceFactory.instance(TableFieldTypesGenerator.class);
+
+		ThreadPoolExecutor executor = new ThreadPoolExecutor(10, 30, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(30));
+
+		try (Closeable ignored = executor::shutdown) {
+			List<String> collectionNameList = StreamSupport.stream(collectionNames.spliterator(), false).collect(Collectors.toList());
+			ListUtils.partition(collectionNameList, tableSize).forEach(nameList -> {
+				CountDownLatch countDownLatch = new CountDownLatch(nameList.size());
+
+				if (version.compareTo("3.2") >= 0) {
+					Map<String, MongoCollection<Document>> documentMap = Collections.synchronizedMap(new HashMap<>());
+
+					nameList.forEach(name -> executor.execute(() -> {
+						documentMap.put(name, mongoDatabase.getCollection(name));
+						countDownLatch.countDown();
+					}));
+
+					try {
+						countDownLatch.await();
+					} catch (InterruptedException e) {
+						TapLogger.error(TAG, "MongodbConnector discoverSchema countDownLatch await", e);
+					}
+
+					//List all the tables under the database.
+					List<TapTable> list = list();
+					nameList.forEach(name -> {
+						TapTable table = table(name).defaultPrimaryKeys(singletonList("_id"));
+						try {
+							MongodbUtil.sampleDataRow(documentMap.get(name), SAMPLE_SIZE_BATCH_SIZE, (dataRow) -> {
+								Set<String> fieldNames = dataRow.keySet();
+								for (String fieldName : fieldNames) {
+									BsonValue value = dataRow.get(fieldName);
+									getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
 								}
-						}
-						table = table(collectionName).defaultPrimaryKeys(singletonList("_id"));
-						if (version.compareTo("3.2") >= 0) {
-								try {
-										MongodbUtil.sampleDataRow(mongoDatabase.getCollection(collectionName), SAMPLE_SIZE_BATCH_SIZE, (dataRow) -> {
-												Set<String> fieldNames = dataRow.keySet();
-												for (String fieldName : fieldNames) {
-														BsonValue value = dataRow.get(fieldName);
-														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
-												}
-										});
-								} catch (Exception e) {
-										TapLogger.error(TAG, "Use $sample load mongo connection {}'s {} schema failed {}, will use first row as data schema.",
-														MongodbUtil.maskUriPassword(mongoConfig.getUri()), collectionName, e.getMessage(), e);
-								}
-						} else {
-								try (MongoCursor<BsonDocument> cursor = mongoDatabase.getCollection(collectionName, BsonDocument.class).find().iterator()){
-										while (cursor.hasNext()) {
-												final BsonDocument document = cursor.next();
-												for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
-														final String fieldName = entry.getKey();
-														final BsonValue value = entry.getValue();
-														getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
-												}
-												break;
-										}
-								}
+							});
+						} catch (Exception e) {
+							TapLogger.error(TAG, "Use $sample load mongo connection {}'s {} schema failed {}, will use first row as data schema.",
+									MongodbUtil.maskUriPassword(mongoConfig.getUri()), name, e.getMessage(), e);
 						}
 
-						final LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
-						if (MapUtils.isNotEmpty(nameFieldMap)) {
-								list.add(table);
+						if (!Objects.isNull(table.getNameFieldMap()) && !table.getNameFieldMap().isEmpty()) {
+							list.add(table);
 						}
-            if(list.size() >= tableSize) {
-                consumer.accept(list);
-                list = list();
-            }
-        }
-        if(!list.isEmpty())
-            consumer.accept(list);
-    }
+					});
 
-		public static void getRelateDatabaseField(TapConnectionContext connectionContext, TableFieldTypesGenerator tableFieldTypesGenerator, BsonValue value, String fieldName, TapTable table) {
-
-				if (value instanceof BsonDocument) {
-						BsonDocument bsonDocument = (BsonDocument) value;
-						for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
-								getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, entry.getValue(), fieldName + "." + entry.getKey(), table);
-						}
-				} else if (value instanceof BsonArray) {
-						BsonArray bsonArray = (BsonArray) value;
-						BsonDocument bsonDocument = new BsonDocument();
-						for (BsonValue bsonValue : bsonArray) {
-								if (bsonValue instanceof BsonDocument) {
-										bsonDocument.putAll((BsonDocument) bsonValue);
-								}
-						}
-						if (MapUtils.isNotEmpty(bsonDocument)) {
-								for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
-										getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, entry.getValue(), fieldName + "." + entry.getKey(), table);
-								}
-						}
-				}
-				TapField field = null;
-				if (value != null) {
-						field = TapSimplify.field(fieldName, value.getBsonType().name());
+					consumer.accept(list);
 				} else {
-						field = TapSimplify.field(fieldName, BsonType.NULL.name());
-				}
+					Map<String, MongoCollection<BsonDocument>> documentMap = Collections.synchronizedMap(new HashMap<>());
 
-				if ("_id".equals(fieldName)) {
-						field.primaryKeyPos(1);
+					nameList.forEach(name -> executor.execute(() -> {
+						documentMap.put(name, mongoDatabase.getCollection(name, BsonDocument.class));
+						countDownLatch.countDown();
+					}));
+
+					try {
+						countDownLatch.await();
+					} catch (InterruptedException e) {
+						TapLogger.error(TAG, "MongodbConnector discoverSchema countDownLatch await", e);
+					}
+
+					//List all the tables under the database.
+					List<TapTable> list = list();
+					nameList.forEach(name -> {
+						TapTable table = table(name).defaultPrimaryKeys(singletonList("_id"));
+						try (MongoCursor<BsonDocument> cursor = documentMap.get(name).find().iterator()) {
+							while (cursor.hasNext()) {
+								final BsonDocument document = cursor.next();
+								for (Map.Entry<String, BsonValue> entry : document.entrySet()) {
+									final String fieldName = entry.getKey();
+									final BsonValue value = entry.getValue();
+									getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, value, fieldName, table);
+								}
+								break;
+							}
+						}
+						if (!Objects.isNull(table.getNameFieldMap()) && !table.getNameFieldMap().isEmpty()) {
+							list.add(table);
+						}
+					});
+
+					consumer.accept(list);
 				}
-				tableFieldTypesGenerator.autoFill(field, connectionContext.getSpecification().getDataTypesMap());
-				table.add(field);
+			});
+		}
+	}
+
+	public static void getRelateDatabaseField(TapConnectionContext connectionContext, TableFieldTypesGenerator tableFieldTypesGenerator, BsonValue value, String fieldName, TapTable table) {
+
+		if (value instanceof BsonDocument) {
+			BsonDocument bsonDocument = (BsonDocument) value;
+			for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
+				getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, entry.getValue(), fieldName + "." + entry.getKey(), table);
+			}
+		} else if (value instanceof BsonArray) {
+			BsonArray bsonArray = (BsonArray) value;
+			BsonDocument bsonDocument = new BsonDocument();
+			for (BsonValue bsonValue : bsonArray) {
+				if (bsonValue instanceof BsonDocument) {
+					bsonDocument.putAll((BsonDocument) bsonValue);
+				}
+			}
+			if (MapUtils.isNotEmpty(bsonDocument)) {
+				for (Map.Entry<String, BsonValue> entry : bsonDocument.entrySet()) {
+					getRelateDatabaseField(connectionContext, tableFieldTypesGenerator, entry.getValue(), fieldName + "." + entry.getKey(), table);
+				}
+			}
+		}
+		TapField field = null;
+		if (value != null) {
+			field = TapSimplify.field(fieldName, value.getBsonType().name());
+		} else {
+			field = TapSimplify.field(fieldName, BsonType.NULL.name());
 		}
 
-    /**
-     * The method invocation life circle is below,
-     * initiated -> connectionTest -> destroy -> ended
-     * <p>
-     * You need to create the connection to your data source and release the connection in destroy method.
-     * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     * <p>
-     * consumer can call accept method multiple times to test different items
-     *
-     * @param connectionContext
-     * @return
-     */
-    @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
-        try {
-						onStart(connectionContext);
-						try (final MongoCursor<String> mongoCursor = mongoDatabase.listCollectionNames().iterator();) {
-								mongoCursor.hasNext();
-						}
-						consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
-        } catch(Throwable throwable) {
-            throwable.printStackTrace();
-            consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
-        } finally {
-						onPause(connectionContext);
-				}
-    }
+		if ("_id".equals(fieldName)) {
+			field.primaryKeyPos(1);
+		}
+		tableFieldTypesGenerator.autoFill(field, connectionContext.getSpecification().getDataTypesMap());
+		table.add(field);
+	}
 
-    @Override
-    public int tableCount(TapConnectionContext connectionContext) throws Throwable {
-				int index = 0;
-				try {
-						onStart(connectionContext);
-						MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
-						index = 0;
-						for (String collectionName : collectionNames) {
-								index++;
-						}
-				} catch (Exception e) {
-						throw e;
-				} finally {
-						onPause(connectionContext);
-				}
-				return index;
-    }
+	/**
+	 * The method invocation life circle is below,
+	 * initiated -> connectionTest -> destroy -> ended
+	 * <p>
+	 * You need to create the connection to your data source and release the connection in destroy method.
+	 * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
+	 * <p>
+	 * consumer can call accept method multiple times to test different items
+	 *
+	 * @param connectionContext
+	 * @return
+	 */
+	@Override
+	public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
+		try {
+			onStart(connectionContext);
+			try (final MongoCursor<String> mongoCursor = mongoDatabase.listCollectionNames().iterator();) {
+				mongoCursor.hasNext();
+			}
+			consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_SUCCESSFULLY));
+		} catch (Throwable throwable) {
+			throwable.printStackTrace();
+			consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
+		}
+	}
 
-    /**
-     * Register connector capabilities here.
-     * <p>
-     * To be as a target, please implement WriteRecordFunction, QueryByFilterFunction and DropTableFunction.
-     * WriteRecordFunction is to write insert/update/delete events into database.
-     * QueryByFilterFunction will be used to verify written record is the same with the record query from database base on the same primary keys.
-     * DropTableFunction here will be used to drop the table created by tests.
-     *
-     * If the database need create table before record insertion, then please implement CreateTableFunction,
-     * Incremental engine will generate the data types for each field base on incoming records for CreateTableFunction to create the table.
-     * </p>
-     *
-     * <p>
-     * To be as a source, please implement BatchReadFunction, BatchCountFunction, BatchOffsetFunction, StreamReadFunction and StreamOffsetFunction, QueryByAdvanceFilterFunction.
-     * If the data is schema free which can not fill TapField for TapTable in discoverSchema method, Incremental Engine will sample some records to build TapField by QueryByAdvanceFilterFunction.
-     * QueryByFilterFunction is not necessary, once implemented QueryByAdvanceFilterFunction.
-     * BatchReadFunction is to read initial records from beginner or offset.
-     * BatchCountFunction is to count initial records from beginner or offset.
-     * BatchOffsetFunction is to return runtime offset during reading initial records, if batchRead not started yet, return null.
-     * StreamReadFunction is to start CDC to read incremental record events, insert/update/delete.
-     * StreamOffsetFunction is to return stream offset for specified timestamp or runtime stream offset.
-     * </p>
-     *
-     * If defined data types in spec.json is not covered all the TapValue,
-     * like TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue,
-     * then please provide the custom codec for missing TapValue by using codeRegistry.
-     * This is only needed when database need create table before insert records.
-     *
-     * @param connectorFunctions
-     * @param codecRegistry
-     */
-    @Override
-    public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
-        connectorFunctions.supportWriteRecord(this::writeRecord);
-        connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
-        connectorFunctions.supportDropTable(this::dropTable);
+	@Override
+	public int tableCount(TapConnectionContext connectionContext) throws Throwable {
+		int index = 0;
+		try {
+			MongoIterable<String> collectionNames = mongoDatabase.listCollectionNames();
+			index = 0;
+			for (String collectionName : collectionNames) {
+				index++;
+			}
+		} catch (Exception e) {
+			throw e;
+		}
+		return index;
+	}
 
-        //Handle the special bson types, convert them to TapValue. Otherwise the unrecognized types will be converted to TapRawValue by default.
-        //Target side will not easy to handle the TapRawValue.
-        codecRegistry.registerToTapValue(ObjectId.class, (value, tapType) -> {
-            ObjectId objValue = (ObjectId) value;
-            return new TapStringValue(objValue.toHexString());
-        });
-        codecRegistry.registerToTapValue(Binary.class, (value, tapType) -> {
-           Binary binary = (Binary) value;
-           return new TapBinaryValue(binary.getData());
-        });
+	/**
+	 * Register connector capabilities here.
+	 * <p>
+	 * To be as a target, please implement WriteRecordFunction, QueryByFilterFunction and DropTableFunction.
+	 * WriteRecordFunction is to write insert/update/delete events into database.
+	 * QueryByFilterFunction will be used to verify written record is the same with the record query from database base on the same primary keys.
+	 * DropTableFunction here will be used to drop the table created by tests.
+	 * <p>
+	 * If the database need create table before record insertion, then please implement CreateTableFunction,
+	 * Incremental engine will generate the data types for each field base on incoming records for CreateTableFunction to create the table.
+	 * </p>
+	 *
+	 * <p>
+	 * To be as a source, please implement BatchReadFunction, BatchCountFunction, BatchOffsetFunction, StreamReadFunction and StreamOffsetFunction, QueryByAdvanceFilterFunction.
+	 * If the data is schema free which can not fill TapField for TapTable in discoverSchema method, Incremental Engine will sample some records to build TapField by QueryByAdvanceFilterFunction.
+	 * QueryByFilterFunction is not necessary, once implemented QueryByAdvanceFilterFunction.
+	 * BatchReadFunction is to read initial records from beginner or offset.
+	 * BatchCountFunction is to count initial records from beginner or offset.
+	 * BatchOffsetFunction is to return runtime offset during reading initial records, if batchRead not started yet, return null.
+	 * StreamReadFunction is to start CDC to read incremental record events, insert/update/delete.
+	 * StreamOffsetFunction is to return stream offset for specified timestamp or runtime stream offset.
+	 * </p>
+	 * <p>
+	 * If defined data types in spec.json is not covered all the TapValue,
+	 * like TapTimeValue, TapMapValue, TapDateValue, TapArrayValue, TapYearValue, TapNumberValue, TapBooleanValue, TapDateTimeValue, TapBinaryValue, TapRawValue, TapStringValue,
+	 * then please provide the custom codec for missing TapValue by using codeRegistry.
+	 * This is only needed when database need create table before insert records.
+	 *
+	 * @param connectorFunctions
+	 * @param codecRegistry
+	 */
+	@Override
+	public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
+		connectorFunctions.supportMemoryFetcher(this::memoryFetcher);
+		connectorFunctions.supportWriteRecord(this::writeRecord);
+		connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
+		connectorFunctions.supportDropTable(this::dropTable);
 
-        codecRegistry.registerToTapValue(Code.class, (value, tapType) -> {
-            Code code = (Code) value;
-            return new TapStringValue(code.getCode());
-        });
-        codecRegistry.registerToTapValue(Decimal128.class, (value, tapType) -> {
-            Decimal128 decimal128 = (Decimal128) value;
-            return new TapNumberValue(decimal128.doubleValue());
-        });
-        codecRegistry.registerToTapValue(Symbol.class, (value, tapType) -> {
-            Symbol symbol = (Symbol) value;
-            return new TapStringValue(symbol.getSymbol());
-        });
+		//Handle the special bson types, convert them to TapValue. Otherwise the unrecognized types will be converted to TapRawValue by default.
+		//Target side will not easy to handle the TapRawValue.
+		codecRegistry.registerToTapValue(ObjectId.class, (value, tapType) -> {
+			ObjectId objValue = (ObjectId) value;
+			return new TapStringValue(objValue.toHexString());
+		});
+		codecRegistry.registerToTapValue(Binary.class, (value, tapType) -> {
+			Binary binary = (Binary) value;
+			return new TapBinaryValue(binary.getData());
+		});
 
-        //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
-        codecRegistry.registerFromTapValue(TapTimeValue.class, "DATE_TIME", tapTimeValue -> tapTimeValue.getValue().toDate());
-        codecRegistry.registerFromTapValue(TapDateTimeValue.class, "DATE_TIME", tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
-        codecRegistry.registerFromTapValue(TapDateValue.class, "DATE_TIME", tapDateValue -> tapDateValue.getValue().toDate());
+		codecRegistry.registerToTapValue(Code.class, (value, tapType) -> {
+			Code code = (Code) value;
+			return new TapStringValue(code.getCode());
+		});
+		codecRegistry.registerToTapValue(Decimal128.class, (value, tapType) -> {
+			Decimal128 decimal128 = (Decimal128) value;
+			return new TapNumberValue(decimal128.doubleValue());
+		});
+		codecRegistry.registerToTapValue(Symbol.class, (value, tapType) -> {
+			Symbol symbol = (Symbol) value;
+			return new TapStringValue(symbol.getSymbol());
+		});
 
-        //Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
-        //We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.
-        codecRegistry.registerFromTapValue(TapStringValue.class, tapValue -> {
-            Object originValue = tapValue.getOriginValue();
-            if(originValue instanceof ObjectId) {
-                return originValue;
-            }
-            //If not ObjectId, use default TapValue Codec to convert.
-            return codecRegistry.getValueFromDefaultTapValueCodec(tapValue);
-        });
+		//TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
+		codecRegistry.registerFromTapValue(TapTimeValue.class, "DATE_TIME", tapTimeValue -> tapTimeValue.getValue().toDate());
+		codecRegistry.registerFromTapValue(TapDateTimeValue.class, "DATE_TIME", tapDateTimeValue -> tapDateTimeValue.getValue().toDate());
+		codecRegistry.registerFromTapValue(TapDateValue.class, "DATE_TIME", tapDateValue -> tapDateValue.getValue().toDate());
 
-        //TO be as a source, need to implement below methods.
-        connectorFunctions.supportBatchRead(this::batchRead);
-        connectorFunctions.supportBatchCount(this::batchCount);
-        connectorFunctions.supportStreamRead(this::streamRead);
-				connectorFunctions.supportTimestampToStreamOffset(this::streamOffset);
+		//Handle ObjectId when the source is also mongodb, we convert ObjectId to String before enter incremental engine.
+		//We need check the TapStringValue, when will write to mongodb, if the originValue is ObjectId, then use originValue instead of the converted String value.
+		codecRegistry.registerFromTapValue(TapStringValue.class, tapValue -> {
+			Object originValue = tapValue.getOriginValue();
+			if (originValue instanceof ObjectId) {
+				return originValue;
+			}
+			//If not ObjectId, use default TapValue Codec to convert.
+			return codecRegistry.getValueFromDefaultTapValueCodec(tapValue);
+		});
+
+		//TO be as a source, need to implement below methods.
+		connectorFunctions.supportBatchRead(this::batchRead);
+		connectorFunctions.supportBatchCount(this::batchCount);
+		connectorFunctions.supportCreateIndex(this::createIndex);
+		connectorFunctions.supportStreamRead(this::streamRead);
+		connectorFunctions.supportTimestampToStreamOffset(this::streamOffset);
 //        connectorFunctions.supportStreamOffset((connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer) -> streamOffset(connectorContext, tableList, offsetStartTime, offsetOffsetTimeConsumer));
-    }
+	}
 
-    public void onStart(TapConnectionContext connectionContext) throws Throwable {
-				final DataMap connectionConfig = connectionContext.getConnectionConfig();
-				if (MapUtils.isEmpty(connectionConfig)) {
-						throw new RuntimeException(String.format("connection config cannot be empty %s", connectionConfig));
+	private void createIndex(TapConnectorContext tapConnectorContext, TapTable table, TapCreateIndexEvent tapCreateIndexEvent) {
+		final List<TapIndex> indexList = tapCreateIndexEvent.getIndexList();
+		if (CollectionUtils.isNotEmpty(indexList)) {
+			for (TapIndex tapIndex : indexList) {
+				final List<TapIndexField> indexFields = tapIndex.getIndexFields();
+				if (CollectionUtils.isNotEmpty(indexFields)) {
+					final MongoCollection<Document> collection = mongoDatabase.getCollection(table.getName());
+					Document keys = new Document();
+					for (TapIndexField indexField : indexFields) {
+						keys.append(indexField.getName(), 1);
+					}
+					final IndexOptions indexOptions = new IndexOptions();
+					if (EmptyKit.isNotEmpty(tapIndex.getName())) {
+						indexOptions.name(tapIndex.getName());
+					}
+					collection.createIndex(keys, indexOptions);
 				}
-				mongoConfig = MongodbConfig.load(connectionConfig);
-				if (mongoConfig == null) {
-						throw new RuntimeException(String.format("load mongo config failed from connection config %s", connectionConfig));
-				}
-				if (mongoClient == null) {
-						try {
-								mongoClient = MongoClients.create(mongoConfig.getUri());
-								mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
-						} catch (Throwable e) {
-								throw new RuntimeException(String.format("create mongodb connection failed %s, mongo config %s, connection config %s", e.getMessage(), mongoConfig, connectionConfig), e);
-						}
-				}
-    }
+			}
+		}
+	}
 
-    private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
-        getMongoCollection(dropTableEvent.getTableId()).drop();
+	private String memoryFetcher(List<String> mapKeys, String level) {
+		ParagraphFormatter paragraphFormatter = new ParagraphFormatter(MongodbConnector.class.getSimpleName());
+		paragraphFormatter.addRow("MongoConfig", mongoConfig != null ? mongoConfig.getDatabase() : null);
+		return paragraphFormatter.toString();
+	}
 
-    }
+	public void onStart(TapConnectionContext connectionContext) throws Throwable {
+		final DataMap connectionConfig = connectionContext.getConnectionConfig();
+		if (MapUtils.isEmpty(connectionConfig)) {
+			throw new RuntimeException(String.format("connection config cannot be empty %s", connectionConfig));
+		}
+		mongoConfig = MongodbConfig.load(connectionConfig);
+		if (mongoConfig == null) {
+			throw new RuntimeException(String.format("load mongo config failed from connection config %s", connectionConfig));
+		}
+		if (mongoClient == null) {
+			try {
+				mongoClient = MongodbUtil.createMongoClient(mongoConfig);
+				mongoDatabase = mongoClient.getDatabase(mongoConfig.getDatabase());
+			} catch (Throwable e) {
+				throw new RuntimeException(String.format("create mongodb connection failed %s, mongo config %s, connection config %s", e.getMessage(), mongoConfig, connectionConfig), e);
+			}
+		}
+	}
+
+	private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) throws Throwable {
+		getMongoCollection(dropTableEvent.getTableId()).drop();
+
+	}
 
 //    Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) throws Throwable {
 //        //If don't support return stream offset by offsetStartTime, please throw NotSupportedException to let Flow engine knows, otherwise the result will be unpredictable.
@@ -344,268 +414,271 @@ public class MongodbConnector extends ConnectorBase {
 //    }
 
 
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(needCreateTable)
-     *      createTable
-     *  if(needClearTable)
-     *      clearTable
-     *  if(needDropTable)
-     *      dropTable
-     *  writeRecord
-     * -> destroy -> ended
-     *
-     * @param connectorContext
-     * @param tapRecordEvents
-     * @param writeListResultConsumer
-     */
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
-				if(mongodbWriter == null){
-						mongodbWriter = new MongodbWriter();
-						mongodbWriter.onStart(mongoConfig);
-				}
-
-				mongodbWriter.writeRecord(tapRecordEvents, table, writeListResultConsumer);
-    }
-
-    private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, TapTable table, Consumer<FilterResults> consumer) {
-        MongoCollection<Document> collection = getMongoCollection(table.getId());
-        FilterResults filterResults = new FilterResults();
-        List<Bson> bsonList = new ArrayList<>();
-        DataMap match = tapAdvanceFilter.getMatch();
-        if(match != null) {
-            for (Map.Entry<String, Object> entry : match.entrySet()) {
-                bsonList.add(eq(entry.getKey(), entry.getValue()));
-            }
-        }
-        List<QueryOperator> ops = tapAdvanceFilter.getOperators();
-        if(ops != null) {
-            for(QueryOperator op : ops) {
-                switch (op.getOperator()) {
-                    case QueryOperator.GT:
-                        bsonList.add(gt(op.getKey(), op.getValue()));
-                        break;
-                    case QueryOperator.GTE:
-                        bsonList.add(gte(op.getKey(), op.getValue()));
-                        break;
-                    case QueryOperator.LT:
-                        bsonList.add(lt(op.getKey(), op.getValue()));
-                        break;
-                    case QueryOperator.LTE:
-                        bsonList.add(lte(op.getKey(), op.getValue()));
-                        break;
-                }
-            }
-        }
-
-        Integer limit = tapAdvanceFilter.getLimit();
-        if(limit == null)
-            limit = 1000;
-
-        Bson query;
-        if(bsonList.isEmpty())
-            query = new Document();
-        else
-            query = and(bsonList.toArray(new Bson[0]));
-
-        FindIterable<Document> iterable = collection.find(query).limit(limit);
-
-        Integer skip = tapAdvanceFilter.getSkip();
-        if(skip != null) {
-            iterable.skip(skip);
-        }
-
-        List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
-        if(sortOnList != null) {
-            for(SortOn sortOn : sortOnList) {
-                switch (sortOn.getSort()) {
-                    case SortOn.ASCENDING:
-                        iterable.sort(Sorts.ascending(sortOn.getKey()));
-                        break;
-                    case SortOn.DESCENDING:
-                        iterable.sort(Sorts.descending(sortOn.getKey()));
-                        break;
-                }
-            }
-        }
-				try (final MongoCursor<Document> mongoCursor = iterable.iterator()) {
-						while (mongoCursor.hasNext()) {
-								filterResults.add(mongoCursor.next());
-						}
-				}
-        consumer.accept(filterResults);
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     * if(batchEnabled)
-     * batchCount -> batchRead
-     * if(streamEnabled)
-     * streamRead
-     * -> destroy -> ended
-     * <p>
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @return
-     */
-    private long batchCount(TapConnectorContext connectorContext, TapTable table) throws Throwable {
-//        MongoCollection<Document> collection = getMongoCollection(table.getId());
-//        return collection.countDocuments();
-        return getCollectionNotAggregateCountByTableName(mongoClient, mongoConfig.getDatabase(), table.getId(), null);
-    }
-    public static long getCollectionNotAggregateCountByTableName(MongoClient mongoClient, String db, String collectionName, Document filter) {
-        long dbCount = 0L;
-        MongoDatabase database = mongoClient.getDatabase(db);
-        Document countDocument = database.runCommand(
-                new Document("count", collectionName)
-                        .append("query", filter == null ? new Document() : filter)
-        );
-
-        if (countDocument.containsKey("ok") && countDocument.containsKey("n")) {
-            if (countDocument.get("ok").equals(1d)) {
-                dbCount = Long.valueOf(countDocument.get("n") + "");
-            }
-        }
-
-        return dbCount;
-    }
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     * if(batchEnabled)
-     * batchCount -> batchRead
-     * if(streamEnabled)
-     * streamRead
-     * -> destroy -> ended
-     * <p>
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param offset
-     * @param tapReadOffsetConsumer
-     */
-    private void batchRead(TapConnectorContext connectorContext, TapTable table, Object offset, int eventBatchSize, BiConsumer<List<TapEvent>, Object> tapReadOffsetConsumer) throws Throwable {
-        List<TapEvent> tapEvents = list();
-        MongoCursor<Document> mongoCursor;
-        MongoCollection<Document> collection = getMongoCollection(table.getId());
-        final int batchSize = eventBatchSize > 0 ? eventBatchSize : 5000;
-        if (offset == null) {
-            mongoCursor = collection.find().sort(Sorts.ascending(COLLECTION_ID_FIELD)).batchSize(batchSize).iterator();
-        } else {
-            MongoBatchOffset mongoOffset = (MongoBatchOffset) offset;//fromJson(offset, MongoOffset.class);
-            Object offsetValue = mongoOffset.value();
-            if(offsetValue != null) {
-                mongoCursor = collection.find(queryCondition(COLLECTION_ID_FIELD, offsetValue)).sort(Sorts.ascending(COLLECTION_ID_FIELD))
-                        .batchSize(batchSize).iterator();
-            } else {
-                mongoCursor = collection.find().sort(Sorts.ascending(COLLECTION_ID_FIELD)).batchSize(batchSize).iterator();
-                TapLogger.warn(TAG, "Offset format is illegal {}, no offset value has been found. Final offset will be null to do the batchRead", offset);
-            }
-        }
-
-        Document lastDocument = null;
-
-        while (mongoCursor.hasNext()) {
-            lastDocument = mongoCursor.next();
-            tapEvents.add(insertRecordEvent(lastDocument, table.getId()));
-
-            if(tapEvents.size() == eventBatchSize) {
-								Object value = lastDocument.get(COLLECTION_ID_FIELD);
-								batchOffset = new MongoBatchOffset(COLLECTION_ID_FIELD, value);
-                tapReadOffsetConsumer.accept(tapEvents, batchOffset);
-                tapEvents = list();
-            }
-        }
-        if(!tapEvents.isEmpty()) {
-            tapReadOffsetConsumer.accept(tapEvents, null);
-        }
-    }
-
-    private Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
-				if (mongodbStreamReader == null){
-						mongodbStreamReader = createStreamReader();
-				}
-				return mongodbStreamReader.streamOffset(offsetStartTime);
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     * if(batchEnabled)
-     * batchCount -> batchRead
-     * if(streamEnabled)
-     * streamRead
-     * -> destroy -> ended
-     * <p>
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext //     * @param offset
-     *                         //     * @param consumer
-     */
-    private void streamRead(TapConnectorContext connectorContext, List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer) {
-				if (mongodbStreamReader == null){
-						mongodbStreamReader = createStreamReader();
-				}
-				try {
-						mongodbStreamReader.read(tableList, offset, eventBatchSize, consumer);
-				} catch (Exception e) {
-						throw new RuntimeException(e);
-				}
-
-//				consumer.asyncMethodAndNoRetry();
-    }
-    /**
-     * The method invocation life circle is below,
-     * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
-     * <p>
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     */
-    @Override
-    public void onDestroy(TapConnectionContext connectorContext) {
-    }
-
-		private MongodbStreamReader createStreamReader(){
-				final int version = MongodbUtil.getVersion(mongoClient, mongoConfig.getDatabase());
-				MongodbStreamReader mongodbStreamReader = null;
-				if (version >= 4) {
-						mongodbStreamReader = new MongodbV4StreamReader();
-				} else {
-						mongodbStreamReader = new MongodbV3StreamReader();
-				}
-				mongodbStreamReader.onStart(mongoConfig);
-				return mongodbStreamReader;
+	/**
+	 * The method invocation life circle is below,
+	 * initiated ->
+	 * if(needCreateTable)
+	 * createTable
+	 * if(needClearTable)
+	 * clearTable
+	 * if(needDropTable)
+	 * dropTable
+	 * writeRecord
+	 * -> destroy -> ended
+	 *
+	 * @param connectorContext
+	 * @param tapRecordEvents
+	 * @param writeListResultConsumer
+	 */
+	private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws Throwable {
+		if (mongodbWriter == null) {
+			mongodbWriter = new MongodbWriter(connectorContext.getGlobalStateMap());
+			mongodbWriter.onStart(mongoConfig);
 		}
 
-    @Override
-    public void onPause(TapConnectionContext connectorContext) throws Throwable {
+		mongodbWriter.writeRecord(tapRecordEvents, table, writeListResultConsumer);
+	}
+
+	private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter tapAdvanceFilter, TapTable table, Consumer<FilterResults> consumer) {
+		MongoCollection<Document> collection = getMongoCollection(table.getId());
+		FilterResults filterResults = new FilterResults();
+		List<Bson> bsonList = new ArrayList<>();
+		DataMap match = tapAdvanceFilter.getMatch();
+		if (match != null) {
+			for (Map.Entry<String, Object> entry : match.entrySet()) {
+				bsonList.add(eq(entry.getKey(), entry.getValue()));
+			}
+		}
+		List<QueryOperator> ops = tapAdvanceFilter.getOperators();
+		if (ops != null) {
+			for (QueryOperator op : ops) {
+				switch (op.getOperator()) {
+					case QueryOperator.GT:
+						bsonList.add(gt(op.getKey(), op.getValue()));
+						break;
+					case QueryOperator.GTE:
+						bsonList.add(gte(op.getKey(), op.getValue()));
+						break;
+					case QueryOperator.LT:
+						bsonList.add(lt(op.getKey(), op.getValue()));
+						break;
+					case QueryOperator.LTE:
+						bsonList.add(lte(op.getKey(), op.getValue()));
+						break;
+				}
+			}
+		}
+
+		Integer limit = tapAdvanceFilter.getLimit();
+		if (limit == null)
+			limit = 1000;
+
+		Bson query;
+		if (bsonList.isEmpty())
+			query = new Document();
+		else
+			query = and(bsonList.toArray(new Bson[0]));
+
+		FindIterable<Document> iterable = collection.find(query).limit(limit);
+
+		Integer skip = tapAdvanceFilter.getSkip();
+		if (skip != null) {
+			iterable.skip(skip);
+		}
+
+		List<SortOn> sortOnList = tapAdvanceFilter.getSortOnList();
+		if (CollectionUtils.isNotEmpty(sortOnList)) {
+			List<String> ascKeys = sortOnList.stream()
+					.filter(s -> s.getSort() == SortOn.ASCENDING)
+					.map(SortOn::getKey)
+					.collect(Collectors.toList());
+			if (CollectionUtils.isNotEmpty(ascKeys)) {
+				iterable.sort(Sorts.ascending(ascKeys));
+			}
+			List<String> descKeys = sortOnList.stream()
+					.filter(s -> s.getSort() == SortOn.DESCENDING)
+					.map(SortOn::getKey)
+					.collect(Collectors.toList());
+			if (CollectionUtils.isNotEmpty(descKeys)) {
+				iterable.sort(Sorts.descending(descKeys));
+			}
+		}
+		try (final MongoCursor<Document> mongoCursor = iterable.iterator()) {
+			while (mongoCursor.hasNext()) {
+				filterResults.add(mongoCursor.next());
+			}
+		}
+		consumer.accept(filterResults);
+	}
+
+	/**
+	 * The method invocation life circle is below,
+	 * initiated ->
+	 * if(batchEnabled)
+	 * batchCount -> batchRead
+	 * if(streamEnabled)
+	 * streamRead
+	 * -> destroy -> ended
+	 * <p>
+	 * In connectorContext,
+	 * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+	 * current instance is serving for the table from connectorContext.
+	 *
+	 * @param connectorContext
+	 * @return
+	 */
+	private long batchCount(TapConnectorContext connectorContext, TapTable table) throws Throwable {
+//        MongoCollection<Document> collection = getMongoCollection(table.getId());
+//        return collection.countDocuments();
+		return getCollectionNotAggregateCountByTableName(mongoClient, mongoConfig.getDatabase(), table.getId(), null);
+	}
+
+	public static long getCollectionNotAggregateCountByTableName(MongoClient mongoClient, String db, String collectionName, Document filter) {
+		long dbCount = 0L;
+		MongoDatabase database = mongoClient.getDatabase(db);
+		Document countDocument = database.runCommand(
+				new Document("count", collectionName)
+						.append("query", filter == null ? new Document() : filter)
+		);
+
+		if (countDocument.containsKey("ok") && countDocument.containsKey("n")) {
+			if (countDocument.get("ok").equals(1d)) {
+				dbCount = Long.valueOf(countDocument.get("n") + "");
+			}
+		}
+
+		return dbCount;
+	}
+
+	/**
+	 * The method invocation life circle is below,
+	 * initiated ->
+	 * if(batchEnabled)
+	 * batchCount -> batchRead
+	 * if(streamEnabled)
+	 * streamRead
+	 * -> destroy -> ended
+	 * <p>
+	 * In connectorContext,
+	 * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+	 * current instance is serving for the table from connectorContext.
+	 *
+	 * @param connectorContext
+	 * @param offset
+	 * @param tapReadOffsetConsumer
+	 */
+	private void batchRead(TapConnectorContext connectorContext, TapTable table, Object offset, int eventBatchSize, BiConsumer<List<TapEvent>, Object> tapReadOffsetConsumer) throws Throwable {
+		List<TapEvent> tapEvents = list();
+		MongoCursor<Document> mongoCursor;
+		MongoCollection<Document> collection = getMongoCollection(table.getId());
+		final int batchSize = eventBatchSize > 0 ? eventBatchSize : 5000;
+		if (offset == null) {
+			mongoCursor = collection.find().sort(Sorts.ascending(COLLECTION_ID_FIELD)).batchSize(batchSize).iterator();
+		} else {
+			MongoBatchOffset mongoOffset = (MongoBatchOffset) offset;//fromJson(offset, MongoOffset.class);
+			Object offsetValue = mongoOffset.value();
+			if (offsetValue != null) {
+				mongoCursor = collection.find(queryCondition(COLLECTION_ID_FIELD, offsetValue)).sort(Sorts.ascending(COLLECTION_ID_FIELD))
+						.batchSize(batchSize).iterator();
+			} else {
+				mongoCursor = collection.find().sort(Sorts.ascending(COLLECTION_ID_FIELD)).batchSize(batchSize).iterator();
+				TapLogger.warn(TAG, "Offset format is illegal {}, no offset value has been found. Final offset will be null to do the batchRead", offset);
+			}
+		}
+
+		Document lastDocument = null;
+
+		while (mongoCursor.hasNext()) {
+			if (!isAlive()) return;
+			lastDocument = mongoCursor.next();
+			tapEvents.add(insertRecordEvent(lastDocument, table.getId()));
+
+			if (tapEvents.size() == eventBatchSize) {
+				Object value = lastDocument.get(COLLECTION_ID_FIELD);
+				batchOffset = new MongoBatchOffset(COLLECTION_ID_FIELD, value);
+				tapReadOffsetConsumer.accept(tapEvents, batchOffset);
+				tapEvents = list();
+			}
+		}
+		if (!tapEvents.isEmpty()) {
+			tapReadOffsetConsumer.accept(tapEvents, null);
+		}
+	}
+
+	private Object streamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+		if (mongodbStreamReader == null) {
+			mongodbStreamReader = createStreamReader();
+		}
+		return mongodbStreamReader.streamOffset(offsetStartTime);
+	}
+
+	/**
+	 * The method invocation life circle is below,
+	 * initiated ->
+	 * if(batchEnabled)
+	 * batchCount -> batchRead
+	 * if(streamEnabled)
+	 * streamRead
+	 * -> destroy -> ended
+	 * <p>
+	 * In connectorContext,
+	 * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+	 * current instance is serving for the table from connectorContext.
+	 *
+	 * @param connectorContext //     * @param offset
+	 *                         //     * @param consumer
+	 */
+	private void streamRead(TapConnectorContext connectorContext, List<String> tableList, Object offset, int eventBatchSize, StreamReadConsumer consumer) {
+		if (mongodbStreamReader == null) {
+			mongodbStreamReader = createStreamReader();
+		}
+		try {
+			mongodbStreamReader.read(connectorContext, tableList, offset, eventBatchSize, consumer);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+
+	/**
+	 * The method invocation life circle is below,
+	 * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
+	 * <p>
+	 * In connectorContext,
+	 * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
+	 * current instance is serving for the table from connectorContext.
+	 */
+//    @Override
+//    public void onDestroy(TapConnectionContext connectionContext) {
+//    }
+	private MongodbStreamReader createStreamReader() {
+		final int version = MongodbUtil.getVersion(mongoClient, mongoConfig.getDatabase());
+		MongodbStreamReader mongodbStreamReader = null;
+		if (version >= 4) {
+			mongodbStreamReader = new MongodbV4StreamReader();
+		} else {
+			mongodbStreamReader = new MongodbV3StreamReader();
+		}
+		mongodbStreamReader.onStart(mongoConfig);
+		return mongodbStreamReader;
+	}
+
+	@Override
+	public void onStop(TapConnectionContext connectionContext) throws Throwable {
 //        if (mongoClient != null) {
 //            mongoClient.close();
 //        }
-				isShutDown.set(true);
-				if(mongodbStreamReader != null) {
-						mongodbStreamReader.onDestroy();
-						mongodbStreamReader = null;
-				}
-
-				if (mongoClient != null) {
-						mongoClient.close();
-						mongoClient = null;
-				}
-
-				if (mongodbWriter != null) {
-						mongodbWriter.onDestroy();
-						mongodbWriter = null;
-				}
+		isShutDown.set(true);
+		if (mongodbStreamReader != null) {
+			mongodbStreamReader.onDestroy();
 		}
+
+		if (mongoClient != null) {
+			mongoClient.close();
+		}
+
+		if (mongodbWriter != null) {
+			mongodbWriter.onDestroy();
+		}
+	}
 }

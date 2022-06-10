@@ -15,7 +15,6 @@ import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.*;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
-import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
@@ -27,11 +26,9 @@ import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -41,7 +38,7 @@ import java.util.function.Consumer;
  * @Description
  * @create 2022-04-25 15:09
  **/
-@TapConnectorClass("spec.json")
+@TapConnectorClass("mysql-spec.json")
 public class MysqlConnector extends ConnectorBase {
 	private static final String TAG = MysqlConnector.class.getSimpleName();
 	private static final int MAX_FILTER_RESULT_SIZE = 100;
@@ -49,15 +46,27 @@ public class MysqlConnector extends ConnectorBase {
 	private MysqlReader mysqlReader;
 	private MysqlWriter mysqlWriter;
 	private String version;
+	private String connectionTimezone;
 
-	@Override
+
+		@Override
 	public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
 		codecRegistry.registerFromTapValue(TapMapValue.class, "json", tapValue -> toJson(tapValue.getValue()));
 		codecRegistry.registerFromTapValue(TapArrayValue.class, "json", tapValue -> toJson(tapValue.getValue()));
-		codecRegistry.registerFromTapValue(TapBooleanValue.class, "tinyint(1)", TapValue::getValue);
 		codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> formatTapDateTime(tapTimeValue.getValue(), "HH:mm:ss.SSSSSS"));
-		codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> formatTapDateTime(tapDateTimeValue.getValue(), "yyyy-MM-dd HH:mm:ss.SSSSSS"));
-		codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> formatTapDateTime(tapDateValue.getValue(), "yyyy-MM-dd"));
+		codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> {
+				if (tapDateTimeValue.getValue() != null && tapDateTimeValue.getValue().getTimeZone() == null) {
+						tapDateTimeValue.getValue().setTimeZone(TimeZone.getTimeZone(this.connectionTimezone));
+				}
+				return formatTapDateTime(tapDateTimeValue.getValue(), "yyyy-MM-dd HH:mm:ss.SSSSSS");
+		});
+		codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> {
+				if (tapDateValue.getValue() != null && tapDateValue.getValue().getTimeZone() == null) {
+						tapDateValue.getValue().setTimeZone(TimeZone.getTimeZone(this.connectionTimezone));
+				}
+				return formatTapDateTime(tapDateValue.getValue(), "yyyy-MM-dd");
+		});
+		codecRegistry.registerFromTapValue(TapBooleanValue.class, "tinyint(1)", TapValue::getValue);
 
 		connectorFunctions.supportCreateTable(this::createTable);
 		connectorFunctions.supportDropTable(this::dropTable);
@@ -109,25 +118,25 @@ public class MysqlConnector extends ConnectorBase {
 			this.mysqlWriter = new MysqlJdbcOneByOneWriter(mysqlJdbcContext);
 			this.mysqlReader = new MysqlReader(mysqlJdbcContext);
 			this.version = mysqlJdbcContext.getMysqlVersion();
+			this.connectionTimezone = tapConnectionContext.getConnectionConfig().getString("timezone");
+				if ("Database Timezone".equals(this.connectionTimezone) || StringUtils.isBlank(this.connectionTimezone)) {
+						this.connectionTimezone = mysqlJdbcContext.timezone();
+				}
 		}
 	}
 
-	@Override
-	public void onDestroy(TapConnectionContext connectorContext) throws Throwable {
-		if (connectorContext instanceof TapConnectorContext) {
-			KVMap<Object> stateMap = ((TapConnectorContext) connectorContext).getStateMap();
-			stateMap.remove(MysqlReader.SERVER_NAME_KEY);
-			stateMap.remove(MysqlReader.MYSQL_SCHEMA_HISTORY);
-		}
-	}
+//	@Override
+//	public void onDestroy(TapConnectionContext connectionContext) throws Throwable {
+//	}
 
 	@Override
-	public void onPause(TapConnectionContext connectorContext) throws Throwable {
+	public void onStop(TapConnectionContext connectionContext) throws Throwable {
 		try {
 			this.mysqlJdbcContext.close();
 		} catch (Exception e) {
 			TapLogger.error(TAG, "Release connector failed, error: " + e.getMessage() + "\n" + getStackString(e));
 		}
+		Optional.ofNullable(this.mysqlReader).ifPresent(MysqlReader::close);
 		Optional.ofNullable(this.mysqlWriter).ifPresent(MysqlWriter::onDestroy);
 	}
 

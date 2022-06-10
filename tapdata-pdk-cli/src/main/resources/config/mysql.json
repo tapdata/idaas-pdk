@@ -6,9 +6,7 @@
 	"password": "tapdata",
 	"database": "tdd",
 	"timezone": "",
-	"name": "mysql connection",
-	"addtionalString": "",
-	"isShareCdc": false
+	"addtionalString": ""
   },
   "node": {
   }

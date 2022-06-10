@@ -112,8 +112,8 @@ public class ConnectorProjectBootCli extends CommonCli {
         String specPath = output + "/" + artifactId.toLowerCase() + "-connector/src/main/resources/spec.json";
         String specJson = FileUtils.readFileToString(new File(specPath), "utf8");
         JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
-        DataMap dataMap = jsonParser.fromJson(specJson);
-        DataMap propertyMap = jsonParser.fromJson(jsonParser.toJson(dataMap.get("properties")));
+        DataMap dataMap = jsonParser.fromJsonObject(specJson);
+        DataMap propertyMap = jsonParser.fromJsonObject(jsonParser.toJson(dataMap.get("properties")));
         propertyMap.put("name", artifactId);
         propertyMap.put("id", artifactId.toLowerCase());
         dataMap.put("properties", propertyMap);

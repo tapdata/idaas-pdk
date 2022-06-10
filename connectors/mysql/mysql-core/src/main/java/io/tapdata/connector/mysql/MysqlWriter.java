@@ -239,12 +239,7 @@ public abstract class MysqlWriter {
 	}
 
 	protected Collection<String> getUniqueKeys(TapTable tapTable) {
-		Collection<String> primaryKeys = tapTable.primaryKeys();
-		LinkedHashMap<String, TapField> nameFieldMap = tapTable.getNameFieldMap();
-		if (CollectionUtils.isEmpty(primaryKeys)) {
-			primaryKeys = new ArrayList<>(nameFieldMap.keySet());
-		}
-		return primaryKeys;
+		return tapTable.primaryKeys(true);
 	}
 
 	protected boolean needAddIntoPreparedStatementValues(TapField field, TapRecordEvent tapRecordEvent) {

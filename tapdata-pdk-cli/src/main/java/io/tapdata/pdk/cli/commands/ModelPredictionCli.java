@@ -3,6 +3,7 @@ package io.tapdata.pdk.cli.commands;
 import com.alibaba.fastjson.JSON;
 import io.tapdata.entity.conversion.TableFieldTypesGenerator;
 import io.tapdata.entity.conversion.TargetTypesGenerator;
+import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.mapping.DefaultExpressionMatchingMap;
 import io.tapdata.entity.mapping.TypeExprResult;
 import io.tapdata.entity.mapping.type.*;
@@ -11,7 +12,6 @@ import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.simplify.pretty.BiClassHandlers;
-import io.tapdata.entity.simplify.pretty.ClassHandlers;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.cache.KVMap;
@@ -43,8 +43,6 @@ import java.text.MessageFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static io.tapdata.entity.simplify.TapSimplify.*;
 
@@ -140,7 +138,42 @@ public class ModelPredictionCli extends CommonCli {
                 TapNodeSpecification specification = nodeInfo.getTapNodeSpecification();
                 String dagId = UUID.randomUUID().toString();
                 KVMap<TapTable> kvMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(dagId, TapTable.class);
-                KVMap<Object> stateMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(dagId, Object.class);
+                KVMap<Object> stateMap = new KVMap<Object>() {
+                    @Override
+                    public void init(String mapKey, Class<Object> valueClass) {
+
+                    }
+
+                    @Override
+                    public void put(String key, Object o) {
+
+                    }
+
+                    @Override
+                    public Object putIfAbsent(String key, Object o) {
+                        return null;
+                    }
+
+                    @Override
+                    public Object remove(String key) {
+                        return null;
+                    }
+
+                    @Override
+                    public void clear() {
+
+                    }
+
+                    @Override
+                    public void reset() {
+
+                    }
+
+                    @Override
+                    public Object get(String key) {
+                        return null;
+                    }
+                };//InstanceFactory.instance(KVMapFactory.class).getCacheMap(dagId, Object.class);
                 ConnectorNode node = PDKIntegration.createConnectorBuilder()
                         .withDagId(dagId)
                         .withAssociateId("test")
@@ -149,6 +182,7 @@ public class ModelPredictionCli extends CommonCli {
                         .withVersion(specification.getVersion())
                         .withTableMap(kvMap)
                         .withStateMap(stateMap)
+                        .withGlobalStateMap(stateMap)
                         .build();
                 PDKInvocationMonitor.getInstance().invokePDKMethod(node, PDKMethod.REGISTER_CAPABILITIES,
                         node::registerCapabilities,
@@ -162,6 +196,7 @@ public class ModelPredictionCli extends CommonCli {
             TapTable generatedTable = generateAllTypesTable(sourceNode);
             if(generatedTable == null)
                 throw new NullPointerException("Generate all types for source " + sourceNode + " failed");
+
             for(ConnectorNode targetNode : connectorNodes) {
                 if(!sourceNode.equals(targetNode)) {
                     TapResult<LinkedHashMap<String, TapField>> result = InstanceFactory.instance(TargetTypesGenerator.class).convert(generatedTable.getNameFieldMap(), targetNode.getConnectorContext().getSpecification().getDataTypesMap(), targetNode.getCodecsFilterManager());
@@ -171,24 +206,62 @@ public class ModelPredictionCli extends CommonCli {
                 }
             }
         }
-        writeWorkbook();
+        String file = writeWorkbook();
+        TapLogger.info(TAG, "Excel file has been written in {}", file);
+        System.exit(1);
         return 0;
     }
 
-    private void writeWorkbook() {
+    private void specialDataTypesToTest(ConnectorNode sourceNode, TapTable generatedTable) {
+        if(sourceNode.getConnectorContext().getSpecification().getId().equals("mysql")) {
+            generatedTable.add(field("special_int(11)", "int(11)"));
+            generatedTable.add(field("special_enum()", "enum('03TapMongoDB','04TapDB2','05TapPostgres','06TapSqlserver')"));
+            generatedTable.add(field("special_mediumint(9)", "mediumint(9)"));
+            generatedTable.add(field("special_mediumint(8)_unsigned", "mediumint(8) unsigned"));
+            generatedTable.add(field("special_tinyint(4)", "tinyint(4)"));
+            generatedTable.add(field("special_tinyint(3)_unsigned", "tinyint(3) unsigned"));
+            generatedTable.add(field("special_tinyint(1)", "tinyint(1)"));
+            generatedTable.add(field("special_bit(1)", "bit(1)"));
+            generatedTable.add(field("special_bit(32)", "bit(32)"));
+            generatedTable.add(field("special_bit(64)", "bit(64)"));
+            generatedTable.add(field("special_smallint(6)", "smallint(6)"));
+            generatedTable.add(field("special_smallint(5)_unsigned", "smallint(5) unsigned"));
+            generatedTable.add(field("special_mediumint(9)", "mediumint(9)"));
+            generatedTable.add(field("special_mediumint(8)_unsigned", "mediumint(8) unsigned"));
+            generatedTable.add(field("special_int(10)_unsigned", "int(10) unsigned"));
+            generatedTable.add(field("special_bigint(20)", "bigint(20)"));
+            generatedTable.add(field("special_bigint(20)_unsigned", "bigint(20) unsigned"));
+            generatedTable.add(field("special_varbinary(10)", "varbinary(10)"));
+            generatedTable.add(field("special_varbinary(255)", "varbinary(255)"));
+            generatedTable.add(field("special_set()", "set('03TapMongoDB','04TapDB2','05TapPostgres')"));
+            generatedTable.add(field("special_char(10)", "char(10)"));
+            generatedTable.add(field("special_char(255)", "char(255)"));
+            generatedTable.add(field("special_varchar(10)", "varchar(10)"));
+            generatedTable.add(field("special_varchar(255)", "varchar(255)"));
+        }
+
+        if(sourceNode.getConnectorContext().getSpecification().getId().equals("mongodb")) {
+            generatedTable.add(field("special_string_id_primary", "string").primaryKeyPos(generatedTable.getNameFieldMap().size()));
+        }
+    }
+
+    private String writeWorkbook() {
         if(workbook == null)
-            return;
+            return null;
+        String file = output + "TypesMappingReport_" + dateTime() + ".xlsx";
         try
         {
             //Write the workbook in file system
-            FileOutputStream out = FileUtils.openOutputStream(new File(output + "TypesMappingReport_" + dateTime() + ".xlsx"));
+            FileOutputStream out = FileUtils.openOutputStream(new File(file));
             workbook.write(out);
             out.close();
         }
         catch (Exception e)
         {
             e.printStackTrace();
+            throw new RuntimeException(e);
         }
+        return file;
     }
 
     private String dateTime() {
@@ -209,19 +282,23 @@ public class ModelPredictionCli extends CommonCli {
         Map<String, Object[]> data = new LinkedHashMap<>();
         String sourceName = sourceNode.getConnectorContext().getSpecification().getName();
         String targetName = targetNode.getConnectorContext().getSpecification().getName();
-        data.put("1", new Object[] {"No.", sourceName + " type", sourceName + " model", targetName + " type", targetName + " model"});
+        data.put("1", new Object[] {"No.", "Field name", sourceName + " type", sourceName + " tap type", sourceName + " params", sourceName + " expression", sourceName + " model", " to ", targetName + " model", targetName + " type", targetName + " tap type", targetName + " params", targetName + " expression"});
         Set<Map.Entry<String, TapField>> entries = sourceNameFieldMap.entrySet();
         int index = 0;
         for(Map.Entry<String, TapField> entry : entries) {
             TapField targetField = targetNameFieldMap.get(entry.getKey());
-            data.put(String.valueOf(index + 2), new Object[] {index + 1,
-                    getDataTypeName(sourceNode, entry.getValue()), entry.getValue().getDataType(),
-                    getDataTypeName(targetNode, targetField), targetField.getDataType()
+            data.put(String.valueOf(index + 2), new Object[] {index + 1, entry.getKey(),
+                    getDataTypeName(sourceNode, entry.getValue()), getTapType(sourceNode, entry.getValue()), getParams(sourceNode, entry.getValue()), getExpression(sourceNode, entry.getValue()), entry.getValue().getDataType(),
+                    "-->",
+                    targetField.getDataType(), getDataTypeName(targetNode, targetField), getTapType(targetNode, targetField), getParams(targetNode, targetField), getExpression(targetNode, targetField),
             });
             index++;
         }
-        int sourceCommendIndex = 2;
-        int targetCommendIndex = 4;
+        int sourceCommendIndex = 6;
+        int targetCommendIndex = 8;
+
+        int sourceParamsIndex = 4;
+        int targetParamsIndex = 11;
 
         //https://www.baeldung.com/apache-poi-change-cell-font
         //Iterate over data and write to sheet
@@ -234,8 +311,16 @@ public class ModelPredictionCli extends CommonCli {
             int cellnum = 0;
             for (Object obj : objArr)
             {
+                CellStyle cellStyle = workbook.createCellStyle();
+
                 Cell cell = row.createCell(cellnum++);
-                sheet.autoSizeColumn(cellnum - 1);
+//                sheet.setDefaultRowHeight((short) 2000);
+                if(cellnum - 1 == sourceParamsIndex || cellnum - 1 == targetParamsIndex) {
+                    sheet.setColumnWidth(cellnum - 1, 4000);
+//                    cellStyle.setAlignment(HorizontalAlignment.LEFT);
+                } else {
+                    sheet.autoSizeColumn(cellnum - 1);
+                }
                 if(sourceCommendIndex == cellnum - 1) {
                     TypeExprResult<DataMap> result = addCellComment(creationHelper, drawing, cell, sourceNode, (String)obj);
                 }
@@ -243,8 +328,6 @@ public class ModelPredictionCli extends CommonCli {
                     TypeExprResult<DataMap> result = addCellComment(creationHelper, drawing, cell, targetNode, (String)obj);
                 }
 
-
-                CellStyle cellStyle = workbook.createCellStyle();
                 if(sourceCommendIndex == cellnum  - 1 || targetCommendIndex == cellnum  - 1) {
                     cellStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
                     cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -263,6 +346,35 @@ public class ModelPredictionCli extends CommonCli {
             }
         }
 
+    }
+    private Object getExpression(ConnectorNode connectorNode, TapField field) {
+        TypeExprResult<DataMap> result = connectorNode.getConnectorContext().getSpecification().getDataTypesMap().get(field.getDataType());
+        if(result == null)
+            return null;
+        return result.getExpression();
+    }
+    private Object getParams(ConnectorNode connectorNode, TapField field) {
+        TypeExprResult<DataMap> result = connectorNode.getConnectorContext().getSpecification().getDataTypesMap().get(field.getDataType());
+        if(result == null)
+            return null;
+        Object value = result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+        if(value instanceof TapMapping) {
+            TapMapping map = (TapMapping) value;
+            return JSON.toJSONString(map, true);
+        }
+        return null;
+    }
+
+    private Object getTapType(ConnectorNode connectorNode, TapField field) {
+        TypeExprResult<DataMap> result = connectorNode.getConnectorContext().getSpecification().getDataTypesMap().get(field.getDataType());
+        if(result == null)
+            return null;
+        Object value = result.getValue().get(TapMapping.FIELD_TYPE_MAPPING);
+        if(value instanceof TapMapping) {
+            TapMapping map = (TapMapping) value;
+            return map.getTo();
+        }
+        return null;
     }
 
     private String getDataTypeName(ConnectorNode connectorNode, TapField field) {
@@ -497,24 +609,20 @@ public class ModelPredictionCli extends CommonCli {
         ) {
             needEmpty = false;
             TapResult<String> result;
-            result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale()));
-            if(result != null && result.getResult() != TapResult.RESULT_FAILED)
-                fields.add(result.getData());
             result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMinScale()));
             if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                 fields.add(result.getData());
-            result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMinPrecision()).scale(numberMapping.getMaxScale()));
-            if(result != null && result.getResult() != TapResult.RESULT_FAILED)
-                fields.add(result.getData());
-            result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMinPrecision()).scale(numberMapping.getMinScale()));
-            if(result != null && result.getResult() != TapResult.RESULT_FAILED)
-                fields.add(result.getData());
+            if(numberMapping.getMaxScale() / 2 > numberMapping.getMinScale()) {
+                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale() / 2));
+                if(result != null && result.getResult() != TapResult.RESULT_FAILED)
+                    fields.add(result.getData());
+            }
             if(numberMapping.getUnsigned() != null) {
-                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale()).unsigned(true));
+                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMinScale()).unsigned(true));
                 if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                     fields.add(result.getData());
 
-                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMaxScale()).unsigned(false));
+                result = numberMapping.fromTapType(tableExpressionWrapper.expression, new TapNumber().precision(numberMapping.getMaxPrecision()).scale(numberMapping.getMinScale()).unsigned(false));
                 if(result != null && result.getResult() != TapResult.RESULT_FAILED)
                     fields.add(result.getData());
             }
@@ -578,6 +686,7 @@ public class ModelPredictionCli extends CommonCli {
             fillTestFields(tapTable, expression, tapMapping);
             return false;
         }, DefaultExpressionMatchingMap.ITERATE_TYPE_PREFIX_ONLY);
+        specialDataTypesToTest(node, tapTable);
         InstanceFactory.instance(TableFieldTypesGenerator.class).autoFill(tapTable.getNameFieldMap(), expressionMatchingMap);
         return tapTable;
     }

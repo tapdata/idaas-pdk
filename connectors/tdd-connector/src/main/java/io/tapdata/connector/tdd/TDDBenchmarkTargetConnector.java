@@ -266,14 +266,14 @@ public class TDDBenchmarkTargetConnector extends ConnectorBase {
      * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
      * current instance is serving for the table from connectorContext.
      */
+//    @Override
+//    public void onDestroy(TapConnectionContext connectionContext) {
+//        //TODO release resources
+//        isShutDown.set(true);
+//    }
+
     @Override
-    public void onDestroy(TapConnectionContext connectorContext) {
-        //TODO release resources
+    public void onStop(TapConnectionContext connectionContext) throws Throwable {
         isShutDown.set(true);
-    }
-
-    @Override
-    public void onPause(TapConnectionContext connectorContext) throws Throwable {
-
     }
 }

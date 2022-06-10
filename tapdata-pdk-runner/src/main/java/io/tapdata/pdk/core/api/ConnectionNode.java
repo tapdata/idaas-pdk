@@ -5,7 +5,6 @@ import io.tapdata.pdk.apis.TapConnectorNode;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -26,8 +25,8 @@ public class ConnectionNode extends Node {
         connectorNode.init(connectionContext);
     }
 
-    public void connectorDestroy() throws Throwable {
-        connectorNode.destroy(connectionContext);
+    public void connectorStop() throws Throwable {
+        connectorNode.stop(connectionContext);
     }
     public TapConnectorNode getConnectorNode() {
         return connectorNode;

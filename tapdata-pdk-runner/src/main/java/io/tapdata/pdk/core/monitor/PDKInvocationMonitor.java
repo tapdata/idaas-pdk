@@ -2,13 +2,17 @@ package io.tapdata.pdk.core.monitor;
 
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.error.CoreException;
+import io.tapdata.entity.utils.ParagraphFormatter;
 import io.tapdata.pdk.core.api.ConnectorNode;
 import io.tapdata.pdk.core.api.Node;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
+import io.tapdata.pdk.core.memory.MemoryFetcher;
+import io.tapdata.pdk.core.memory.MemoryMap;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +22,7 @@ import java.util.function.Consumer;
 /**
  * TODO start monitor thread for checking slow invocation
  */
-public class PDKInvocationMonitor {
+public class PDKInvocationMonitor implements MemoryFetcher {
     private static final String TAG = PDKInvocationMonitor.class.getSimpleName();
     private static volatile PDKInvocationMonitor instance = new PDKInvocationMonitor();
     private static final Object lock = new int[0];
@@ -161,5 +165,16 @@ public class PDKInvocationMonitor {
             id = Long.toHexString(System.currentTimeMillis()) + Long.toHexString(counter.getAndIncrement());
         }
         System.out.println("takes " + (System.currentTimeMillis() - time) + " id " + id);
+    }
+
+    @Override
+    public String memory(List<String> mapKeys, String memoryLevel) {
+        ParagraphFormatter paragraphFormatter = new ParagraphFormatter(PDKInvocationMonitor.class.getSimpleName());
+        for(Map.Entry<PDKMethod, InvocationCollector> entry : methodInvocationCollectorMap.entrySet()) {
+            if(mapKeys != null && !mapKeys.isEmpty() && !mapKeys.contains(entry.getKey().name()))
+                continue;
+            paragraphFormatter.addRow(entry.getKey().name(), entry.getValue().toMemoryString(memoryLevel));
+        }
+        return paragraphFormatter.toString();
     }
 }

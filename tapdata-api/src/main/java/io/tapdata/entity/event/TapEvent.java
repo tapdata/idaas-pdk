@@ -72,4 +72,12 @@ public abstract class TapEvent implements Serializable {
             tapEvent.traceMap = new ConcurrentHashMap<>(traceMap);
     }
 
+    @Override
+    public String toString() {
+        return "TapEvent{" +
+                "time=" + time +
+                ", info=" + info +
+                ", traceMap=" + traceMap +
+                '}';
+    }
 }

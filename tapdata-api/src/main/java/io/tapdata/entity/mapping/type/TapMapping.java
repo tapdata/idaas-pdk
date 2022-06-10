@@ -14,6 +14,9 @@ public abstract class TapMapping {
     public static final String FIELD_TYPE_MAPPING = "_tapMapping";
     private static final String TAG = TapMapping.class.getSimpleName();
 
+    public static final BigDecimal MIN_SCORE = BigDecimal.valueOf(10).pow(10000).negate();
+    public static final BigDecimal MAX_SCORE = BigDecimal.valueOf(10).pow(10000);
+
     protected String name;
     protected String to;
     protected Boolean queryOnly = false;
@@ -167,10 +170,11 @@ public abstract class TapMapping {
         if (pos >= 0) {
             int startPos = typeExpression.lastIndexOf("[", pos);
             if (startPos >= 0) {
-                typeExpression = typeExpression.substring(0, startPos) + (needSpace ? " " : "") + typeExpression.substring(startPos + 1);
-
                 int endPos = typeExpression.indexOf("]", pos);
                 if (endPos >= 0) {
+                    typeExpression = typeExpression.substring(0, startPos) + (needSpace ? " " : "") + typeExpression.substring(startPos + 1);
+
+                    endPos = typeExpression.indexOf("]", pos);
                     typeExpression = typeExpression.substring(0, endPos) + typeExpression.substring(endPos + 1);
                 }
             }

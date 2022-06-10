@@ -1,22 +1,33 @@
 package io.tapdata.mongodb;
 
 import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import io.tapdata.entity.logger.TapLogger;
-import org.apache.commons.lang3.StringUtils;
+import io.tapdata.kit.EmptyKit;
+import io.tapdata.kit.StringKit;
+import io.tapdata.mongodb.entity.MongodbConfig;
+import io.tapdata.mongodb.util.SSLUtil;
+import org.apache.commons.collections4.CollectionUtils;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -24,6 +35,8 @@ import java.util.stream.IntStream;
  * @date 2022/5/17 20:40
  **/
 public class MongodbUtil {
+
+		public final static String SUB_COLUMN_NAME = "__tapd8";
 
 		private static final int SAMPLE_SIZE_BATCH_SIZE = 1000;
 
@@ -90,7 +103,7 @@ public class MongodbUtil {
 						String replicaSetName = replicaSetUsedIn(hostStr);
 						String addresses = hostStr.split("/")[1];
 						StringBuilder sb = new StringBuilder();
-						if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
+						if (EmptyKit.isNotEmpty(username) && EmptyKit.isNotEmpty(password)) {
 								try {
 										sb.append("mongodb://").append(URLEncoder.encode(connectionString.getUsername(), "UTF-8")).append(":").append(URLEncoder.encode(String.valueOf(password), "UTF-8")).append("@").append(addresses).append("/").append(database);
 								} catch (UnsupportedEncodingException e) {
@@ -99,7 +112,7 @@ public class MongodbUtil {
 						} else {
 								sb.append("mongodb://").append(addresses).append("/").append(database);
 						}
-						if (StringUtils.isNotBlank(mongoDBURIOptions)) {
+						if (EmptyKit.isNotBlank(mongoDBURIOptions)) {
 								sb.append("?").append(mongoDBURIOptions);
 						}
 						nodeConnURIs.put(replicaSetName, sb.toString());
@@ -122,12 +135,12 @@ public class MongodbUtil {
 										String replicaSetName = document.getString("set");
 
 										StringBuilder uriSB = new StringBuilder();
-										if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+										if (EmptyKit.isNotBlank(username) && EmptyKit.isNotBlank(password)) {
 												uriSB.append("mongodb://").append(URLEncoder.encode(username, "UTF-8")).append(":").append(URLEncoder.encode(password, "UTF-8")).append("@").append(addressStr).append("/").append(database);
 										} else {
 												uriSB.append("mongodb://").append(addressStr).append("/").append(database);
 										}
-										if (StringUtils.isNotBlank(mongoDBURIOptions)) {
+										if (EmptyKit.isNotBlank(mongoDBURIOptions)) {
 												uriSB.append("?").append(mongoDBURIOptions);
 										}
 										nodeConnURIs.put(replicaSetName, uriSB.toString());
@@ -138,7 +151,7 @@ public class MongodbUtil {
 
 										for (String address : connectionString.getHosts()) {
 												StringBuilder sb = new StringBuilder();
-												if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+												if (EmptyKit.isNotBlank(username) && EmptyKit.isNotBlank(password)) {
 														try {
 																sb.append("mongodb://").append(URLEncoder.encode(username, "UTF-8")).append(":").append(URLEncoder.encode(password, "UTF-8")).append("@").append(address).append("/").append(database);
 														} catch (UnsupportedEncodingException ex) {
@@ -147,7 +160,7 @@ public class MongodbUtil {
 												} else {
 														sb.append("mongodb://").append(address).append("/").append(database);
 												}
-												if (StringUtils.isNotBlank(mongoDBURIOptions)) {
+												if (EmptyKit.isNotBlank(mongoDBURIOptions)) {
 														sb.append("?").append(mongoDBURIOptions);
 												}
 												nodeConnURIs.put(replicaSetName, sb.toString());
@@ -174,7 +187,7 @@ public class MongodbUtil {
 				String options = null;
 				try {
 
-						if (StringUtils.isNotBlank(databaseUri)) {
+						if (EmptyKit.isNotBlank(databaseUri)) {
 								String[] split = databaseUri.split("\\?", 2);
 								if (split.length == 2) {
 										options = split[1];
@@ -189,7 +202,7 @@ public class MongodbUtil {
 		}
 
 		public static String maskUriPassword(String mongodbUri) {
-				if (StringUtils.isNotBlank(mongodbUri)) {
+				if (EmptyKit.isNotBlank(mongodbUri)) {
 						try {
 								ConnectionString connectionString = new ConnectionString(mongodbUri);
 								MongoCredential credentials = connectionString.getCredential();
@@ -199,7 +212,7 @@ public class MongodbUtil {
 												String pass = new String(password);
 												pass = URLEncoder.encode(pass, "UTF-8");
 
-												mongodbUri = StringUtils.replaceOnce(mongodbUri, pass + "@", "******@");
+												mongodbUri = StringKit.replaceOnce(mongodbUri, pass + "@", "******@");
 										}
 								}
 
@@ -226,8 +239,110 @@ public class MongodbUtil {
 				return serverDate != null ? serverDate.getTime() : 0;
 		}
 
-		public static void main(String[] args) {
-				ConnectionString connectionString = new ConnectionString("mongodb://root:Gotapd8@192.168.1.183:23221/target?authSource=admin");
-				System.out.println(connectionString);
+		public static String mongodbKeySpecialCharHandler(String key, String replacement) {
+
+				if (EmptyKit.isNotBlank(key)) {
+						if (key.startsWith("$")) {
+								key = key.replaceFirst("\\$", replacement);
+						}
+
+						if (key.contains(".") && !key.startsWith(SUB_COLUMN_NAME + ".")) {
+								key = key.replaceAll("\\.", replacement);
+						}
+
+						if (key.contains(" ")) {
+								key = key.replaceAll(" ", replacement);
+						}
+				}
+
+				return key;
+		}
+
+		public static MongoClient createMongoClient(MongodbConfig mongodbConfig) {
+				final MongoClientSettings.Builder builder = MongoClientSettings.builder();
+				String mongodbUri = mongodbConfig.getUri();
+				builder.applyConnectionString(new ConnectionString(mongodbUri));
+
+				if (mongodbConfig.isSsl()) {
+						if (EmptyKit.isNotEmpty(mongodbUri) &&
+										(mongodbUri.indexOf("tlsAllowInvalidCertificates=true") > 0 ||
+														mongodbUri.indexOf("sslAllowInvalidCertificates=true") > 0)) {
+								builder.applyToSslSettings(sslSettingBuilder -> {
+										SSLContext sslContext = null;
+										try {
+												sslContext = SSLContext.getInstance("SSL");
+										} catch (NoSuchAlgorithmException e) {
+												throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
+										}
+										try {
+												sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+														@Override
+														public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+														}
+
+														@Override
+														public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+														}
+
+														@Override
+														public X509Certificate[] getAcceptedIssuers() {
+																return null;
+														}
+												}}, new SecureRandom());
+										} catch (KeyManagementException e) {
+												throw new RuntimeException(String.format("Initialize ssl context failed %s", e.getMessage()), e);
+										}
+										sslSettingBuilder.enabled(true).context(sslContext).invalidHostNameAllowed(true);
+								});
+
+						} else {
+								sslMongoClientOption(mongodbConfig.isSslValidate(), mongodbConfig.getSslCA(), mongodbConfig.getSslCA(),
+												mongodbConfig.getSslKey(), mongodbConfig.getSslPass(), mongodbConfig.getCheckServerIdentity(), builder);
+						}
+				}
+
+				return MongoClients.create(builder.build());
+		}
+
+		public static void sslMongoClientOption(boolean sslValidate, String sslCA, String sslCert, String sslKeyStr, String sslPass,
+																						boolean checkServerIdentity, MongoClientSettings.Builder builder){
+
+
+				List<String> certificates = SSLUtil.retriveCertificates(sslCert);
+				String sslKey = SSLUtil.retrivePrivateKey(sslKeyStr);
+				if (EmptyKit.isNotBlank(sslKey) && CollectionUtils.isNotEmpty(certificates)) {
+
+						builder.applyToSslSettings(sslSettingsBuilder -> {
+								List<String> trustCertificates = null;
+								if (sslValidate) {
+										trustCertificates = SSLUtil.retriveCertificates(sslCA);
+								}
+								SSLContext sslContext = null;
+								try {
+										sslContext = SSLUtil.createSSLContext(sslKey, certificates, trustCertificates, sslPass);
+								} catch (Exception e) {
+										throw new RuntimeException(String.format("Create ssl context failed %s", e.getMessage()), e);
+								}
+								sslSettingsBuilder.context(sslContext);
+								sslSettingsBuilder.enabled(true);
+								sslSettingsBuilder.invalidHostNameAllowed(!checkServerIdentity);
+						});
+				}
+		}
+
+		public static String getSimpleMongodbUri(ConnectionString connectionString) {
+				if (connectionString == null) {
+						return "";
+				}
+
+				String uri = "mongodb://";
+
+				uri += connectionString.getHosts().stream().collect(Collectors.joining(",")).trim();
+
+				if (EmptyKit.isNotBlank(connectionString.getDatabase())) {
+						uri += "/" + connectionString.getDatabase();
+				}
+
+				return uri;
 		}
 }

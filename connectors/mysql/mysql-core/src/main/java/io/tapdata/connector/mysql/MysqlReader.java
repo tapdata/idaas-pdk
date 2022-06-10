@@ -15,22 +15,27 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
+import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
+import io.tapdata.entity.schema.type.TapDate;
+import io.tapdata.entity.schema.type.TapDateTime;
+import io.tapdata.entity.schema.type.TapType;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.entity.utils.cache.KVMap;
+import io.tapdata.entity.utils.cache.KVReadOnlyMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.storage.OffsetUtils;
-import org.codehaus.plexus.util.StringUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -63,6 +68,7 @@ public class MysqlReader implements Closeable {
 	private ExecutorService streamConsumerThreadPool;
 	private StreamReadConsumer streamReadConsumer;
 	private ScheduledExecutorService mysqlSchemaHistoryMonitor;
+	private KVReadOnlyMap<TapTable> tapTableMap;
 
 	public MysqlReader(MysqlJdbcContext mysqlJdbcContext) {
 		this.mysqlJdbcContext = mysqlJdbcContext;
@@ -73,14 +79,11 @@ public class MysqlReader implements Closeable {
 							   Predicate<?> stop, BiConsumer<Map<String, Object>, MysqlSnapshotOffset> consumer) throws Throwable {
 		SqlMaker sqlMaker = new MysqlMaker();
 		String sql = sqlMaker.selectSql(tapConnectorContext, tapTable, mysqlSnapshotOffset);
-		Collection<String> pks = tapTable.primaryKeys();
+		Collection<String> pks = tapTable.primaryKeys(true);
 		AtomicLong row = new AtomicLong(0L);
 		this.mysqlJdbcContext.queryWithStream(sql, rs -> {
 			ResultSetMetaData metaData = rs.getMetaData();
-			while (rs.next()) {
-				if (null != stop && stop.test(null)) {
-					break;
-				}
+			while ((null == stop || !stop.test(null)) && rs.next()) {
 				row.incrementAndGet();
 				Map<String, Object> data = new HashMap<>();
 				for (int i = 0; i < metaData.getColumnCount(); i++) {
@@ -131,6 +134,7 @@ public class MysqlReader implements Closeable {
 						   Object offset, int batchSize, StreamReadConsumer consumer) throws Throwable {
 		try {
 			initDebeziumServerName(tapConnectorContext);
+			this.tapTableMap = tapConnectorContext.getTableMap();
 			String offsetStr = "";
 			JsonParser jsonParser = InstanceFactory.instance(JsonParser.class);
 			MysqlStreamOffset mysqlStreamOffset = null;
@@ -153,7 +157,7 @@ public class MysqlReader implements Closeable {
 			initMysqlSchemaHistory(tapConnectorContext);
 			this.mysqlSchemaHistoryMonitor = new ScheduledThreadPoolExecutor(1);
 			this.mysqlSchemaHistoryMonitor.scheduleAtFixedRate(() -> saveMysqlSchemaHistory(tapConnectorContext),
-					1L, 1L, TimeUnit.MINUTES);
+					10L, 10L, TimeUnit.SECONDS);
 			Configuration.Builder builder = Configuration.create()
 					.with("name", serverName)
 					.with("connector.class", "io.debezium.connector.mysql.MySqlConnector")
@@ -169,7 +173,8 @@ public class MysqlReader implements Closeable {
 					.with(MySqlConnectorConfig.SNAPSHOT_LOCKING_MODE, MySqlConnectorConfig.SnapshotLockingMode.NONE)
 					.with("max.queue.size", batchSize * 8)
 					.with("max.batch.size", batchSize)
-					.with(MySqlConnectorConfig.SERVER_ID, randomServerId());
+					.with(MySqlConnectorConfig.SERVER_ID, randomServerId())
+					.with("time.precision.mode", "adaptive_time_microseconds");
 			List<String> dbTableNames = tables.stream().map(t -> database + "." + t).collect(Collectors.toList());
 			builder.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, database);
 			builder.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, String.join(",", dbTableNames));
@@ -226,6 +231,7 @@ public class MysqlReader implements Closeable {
 		} finally {
 			Optional.ofNullable(streamConsumerThreadPool).ifPresent(ExecutorService::shutdownNow);
 			Optional.ofNullable(mysqlSchemaHistoryMonitor).ifPresent(ExecutorService::shutdownNow);
+			TapLogger.info(TAG, "Mysql binlog reader stopped");
 		}
 	}
 
@@ -330,25 +336,25 @@ public class MysqlReader implements Closeable {
 					tapRecordEvent = new TapInsertRecordEvent();
 					if (null == valueSchema.field("after"))
 						throw new RuntimeException("Found insert record does not have after: " + record);
-					after = struct2Map(value.getStruct("after"));
+					after = struct2Map(value.getStruct("after"), table);
 					((TapInsertRecordEvent) tapRecordEvent).setAfter(after);
 					break;
 				case UPDATE:
 					tapRecordEvent = new TapUpdateRecordEvent();
 					if (null != valueSchema.field("before")) {
-						before = struct2Map(value.getStruct("before"));
+						before = struct2Map(value.getStruct("before"), table);
 						((TapUpdateRecordEvent) tapRecordEvent).setBefore(before);
 					}
 					if (null == valueSchema.field("after"))
 						throw new RuntimeException("Found update record does not have after: " + record);
-					after = struct2Map(value.getStruct("after"));
+					after = struct2Map(value.getStruct("after"), table);
 					((TapUpdateRecordEvent) tapRecordEvent).setAfter(after);
 					break;
 				case DELETE:
 					tapRecordEvent = new TapDeleteRecordEvent();
 					if (null == valueSchema.field("before"))
 						throw new RuntimeException("Found delete record does not have before: " + record);
-					before = struct2Map(value.getStruct("before"));
+					before = struct2Map(value.getStruct("before"), table);
 					((TapDeleteRecordEvent) tapRecordEvent).setBefore(before);
 					break;
 				default:
@@ -362,7 +368,7 @@ public class MysqlReader implements Closeable {
 		}
 	}
 
-	private Map<String, Object> struct2Map(Struct struct) {
+	private Map<String, Object> struct2Map(Struct struct, String table) {
 		if (null == struct) return null;
 		Map<String, Object> result = new HashMap<>();
 		Schema schema = struct.schema();
@@ -373,9 +379,28 @@ public class MysqlReader implements Closeable {
 			if (value instanceof ByteBuffer) {
 				value = ((ByteBuffer) value).array();
 			}
+			value = handleDatetime(table, fieldName, value);
 			result.put(fieldName, value);
 		}
 		return result;
+	}
+
+	private Object handleDatetime(String table, String fieldName, Object value) {
+		TapTable tapTable = tapTableMap.get(table);
+		if (null == tapTable) return value;
+		TapField tapField = tapTable.getNameFieldMap().get(fieldName);
+		if (null == tapField) return value;
+		TapType tapType = tapField.getTapType();
+		if (tapType instanceof TapDateTime) {
+			if (((TapDateTime) tapType).getFraction().equals(0) && value instanceof Long) {
+				value = ((Long) value) / 1000;
+			}
+		} else if (tapType instanceof TapDate) {
+			if (value instanceof Integer) {
+				value = (Integer) value * 24 * 60 * 60 * 1000L;
+			}
+		}
+		return value;
 	}
 
 	private MysqlStreamOffset getMysqlStreamOffset(SourceRecord record) {

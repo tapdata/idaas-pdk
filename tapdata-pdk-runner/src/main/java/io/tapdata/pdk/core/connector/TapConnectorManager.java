@@ -1,7 +1,10 @@
 package io.tapdata.pdk.core.connector;
 
+import io.tapdata.entity.utils.ParagraphFormatter;
 import io.tapdata.pdk.core.classloader.ExternalJarManager;
 import io.tapdata.pdk.core.executor.ExecutorsManager;
+import io.tapdata.pdk.core.memory.MemoryFetcher;
+import io.tapdata.pdk.core.memory.MemoryMap;
 import io.tapdata.pdk.core.tapnode.TapNodeInstance;
 import io.tapdata.pdk.core.utils.CommonUtils;
 
@@ -17,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Scan jar path to create TapConnector for each jar.
  *
  */
-public class TapConnectorManager {
+public class TapConnectorManager implements MemoryFetcher {
     private static volatile TapConnectorManager instance;
     /**
      * Key is jar file name
@@ -197,5 +200,19 @@ public class TapConnectorManager {
 //                System.out.println("GCed " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 + "KB");
             }
         }, 10, 10, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public String memory(List<String> mapKeys, String memoryLevel) {
+        ParagraphFormatter paragraphFormatter = new ParagraphFormatter(TapConnectorManager.class.getSimpleName())
+                .addRow("IsStarted", isStarted)
+                .addRow("ExternalJarManager", externalJarManager != null ? externalJarManager.toMemoryString(memoryLevel, 1) : null)
+                ;
+        for(Map.Entry<String, TapConnector> entry : jarNameTapConnectorMap.entrySet()) {
+            if(mapKeys != null && !mapKeys.isEmpty() && !mapKeys.contains(entry.getKey()))
+                continue;
+            paragraphFormatter.addRow(entry.getKey(), entry.getValue().toMemoryString(memoryLevel, 1));
+        }
+        return paragraphFormatter.toString();
     }
 }

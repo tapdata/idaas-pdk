@@ -10,13 +10,20 @@ import io.tapdata.entity.schema.value.TapBooleanValue;
 public class ToTapBooleanCodec implements ToTapValueCodec<TapBooleanValue> {
     @Override
     public TapBooleanValue toTapValue(Object value, TapType typeFromSchema) {
-        TapBooleanValue numberValue = null;
+        TapBooleanValue booleanValue = null;
         if(value instanceof Number) {
-            numberValue = new TapBooleanValue(((Number) value).intValue() != 0);
+            booleanValue = new TapBooleanValue(((Number) value).intValue() != 0);
         } else if(value instanceof Boolean) {
-            numberValue = new TapBooleanValue((Boolean) value);
+            booleanValue = new TapBooleanValue((Boolean) value);
+        } else if(value instanceof String) {
+            String theStr = (String) value;
+            if(theStr.equalsIgnoreCase("false") || theStr.equalsIgnoreCase("n") || theStr.equalsIgnoreCase("no") || theStr.equalsIgnoreCase("0")) {
+                booleanValue = new TapBooleanValue(false);
+            } else {
+                booleanValue = new TapBooleanValue(true);
+            }
         }
 
-        return numberValue;
+        return booleanValue;
     }
 }

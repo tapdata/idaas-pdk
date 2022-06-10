@@ -13,4 +13,9 @@ public class TapRawValue extends TapValue<Object, TapRaw> {
     public TapType createDefaultTapType() {
         return new TapRaw();
     }
+
+    @Override
+    public Class<? extends TapType> tapTypeClass() {
+        return TapRaw.class;
+    }
 }

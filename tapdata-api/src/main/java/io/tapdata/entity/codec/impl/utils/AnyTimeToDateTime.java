@@ -30,6 +30,14 @@ public class AnyTimeToDateTime {
         return (DateTime) classHandlers.handle(obj);
     }
 
+    public static DateTime toDateTime(Object obj, Integer fraction) {
+        if(fraction != null && obj instanceof Long) {
+            return new DateTime((Long) obj, fraction);
+        } else {
+            return toDateTime(obj);
+        }
+    }
+
     public static long convertTimestamp(long timestamp, TimeZone fromTimeZone, TimeZone toTimeZone) {
         LocalDateTime dt = LocalDateTime.now();
         ZonedDateTime fromZonedDateTime = dt.atZone(fromTimeZone.toZoneId());
