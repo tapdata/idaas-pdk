@@ -62,9 +62,7 @@ public class UploadFileService {
       if (jsons.size() == 1) {
         builder.addFormDataPart("source", "");
       }
-    }
-
-    // whether replace the latest version
+    }    // whether replace the latest version
     builder.addFormDataPart("latest", String.valueOf(latest));
 
     String url = hostAndPort + "/api/pdk/upload/source?access_token=" + token;

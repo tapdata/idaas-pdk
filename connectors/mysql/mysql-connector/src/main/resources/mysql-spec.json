@@ -3,7 +3,7 @@
 	"name": "Mysql",
 	"icon": "icons/mysql.png",
 	"id": "mysql",
-	"docs": "${docs}"
+	"doc": "${doc}"
   },
   "configOptions": {
 	"connection": {
@@ -193,7 +193,7 @@
 	  "password": "password",
 	  "addtionalString": "Connection Parameter String",
 	  "timezone": "timezone",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_en_US.md"
 	},
 	"zh_CN": {
 	  "host": "地址",
@@ -203,7 +203,7 @@
 	  "password": "密码",
 	  "addtionalString": "连接参数",
 	  "timezone": "时区",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_zh_CN.md"
 	},
 	"zh_TW": {
 	  "host": "地址",
@@ -213,7 +213,7 @@
 	  "password": "密碼",
 	  "addtionalString": "連接參數",
 	  "timezone": "時區",
-	  "docs": "docs/readme_zh.md"
+	  "doc": "docs/mysql_zh_TW.md"
 	}
   },
   "dataTypes": {

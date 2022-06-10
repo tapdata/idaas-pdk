@@ -130,9 +130,8 @@ public class RegisterCli extends CommonCli {
                                         String docPathStr = (String) docPath;
                                         if(!inputStreamMap.containsKey(docPathStr)) {
                                             InputStream is = nodeInfo.readResource(docPathStr);
-//                                            if(is != null)
-//                                                inputStreamMap.put(docPathStr, is);
-                                            //TODO uncomment above to continue upload resources. 
+                                            if(is != null)
+                                                inputStreamMap.put(docPathStr, is);
                                         }
                                     }
                                 }
