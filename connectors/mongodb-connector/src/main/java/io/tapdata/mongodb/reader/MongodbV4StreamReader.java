@@ -1,7 +1,13 @@
 package io.tapdata.mongodb.reader;
 
-import com.mongodb.*;
-import com.mongodb.client.*;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoCommandException;
+import com.mongodb.MongoInterruptedException;
+import com.mongodb.MongoNamespace;
+import com.mongodb.client.ChangeStreamIterable;
+import com.mongodb.client.MongoChangeStreamCursor;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -14,6 +20,7 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.cache.KVMap;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.mongodb.util.MongodbLookupUtil;
@@ -26,8 +33,6 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
 import java.util.List;
@@ -36,8 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.tapdata.base.ConnectorBase.*;
 import static java.util.Collections.singletonList;
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 /**
  * @author jackin
@@ -155,7 +158,8 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 										}
 						} catch (Throwable throwable) {
 								if (!running.get()) {
-										if (throwable instanceof IllegalStateException && throwable.getMessage().contains("state should be: open") || throwable.getMessage().contains("Cursor has been closed")) {
+										final String message = throwable.getMessage();
+										if (throwable instanceof IllegalStateException && EmptyKit.isNotEmpty(message) && ( message.contains("state should be: open") || message.contains("Cursor has been closed"))) {
 												return;
 										}
 
