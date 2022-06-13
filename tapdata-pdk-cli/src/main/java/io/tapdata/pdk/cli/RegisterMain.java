@@ -22,9 +22,9 @@ public class RegisterMain {
 //                "register", "-a", "3324cfdf-7d3e-4792-bd32-571638d4562f", "-t", "http://localhost:3000",
 
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/empty-connector-v1.1-SNAPSHOT.jar",
-				basePath + "dist/mysql-connector-v1.0-SNAPSHOT.jar",
+//				basePath + "dist/mysql-connector-v1.0-SNAPSHOT.jar",
 				basePath + "dist/postgres-connector-v1.0-SNAPSHOT.jar",
-				basePath + "dist/mongodb-connector-v1.0-SNAPSHOT.jar",
+//				basePath + "dist/mongodb-connector-v1.0-SNAPSHOT.jar",
 		};
 
 		Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);

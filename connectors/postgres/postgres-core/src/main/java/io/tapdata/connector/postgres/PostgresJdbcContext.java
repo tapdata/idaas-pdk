@@ -11,6 +11,7 @@ import io.tapdata.kit.EmptyKit;
 import io.tapdata.kit.StringKit;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PostgresJdbcContext extends JdbcContext {
 
@@ -18,6 +19,23 @@ public class PostgresJdbcContext extends JdbcContext {
 
     public PostgresJdbcContext(PostgresConfig config, HikariDataSource hikariDataSource) {
         super(config, hikariDataSource);
+    }
+
+    /**
+     * query version of database
+     *
+     * @return version description
+     */
+    @Override
+    public String queryVersion() {
+        AtomicReference<String> version = new AtomicReference<>("");
+        try {
+            query("SELECT VERSION()", resultSet -> version.set(resultSet.getString(1)));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        String versionStr = version.get().replace("PostgreSQL ", "");
+        return versionStr.substring(0, versionStr.indexOf(" "));
     }
 
     @Override

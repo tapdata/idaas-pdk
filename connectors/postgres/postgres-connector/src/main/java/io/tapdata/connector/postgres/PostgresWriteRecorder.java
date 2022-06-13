@@ -30,7 +30,7 @@ public class PostgresWriteRecorder {
     private PreparedStatement preparedStatement = null;
     private final AtomicLong atomicLong = new AtomicLong(0);
     private final List<TapRecordEvent> batchCache = TapSimplify.list();
-    private String postgresVersion = "PostgreSQL 9.6";
+    private String postgresVersion = "9.6";
 
     public PostgresWriteRecorder(Connection connection, TapTable tapTable, String schema) {
         this.connection = connection;
@@ -82,7 +82,7 @@ public class PostgresWriteRecorder {
             String insertValue = "VALUES(" + StringKit.copyString("?", allColumn.size(), ",") + ") ";
             String insertSql = insertHead + insertValue;
             if (EmptyKit.isNotEmpty(uniqueCondition)) {
-                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+                if (Double.parseDouble(postgresVersion) > 9.5) {
                     insertSql += "ON CONFLICT("
                             + uniqueCondition.stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", "))
                             + ") DO UPDATE SET " + allColumn.stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(", "));
@@ -104,7 +104,7 @@ public class PostgresWriteRecorder {
         }
         preparedStatement.clearParameters();
         int pos = 1;
-        if (postgresVersion.compareTo("PostgreSQL 9.5") <= 0 && EmptyKit.isNotEmpty(uniqueCondition)) {
+        if (Double.parseDouble(postgresVersion) <= 9.5 && EmptyKit.isNotEmpty(uniqueCondition)) {
             for (String key : allColumn) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
@@ -115,7 +115,7 @@ public class PostgresWriteRecorder {
         for (String key : allColumn) {
             preparedStatement.setObject(pos++, after.get(key));
         }
-        if (EmptyKit.isNotEmpty(uniqueCondition) && postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+        if (EmptyKit.isNotEmpty(uniqueCondition) && Double.parseDouble(postgresVersion) > 9.5) {
             for (String key : allColumn) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
