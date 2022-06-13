@@ -69,6 +69,7 @@ public class MysqlReader implements Closeable {
 	private StreamReadConsumer streamReadConsumer;
 	private ScheduledExecutorService mysqlSchemaHistoryMonitor;
 	private KVReadOnlyMap<TapTable> tapTableMap;
+	private final int MIN_BATCH_SIZE = 1000;
 
 	public MysqlReader(MysqlJdbcContext mysqlJdbcContext) {
 		this.mysqlJdbcContext = mysqlJdbcContext;
@@ -133,6 +134,7 @@ public class MysqlReader implements Closeable {
 	public void readBinlog(TapConnectorContext tapConnectorContext, List<String> tables,
 						   Object offset, int batchSize, StreamReadConsumer consumer) throws Throwable {
 		try {
+				batchSize = batchSize < MIN_BATCH_SIZE ? MIN_BATCH_SIZE : batchSize;
 			initDebeziumServerName(tapConnectorContext);
 			this.tapTableMap = tapConnectorContext.getTableMap();
 			String offsetStr = "";
