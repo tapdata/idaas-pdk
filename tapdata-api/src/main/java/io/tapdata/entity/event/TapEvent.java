@@ -64,6 +64,17 @@ public abstract class TapEvent implements Serializable {
         this.time = time;
     }
 
+    @Override
+    public Object clone() {
+        try {
+            TapEvent obj = this.getClass().newInstance();
+            clone(obj);
+            return obj;
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void clone(TapEvent tapEvent) {
         tapEvent.time = time;
         if(info != null)
