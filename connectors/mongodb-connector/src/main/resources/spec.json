@@ -3,6 +3,7 @@
     "name": "MongoDB",
     "icon": "icons/mongodb.png",
     "doc" : "${doc}",
+    "tags" : ["schema-free"],
     "id": "mongodb"
   },
   "configOptions": {
