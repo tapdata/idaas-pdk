@@ -323,7 +323,7 @@ public class PostgresConnector extends ConnectorBase {
         try {
             List<String> sqls = TapSimplify.list();
             if (EmptyKit.isNotEmpty(createIndexEvent.getIndexList())) {
-                if (Double.parseDouble(postgresVersion) > 9.5) {
+                if (Integer.parseInt(postgresVersion) > 90500) {
                     createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
                             sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX " +
                                     (EmptyKit.isNotNull(i.getName()) ? "IF NOT EXISTS \"" + i.getName() + "\"" : "") + " ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
@@ -357,7 +357,7 @@ public class PostgresConnector extends ConnectorBase {
         PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
         PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
 
-        if (Double.parseDouble(postgresVersion) <= 9.5) {
+        if (Integer.parseInt(postgresVersion) <= 90500) {
             insertRecorder.setPostgresVersion(postgresVersion);
             updateRecorder.setPostgresVersion(postgresVersion);
             deleteRecorder.setPostgresVersion(postgresVersion);
