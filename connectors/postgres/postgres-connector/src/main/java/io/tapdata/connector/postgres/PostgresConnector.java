@@ -195,7 +195,7 @@ public class PostgresConnector extends ConnectorBase {
             clearSlot(slotName.toString());
         }
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
-            postgresJdbcContext.finish();
+            postgresJdbcContext.finish(connectorContext.getId());
         }
         //stateMap will be cleared by engine
     }
@@ -216,7 +216,7 @@ public class PostgresConnector extends ConnectorBase {
             cdcRunner = null;
         }
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
-            postgresJdbcContext.finish();
+            postgresJdbcContext.finish(connectionContext.getId());
         }
     }
 
@@ -224,7 +224,7 @@ public class PostgresConnector extends ConnectorBase {
     private void initConnection(TapConnectionContext connectorContext) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectorContext.getConnectionConfig());
         if (EmptyKit.isNull(postgresJdbcContext) || postgresJdbcContext.isFinish()) {
-            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
+            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class, connectorContext.getId());
         }
         isConnectorStarted(connectorContext, tapConnectorContext -> slotName = tapConnectorContext.getStateMap().get("tapdata_pg_slot"));
         postgresVersion = postgresJdbcContext.queryVersion();
@@ -351,9 +351,6 @@ public class PostgresConnector extends ConnectorBase {
 
     //write records as all events, prepared
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
-        if (!postgresJdbcContext.testValid()) {
-            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
-        }
         Connection connection = postgresJdbcContext.getConnection();
         //three types of record
         PostgresWriteRecorder insertRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
