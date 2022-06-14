@@ -2,14 +2,18 @@ package io.tapdata.pdk.apis.context;
 import io.tapdata.entity.utils.DefaultConcurrentMap;
 import io.tapdata.pdk.apis.spec.TapNodeSpecification;
 
+import java.util.UUID;
+
 
 public class TapContext {
+    protected String id;
     protected TapNodeSpecification specification;
 
     protected final DefaultConcurrentMap attributes = new DefaultConcurrentMap();
 
     public TapContext(TapNodeSpecification specification) {
         this.specification = specification;
+        id = UUID.randomUUID().toString().replace("-", "");
     }
 
     public Object putAttributeIfAbsent(String key, Object value) {
@@ -32,4 +36,7 @@ public class TapContext {
         this.specification = specification;
     }
 
+    public String getId() {
+        return id;
+    }
 }

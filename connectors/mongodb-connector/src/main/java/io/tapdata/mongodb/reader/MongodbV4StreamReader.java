@@ -1,10 +1,13 @@
 package io.tapdata.mongodb.reader;
 
 import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCommandException;
+import com.mongodb.MongoInterruptedException;
 import com.mongodb.MongoNamespace;
-import com.mongodb.client.*;
+import com.mongodb.client.ChangeStreamIterable;
+import com.mongodb.client.MongoChangeStreamCursor;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -17,6 +20,7 @@ import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.cache.KVMap;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.mongodb.MongodbUtil;
 import io.tapdata.mongodb.entity.MongodbConfig;
 import io.tapdata.mongodb.util.MongodbLookupUtil;
@@ -29,8 +33,6 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
 import java.util.List;
@@ -39,8 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.tapdata.base.ConnectorBase.*;
 import static java.util.Collections.singletonList;
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 /**
  * @author jackin
@@ -96,71 +96,76 @@ public class MongodbV4StreamReader implements MongodbStreamReader {
 						}
 						consumer.streamReadStarted();
 						try (final MongoChangeStreamCursor<ChangeStreamDocument<Document>> streamCursor = changeStream.cursor()) {
-								while (!running.get()) {
-										ChangeStreamDocument<Document> event = streamCursor.tryNext();
-										if (event == null) {
-												if (!tapEvents.isEmpty()) {
+										while (!running.get()) {
+												ChangeStreamDocument<Document> event = streamCursor.tryNext();
+												if (event == null) {
+														if (!tapEvents.isEmpty()) {
+																consumer.accept(tapEvents, offset);
+																tapEvents = list();
+														}
+														continue;
+												}
+												if (tapEvents.size() >= eventBatchSize) {
 														consumer.accept(tapEvents, offset);
 														tapEvents = list();
 												}
-												continue;
-										}
-										if (tapEvents.size() >= eventBatchSize) {
-												consumer.accept(tapEvents, offset);
-												tapEvents = list();
-										}
 
-										MongoNamespace mongoNamespace = event.getNamespace();
+												MongoNamespace mongoNamespace = event.getNamespace();
 
-										String collectionName = null;
-										if (mongoNamespace != null) {
-												collectionName = mongoNamespace.getCollectionName();
-										}
-										if (collectionName == null)
-												continue;
-										offset = event.getResumeToken();
-										OperationType operationType = event.getOperationType();
-										Document fullDocument = event.getFullDocument();
-										if (operationType == OperationType.INSERT) {
-												DataMap after = new DataMap();
-												after.putAll(fullDocument);
-												TapInsertRecordEvent recordEvent = insertRecordEvent(after, collectionName);
-												recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
-												tapEvents.add(recordEvent);
-										} else if (operationType == OperationType.DELETE) {
-												DataMap before = new DataMap();
-												if (event.getDocumentKey() != null) {
-														final Document documentKey = new DocumentCodec().decode(new BsonDocumentReader(event.getDocumentKey()), DecoderContext.builder().build());
-														before.put("_id", documentKey.get("_id"));
-														final Map lookupData = MongodbLookupUtil.findDeleteCacheByOid(connectionString, collectionName, documentKey.get("_id"), globalStateMap);
-														TapDeleteRecordEvent recordEvent = deleteDMLEvent(MapUtils.isNotEmpty(lookupData) ? lookupData : before, collectionName);
-														recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
-														tapEvents.add(recordEvent);
-												} else {
-														TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
+												String collectionName = null;
+												if (mongoNamespace != null) {
+														collectionName = mongoNamespace.getCollectionName();
 												}
-										} else if (operationType == OperationType.UPDATE || operationType == OperationType.REPLACE) {
-												DataMap after = new DataMap();
-												if (MapUtils.isEmpty(fullDocument)) {
-														TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
+												if (collectionName == null)
 														continue;
-												}
-												if (event.getDocumentKey() != null) {
+												offset = event.getResumeToken();
+												OperationType operationType = event.getOperationType();
+												Document fullDocument = event.getFullDocument();
+												if (operationType == OperationType.INSERT) {
+														DataMap after = new DataMap();
 														after.putAll(fullDocument);
-
-														TapUpdateRecordEvent recordEvent = updateDMLEvent(null, after, collectionName);
+														TapInsertRecordEvent recordEvent = insertRecordEvent(after, collectionName);
 														recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
 														tapEvents.add(recordEvent);
-												} else {
-														throw new RuntimeException(String.format("Document key is null, failed to update. %s", event));
+												} else if (operationType == OperationType.DELETE) {
+														DataMap before = new DataMap();
+														if (event.getDocumentKey() != null) {
+																final Document documentKey = new DocumentCodec().decode(new BsonDocumentReader(event.getDocumentKey()), DecoderContext.builder().build());
+																before.put("_id", documentKey.get("_id"));
+																final Map lookupData = MongodbLookupUtil.findDeleteCacheByOid(connectionString, collectionName, documentKey.get("_id"), globalStateMap);
+																TapDeleteRecordEvent recordEvent = deleteDMLEvent(MapUtils.isNotEmpty(lookupData) ? lookupData : before, collectionName);
+																recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
+																tapEvents.add(recordEvent);
+														} else {
+																TapLogger.warn(TAG, "Document key is null, failed to delete. {}", event);
+														}
+												} else if (operationType == OperationType.UPDATE || operationType == OperationType.REPLACE) {
+														DataMap after = new DataMap();
+														if (MapUtils.isEmpty(fullDocument)) {
+																TapLogger.warn(TAG, "Found update event already deleted in collection %s, _id %s", collectionName, event.getDocumentKey().get("_id"));
+																continue;
+														}
+														if (event.getDocumentKey() != null) {
+																after.putAll(fullDocument);
+
+																TapUpdateRecordEvent recordEvent = updateDMLEvent(null, after, collectionName);
+																recordEvent.setReferenceTime((long) (event.getClusterTime().getTime()) * 1000);
+																tapEvents.add(recordEvent);
+														} else {
+																throw new RuntimeException(String.format("Document key is null, failed to update. %s", event));
+														}
 												}
 										}
-								}
 						} catch (Throwable throwable) {
-								if (!running.get() && throwable instanceof IllegalStateException) {
-										if (throwable.getMessage().contains("state should be: open") || throwable.getMessage().contains("Cursor has been closed")) {
+								if (!running.get()) {
+										final String message = throwable.getMessage();
+										if (throwable instanceof IllegalStateException && EmptyKit.isNotEmpty(message) && ( message.contains("state should be: open") || message.contains("Cursor has been closed"))) {
+												return;
 										}
-										return;
+
+										if (throwable instanceof MongoInterruptedException || throwable instanceof InterruptedException) {
+												return;
+										}
 								}
 
 								if (throwable instanceof MongoCommandException) {

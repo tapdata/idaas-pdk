@@ -44,15 +44,15 @@ public class TapConnectorContext extends TapConnectionContext {
         this.stateMap = stateMap;
     }
 
-		public KVMap<Object> getGlobalStateMap() {
-				return globalStateMap;
-		}
+    public KVMap<Object> getGlobalStateMap() {
+            return globalStateMap;
+    }
 
-		public void setGlobalStateMap(KVMap<Object> globalStateMap) {
-				this.globalStateMap = globalStateMap;
-		}
+    public void setGlobalStateMap(KVMap<Object> globalStateMap) {
+            this.globalStateMap = globalStateMap;
+    }
 
-		public String toString() {
+    public String toString() {
         return "TapConnectorContext " + "connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " nodeConfig: " + (nodeConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(nodeConfig) : "") + " spec: " + specification;
     }
 }

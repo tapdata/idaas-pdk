@@ -38,11 +38,16 @@ public class TapCodecsFilterManagerTest {
         sourceNameFieldMap.put("long", field("long", "number(64)").tapType(tapNumber().bit(64).minValue(BigDecimal.valueOf(Long.MIN_VALUE)).maxValue(BigDecimal.valueOf(Long.MAX_VALUE))));
         sourceNameFieldMap.put("double", field("double", "double").tapType(tapNumber().scale(3).bit(64).minValue(BigDecimal.valueOf(Double.MIN_VALUE)).maxValue(BigDecimal.valueOf(Double.MAX_VALUE))));
 
+        //read from source, transform to TapValue out from source connector.
         codecsFilterManager.transformToTapValueMap(map, sourceNameFieldMap);
 
+        //before enter a processor, transform to value from TapValue.
         Map<String, TapField> nameFieldMap = codecsFilterManager.transformFromTapValueMap(map);
 
+        //Processor add a new field.
         map.put("dateTime", new Date());
+
+        //transform to TapValue out from processor. nameFieldMap will add new field.
         codecsFilterManager.transformToTapValueMap(map, nameFieldMap);
         assertNotNull(map.get("dateTime"));
         TapValue tapValue = (TapValue) map.get("dateTime");

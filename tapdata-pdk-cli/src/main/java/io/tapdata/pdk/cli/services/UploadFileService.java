@@ -31,6 +31,7 @@ public class UploadFileService {
     String jsonString = JSON.toJSONString(param);
     String s = OkHttpUtils.postJsonParams(tokenUrl, jsonString);
 
+    System.out.println("generate token " + s);
     Map map = JSON.parseObject(s, Map.class);
     Object data = map.get("data");
     JSONObject data1 = (JSONObject) data;

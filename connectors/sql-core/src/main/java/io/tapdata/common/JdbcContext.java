@@ -20,6 +20,7 @@ public abstract class JdbcContext {
 
     private final static String TAG = JdbcContext.class.getSimpleName();
     private final HikariDataSource hikariDataSource;
+    private boolean isFinish = false;
     private final CommonDbConfig config;
     private final AtomicInteger connectorNumber = new AtomicInteger(1); //number of initialization
 
@@ -131,9 +132,18 @@ public abstract class JdbcContext {
         }
     }
 
+    public boolean isFinish() {
+        return isFinish;
+    }
+
+    public void setFinish(boolean finish) {
+        isFinish = finish;
+    }
+
     public void finish() {
         if (connectorNumber.decrementAndGet() <= 0) {
             this.hikariDataSource.close();
+            setFinish(true);
             DataSourcePool.removeJdbcContext(config);
         }
     }

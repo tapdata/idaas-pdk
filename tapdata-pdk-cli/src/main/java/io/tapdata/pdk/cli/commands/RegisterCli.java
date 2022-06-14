@@ -152,12 +152,10 @@ public class RegisterCli extends CommonCli {
                     o.put("tapTypeDataTypeMap", JSON.toJSONString(tapTypeDataTypeMap));
                     String jsonString = o.toJSONString();
                     jsons.add(jsonString);
-
-
                 }
-
-                System.out.println(tapNodeInfoCollection);
+                System.out.println(file.getName() + " uploading...");
                 UploadFileService.upload(inputStreamMap, file, jsons, latest, tmUrl, authToken);
+                System.out.println(file.getName() + " registered successfully");
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();

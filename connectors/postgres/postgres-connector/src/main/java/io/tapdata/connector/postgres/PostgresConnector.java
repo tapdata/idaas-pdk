@@ -223,7 +223,7 @@ public class PostgresConnector extends ConnectorBase {
     //initialize jdbc context, slot name, version
     private void initConnection(TapConnectionContext connectorContext) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectorContext.getConnectionConfig());
-        if (EmptyKit.isNull(postgresJdbcContext)) {
+        if (EmptyKit.isNull(postgresJdbcContext) || postgresJdbcContext.isFinish()) {
             postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         }
         isConnectorStarted(connectorContext, tapConnectorContext -> slotName = tapConnectorContext.getStateMap().get("tapdata_pg_slot"));
@@ -323,7 +323,7 @@ public class PostgresConnector extends ConnectorBase {
         try {
             List<String> sqls = TapSimplify.list();
             if (EmptyKit.isNotEmpty(createIndexEvent.getIndexList())) {
-                if (postgresVersion.compareTo("PostgreSQL 9.5") > 0) {
+                if (Double.parseDouble(postgresVersion) > 9.5) {
                     createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
                             sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX " +
                                     (EmptyKit.isNotNull(i.getName()) ? "IF NOT EXISTS \"" + i.getName() + "\"" : "") + " ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
@@ -351,8 +351,8 @@ public class PostgresConnector extends ConnectorBase {
 
     //write records as all events, prepared
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
-        if (postgresJdbcContext.queryAllTables(Collections.singletonList(tapTable.getId())).size() < 1) {
-            throw new RuntimeException("Table " + tapTable.getId() + " not exist!");
+        if (!postgresJdbcContext.testValid()) {
+            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         }
         Connection connection = postgresJdbcContext.getConnection();
         //three types of record
@@ -360,7 +360,7 @@ public class PostgresConnector extends ConnectorBase {
         PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
         PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
 
-        if (postgresVersion.compareTo("PostgreSQL 9.5") <= 0) {
+        if (Double.parseDouble(postgresVersion) <= 9.5) {
             insertRecorder.setPostgresVersion(postgresVersion);
             updateRecorder.setPostgresVersion(postgresVersion);
             deleteRecorder.setPostgresVersion(postgresVersion);
