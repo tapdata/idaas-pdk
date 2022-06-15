@@ -73,13 +73,16 @@
           "required": true,
           "type": "string",
           "title": "${logPluginName}",
-          "default": "",
+          "default": "logMiner",
           "x-decorator": "FormItem",
           "x-component": "Select",
           "apiServerKey": "logPlugin",
           "x-index": 8,
           "enum": [
-
+            {
+              "label": "logMiner",
+              "value": "logMiner"
+            }
           ]
         }
       }

@@ -1,6 +1,8 @@
 package io.tapdata.connector.oracle;
 
+import io.tapdata.common.DataSourcePool;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.kit.EmptyKit;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -19,6 +21,7 @@ import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,14 +38,25 @@ public class OracleConnector extends ConnectorBase {
     private static final int BATCH_READ_SIZE = 5000;
     private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
 
+    //initialize jdbc context, version
+    private void initConnection(TapConnectionContext connectorContext) {
+        oracleConfig = new OracleConfig().load(connectorContext.getConnectionConfig());
+        if (EmptyKit.isNull(oracleJdbcContext) || oracleJdbcContext.isFinish()) {
+            oracleJdbcContext = (OracleJdbcContext) DataSourcePool.getJdbcContext(oracleConfig, OracleJdbcContext.class, connectorContext.getId());
+        }
+        oracleVersion = oracleJdbcContext.queryVersion();
+    }
+
     @Override
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
-
+        initConnection(connectionContext);
     }
 
     @Override
     public void onStop(TapConnectionContext connectionContext) throws Throwable {
-
+        if (EmptyKit.isNotNull(oracleJdbcContext)) {
+            oracleJdbcContext.finish(connectionContext.getId());
+        }
     }
 
     private void onDestroy(TapConnectionContext connectionContext) throws Throwable {
@@ -54,9 +68,11 @@ public class OracleConnector extends ConnectorBase {
         connectorFunctions.supportWriteRecord(this::writeRecord);
 
     }
+
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
 
     }
+
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
         //get table info
@@ -78,7 +94,7 @@ public class OracleConnector extends ConnectorBase {
                 Map<String, List<DataMap>> indexMap = indexList.stream().filter(idx -> table.equals(idx.getString("TABLE_NAME")))
                         .collect(Collectors.groupingBy(idx -> idx.getString("INDEX_NAME"), LinkedHashMap::new, Collectors.toList()));
                 indexMap.forEach((key, value) -> {
-                    if (value.stream().anyMatch(v -> (boolean) v.get("IS_PK"))) {
+                    if (value.stream().anyMatch(v -> ((BigDecimal) v.get("IS_PK")).intValue() == 1)) {
                         primaryKey.addAll(value.stream().map(v -> v.getString("COLUMN_NAME")).collect(Collectors.toList()));
                     }
                     TapIndex index = new TapIndex();
@@ -91,7 +107,7 @@ public class OracleConnector extends ConnectorBase {
                         fieldList.add(field);
                     });
                     index.setUnique(value.stream().anyMatch(v -> "UNIQUE".equals(v.getString("UNIQUENESS"))));
-                    index.setPrimary(value.stream().anyMatch(v -> (boolean) v.get("IS_PK")));
+                    index.setPrimary(value.stream().anyMatch(v -> ((BigDecimal) v.get("IS_PK")).intValue() == 1));
                     index.setIndexFields(fieldList);
                     tapIndexList.add(index);
                 });
@@ -114,11 +130,23 @@ public class OracleConnector extends ConnectorBase {
 
     @Override
     public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
-
+        oracleConfig = new OracleConfig().load(connectionContext.getConnectionConfig());
+        OracleTest oracleTest = new OracleTest(oracleConfig);
+        TestItem testHostPort = oracleTest.testHostPort();
+        consumer.accept(testHostPort);
+        if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
+            return;
+        }
+        TestItem testConnect = oracleTest.testConnect();
+        consumer.accept(testConnect);
+        if (testConnect.getResult() == TestItem.RESULT_FAILED) {
+            return;
+        }
+        oracleTest.close();
     }
 
     @Override
     public int tableCount(TapConnectionContext connectionContext) throws Throwable {
-        return 0;
+        return oracleJdbcContext.queryAllTables(null).size();
     }
 }
