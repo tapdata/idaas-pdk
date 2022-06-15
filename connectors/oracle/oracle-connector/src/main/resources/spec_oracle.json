@@ -249,6 +249,7 @@
         9
       ],
       "defaultFraction": 6,
+      "withTimeZone": false,
       "priority": 2,
       "to": "TapDateTime"
     },
