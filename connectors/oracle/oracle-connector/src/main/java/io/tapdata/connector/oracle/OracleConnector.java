@@ -1,5 +1,9 @@
 package io.tapdata.connector.oracle;
 
+import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.entity.*;
+import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import com.google.common.collect.Lists;
 import io.tapdata.base.ConnectorBase;
 import io.tapdata.connector.oracle.bean.OracleColumn;
@@ -22,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@TapConnectorClass("spec_oracle.json")
 public class OracleConnector extends ConnectorBase {
 
     private OracleConfig oracleConfig;
@@ -46,9 +51,12 @@ public class OracleConnector extends ConnectorBase {
 
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
+        connectorFunctions.supportWriteRecord(this::writeRecord);
 
     }
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
 
+    }
     @Override
     public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
         //get table info
