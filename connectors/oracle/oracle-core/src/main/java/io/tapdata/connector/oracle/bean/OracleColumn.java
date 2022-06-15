@@ -37,7 +37,28 @@ public class OracleColumn extends CommonColumn {
         String dataScale = dataMap.getString("DATA_SCALE");
         if (dataType.contains("(")) {
             return dataType;
+        } else {
+            switch (dataType) {
+                case "CHAR":
+                case "VARCHAR2":
+                case "RAW":
+                    return dataType + "(" + dataLength + ")";
+                case "NCHAR":
+                case "NVARCHAR2":
+                    return dataType + "(" + Integer.parseInt(dataLength) / 2 + ")";
+                case "FLOAT":
+                    return dataType + "(" + dataPrecision + ")";
+                case "NUMBER":
+                    if (EmptyKit.isNull(dataPrecision) && EmptyKit.isNull(dataScale)) {
+                        return "NUMBER";
+                    } else if (EmptyKit.isNull(dataPrecision)) {
+                        return "NUMBER(*," + dataScale + ")";
+                    } else {
+                        return "NUMBER(" + dataPrecision + "," + dataScale + ")";
+                    }
+                default:
+                    return dataType;
+            }
         }
-        return "";
     }
 }

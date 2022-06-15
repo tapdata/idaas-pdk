@@ -150,6 +150,16 @@
       "preferByte": 1000,
       "to": "TapString"
     },
+    "INTEGER[($precision)]": {
+      "precision": [
+        1,
+        38
+      ],
+      "preferPrecision": 20,
+      "defaultPrecision": 38,
+      "priority": 1,
+      "to": "TapNumber"
+    },
     "NUMBER(*,$scale)": {
       "scale": [
         -84,
