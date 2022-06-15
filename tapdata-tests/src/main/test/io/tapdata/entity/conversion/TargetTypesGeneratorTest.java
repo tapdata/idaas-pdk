@@ -1146,4 +1146,35 @@ class TargetTypesGeneratorTest {
         TapField number1011Field = nameFieldMap.get("numeric(10,-500)");
         assertEquals("decimal(65,0)", number1011Field.getDataType());
     }
+
+    @Test
+    public void withTimeZoneTest() {
+
+        String sourceTypeExpression = "{" +
+                "\"timestamp[($fraction)] without time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": false,\"defaultFraction\": 6,\"priority\": 1,\"to\": \"TapDateTime\"}," +
+                "\"timestamp[($fraction)] with time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": true,\"defaultFraction\": 6,\"priority\": 2,\"to\": \"TapDateTime\"}" +
+                "}";
+
+        String targetTypeExpression = "{\n" +
+                "\"timestampex[($fraction)] without time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": false,\"defaultFraction\": 6,\"priority\": 1,\"to\": \"TapDateTime\"}," +
+                "\"timestampex[($fraction)] with time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": true,\"defaultFraction\": 6,\"priority\": 2,\"to\": \"TapDateTime\"}" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("timestamp(3) without time zone", "timestamp(3) without time zone"))
+                .add(field("timestamp with time zone", "timestamp with time zone"))
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+
+        TapField number1050Field = nameFieldMap.get("timestamp(3) without time zone");
+        assertEquals("timestampex(3) without time zone", number1050Field.getDataType());
+
+        TapField number1011Field = nameFieldMap.get("timestamp with time zone");
+        assertEquals("timestampex(6) with time zone", number1011Field.getDataType());
+    }
 }
