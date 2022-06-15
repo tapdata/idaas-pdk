@@ -502,11 +502,22 @@ public class TapNumberMapping extends TapMapping {
                 theFinalExpression = theFinalExpression.replace("$" + KEY_BIT, String.valueOf(bit));
             }
 
+            boolean precisionExceeded = false;
+            Integer precision = tapNumber.getPrecision();
+            if(precision != null && this.maxPrecision != null && this.minPrecision != null) {
+                if(maxPrecision < precision) {
+                    precisionExceeded = true;
+                }
+            }
+
             int precisionFromNegativeScale = 0;
 
             Integer scale = tapNumber.getScale();
             if(tapNumber.getPrecision() != null && scale == null)
                 scale = 0;
+            else if(precisionExceeded) //if precision exceeded, remove scale to keep the number as larger as possible.
+                scale = 0;
+
             if (scale != null) {
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
 
@@ -527,9 +538,14 @@ public class TapNumberMapping extends TapMapping {
                 theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(scale));
             }
 
-            Integer precision = tapNumber.getPrecision();
             if (precision != null) {
                 precision += precisionFromNegativeScale;
+
+                //if scale larger than precision, force precision equal to scale.
+                if(scale != null && scale > precision) {
+                    precision = scale;
+                }
+
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_PRECISION, false);
 
                 if(this.maxPrecision != null && this.minPrecision != null) {
