@@ -1,8 +1,15 @@
 package io.tapdata.pdk.apis.functions;
 
+import io.tapdata.entity.schema.TapTable;
+import io.tapdata.pdk.apis.context.TapConnectorContext;
+import io.tapdata.pdk.apis.functions.connector.TapFunction;
 import io.tapdata.pdk.apis.functions.connector.common.ReleaseExternalFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.*;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private ReleaseExternalFunction releaseExternalFunction;
@@ -21,6 +28,41 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private CreateIndexFunction createIndexFunction;
     private DeleteIndexFunction deleteIndexFunction;
     private QueryIndexesFunction queryIndexesFunction;
+
+    public List<String> getCapabilities() {
+        Field[] fields = ConnectorFunctions.class.getDeclaredFields();
+        List<String> fieldArray = new ArrayList<>();
+        for(Field field : fields) {
+            try {
+                Object value = field.get(this);
+                if(value instanceof TapFunction) {
+                    String fieldName = field.getName();
+                    if(fieldName.endsWith("Function")) {
+                        fieldName = fieldName.substring(0, fieldName.length() - "Function".length());
+                    }
+                    fieldArray.add(fieldName);
+                }
+            } catch (Throwable ignored) {}
+        }
+        return fieldArray;
+    }
+
+    public static void main(String[] args) {
+        ConnectorFunctions connectorFunctions = new ConnectorFunctions();
+        connectorFunctions.supportReleaseExternalFunction(new ReleaseExternalFunction() {
+            @Override
+            public void release(TapConnectorContext connectorContext) throws Throwable {
+
+            }
+        });
+        connectorFunctions.supportBatchCount(new BatchCountFunction() {
+            @Override
+            public long count(TapConnectorContext nodeContext, TapTable table) throws Throwable {
+                return 0;
+            }
+        });
+        System.out.println("array " + connectorFunctions.getCapabilities());
+    }
 
     public ConnectorFunctions supportReleaseExternalFunction(ReleaseExternalFunction function) {
         releaseExternalFunction = function;
