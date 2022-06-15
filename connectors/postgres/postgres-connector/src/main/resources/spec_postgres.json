@@ -284,6 +284,7 @@
         0,
         6
       ],
+      "withTimeZone": false,
       "defaultFraction": 6,
       "priority": 1,
       "to": "TapDateTime"
@@ -298,6 +299,7 @@
         0,
         6
       ],
+      "withTimeZone": true,
       "defaultFraction": 6,
       "priority": 2,
       "to": "TapDateTime"
@@ -312,6 +314,7 @@
         0,
         6
       ],
+      "withTimeZone": false,
       "defaultFraction": 6,
       "priority": 1,
       "to": "TapTime"
@@ -326,6 +329,7 @@
         0,
         6
       ],
+      "withTimeZone": true,
       "defaultFraction": 6,
       "priority": 2,
       "to": "TapTime"
