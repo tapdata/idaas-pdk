@@ -150,6 +150,23 @@
       "preferByte": 1000,
       "to": "TapString"
     },
+    "NUMBER(*,$scale)": {
+      "scale": [
+        -84,
+        127
+      ],
+      "precision": [
+        1,
+        38
+      ],
+      "fixed": true,
+      "preferPrecision": 20,
+      "defaultPrecision": 38,
+      "preferScale": 8,
+      "defaultScale": 0,
+      "priority": 1,
+      "to": "TapNumber"
+    },
     "NUMBER[($precision,$scale)]": {
       "precision": [
         1,
@@ -172,7 +189,9 @@
         1,
         126
       ],
-      "fixed": true,
+      "scale": 125,
+      "preferScale": 8,
+      "fixed": false,
       "defaultPrecision": 126,
       "priority": 2,
       "to": "TapNumber"
@@ -182,7 +201,11 @@
         "-3.402823466E+38",
         "3.402823466E+38"
       ],
+      "scale": 37,
+      "preferScale": 8,
+      "preferPrecision": 12,
       "priority": 3,
+      "queryOnly": true,
       "to": "TapNumber"
     },
     "BINARY_DOUBLE": {
@@ -190,6 +213,9 @@
         "-1.7976931348623157E+308",
         "1.7976931348623157E+308"
       ],
+      "preferPrecision": 20,
+      "preferScale": 8,
+      "scale": 307,
       "priority": 3,
       "to": "TapNumber"
     },
