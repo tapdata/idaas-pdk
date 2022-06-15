@@ -243,6 +243,11 @@ public class ModelPredictionCli extends CommonCli {
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("mongodb")) {
             generatedTable.add(field("special_string_id_primary", "string").primaryKeyPos(generatedTable.getNameFieldMap().size()));
         }
+
+        if(sourceNode.getConnectorContext().getSpecification().getId().equals("oracle")) {
+            generatedTable.add(field("special_NUMBER(38,-3)", "NUMBER(38,-3)"));
+            generatedTable.add(field("special_NUMBER(38,-80)", "NUMBER(38,-80)"));
+        }
     }
 
     private String writeWorkbook() {
