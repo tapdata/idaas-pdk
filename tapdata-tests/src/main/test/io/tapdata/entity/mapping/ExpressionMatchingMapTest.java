@@ -175,6 +175,25 @@ class ExpressionMatchingMapTest {
         });
     }
 
+    @Test
+    void testNumberWithStar() {
+        String str = "{\n" +
+                "    \"number(*,$scale)\": {\"scale\": 64, \"to\": \"TapNumber\"},\n" +
+                "}";
+
+        DefaultExpressionMatchingMap matchingMap = DefaultExpressionMatchingMap.map(str);
+
+        validateTapMapping(matchingMap, "number(*,3)", TapNumberMapping.class, TapNumber.class, exprResult -> {
+            assertNotNull(exprResult, "Expression is not matched");
+            assertEquals(exprResult.getParams().get("scale"), "3");
+        }, tapNumberMapping -> {
+            assertEquals(tapNumberMapping.getMaxScale(), 64 );
+        }, tapNumber -> {
+            assertEquals(tapNumber.getScale(), 3);
+        });
+
+    }
+
     private <T extends TapMapping, R extends TapType> void validateTapMapping(DefaultExpressionMatchingMap matchingMap, String dataType, Class<T> tapMappingClass, Class<R> tapTypeClass, Consumer<TypeExprResult<DataMap>> paramValidator, Consumer<T> tapMappingValidator, Consumer<R> tapTypeValidator) {
         TypeExprResult<DataMap> exprResult = matchingMap.get(dataType);
         if(paramValidator != null)
