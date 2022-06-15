@@ -13,10 +13,7 @@ import io.tapdata.entity.schema.value.*;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import io.tapdata.pdk.apis.entity.FilterResult;
-import io.tapdata.pdk.apis.entity.TapFilter;
-import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.util.*;
@@ -74,7 +71,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase {
      * @return
      */
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public ConnectionOptions connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         //Assume below tests are successfully, below tests are recommended, but not required.
         //Connection test
         //TODO execute connection test here
@@ -96,6 +93,7 @@ public class EmptyDorisTargetConnector extends ConnectorBase {
 //        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
         //When test successfully, but some warn is reported.
  //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
+        return null;
     }
 
     @Override

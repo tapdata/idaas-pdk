@@ -122,23 +122,24 @@ public class PostgresConnector extends ConnectorBase {
 
     // TODO: 2022/6/9 need to improve test items
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public ConnectionOptions connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectionContext.getConnectionConfig());
         PostgresTest postgresTest = new PostgresTest(postgresConfig);
         TestItem testHostPort = postgresTest.testHostPort();
         consumer.accept(testHostPort);
         if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
-            return;
+            return null;
         }
         TestItem testConnect = postgresTest.testConnect();
         consumer.accept(testConnect);
         if (testConnect.getResult() == TestItem.RESULT_FAILED) {
-            return;
+            return null;
         }
         consumer.accept(postgresTest.testPrivilege());
         consumer.accept(postgresTest.testReplication());
         consumer.accept(postgresTest.testLogPlugin());
         postgresTest.close();
+        return null;
     }
 
     @Override

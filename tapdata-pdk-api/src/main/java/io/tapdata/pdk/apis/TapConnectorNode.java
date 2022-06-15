@@ -2,6 +2,7 @@ package io.tapdata.pdk.apis;
 
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
+import io.tapdata.pdk.apis.entity.ConnectionOptions;
 import io.tapdata.pdk.apis.entity.TestItem;
 
 import java.io.IOException;
@@ -29,7 +30,7 @@ public interface TapConnectorNode extends TapNode  {
      * @param connectionContext
      * @return
      */
-    void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable;
+    ConnectionOptions connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable;
 
     /**
      * Table count for database.

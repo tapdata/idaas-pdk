@@ -239,7 +239,7 @@ public class MongodbConnector extends ConnectorBase {
 	 * @return
 	 */
 	@Override
-	public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
+	public ConnectionOptions connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
 		try {
 			onStart(connectionContext);
 			try (final MongoCursor<String> mongoCursor = mongoDatabase.listCollectionNames().iterator();) {
@@ -250,6 +250,7 @@ public class MongodbConnector extends ConnectorBase {
 			throwable.printStackTrace();
 			consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Failed, " + throwable.getMessage()));
 		}
+		return null;
 	}
 
 	@Override

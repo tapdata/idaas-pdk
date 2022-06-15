@@ -16,10 +16,7 @@ import io.tapdata.entity.schema.value.*;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import io.tapdata.pdk.apis.entity.FilterResult;
-import io.tapdata.pdk.apis.entity.TapFilter;
-import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import io.tapdata.entity.logger.TapLogger;
 
@@ -64,17 +61,17 @@ public class TDDTargetConnector extends ConnectorBase {
     /**
      * The method invocation life circle is below,
      * initiated -> connectionTest -> discoverSchema -> destroy -> ended
-     *
+     * <p>
      * You need to create the connection to your data source and release the connection after usage in this method.
      * In connectionContext, you can get the connection config which is the user input for your connection application, described in your json file.
-     *
+     * <p>
      * consumer can call accept method multiple times to test different items
      *
      * @param connectionContext
      * @return
      */
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public ConnectionOptions connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         //Assume below tests are successfully, below tests are recommended, but not required.
         //Connection test
         //TODO execute connection test here
@@ -96,6 +93,7 @@ public class TDDTargetConnector extends ConnectorBase {
 //        consumer.accept(testItem(TestItem.ITEM_CONNECTION, TestItem.RESULT_FAILED, "Connection refused"));
         //When test successfully, but some warn is reported.
  //        consumer.accept(testItem(TestItem.ITEM_READ_LOG, TestItem.RESULT_SUCCESSFULLY_WITH_WARN, "CDC not enabled, please check your database settings"));
+        return null;
     }
 
     @Override

@@ -19,10 +19,7 @@ import io.tapdata.pdk.apis.annotations.TapConnectorClass;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
-import io.tapdata.pdk.apis.entity.FilterResults;
-import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
-import io.tapdata.pdk.apis.entity.TestItem;
-import io.tapdata.pdk.apis.entity.WriteListResult;
+import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.error.NotSupportedException;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 import org.apache.commons.collections4.CollectionUtils;
@@ -272,28 +269,29 @@ public class MysqlConnector extends ConnectorBase {
 	}
 
 	@Override
-	public void connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer) throws Throwable {
+	public ConnectionOptions connectionTest(TapConnectionContext databaseContext, Consumer<TestItem> consumer) throws Throwable {
 		onStart(databaseContext);
 		MysqlConnectionTest mysqlConnectionTest = new MysqlConnectionTest(mysqlJdbcContext);
 		TestItem testHostPort = mysqlConnectionTest.testHostPort(databaseContext);
 		consumer.accept(testHostPort);
 		if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
-			return;
+			return null;
 		}
 		TestItem testConnect = mysqlConnectionTest.testConnect();
 		consumer.accept(testConnect);
 		if (testConnect.getResult() == TestItem.RESULT_FAILED) {
-			return;
+			return null;
 		}
 		TestItem testDatabaseVersion = mysqlConnectionTest.testDatabaseVersion();
 		consumer.accept(testDatabaseVersion);
 		if (testDatabaseVersion.getResult() == TestItem.RESULT_FAILED) {
-			return;
+			return null;
 		}
 		consumer.accept(mysqlConnectionTest.testBinlogMode());
 		consumer.accept(mysqlConnectionTest.testBinlogRowImage());
 		consumer.accept(mysqlConnectionTest.testCDCPrivileges());
 		consumer.accept(mysqlConnectionTest.testCreateTablePrivilege(databaseContext));
+		return null;
 	}
 
 	private Object timestampToStreamOffset(TapConnectorContext tapConnectorContext, Long startTime) throws Throwable {
