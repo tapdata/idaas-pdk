@@ -309,11 +309,11 @@
     },
     "RAW($byte)": {
       "queryOnly": true,
-      "to": "TapRaw"
+      "to": "TapBinary"
     },
     "LONG RAW": {
       "queryOnly": true,
-      "to": "TapRaw"
+      "to": "TapBinary"
     }
   }
 }
