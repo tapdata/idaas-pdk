@@ -175,7 +175,7 @@ class TargetTypesGeneratorTest {
                 .add(field("int(32) unsigned", "int(32) unsigned"))
                 .add(field("longtext", "longtext")) // exceed the max of target types
                 .add(field("varchar(10)", "varchar(10)"))
-                .add(field("decimal(27, -3)", "decimal(27, -3)"))
+                .add(field("decimal(20, -3)", "decimal(20, -3)"))
 
 
         ;
@@ -205,8 +205,8 @@ class TargetTypesGeneratorTest {
         //源端scale是负数， 目标端不支持负数的case
         //Source: "    \"decimal($precision,$scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"to\": \"TapNumber\"},\n" +
         //Target: "    \"decimal[($precision,$scale)]\":{\"precision\": [1, 27], \"defaultPrecision\": 10, \"scale\": [0, 9], \"defaultScale\": 0, \"to\": \"TapNumber\"},\n" +
-        TapField decimal273 = nameFieldMap.get("decimal(27, -3)");
-        assertEquals("decimal(27,0)", decimal273.getDataType());
+        TapField decimal273 = nameFieldMap.get("decimal(20, -3)");
+        assertEquals("decimal(23,0)", decimal273.getDataType());
         assertEquals(-3, ((TapNumber)decimal273.getTapType()).getScale());
 
         //源端的类型大于任何目标端的类型， 因此在目标端选择尽可能大的类型
@@ -278,6 +278,7 @@ class TargetTypesGeneratorTest {
                 .add(field("int(32)", "int(32)"))
                 .add(field("decimal(65,30) unsigned", "decimal(65,30) unsigned"))
                 .add(field("decimal(65,-3)", "decimal(65,-3)"))
+                .add(field("decimal(55,-3)", "decimal(55,-3)"))
                 .add(field("decimal(65,30)", "decimal(65,30)"))
                 .add(field("float", "float"))
                 .add(field("float unsigned", "float unsigned"))
@@ -299,7 +300,10 @@ class TargetTypesGeneratorTest {
         assertEquals("int", int32unsignedField.getDataType());
 
         TapField decimal650Field = nameFieldMap.get("decimal(65,-3)");
-        assertEquals("decimal(65,0)", decimal650Field.getDataType());
+        assertEquals("superbigint", decimal650Field.getDataType()); //superbigint is correct if scale is -3.
+
+        TapField decimal550Field = nameFieldMap.get("decimal(55,-3)");
+        assertEquals("decimal(58,0)", decimal550Field.getDataType()); //superbigint is correct if scale is -3.
 
         TapField decimal6530Field = nameFieldMap.get("decimal(65,30)");
         assertEquals("decimal(65,30)", decimal6530Field.getDataType());
