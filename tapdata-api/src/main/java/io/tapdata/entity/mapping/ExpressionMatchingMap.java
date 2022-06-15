@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ExpressionMatchingMap<T> {
     private ValueFilter<T> valueFilter;
     private Map<String, T> exactlyMatchMap = new LinkedHashMap<>();
+    private Map<String, String> exactlyOriginalNameMap = new LinkedHashMap<>();
     private Map<String, List<TypeExpr<T>>> prefixTypeExprListMap = new LinkedHashMap<>();
 
     public static <T> ExpressionMatchingMap<T> map(String json, TypeHolder<Map<String, T>> typeHolder) {
@@ -68,13 +69,14 @@ public class ExpressionMatchingMap<T> {
             TypeExpr<T> typeExpr = new TypeExpr<>();
             if(!typeExpr.parseExpression(key))
                 continue;
-            key = key.toLowerCase();
+            String matchingKey = key.toLowerCase();
+            exactlyOriginalNameMap.put(matchingKey, key);
             typeExpr.setValue(entry.getValue());
             int prefixMatchType = typeExpr.getPrefixMatchType();
 
             switch (prefixMatchType) {
                 case TypeExpr.PREFIX_MATCH_ALL:
-                    exactlyMatchMap.put(key, entry.getValue());
+                    exactlyMatchMap.put(matchingKey, entry.getValue());
                     break;
                 case TypeExpr.PREFIX_MATCH_START:
                     String prefix = typeExpr.getPrefix();
@@ -113,8 +115,12 @@ public class ExpressionMatchingMap<T> {
         }
         if(exactlyMatchMap != null && (type == ITERATE_TYPE_ALL || type == ITERATE_TYPE_EXACTLY_ONLY)) {
             for(Map.Entry<String, T> entry : exactlyMatchMap.entrySet()) {
+                String originalName = exactlyOriginalNameMap.get(entry.getKey());
+                if(originalName == null) {
+                    originalName = entry.getKey();
+                }
                 valueFilter(entry.getValue());
-                if(iterator.iterate(entry)) {
+                if(iterator.iterate(new TapEntry<>(originalName, entry.getValue()))) {
                     return;
                 }
             }
