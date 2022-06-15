@@ -265,6 +265,7 @@
       ],
       "defaultFraction": 6,
       "priority": 2,
+      "withTimeZone": true,
       "to": "TapDateTime"
     },
     "TIMESTAMP[($fraction)] WITH LOCAL TIME ZONE": {
@@ -277,6 +278,7 @@
         0,
         9
       ],
+      "withTimeZone": true,
       "defaultFraction": 6,
       "priority": 2,
       "to": "TapDateTime"
