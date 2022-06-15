@@ -47,4 +47,8 @@ public class StringKit {
         return list.stream().map(s -> around + s + around).collect(Collectors.joining(splitter));
     }
 
+//    public static int compareVersion(String version1, String version2) {
+//        version1.split(".")
+//    }
+
 }
