@@ -235,12 +235,15 @@ public class TapNumberMapping extends TapMapping {
         if (zerofill != null && dataType.contains(zerofill)) {
             theZerofill = true;
         }
+        boolean hasBitVariable = false;
+        boolean hasPrecisionScaleVariable = false;
 
         String lengthStr = getParam(params, KEY_BIT);
         Integer length = null;
         if (lengthStr != null) {
             try {
                 length = Integer.parseInt(lengthStr);
+                hasBitVariable = true;
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }
@@ -260,6 +263,7 @@ public class TapNumberMapping extends TapMapping {
             precisionStr = precisionStr.trim();
             try {
                 precision = Integer.parseInt(precisionStr);
+                hasPrecisionScaleVariable = true;
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
             }
@@ -290,7 +294,19 @@ public class TapNumberMapping extends TapMapping {
 
         BigDecimal theMinValue = null;
         BigDecimal theMaxValue = null;
-        if(length != null) {
+        if(hasBitVariable) {
+            theMinValue = TypeUtils.minValueForBit(length, theUnsigned);
+            theMaxValue = TypeUtils.maxValueForBit(length, theUnsigned);
+        } else if(hasPrecisionScaleVariable){
+            Integer newPrecision = precision;
+            //Support Oracle scale can be negative value, it will increase the precision length.
+            if(scale < 0) {
+                newPrecision = precision - scale;
+            }
+
+            theMinValue = (theUnsigned != null && theUnsigned) ? BigDecimal.ZERO : TypeUtils.minValueForPrecision(newPrecision);
+            theMaxValue = TypeUtils.maxValueForPrecision(newPrecision);
+        } else if(length != null) {
             theMinValue = TypeUtils.minValueForBit(length, theUnsigned);
             theMaxValue = TypeUtils.maxValueForBit(length, theUnsigned);
         } else if(minValue != null && maxValue != null) {
@@ -354,7 +370,7 @@ public class TapNumberMapping extends TapMapping {
 //            final BigDecimal scaleValue =  fixedValue.multiply(BigDecimal.TEN);
 //            final BigDecimal valueValue = scaleValue.multiply(BigDecimal.TEN);
 
-            if((scale != null && isScale()) ||
+            if((scale != null && scale > 0 && isScale()) ||
                     (scale == null && !isScale())) {
 //                score += scaleValue;
                 score = score.add(scaleValue);
@@ -485,8 +501,51 @@ public class TapNumberMapping extends TapMapping {
                 }
                 theFinalExpression = theFinalExpression.replace("$" + KEY_BIT, String.valueOf(bit));
             }
+
+            boolean precisionExceeded = false;
             Integer precision = tapNumber.getPrecision();
+            if(precision != null && this.maxPrecision != null && this.minPrecision != null) {
+                if(maxPrecision < precision) {
+                    precisionExceeded = true;
+                }
+            }
+
+            int precisionFromNegativeScale = 0;
+
+            Integer scale = tapNumber.getScale();
+            if(tapNumber.getPrecision() != null && scale == null)
+                scale = 0;
+            else if(precisionExceeded) //if precision exceeded, remove scale to keep the number as larger as possible.
+                scale = 0;
+
+            if (scale != null) {
+                theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
+
+                if(minScale != null && maxScale != null) {
+                    if(minScale > scale) {
+                        tapResult.addItem(new ResultItem("TapNumberMapping MIN_SCALE", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Scale " + scale + " from source exceeded the minimum of target scale " + this.minScale + ", expression " + typeExpression));
+                        if(scale < 0) {
+                            //handle scale is negative case.
+                            int theMinScale = minScale >= 0 ? 0 : minScale;
+                            precisionFromNegativeScale = theMinScale - scale;
+                        }
+                        scale = minScale;
+                    } else if(maxScale < scale) {
+                        tapResult.addItem(new ResultItem("TapNumberMapping MAX_SCALE", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Scale " + scale + " from source exceeded the maxiumu of target scale " + this.maxScale + ", expression " + typeExpression));
+                        scale = maxScale;
+                    }
+                }
+                theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(scale));
+            }
+
             if (precision != null) {
+                precision += precisionFromNegativeScale;
+
+                //if scale larger than precision, force precision equal to scale.
+                if(scale != null && scale > precision) {
+                    precision = scale;
+                }
+
                 theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_PRECISION, false);
 
                 if(this.maxPrecision != null && this.minPrecision != null) {
@@ -500,23 +559,7 @@ public class TapNumberMapping extends TapMapping {
                 }
                 theFinalExpression = theFinalExpression.replace("$" + KEY_PRECISION, String.valueOf(precision));
             }
-            Integer scale = tapNumber.getScale();
-            if(precision != null && scale == null)
-                scale = 0;
-            if (scale != null) {
-                theFinalExpression = clearBrackets(theFinalExpression, "$" + KEY_SCALE, false);
 
-                if(minScale != null && maxScale != null) {
-                    if(minScale > scale) {
-                        tapResult.addItem(new ResultItem("TapNumberMapping MIN_SCALE", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Scale " + scale + " from source exceeded the minimum of target scale " + this.minScale + ", expression " + typeExpression));
-                        scale = minScale;
-                    } else if(maxScale < scale) {
-                        tapResult.addItem(new ResultItem("TapNumberMapping MAX_SCALE", TapResult.RESULT_SUCCESSFULLY_WITH_WARN, "Scale " + scale + " from source exceeded the maxiumu of target scale " + this.maxScale + ", expression " + typeExpression));
-                        scale = maxScale;
-                    }
-                }
-                theFinalExpression = theFinalExpression.replace("$" + KEY_SCALE, String.valueOf(scale));
-            }
             theFinalExpression = removeBracketVariables(theFinalExpression, 0);
         }
         if(tapResult.getResultItems() != null && !tapResult.getResultItems().isEmpty())

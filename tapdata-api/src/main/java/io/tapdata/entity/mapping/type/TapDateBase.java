@@ -12,7 +12,7 @@ import static io.tapdata.entity.utils.TypeUtils.objectToNumber;
  */
 public abstract class TapDateBase extends TapMapping {
     public static final String KEY_RANGE = "range";
-    public static final String KEY_WITH_TIMEZONE = "withTimezone";
+    public static final String KEY_WITH_TIMEZONE = "withTimeZone";
     public static final String KEY_BYTE = "byte";
     public static final String KEY_FRACTION = "fraction";
     public static final String KEY_PATTERN = "pattern";

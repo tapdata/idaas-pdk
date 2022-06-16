@@ -2,8 +2,6 @@ package io.tapdata.connector.postgres.cdc;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
-import io.tapdata.common.DataSourcePool;
-import io.tapdata.connector.postgres.PostgresJdbcContext;
 import io.tapdata.connector.postgres.cdc.config.PostgresDebeziumConfig;
 import io.tapdata.connector.postgres.cdc.offset.PostgresOffset;
 import io.tapdata.connector.postgres.cdc.offset.PostgresOffsetStorage;
@@ -22,14 +20,11 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.codehaus.plexus.util.StringUtils;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * CDC runner for Postgresql
@@ -40,10 +35,8 @@ import java.util.stream.Collectors;
 public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     private static final String TAG = PostgresCdcRunner.class.getSimpleName();
-    private PostgresJdbcContext postgresJdbcContext;
     private PostgresConfig postgresConfig;
     private PostgresDebeziumConfig postgresDebeziumConfig;
-    private List<String> observedTableList;
     private PostgresOffset postgresOffset;
     private int recordSize;
     private StreamReadConsumer consumer;
@@ -53,13 +46,8 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     }
 
-    public PostgresOffset getPostgresOffset() {
-        return postgresOffset;
-    }
-
     public PostgresCdcRunner use(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        this.postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
         return this;
     }
 
@@ -69,7 +57,6 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
     }
 
     public PostgresCdcRunner watch(List<String> observedTableList) {
-        this.observedTableList = observedTableList;
         postgresDebeziumConfig = new PostgresDebeziumConfig()
                 .use(postgresConfig)
                 .watch(observedTableList);
@@ -139,18 +126,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
                     consumer.streamReadEnded();
                 })
                 .build();
-
-        //make replica identity for postgres those without unique key
-//        try {
-//            makeReplicaIdentity();
-//        } catch (Throwable e) {
-//            e.printStackTrace();
-//        }
         return this;
-    }
-
-    public void consumeRecord(SourceRecord sourceRecord) {
-        System.out.println(sourceRecord);
     }
 
     @Override
@@ -207,51 +183,10 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
             if (obj instanceof ByteBuffer) {
                 obj = struct.getBytes(field.name());
             } else if (obj instanceof Struct) {
-                String str = new String(((Struct) obj).getBytes("value"));
                 obj = BigDecimal.valueOf(NumberKit.bytes2long(((Struct) obj).getBytes("value")), (int) ((Struct) obj).get("scale"));
             }
             dataMap.put(field.name(), obj);
         });
         return dataMap;
     }
-
-    @Override
-    public void closeCdcRunner() throws IOException, SQLException {
-        super.closeCdcRunner();
-        postgresJdbcContext.finish();
-    }
-
-    //make these tables ready for REPLICA IDENTITY
-    private void makeReplicaIdentity() throws Throwable {
-        String tableSql = EmptyKit.isEmpty(observedTableList) ? "" : " AND tab.tablename IN ('" +
-                String.join("','", observedTableList) + "')";
-        List<String> tableD = TapSimplify.list(); //to make table IDENTITY 'D'
-        List<String> tableF = TapSimplify.list(); //to make table IDENTITY 'F'
-        postgresJdbcContext.query(String.format(PG_ALL_REPLICA_IDENTITY, postgresConfig.getSchema(), tableSql), resultSet -> {
-            while (resultSet.next()) {
-                int hasUnique = resultSet.getInt("hasunique");
-                String relReplident = resultSet.getString("relreplident");
-                String tableName = resultSet.getString("tablename");
-                if (hasUnique == 1 && "n,i".contains(relReplident)) {
-                    tableD.add(tableName);
-                } else if (hasUnique == 0 && !"f".equals(relReplident)) {
-                    tableF.add(tableName);
-                }
-            }
-        });
-        List<String> sqls = TapSimplify.list();
-        sqls.addAll(tableD.stream().map(d -> "ALTER TABLE \"" + d + "\" REPLICA IDENTITY DEFAULT").collect(Collectors.toList()));
-        sqls.addAll(tableF.stream().map(f -> "ALTER TABLE \"" + f + "\" REPLICA IDENTITY FULL").collect(Collectors.toList()));
-        postgresJdbcContext.batchExecute(sqls);
-    }
-
-    private final static String PG_ALL_REPLICA_IDENTITY = "SELECT tab.tablename,cls.relreplident,\n" +
-            "    (CASE WHEN EXISTS \n" +
-            "        (SELECT 1 FROM pg_index WHERE indrelid IN \n" +
-            "            (SELECT oid FROM pg_class WHERE relname = tab.tablename)) \n" +
-            "    THEN 1 ELSE 0 END) hasunique \n" +
-            "FROM pg_tables tab\n" +
-            "JOIN pg_class cls ON cls.relname = tab.tablename\n" +
-            "WHERE tab.schemaname = '%s' %s";
-
 }

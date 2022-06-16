@@ -6,8 +6,8 @@ import io.tapdata.entity.utils.DataMap;
 import io.tapdata.kit.EmptyKit;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -22,10 +22,10 @@ public abstract class JdbcContext {
     private final HikariDataSource hikariDataSource;
     private boolean isFinish = false;
     private final CommonDbConfig config;
-    private final AtomicInteger connectorNumber = new AtomicInteger(1); //number of initialization
+    private final List<String> connectorIds = new ArrayList<>(); //number of initialization
 
-    public JdbcContext incrementAndGet() {
-        connectorNumber.incrementAndGet();
+    public JdbcContext incrementConnector(String connectorId) {
+        connectorIds.add(connectorId);
         return this;
     }
 
@@ -140,8 +140,9 @@ public abstract class JdbcContext {
         isFinish = finish;
     }
 
-    public void finish() {
-        if (connectorNumber.decrementAndGet() <= 0) {
+    public void finish(String connectorId) {
+        connectorIds.remove(connectorId);
+        if (EmptyKit.isEmpty(connectorIds)) {
             this.hikariDataSource.close();
             setFinish(true);
             DataSourcePool.removeJdbcContext(config);

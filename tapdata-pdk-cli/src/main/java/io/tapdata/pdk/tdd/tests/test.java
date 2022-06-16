@@ -29,6 +29,7 @@ import java.util.*;
 
 public class test {
 	public static void main(String... args) throws Throwable {
+        System.out.println("hello");
 //        System.out.println(convertJarFileName("mongodb-connector-v1.0-SNAPSHOT__628daf0716419763bbdce3f1__.jar"));
     }
 }

@@ -238,10 +238,16 @@ public class ModelPredictionCli extends CommonCli {
             generatedTable.add(field("special_char(255)", "char(255)"));
             generatedTable.add(field("special_varchar(10)", "varchar(10)"));
             generatedTable.add(field("special_varchar(255)", "varchar(255)"));
+            generatedTable.add(field("special_decimal(30,5)", "decimal(30,5)"));
         }
 
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("mongodb")) {
             generatedTable.add(field("special_string_id_primary", "string").primaryKeyPos(generatedTable.getNameFieldMap().size()));
+        }
+
+        if(sourceNode.getConnectorContext().getSpecification().getId().equals("oracle")) {
+            generatedTable.add(field("special_NUMBER(38,-3)", "NUMBER(38,-3)"));
+            generatedTable.add(field("special_NUMBER(38,-80)", "NUMBER(38,-80)"));
         }
     }
 

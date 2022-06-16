@@ -175,7 +175,7 @@ class TargetTypesGeneratorTest {
                 .add(field("int(32) unsigned", "int(32) unsigned"))
                 .add(field("longtext", "longtext")) // exceed the max of target types
                 .add(field("varchar(10)", "varchar(10)"))
-                .add(field("decimal(27, -3)", "decimal(27, -3)"))
+                .add(field("decimal(20, -3)", "decimal(20, -3)"))
 
 
         ;
@@ -205,8 +205,8 @@ class TargetTypesGeneratorTest {
         //源端scale是负数， 目标端不支持负数的case
         //Source: "    \"decimal($precision,$scale)[theUnsigned][theZerofill]\": {\"precision\":[1, 65], \"scale\": [-3, 30], \"unsigned\": \"theUnsigned\", \"zerofill\": \"theZerofill\", \"precisionDefault\": 10, \"scaleDefault\": 0, \"to\": \"TapNumber\"},\n" +
         //Target: "    \"decimal[($precision,$scale)]\":{\"precision\": [1, 27], \"defaultPrecision\": 10, \"scale\": [0, 9], \"defaultScale\": 0, \"to\": \"TapNumber\"},\n" +
-        TapField decimal273 = nameFieldMap.get("decimal(27, -3)");
-        assertEquals("decimal(27,0)", decimal273.getDataType());
+        TapField decimal273 = nameFieldMap.get("decimal(20, -3)");
+        assertEquals("decimal(23,0)", decimal273.getDataType());
         assertEquals(-3, ((TapNumber)decimal273.getTapType()).getScale());
 
         //源端的类型大于任何目标端的类型， 因此在目标端选择尽可能大的类型
@@ -278,6 +278,7 @@ class TargetTypesGeneratorTest {
                 .add(field("int(32)", "int(32)"))
                 .add(field("decimal(65,30) unsigned", "decimal(65,30) unsigned"))
                 .add(field("decimal(65,-3)", "decimal(65,-3)"))
+                .add(field("decimal(55,-3)", "decimal(55,-3)"))
                 .add(field("decimal(65,30)", "decimal(65,30)"))
                 .add(field("float", "float"))
                 .add(field("float unsigned", "float unsigned"))
@@ -299,7 +300,10 @@ class TargetTypesGeneratorTest {
         assertEquals("int", int32unsignedField.getDataType());
 
         TapField decimal650Field = nameFieldMap.get("decimal(65,-3)");
-        assertEquals("decimal(65,0)", decimal650Field.getDataType());
+        assertEquals("superbigint", decimal650Field.getDataType()); //superbigint is correct if scale is -3.
+
+        TapField decimal550Field = nameFieldMap.get("decimal(55,-3)");
+        assertEquals("decimal(58,0)", decimal550Field.getDataType()); //superbigint is correct if scale is -3.
 
         TapField decimal6530Field = nameFieldMap.get("decimal(65,30)");
         assertEquals("decimal(65,30)", decimal6530Field.getDataType());
@@ -308,7 +312,7 @@ class TargetTypesGeneratorTest {
         assertEquals("float", floatField.getDataType());
 
         TapField floatUnsignedField = nameFieldMap.get("float unsigned");
-        assertEquals("float(5,6) unsigned", floatUnsignedField.getDataType());
+        assertEquals("float(6,6) unsigned", floatUnsignedField.getDataType());
 
         TapField float8Field = nameFieldMap.get("float(8)");
         assertEquals("float", float8Field.getDataType());
@@ -1053,6 +1057,124 @@ class TargetTypesGeneratorTest {
 
 
         TapField doubleField = nameFieldMap.get("double");
-        assertEquals("double", doubleField.getDataType());
+        assertEquals("DOUBLE", doubleField.getDataType());
+    }
+
+    @Test
+    public void ScaleLargerThanPrecisionTest() {
+
+        String sourceTypeExpression = "{" +
+                "    \"numeric[($precision,$scale)]\": {\"precision\": [1,1000],\"scale\": [0,1000],\"fixed\": false,\"preferPrecision\": 20,\"preferScale\": 8,\"priority\": 1,\"to\": \"TapNumber\"}\n"
+                + "}";
+
+        String targetTypeExpression = "{\n" +
+                "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10, \"preferPrecision\": 3,\"defaultScale\": 0,\"preferScale\": 3,\"unsigned\": \"unsigned\", \"fixed\": true},\n" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("numeric(10,50)", "numeric(10,50)"))
+                .add(field("numeric(10,11)", "numeric(10,11)"))
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+
+        TapField number1050Field = nameFieldMap.get("numeric(10,50)");
+        assertEquals("decimal(30,30)", number1050Field.getDataType());
+
+        TapField number1011Field = nameFieldMap.get("numeric(10,11)");
+        assertEquals("decimal(11,11)", number1011Field.getDataType());
+    }
+
+    @Test
+    public void precisionExceededMakeScale0Test() {
+
+        String sourceTypeExpression = "{" +
+                "    \"numeric[($precision,$scale)]\": {\"precision\": [1,1000],\"scale\": [0,1000],\"fixed\": false,\"preferPrecision\": 20,\"preferScale\": 8,\"priority\": 1,\"to\": \"TapNumber\"}\n"
+                + "}";
+
+        String targetTypeExpression = "{\n" +
+                "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10, \"preferPrecision\": 3,\"defaultScale\": 0,\"preferScale\": 3,\"unsigned\": \"unsigned\", \"fixed\": true},\n" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("numeric(1000,500)", "numeric(1000,500)"))
+                .add(field("numeric(66,11)", "numeric(66,11)"))
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+
+        TapField number1050Field = nameFieldMap.get("numeric(1000,500)");
+        assertEquals("decimal(65,0)", number1050Field.getDataType());
+
+        TapField number1011Field = nameFieldMap.get("numeric(66,11)");
+        assertEquals("decimal(65,0)", number1011Field.getDataType());
+    }
+
+    @Test
+    public void scaleNegativeTest() {
+
+        String sourceTypeExpression = "{" +
+                "    \"numeric[($precision,$scale)]\": {\"precision\": [1,1000],\"scale\": [-1000,1000],\"fixed\": false,\"preferPrecision\": 20,\"preferScale\": 8,\"priority\": 1,\"to\": \"TapNumber\"}\n"
+                + "}";
+
+        String targetTypeExpression = "{\n" +
+                "\"decimal[($precision,$scale)][unsigned]\": {\"to\": \"TapNumber\",\"precision\": [ 1, 65],\"scale\": [ 0, 30],\"defaultPrecision\": 10, \"preferPrecision\": 3,\"defaultScale\": 0,\"preferScale\": 3,\"unsigned\": \"unsigned\", \"fixed\": true},\n" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("numeric(10,-5)", "numeric(10,-5)"))
+                .add(field("numeric(10,-500)", "numeric(10,-500)"))
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+
+        TapField number1050Field = nameFieldMap.get("numeric(10,-5)");
+        assertEquals("decimal(15,0)", number1050Field.getDataType());
+
+        TapField number1011Field = nameFieldMap.get("numeric(10,-500)");
+        assertEquals("decimal(65,0)", number1011Field.getDataType());
+    }
+
+    @Test
+    public void withTimeZoneTest() {
+
+        String sourceTypeExpression = "{" +
+                "\"timestamp[($fraction)] without time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": false,\"defaultFraction\": 6,\"priority\": 1,\"to\": \"TapDateTime\"}," +
+                "\"timestamp[($fraction)] with time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": true,\"defaultFraction\": 6,\"priority\": 2,\"to\": \"TapDateTime\"}" +
+                "}";
+
+        String targetTypeExpression = "{\n" +
+                "\"timestampex[($fraction)] without time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": false,\"defaultFraction\": 6,\"priority\": 1,\"to\": \"TapDateTime\"}," +
+                "\"timestampex[($fraction)] with time zone\": {\"range\": [\"1000-01-01 00:00:00\",\"9999-12-31 23:59:59\"],\"pattern\": \"yyyy-MM-dd HH:mm:ss\",\"fraction\": [0,6],\"withTimeZone\": true,\"defaultFraction\": 6,\"priority\": 2,\"to\": \"TapDateTime\"}" +
+                "}";
+
+        TapTable sourceTable = table("test");
+        sourceTable
+                .add(field("timestamp(3) without time zone", "timestamp(3) without time zone"))
+                .add(field("timestamp with time zone", "timestamp with time zone"))
+        ;
+        tableFieldTypesGenerator.autoFill(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(sourceTypeExpression));
+        TapResult<LinkedHashMap<String, TapField>> tapResult = targetTypesGenerator.convert(sourceTable.getNameFieldMap(), DefaultExpressionMatchingMap.map(targetTypeExpression), targetCodecFilterManager);
+
+        LinkedHashMap<String, TapField> nameFieldMap = tapResult.getData();
+
+
+        TapField number1050Field = nameFieldMap.get("timestamp(3) without time zone");
+        assertEquals("timestampex(3) without time zone", number1050Field.getDataType());
+
+        TapField number1011Field = nameFieldMap.get("timestamp with time zone");
+        assertEquals("timestampex(6) with time zone", number1011Field.getDataType());
     }
 }

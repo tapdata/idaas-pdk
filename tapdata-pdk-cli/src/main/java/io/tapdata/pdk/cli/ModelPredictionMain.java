@@ -22,7 +22,9 @@ public class ModelPredictionMain {
 
                 "connectors/mysql/mysql-connector",
                 "connectors/postgres/postgres-connector",
-                "connectors/mongodb-connector"
+                "connectors/mongodb-connector",
+//                "connectors/oracle/oracle-connector",
+                
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk-new/dist/postgres-connector-v1.0-SNAPSHOT.jar",
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk-new/dist/mysql-connector-v1.0-SNAPSHOT.jar"
         };

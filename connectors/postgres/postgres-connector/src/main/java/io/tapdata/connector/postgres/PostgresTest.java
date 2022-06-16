@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,10 +21,11 @@ public class PostgresTest implements AutoCloseable {
 
     private final PostgresConfig postgresConfig;
     private final PostgresJdbcContext postgresJdbcContext;
+    private final String uuid = UUID.randomUUID().toString();
 
     public PostgresTest(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
-        postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
+        postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class, uuid);
     }
 
     //Test host and port
@@ -109,7 +111,7 @@ public class PostgresTest implements AutoCloseable {
     @Override
     public void close() {
         try {
-            postgresJdbcContext.finish();
+            postgresJdbcContext.finish(uuid);
         } catch (Exception ignored) {
         }
     }

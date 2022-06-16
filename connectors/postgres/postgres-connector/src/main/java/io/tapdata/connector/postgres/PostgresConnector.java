@@ -196,7 +196,7 @@ public class PostgresConnector extends ConnectorBase {
             clearSlot(slotName.toString());
         }
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
-            postgresJdbcContext.finish();
+            postgresJdbcContext.finish(connectorContext.getId());
         }
         //stateMap will be cleared by engine
     }
@@ -217,7 +217,7 @@ public class PostgresConnector extends ConnectorBase {
             cdcRunner = null;
         }
         if (EmptyKit.isNotNull(postgresJdbcContext)) {
-            postgresJdbcContext.finish();
+            postgresJdbcContext.finish(connectionContext.getId());
         }
     }
 
@@ -225,7 +225,7 @@ public class PostgresConnector extends ConnectorBase {
     private void initConnection(TapConnectionContext connectorContext) {
         postgresConfig = (PostgresConfig) new PostgresConfig().load(connectorContext.getConnectionConfig());
         if (EmptyKit.isNull(postgresJdbcContext) || postgresJdbcContext.isFinish()) {
-            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
+            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class, connectorContext.getId());
         }
         isConnectorStarted(connectorContext, tapConnectorContext -> slotName = tapConnectorContext.getStateMap().get("tapdata_pg_slot"));
         postgresVersion = postgresJdbcContext.queryVersion();
@@ -324,7 +324,7 @@ public class PostgresConnector extends ConnectorBase {
         try {
             List<String> sqls = TapSimplify.list();
             if (EmptyKit.isNotEmpty(createIndexEvent.getIndexList())) {
-                if (Double.parseDouble(postgresVersion) > 9.5) {
+                if (Integer.parseInt(postgresVersion) > 90500) {
                     createIndexEvent.getIndexList().stream().filter(i -> !i.isPrimary()).forEach(i ->
                             sqls.add("CREATE " + (i.isUnique() ? "UNIQUE " : " ") + "INDEX " +
                                     (EmptyKit.isNotNull(i.getName()) ? "IF NOT EXISTS \"" + i.getName() + "\"" : "") + " ON \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" +
@@ -352,16 +352,13 @@ public class PostgresConnector extends ConnectorBase {
 
     //write records as all events, prepared
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
-        if (!postgresJdbcContext.testValid()) {
-            postgresJdbcContext = (PostgresJdbcContext) DataSourcePool.getJdbcContext(postgresConfig, PostgresJdbcContext.class);
-        }
         Connection connection = postgresJdbcContext.getConnection();
         //three types of record
         PostgresWriteRecorder insertRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
         PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
         PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
 
-        if (Double.parseDouble(postgresVersion) <= 9.5) {
+        if (Integer.parseInt(postgresVersion) <= 90500) {
             insertRecorder.setPostgresVersion(postgresVersion);
             updateRecorder.setPostgresVersion(postgresVersion);
             deleteRecorder.setPostgresVersion(postgresVersion);
