@@ -242,7 +242,7 @@ public class ModelPredictionCli extends CommonCli {
         }
 
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("mongodb")) {
-            generatedTable.add(field("special_string_id_primary", "string").primaryKeyPos(generatedTable.getNameFieldMap().size()));
+            generatedTable.add(field("special_string_id_primary", "STRING").primaryKeyPos(generatedTable.getNameFieldMap().size()));
         }
 
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("oracle")) {
