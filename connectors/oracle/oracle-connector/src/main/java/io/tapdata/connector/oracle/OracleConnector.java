@@ -2,6 +2,7 @@ package io.tapdata.connector.oracle;
 
 import io.tapdata.common.DataSourcePool;
 import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.entity.schema.value.*;
 import io.tapdata.kit.EmptyKit;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
@@ -22,6 +23,7 @@ import io.tapdata.pdk.apis.entity.TestItem;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,12 +67,43 @@ public class OracleConnector extends ConnectorBase {
 
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
+        //need to clear resource outer
+        connectorFunctions.supportReleaseExternalFunction(this::onDestroy);
+        //target
         connectorFunctions.supportWriteRecord(this::writeRecord);
+//        connectorFunctions.supportCreateTable(this::createTable);
+//        connectorFunctions.supportClearTable(this::clearTable);
+//        connectorFunctions.supportDropTable(this::dropTable);
+//        connectorFunctions.supportCreateIndex(this::createIndex);
+//        //source
+//        connectorFunctions.supportBatchCount(this::batchCount);
+//        connectorFunctions.supportBatchRead(this::batchRead);
+//        connectorFunctions.supportStreamRead(this::streamRead);
+//        connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
+//        //query
+//        connectorFunctions.supportQueryByFilter(this::queryByFilter);
+//        connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
+        codecRegistry.registerFromTapValue(TapRawValue.class, "CLOB", tapRawValue -> {
+            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapMapValue.class, "CLOB", tapMapValue -> {
+            if (tapMapValue != null && tapMapValue.getValue() != null) return toJson(tapMapValue.getValue());
+            return "null";
+        });
+        codecRegistry.registerFromTapValue(TapArrayValue.class, "CLOB", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null) return toJson(tapValue.getValue());
+            return "null";
+        });
+        //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
+        codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> tapTimeValue.getValue().toTime());
+        codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toTimestamp());
+        codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toSqlDate());
     }
 
-    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
-
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
+        new OracleRecordWriter(oracleJdbcContext, tapTable).setVersion(oracleVersion).write(tapRecordEvents, writeListResultConsumer);
     }
 
     @Override

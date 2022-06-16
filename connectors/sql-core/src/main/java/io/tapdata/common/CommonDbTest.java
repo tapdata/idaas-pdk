@@ -11,7 +11,7 @@ import static io.tapdata.base.ConnectorBase.testItem;
 
 public class CommonDbTest implements AutoCloseable {
 
-    private final CommonDbConfig commonDbConfig;
+    protected final CommonDbConfig commonDbConfig;
     protected JdbcContext jdbcContext;
     protected final String uuid = UUID.randomUUID().toString();
 
@@ -48,7 +48,7 @@ public class CommonDbTest implements AutoCloseable {
         }
     }
 
-    enum DbTestItem {
+    protected enum DbTestItem {
 
         HOST_PORT("Check host port is invalid"),
         CHECK_CDC_PRIVILEGES("Check replication privileges"),

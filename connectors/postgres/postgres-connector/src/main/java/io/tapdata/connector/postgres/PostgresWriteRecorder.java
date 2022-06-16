@@ -1,88 +1,36 @@
 package io.tapdata.connector.postgres;
 
-import io.tapdata.entity.event.dml.TapRecordEvent;
+import io.tapdata.common.WriteRecorder;
 import io.tapdata.entity.schema.TapTable;
-import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.kit.EmptyKit;
 import io.tapdata.kit.StringKit;
-import io.tapdata.pdk.apis.entity.WriteListResult;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class PostgresWriteRecorder {
-
-    private final Connection connection;
-    private final TapTable tapTable;
-    private final List<String> allColumn;
-    private final String schema;
-    private List<String> uniqueCondition;
-    private boolean hasPk = false;
-
-    private PreparedStatement preparedStatement = null;
-    private final AtomicLong atomicLong = new AtomicLong(0);
-    private final List<TapRecordEvent> batchCache = TapSimplify.list();
-    private String postgresVersion = "90500";
+public class PostgresWriteRecorder extends WriteRecorder {
 
     public PostgresWriteRecorder(Connection connection, TapTable tapTable, String schema) {
-        this.connection = connection;
-        this.tapTable = tapTable;
-        this.schema = schema;
-        this.allColumn = new ArrayList<>(tapTable.getNameFieldMap().keySet());
-        analyzeTable();
+        super(connection, tapTable, schema);
     }
 
-    private void analyzeTable() {
-        //1、primaryKeys has first priority
-        if (EmptyKit.isNotEmpty(tapTable.primaryKeys(false))) {
-            hasPk = true;
-            uniqueCondition = new ArrayList<>(tapTable.primaryKeys(false));
-        }
-        //2、second priority: analyze table with its indexes
-        else {
-            uniqueCondition = new ArrayList<>(tapTable.primaryKeys(true));
-        }
-    }
-
-    public void executeBatch(WriteListResult<TapRecordEvent> listResult) {
-        long succeed = batchCache.size();
-        if (succeed <= 0) {
-            return;
-        }
-        try {
-            if (preparedStatement != null) {
-                preparedStatement.executeBatch();
-                preparedStatement.clearBatch();
-                batchCache.clear();
-            }
-        } catch (SQLException e) {
-            Map<TapRecordEvent, Throwable> map = batchCache.stream().collect(Collectors.toMap(Function.identity(), (v) -> e));
-            listResult.addErrors(map);
-            succeed = 0;
-            e.printStackTrace();
-        }
-        atomicLong.addAndGet(succeed);
-    }
-
+    @Override
     public void addInsertBatch(Map<String, Object> after) throws SQLException {
+        //after is empty will be skipped
         if (EmptyKit.isEmpty(after)) {
             return;
         }
+        //insert into all columns, make preparedStatement
         if (EmptyKit.isNull(preparedStatement)) {
             String insertHead = "INSERT INTO \"" + schema + "\".\"" + tapTable.getId() + "\" ("
                     + allColumn.stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", ")) + ") ";
             String insertValue = "VALUES(" + StringKit.copyString("?", allColumn.size(), ",") + ") ";
             String insertSql = insertHead + insertValue;
             if (EmptyKit.isNotEmpty(uniqueCondition)) {
-                if (Integer.parseInt(postgresVersion) > 90500) {
+                if (Integer.parseInt(version) > 90500 && uniqueConditionIsIndex) {
                     insertSql += "ON CONFLICT("
                             + uniqueCondition.stream().map(k -> "\"" + k + "\"").collect(Collectors.joining(", "))
                             + ") DO UPDATE SET " + allColumn.stream().map(k -> "\"" + k + "\"=?").collect(Collectors.joining(", "));
@@ -103,19 +51,28 @@ public class PostgresWriteRecorder {
             preparedStatement = connection.prepareStatement(insertSql);
         }
         preparedStatement.clearParameters();
+        //make params
         int pos = 1;
-        if (Integer.parseInt(postgresVersion) <= 90500 && EmptyKit.isNotEmpty(uniqueCondition)) {
+        if ((Integer.parseInt(version) <= 90500 || !uniqueConditionIsIndex) && EmptyKit.isNotEmpty(uniqueCondition)) {
             for (String key : allColumn) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
-            for (String key : uniqueCondition) {
-                preparedStatement.setObject(pos++, after.get(key));
+            if(hasPk) {
+                for (String key : uniqueCondition) {
+                    preparedStatement.setObject(pos++, after.get(key));
+                }
+            }
+            else {
+                for (String key : uniqueCondition) {
+                    preparedStatement.setObject(pos++, after.get(key));
+                    preparedStatement.setObject(pos++, after.get(key));
+                }
             }
         }
         for (String key : allColumn) {
             preparedStatement.setObject(pos++, after.get(key));
         }
-        if (EmptyKit.isNotEmpty(uniqueCondition) && Integer.parseInt(postgresVersion) > 90500) {
+        if (EmptyKit.isNotEmpty(uniqueCondition) && Integer.parseInt(version) > 90500 && uniqueConditionIsIndex) {
             for (String key : allColumn) {
                 preparedStatement.setObject(pos++, after.get(key));
             }
@@ -124,6 +81,7 @@ public class PostgresWriteRecorder {
     }
 
     //before is always empty
+    @Override
     public void addUpdateBatch(Map<String, Object> after) throws SQLException {
         if (EmptyKit.isEmpty(after) || EmptyKit.isEmpty(uniqueCondition)) {
             return;
@@ -151,6 +109,7 @@ public class PostgresWriteRecorder {
         preparedStatement.addBatch();
     }
 
+    @Override
     public void addDeleteBatch(Map<String, Object> before) throws SQLException {
         if (EmptyKit.isEmpty(before)) {
             return;
@@ -184,30 +143,5 @@ public class PostgresWriteRecorder {
                 preparedStatement.setObject(pos++, before.get(key));
             }
         }
-    }
-
-    public void addAndCheckCommit(TapRecordEvent recordEvent, WriteListResult<TapRecordEvent> listResult) {
-        batchCache.add(recordEvent);
-        if (batchCache.size() >= 1000) {
-            executeBatch(listResult);
-        }
-    }
-
-    public void releaseResource() {
-        try {
-            if (EmptyKit.isNotNull(preparedStatement)) {
-                preparedStatement.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public AtomicLong getAtomicLong() {
-        return atomicLong;
-    }
-
-    public void setPostgresVersion(String postgresVersion) {
-        this.postgresVersion = postgresVersion;
     }
 }
