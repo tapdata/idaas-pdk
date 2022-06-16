@@ -5,8 +5,10 @@ import io.tapdata.base.ConnectorBase;
 import io.tapdata.common.CommonSqlMaker;
 import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.oracle.bean.OracleColumn;
+import io.tapdata.connector.oracle.cdc.offset.OracleOffset;
 import io.tapdata.connector.oracle.config.OracleConfig;
 import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
@@ -27,10 +29,12 @@ import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.math.BigDecimal;
+import oracle.sql.BLOB;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -80,7 +84,7 @@ public class OracleConnector extends ConnectorBase {
 //        connectorFunctions.supportCreateIndex(this::createIndex);
 //        //source
         connectorFunctions.supportBatchCount(this::batchCount);
-//        connectorFunctions.supportBatchRead(this::batchRead);
+        connectorFunctions.supportBatchRead(this::batchRead);
 //        connectorFunctions.supportStreamRead(this::streamRead);
 //        connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
 //        //query
@@ -88,7 +92,7 @@ public class OracleConnector extends ConnectorBase {
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
 
         codecRegistry.registerFromTapValue(TapRawValue.class, "CLOB", tapRawValue -> {
-            if (tapRawValue != null && tapRawValue.getValue() != null) return toJson(tapRawValue.getValue());
+            if (tapRawValue != null && tapRawValue.getValue() != null) return tapRawValue.getValue().toString();
             return "null";
         });
         codecRegistry.registerFromTapValue(TapMapValue.class, "CLOB", tapMapValue -> {
@@ -99,8 +103,14 @@ public class OracleConnector extends ConnectorBase {
             if (tapValue != null && tapValue.getValue() != null) return toJson(tapValue.getValue());
             return "null";
         });
+        codecRegistry.registerFromTapValue(TapBooleanValue.class, "INTEGER", tapValue -> {
+            if (tapValue != null && tapValue.getValue() != null) return tapValue.getValue() ? 1 : 0;
+            return 0;
+        });
+
+        codecRegistry.registerToTapValue(BLOB.class, (value, tapType) -> new TapBinaryValue(DbKit.BlobToBytes((BLOB) value)));
         //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
-        codecRegistry.registerFromTapValue(TapTimeValue.class, tapTimeValue -> tapTimeValue.getValue().toTime());
+        codecRegistry.registerFromTapValue(TapTimeValue.class, "CHAR(8)", tapTimeValue -> formatTapDateTime(tapTimeValue.getValue(), "HH:mm:ss"));
         codecRegistry.registerFromTapValue(TapDateTimeValue.class, tapDateTimeValue -> tapDateTimeValue.getValue().toTimestamp());
         codecRegistry.registerFromTapValue(TapDateValue.class, tapDateValue -> tapDateValue.getValue().toSqlDate());
     }
@@ -170,6 +180,39 @@ public class OracleConnector extends ConnectorBase {
         String sql = "SELECT COUNT(1) FROM \"" + oracleConfig.getSchema() + "\".\"" + tapTable.getId() + "\"";
         oracleJdbcContext.query(sql, resultSet -> count.set(resultSet.getLong(1)));
         return count.get();
+    }
+
+    private void batchRead(TapConnectorContext tapConnectorContext, TapTable tapTable, Object offsetState, int eventBatchSize, BiConsumer<List<TapEvent>, Object> eventsOffsetConsumer) throws Throwable {
+        OracleOffset oracleOffset;
+        //beginning
+        if (null == offsetState) {
+            oracleOffset = new OracleOffset(CommonSqlMaker.getOrderByUniqueKey(tapTable), 0L);
+        }
+        //with offset
+        else {
+            oracleOffset = (OracleOffset) offsetState;
+        }
+        String sql = "SELECT * FROM (SELECT a.*,ROWNUM row_no FROM\"" + oracleConfig.getSchema() + "\".\"" + tapTable.getId() + "\" a " + oracleOffset.getSortString() + ") WHERE row_no>" + oracleOffset.getOffsetValue();
+        oracleJdbcContext.query(sql, resultSet -> {
+            List<TapEvent> tapEvents = list();
+            //get all column names
+            List<String> columnNames = DbKit.getColumnsFromResultSet(resultSet);
+            while (isAlive() && !resultSet.isAfterLast() && resultSet.getRow() > 0) {
+                tapEvents.add(insertRecordEvent(DbKit.getRowFromResultSet(resultSet, columnNames), tapTable.getId()));
+                if (tapEvents.size() == eventBatchSize) {
+                    oracleOffset.setOffsetValue(oracleOffset.getOffsetValue() + eventBatchSize);
+                    eventsOffsetConsumer.accept(tapEvents, oracleOffset);
+                    tapEvents = list();
+                }
+                resultSet.next();
+            }
+            //last events those less than eventBatchSize
+            if (EmptyKit.isNotEmpty(tapEvents)) {
+                oracleOffset.setOffsetValue(oracleOffset.getOffsetValue() + tapEvents.size());
+            }
+            eventsOffsetConsumer.accept(tapEvents, oracleOffset);
+        });
+
     }
 
     //one filter can only match one record

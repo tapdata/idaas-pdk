@@ -362,7 +362,7 @@ public class PostgresConnector extends ConnectorBase {
         PostgresOffset postgresOffset;
         //beginning
         if (null == offsetState) {
-            postgresOffset = new PostgresOffset(getOrderByUniqueKey(tapTable), 0L);
+            postgresOffset = new PostgresOffset(CommonSqlMaker.getOrderByUniqueKey(tapTable), 0L);
         }
         //with offset
         else {
@@ -389,36 +389,6 @@ public class PostgresConnector extends ConnectorBase {
             eventsOffsetConsumer.accept(tapEvents, postgresOffset);
         });
 
-    }
-
-    private String getOrderByUniqueKey(TapTable tapTable) {
-        StringBuilder orderBy = new StringBuilder();
-        orderBy.append(" ORDER BY ");
-        List<TapIndex> indexList = tapTable.getIndexList();
-        //has no indexes, need each field
-        if (EmptyKit.isEmpty(indexList)) {
-            orderBy.append(tapTable.getNameFieldMap().keySet().stream().map(field -> "\"" + field + "\"")
-                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-        }
-        //has indexes but no unique
-        else if (indexList.stream().noneMatch(TapIndex::isUnique)) {
-            TapIndex index = indexList.stream().findFirst().orElseGet(TapIndex::new);
-            orderBy.append(index.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
-                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-            List<String> indexFields = index.getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
-            if (tapTable.getNameFieldMap().size() > indexFields.size()) {
-                orderBy.append(',');
-                orderBy.append(tapTable.getNameFieldMap().keySet().stream().filter(key -> !indexFields.contains(key)).map(field -> "\"" + field + "\"")
-                        .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-            }
-        }
-        //has unique indexes
-        else {
-            TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
-            orderBy.append(uniqueIndex.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
-                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-        }
-        return orderBy.toString();
     }
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {

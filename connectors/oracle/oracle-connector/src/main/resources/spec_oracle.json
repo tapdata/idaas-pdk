@@ -137,6 +137,7 @@
       "priority": 2,
       "defaultByte": 1,
       "bitRatio": 3,
+      "queryOnly": true,
       "fixed": true,
       "to": "TapString"
     },
@@ -149,8 +150,8 @@
     "NVARCHAR2[($byte)]": {
       "byte": 2000,
       "priority": 2,
+      "queryOnly": true,
       "bitRatio": 3,
-      "preferByte": 1000,
       "to": "TapString"
     },
     "INTEGER": {
@@ -297,7 +298,7 @@
     },
     "NCLOB": {
       "byte": "4g",
-      "pkEnablement": false,
+      "queryOnly": true,
       "priority": 3,
       "to": "TapString"
     },
