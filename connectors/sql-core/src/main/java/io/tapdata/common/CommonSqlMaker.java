@@ -1,4 +1,4 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.common;
 
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapTable;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * @author Jarad
  * @date 2022/4/29
  */
-public class PostgresSqlMaker {
+public class CommonSqlMaker {
 
     /**
      * combine column definition for creating table
@@ -67,7 +67,7 @@ public class PostgresSqlMaker {
         StringBuilder builder = new StringBuilder();
         if (EmptyKit.isNotEmpty(filter.getMatch()) || EmptyKit.isNotEmpty(filter.getOperators())) {
             builder.append("WHERE ");
-            builder.append(PostgresSqlMaker.buildKeyAndValue(filter.getMatch(), "AND", "="));
+            builder.append(CommonSqlMaker.buildKeyAndValue(filter.getMatch(), "AND", "="));
         }
         if (EmptyKit.isNotEmpty(filter.getOperators())) {
             if (EmptyKit.isNotEmpty(filter.getMatch())) {

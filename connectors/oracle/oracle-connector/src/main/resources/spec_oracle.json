@@ -153,12 +153,7 @@
       "preferByte": 1000,
       "to": "TapString"
     },
-    "INTEGER[($precision)]": {
-      "precision": [
-        1,
-        38
-      ],
-      "preferPrecision": 20,
+    "INTEGER": {
       "defaultPrecision": 38,
       "priority": 1,
       "to": "TapNumber"
@@ -296,21 +291,25 @@
     },
     "CLOB": {
       "byte": "4g",
+      "pkEnablement": false,
       "priority": 2,
       "to": "TapString"
     },
     "NCLOB": {
       "byte": "4g",
-      "priority": 2,
+      "pkEnablement": false,
+      "priority": 3,
       "to": "TapString"
     },
     "BLOB": {
       "byte": "4g",
+      "pkEnablement": false,
       "priority": 2,
       "to": "TapBinary"
     },
     "BFILE": {
       "queryOnly": true,
+      "pkEnablement": false,
       "to": "TapBinary"
     },
     "RAW($byte)": {

@@ -1,0 +1,13 @@
+{
+  "connection": {
+    "host": "192.168.1.126",
+    "port": 1521,
+    "database": "tap122c",
+    "schema": "JARAD",
+    "user": "jarad",
+    "password": "gj0628",
+    "logPluginName": "logMiner"
+  },
+  "node": {
+  }
+}
