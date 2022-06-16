@@ -5,7 +5,7 @@ SELECT col.*, d.description,
           AND a.attname = col.column_name
           AND NOT a.attisdropped
           AND a.attrelid =
-              (SELECT cl.oid
+              (SELECT max(cl.oid)
                FROM pg_catalog.pg_class cl
                         LEFT JOIN pg_catalog.pg_namespace n ON n.oid = cl.relnamespace
                WHERE cl.relname = col.table_name))
