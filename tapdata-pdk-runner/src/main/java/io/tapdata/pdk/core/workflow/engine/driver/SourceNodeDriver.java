@@ -23,6 +23,7 @@ import io.tapdata.entity.utils.cache.KVMapFactory;
 import io.tapdata.entity.utils.cache.KVMap;
 import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
+import io.tapdata.pdk.apis.functions.connector.common.ReleaseExternalFunction;
 import io.tapdata.pdk.apis.functions.connector.source.*;
 import io.tapdata.pdk.apis.functions.connector.target.ControlFunction;
 import io.tapdata.pdk.apis.functions.connector.target.QueryByAdvanceFilterFunction;
@@ -409,6 +410,11 @@ public class SourceNodeDriver extends Driver {
         CommonUtils.ignoreAnyError(() -> {
             if(sourceStateListener != null)
                 sourceStateListener.stateChanged(STATE_ENDED);
+            ReleaseExternalFunction releaseExternalFunction = sourceNode.getConnectorFunctions().getReleaseExternalFunction();
+            if (releaseExternalFunction != null) {
+                PDKInvocationMonitor.invoke(sourceNode, PDKMethod.RELEASE_EXTERNAL, () -> releaseExternalFunction.release(sourceNode.getConnectorContext()), TAG);
+            }
+            PDKInvocationMonitor.invoke(sourceNode, PDKMethod.STOP, () -> sourceNode.connectorStop(), TAG);
             InstanceFactory.instance(KVMapFactory.class).reset(sourceNode.getAssociateId());
         }, TAG);
     }
