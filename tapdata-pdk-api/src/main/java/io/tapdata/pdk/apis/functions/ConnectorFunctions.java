@@ -21,7 +21,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private QueryByFilterFunction queryByFilterFunction;
     private QueryByAdvanceFilterFunction queryByAdvanceFilterFunction;
     private CreateTableFunction createTableFunction;
-    private AlterTableFunction alterTableFunction;
     private ClearTableFunction clearTableFunction;
     private DropTableFunction dropTableFunction;
     private ControlFunction controlFunction;
@@ -137,11 +136,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
         return this;
     }
 
-    public ConnectorFunctions supportAlterTable(AlterTableFunction function) {
-        this.alterTableFunction = function;
-        return this;
-    }
-
     public ConnectorFunctions supportClearTable(ClearTableFunction function) {
         this.clearTableFunction = function;
         return this;
@@ -192,10 +186,6 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public CreateTableFunction getCreateTableFunction() {
         return createTableFunction;
-    }
-
-    public AlterTableFunction getAlterTableFunction() {
-        return alterTableFunction;
     }
 
     public ClearTableFunction getClearTableFunction() {

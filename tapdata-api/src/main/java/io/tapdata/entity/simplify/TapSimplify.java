@@ -6,7 +6,6 @@ import io.tapdata.entity.event.ddl.field.InsertFieldItem;
 import io.tapdata.entity.event.ddl.field.UpdateFieldItem;
 import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.index.TapDeleteIndexEvent;
-import io.tapdata.entity.event.ddl.table.TapAlterTableEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
@@ -184,13 +183,6 @@ public class TapSimplify {
 
 	public static UpdateFieldItem updateFieldItem() {
 		return new UpdateFieldItem();
-	}
-
-	public static TapAlterTableEvent alterTableEvent(String tableId) {
-		TapAlterTableEvent alterTableEvent = new TapAlterTableEvent();
-		alterTableEvent.setTime(System.currentTimeMillis());
-		alterTableEvent.setTableId(tableId);
-		return alterTableEvent;
 	}
 
 	public static TapCreateIndexEvent createIndexEvent(String tableId, List<TapIndex> indexList) {

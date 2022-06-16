@@ -56,7 +56,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
     private Map<String, TableTapEventHandler> tableIdTapEventHandlerMap = new ConcurrentHashMap<>();
     public TargetNodeDriver() {
         classHandlers.register(TapCreateTableEvent.class, this::handleCreateTableEvent);
-        classHandlers.register(TapAlterTableEvent.class, this::handleAlterTableEvent);
+//        classHandlers.register(TapAlterTableEvent.class, this::handleAlterTableEvent);
         classHandlers.register(TapClearTableEvent.class, this::handleClearTableEvent);
         classHandlers.register(TapDropTableEvent.class, this::handleDropTableEvent);
 
@@ -79,17 +79,17 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
         return null;
     }
 
-    private Void handleAlterTableEvent(TapAlterTableEvent alterTableEvent) {
-        PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
-        AlterTableFunction alterTableFunction = targetNode.getConnectorFunctions().getAlterTableFunction();
-        if(alterTableFunction != null) {
-            TapLogger.debug(TAG, "Alter table {} before start. {}", alterTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
-            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.TARGET_ALTER_TABLE, () -> {
-                alterTableFunction.alterTable(targetNode.getConnectorContext(), alterTableEvent);
-            }, "Alter table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
-        }
-        return null;
-    }
+//    private Void handleAlterTableEvent(TapAlterTableEvent alterTableEvent) {
+//        PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
+//        AlterTableFunction alterTableFunction = targetNode.getConnectorFunctions().getAlterTableFunction();
+//        if(alterTableFunction != null) {
+//            TapLogger.debug(TAG, "Alter table {} before start. {}", alterTableEvent.getTableId(), LoggerUtils.targetNodeMessage(targetNode));
+//            pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.TARGET_ALTER_TABLE, () -> {
+//                alterTableFunction.alterTable(targetNode.getConnectorContext(), alterTableEvent);
+//            }, "Alter table " + LoggerUtils.targetNodeMessage(targetNode), TAG);
+//        }
+//        return null;
+//    }
 
     private Void handleClearTableEvent(TapClearTableEvent clearTableEvent) {
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
