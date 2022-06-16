@@ -13,7 +13,13 @@ public abstract class CommonCli implements Callable<Integer> {
         }
         return execute();
     }
-
+    protected String getMavenHome(String mavenHome) {
+        if(mavenHome == null)
+            mavenHome = CommonUtils.getProperty("MAVEN_HOME", null);
+        if(mavenHome == null)
+            throw new IllegalArgumentException("Missing MAVEN_HOME or use -m to specified maven home");
+        return mavenHome;
+    }
     protected abstract Integer execute() throws Exception;
 
 }
