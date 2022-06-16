@@ -58,7 +58,7 @@ public class ModelPredictionCli extends CommonCli {
 
     @CommandLine.Option(names = { "-o", "--output" }, required = true, description = "Specify the folder where model deduction report files will be generated")
     private String output;
-    @CommandLine.Option(names = { "-m", "--mavenHome" }, required = true, description = "Specify the maven home")
+    @CommandLine.Option(names = { "-m", "--mavenHome" }, required = false, description = "Specify the maven home")
     private String mavenHome;
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "TapData cli help")
     private boolean helpRequested = false;
@@ -89,10 +89,7 @@ public class ModelPredictionCli extends CommonCli {
                 if(!file.getAbsolutePath().contains("connectors")) {
                     throw new IllegalArgumentException("Connector project is under connectors directory, are you passing the correct connector project directory? " + file.getAbsolutePath());
                 }
-
-                if(mavenHome != null) {
-                    System.setProperty("maven.home", mavenHome);
-                }
+                System.setProperty("maven.home", getMavenHome(this.mavenHome));
                 String pomFile = file.getAbsolutePath();
                 if(!pomFile.endsWith("pom.xml")) {
                     pomFile = pomFile + File.separator + "pom.xml";
@@ -242,7 +239,7 @@ public class ModelPredictionCli extends CommonCli {
         }
 
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("mongodb")) {
-            generatedTable.add(field("special_string_id_primary", "string").primaryKeyPos(generatedTable.getNameFieldMap().size()));
+            generatedTable.add(field("special_string_id_primary", "STRING").primaryKeyPos(generatedTable.getNameFieldMap().size()));
         }
 
         if(sourceNode.getConnectorContext().getSpecification().getId().equals("oracle")) {
