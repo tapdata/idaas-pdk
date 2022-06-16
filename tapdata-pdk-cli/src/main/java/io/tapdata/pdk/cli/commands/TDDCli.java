@@ -142,8 +142,8 @@ public class TDDCli extends CommonCli {
 
 
 
-            if(installProjects != null && mavenHome != null) {
-                System.setProperty("maven.home", mavenHome);
+            if(installProjects != null) {
+                System.setProperty("maven.home", getMavenHome(mavenHome));
                 for(String installProject : installProjects) {
                     String pomFile = installProject;
                     if(!pomFile.endsWith("pom.xml")) {
@@ -170,11 +170,29 @@ public class TDDCli extends CommonCli {
                 }
             }
 
+            System.setProperty("maven.home", getMavenHome(this.mavenHome));
+
             System.setProperty("maven.multiModuleProjectDirectory", file.getAbsolutePath());
             System.out.println(file.getName() + " is packaging...");
-            MavenCli mavenCli = new MavenCli();
-            int state = mavenCli.doMain(new String[]{"clean", "install", "-DskipTests", "-P", "not_encrypt", "-U"}, file.getAbsolutePath(), System.out, System.out);
-            if (0 == state){
+
+            String pomFile = file.getAbsolutePath();
+            if(!pomFile.endsWith("pom.xml")) {
+                pomFile = pomFile + File.separator + "pom.xml";
+            }
+            InvocationRequest request = new DefaultInvocationRequest();
+            request.setPomFile( new File( pomFile ) );
+            request.setGoals(Arrays.asList( "clean", "install", "-DskipTests", "-P", "not_encrypt", "-U"));
+
+            Invoker invoker = new DefaultInvoker();
+            InvocationResult result = invoker.execute( request );
+
+            if ( result.getExitCode() != 0 )
+            {
+                if(result.getExecutionException() != null)
+                    System.out.println(result.getExecutionException().getMessage());
+                System.out.println("------------- Maven package Failed --------------");
+                System.exit(0);
+            } else {
                 MavenXpp3Reader reader = new MavenXpp3Reader();
                 Model model = reader.read(new FileReader(FilenameUtils.concat(file.getAbsolutePath(), "pom.xml")));
                 jarFile = FilenameUtils.concat("./", "./dist/" + model.getArtifactId() + "-v" + model.getVersion() + ".jar");
@@ -182,11 +200,23 @@ public class TDDCli extends CommonCli {
                 System.out.println("Connector jar is " + jarFile);
 //                System.setProperty("maven.multiModuleProjectDirectory", ".");
                 Thread.currentThread().setContextClassLoader(TDDCli.class.getClassLoader());
-            } else {
-                System.out.println("");
-                System.out.println("------------- Maven package Failed --------------");
-                System.exit(0);
             }
+
+//            MavenCli mavenCli = new MavenCli();
+//            int state = mavenCli.doMain(new String[]{"clean", "install", "-DskipTests", "-P", "not_encrypt", "-U"}, file.getAbsolutePath(), System.out, System.out);
+//            if (0 == state){
+//                MavenXpp3Reader reader = new MavenXpp3Reader();
+//                Model model = reader.read(new FileReader(FilenameUtils.concat(file.getAbsolutePath(), "pom.xml")));
+//                jarFile = FilenameUtils.concat("./", "./dist/" + model.getArtifactId() + "-v" + model.getVersion() + ".jar");
+//                System.out.println("------------- Maven package successfully -------------");
+//                System.out.println("Connector jar is " + jarFile);
+////                System.setProperty("maven.multiModuleProjectDirectory", ".");
+//                Thread.currentThread().setContextClassLoader(TDDCli.class.getClassLoader());
+//            } else {
+//                System.out.println("");
+//                System.out.println("------------- Maven package Failed --------------");
+//                System.exit(0);
+//            }
         } else {
             throw new IllegalArgumentException("File " + file.getAbsolutePath() + " is not exist");
         }
