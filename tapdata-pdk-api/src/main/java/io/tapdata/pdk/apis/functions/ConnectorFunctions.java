@@ -36,10 +36,18 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
                 Object value = field.get(this);
                 if(value instanceof TapFunction) {
                     String fieldName = field.getName();
-                    if(fieldName.endsWith("Function")) {
-                        fieldName = fieldName.substring(0, fieldName.length() - "Function".length());
+//                    if(fieldName.endsWith("Function")) {
+//                        fieldName = fieldName.substring(0, fieldName.length() - "Function".length());
+//                    }
+                    StringBuilder fieldNameBuilder = new StringBuilder();
+                    for(char c : fieldName.toCharArray()) {
+                        if(c >= 'A' && c <= 'Z') {
+                            fieldNameBuilder.append("-");
+                            c += 32;
+                        }
+                        fieldNameBuilder.append(c);
                     }
-                    fieldArray.add(fieldName);
+                    fieldArray.add(fieldNameBuilder.toString());
                 }
             } catch (Throwable ignored) {}
         }
