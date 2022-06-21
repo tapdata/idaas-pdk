@@ -10,6 +10,10 @@ import java.util.TimeZone;
 public class TapAlterDatabaseTimeZoneEvent extends TapTableEvent {
     public static final int TYPE = 310;
     private TimeZone timeZone;
+    public TapAlterDatabaseTimeZoneEvent timeZone(TimeZone timeZone) {
+        this.timeZone = timeZone;
+        return this;
+    }
 
     public TapAlterDatabaseTimeZoneEvent() {
         super(TYPE);
@@ -22,5 +26,13 @@ public class TapAlterDatabaseTimeZoneEvent extends TapTableEvent {
             if (timeZone != null)
                 alterDatabaseTimeZoneEvent.timeZone = timeZone;
         }
+    }
+
+    public TimeZone getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(TimeZone timeZone) {
+        this.timeZone = timeZone;
     }
 }

@@ -1,14 +1,13 @@
 package io.tapdata.entity.simplify;
 
 import io.tapdata.entity.event.control.HeartbeatEvent;
+import io.tapdata.entity.event.ddl.entity.FieldAttrChange;
 import io.tapdata.entity.event.ddl.field.DeleteFieldItem;
 import io.tapdata.entity.event.ddl.field.InsertFieldItem;
 import io.tapdata.entity.event.ddl.field.UpdateFieldItem;
 import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.index.TapDeleteIndexEvent;
-import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
-import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
-import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
+import io.tapdata.entity.event.ddl.table.*;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
@@ -203,6 +202,66 @@ public class TapSimplify {
 
 	public static TapInsertRecordEvent insertRecordEvent(Map<String, Object> after, String table) {
 		return new TapInsertRecordEvent().init().after(after).table(table);
+	}
+
+	public static TapAlterDatabaseTimeZoneEvent alterDatabaseTimeZoneEvent() {
+		return new TapAlterDatabaseTimeZoneEvent();
+	}
+
+	public static TapAlterFieldCommentEvent alterFieldCommentEvent() {
+		return new TapAlterFieldCommentEvent();
+	}
+
+	public static <T> FieldAttrChange<T> fieldAttrChange(String name, T after) {
+		return FieldAttrChange.create(name, after);
+	}
+
+	public static TapAlterFieldConstraintEvent alterFieldConstraintEvent() {
+		return new TapAlterFieldConstraintEvent();
+	}
+
+	public static TapAlterFieldDataTypeEvent alterFieldDataTypeEvent() {
+		return new TapAlterFieldDataTypeEvent();
+	}
+
+	public static TapAlterFieldNameEvent alterFieldNameEvent() {
+		return new TapAlterFieldNameEvent();
+	}
+
+	public static TapAlterFieldDefaultEvent alterFieldDefaultEvent() {
+		return new TapAlterFieldDefaultEvent();
+	}
+
+	public static TapAlterFieldNotNullEvent alterFieldNotNullEvent() {
+		return new TapAlterFieldNotNullEvent();
+	}
+
+	public static TapAlterFieldPrimaryKeyEvent alterFieldPrimaryKeyEvent() {
+		return new TapAlterFieldPrimaryKeyEvent();
+	}
+
+	public static TapAlterTableCharsetEvent alterTableCharsetEvent() {
+		return new TapAlterTableCharsetEvent();
+	}
+
+	public static TapClearTableEvent clearTableEvent() {
+		return new TapClearTableEvent();
+	}
+
+	public static TapCreateTableEvent createTableEvent() {
+		return new TapCreateTableEvent();
+	}
+
+	public static TapDropFieldEvent dropFieldEvent() {
+		return new TapDropFieldEvent();
+	}
+
+	public static TapDropTableEvent dropTableEvent()  {
+		return new TapDropTableEvent();
+	}
+
+	public static TapNewFieldEvent newFieldEvent() {
+		return new TapNewFieldEvent();
 	}
 
 	public static TapDeleteRecordEvent deleteDMLEvent(Map<String, Object> before, String table) {

@@ -12,7 +12,13 @@ import java.util.List;
 public class TapAlterFieldCommentEvent extends TapTableEvent {
     public static final int TYPE = 300;
     private List<FieldAttrChange<String>> comments;
-
+    public TapAlterFieldCommentEvent change(FieldAttrChange<String> change) {
+        if(comments == null)
+            comments = new ArrayList<>();
+        if(change != null && comments.contains(change))
+            comments.add(change);
+        return this;
+    }
     public TapAlterFieldCommentEvent() {
         super(TYPE);
     }
@@ -23,5 +29,13 @@ public class TapAlterFieldCommentEvent extends TapTableEvent {
             if (comments != null)
                 alterFieldCommentEvent.comments = new ArrayList<>(comments);
         }
+    }
+
+    public List<FieldAttrChange<String>> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<FieldAttrChange<String>> comments) {
+        this.comments = comments;
     }
 }

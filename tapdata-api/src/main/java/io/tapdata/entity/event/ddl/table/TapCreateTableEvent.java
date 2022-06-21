@@ -10,6 +10,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class TapCreateTableEvent extends TapTableEvent {
     public static final int TYPE = 201;
     private TapTable table;
+    public TapCreateTableEvent table(TapTable table) {
+        this.table = table;
+        return this;
+    }
 
     public TapCreateTableEvent() {
         super(TYPE);

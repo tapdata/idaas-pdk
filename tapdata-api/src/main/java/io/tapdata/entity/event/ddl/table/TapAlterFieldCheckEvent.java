@@ -12,6 +12,14 @@ import java.util.List;
 public class TapAlterFieldCheckEvent extends TapTableEvent {
     public static final int TYPE = 308;
     private List<FieldAttrChange<String>> checkChanges;
+    public TapAlterFieldCheckEvent change(FieldAttrChange<String> change) {
+        if(checkChanges == null)
+            checkChanges = new ArrayList<>();
+        if(change != null && checkChanges.contains(change))
+            checkChanges.add(change);
+        return this;
+    }
+
 
     public TapAlterFieldCheckEvent() {
         super(TYPE);
@@ -24,5 +32,13 @@ public class TapAlterFieldCheckEvent extends TapTableEvent {
             if (checkChanges != null)
                 alterFieldCheckEvent.checkChanges = new ArrayList<>(checkChanges);
         }
+    }
+
+    public List<FieldAttrChange<String>> getCheckChanges() {
+        return checkChanges;
+    }
+
+    public void setCheckChanges(List<FieldAttrChange<String>> checkChanges) {
+        this.checkChanges = checkChanges;
     }
 }
