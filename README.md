@@ -208,11 +208,14 @@ PDK need developer to provide below,
 
 ## How to contribute to idaas-pdk
 * Fork idaas-pdk
-* Create ${database}-connector module under connectors 
+* DataSource can be database, SaaS, private protocol etc. Which your connector will connect with  
+* Create ${datasource}-connector module under connectors 
 * Implemented the methods that PDK required, and the features you want to provide 
-* Pass TDD tests
-* Submit Pull Request
-* Will merge after review
+* Prepare TDD config json file to pass TDD tests
+* Prepare README file with the steps to set up the datasource test environment
+* Submit Pull Request to review-pr branch
+* Tapdata tester will set up the database environment and run TDD tests
+* Will merge after TDD tests are passed
 
 ## Roadmap
 
