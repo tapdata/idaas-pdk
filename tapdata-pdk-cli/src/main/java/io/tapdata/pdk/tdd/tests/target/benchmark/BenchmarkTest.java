@@ -93,7 +93,7 @@ public class BenchmarkTest extends PDKTestBase {
                 }
             }
         });
-        waitCompleted(5);
+        waitCompleted(50000);
     }
 
     private void checkFunctions() {

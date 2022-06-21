@@ -147,7 +147,10 @@ public class RegisterCli extends CommonCli {
                     ConnectorFunctions connectorFunctions = new ConnectorFunctions();
                     TapCodecsRegistry codecRegistry = new TapCodecsRegistry();
                     connector1.registerCapabilities(connectorFunctions, codecRegistry);
-                    //TODO Zed, please use below to save into database, this is user customized codecs map. TapType -> DataType. Retrieve it back from database for building TapCodecRegister to do the type generation.
+
+                    //TODO JiaXin, please upload capabilities to TM.
+                    List<String> capabilities = connectorFunctions.getCapabilities();
+
                     Map<Class<?>, String> tapTypeDataTypeMap = codecRegistry.getTapTypeDataTypeMap();
                     o.put("tapTypeDataTypeMap", JSON.toJSONString(tapTypeDataTypeMap));
                     String jsonString = o.toJSONString();

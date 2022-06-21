@@ -7,5 +7,5 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import java.util.List;
 
 public interface AlterFieldCommentFunction {
-    void alterFieldComment(TapConnectorContext connectorContext, TapAlterFieldCommentEvent alterFieldCommentEvent);
+    void alterFieldComment(TapConnectorContext connectorContext, TapAlterFieldCommentEvent alterFieldCommentEvent) throws Throwable;
 }

@@ -189,7 +189,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
         //Below is sample code to generate records directly.
         for (int j = 0; j < 1000; j++) {
             List<TapEvent> tapEvents = list();
-            for (int i = 0; i < eventBatchSize; i++) {
+            for (int i = 0; i < 1000; i++) {
                 Map<String, Object> map = new HashMap<>();
                 for(int m = 0; m < 10; m++) {
                     String key = String.valueOf(m);
@@ -198,9 +198,14 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
                 TapInsertRecordEvent recordEvent = insertRecordEvent(map, table.getId());
                 counter.incrementAndGet();
                 tapEvents.add(recordEvent);
+                if(tapEvents.size() >= eventBatchSize) {
+                    eventsOffsetConsumer.accept(tapEvents, null);
+                    tapEvents = list();
+                }
             }
 
-            eventsOffsetConsumer.accept(tapEvents, null);
+            if(!tapEvents.isEmpty())
+                eventsOffsetConsumer.accept(tapEvents, null);
         }
         counter.set(counter.get() + 1000);
     }

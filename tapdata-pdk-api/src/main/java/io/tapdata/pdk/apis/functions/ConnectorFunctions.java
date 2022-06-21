@@ -27,6 +27,67 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
     private CreateIndexFunction createIndexFunction;
     private DeleteIndexFunction deleteIndexFunction;
     private QueryIndexesFunction queryIndexesFunction;
+    private AlterDatabaseTimeZoneFunction alterDatabaseTimeZoneFunction;
+    private AlterFieldCheckFunction alterFieldCheckFunction;
+    private AlterFieldCommentFunction alterFieldCommentFunction;
+    private AlterFieldConstraintFunction alterFieldConstraintFunction;
+    private AlterFieldDataTypeFunction alterFieldDataTypeFunction;
+    private AlterFieldDefaultFunction alterFieldDefaultFunction;
+    private AlterFieldNameFunction alterFieldNameFunction;
+    private AlterFieldNotNullFunction alterFieldNotNullFunction;
+    private AlterFieldPrimaryKeyFunction alterFieldPrimaryKeyFunction;
+    private AlterTableCharsetFunction alterTableCharsetFunction;
+    private DropFieldFunction dropFieldFunction;
+    private NewFieldFunction newFieldFunction;
+
+    public ConnectorFunctions supportAlterDatabaseTimeZoneFunction(AlterDatabaseTimeZoneFunction function) {
+        alterDatabaseTimeZoneFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldCheckFunction(AlterFieldCheckFunction function) {
+        alterFieldCheckFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldCommentFunction(AlterFieldCommentFunction function) {
+        alterFieldCommentFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldConstraintFunction(AlterFieldConstraintFunction function) {
+        alterFieldConstraintFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldDataTypeFunction(AlterFieldDataTypeFunction function) {
+        alterFieldDataTypeFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldDefaultFunction(AlterFieldDefaultFunction function) {
+        alterFieldDefaultFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldNameFunction(AlterFieldNameFunction function) {
+        alterFieldNameFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldNotNullFunction(AlterFieldNotNullFunction function) {
+        alterFieldNotNullFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterFieldPrimaryKeyFunction(AlterFieldPrimaryKeyFunction function) {
+        alterFieldPrimaryKeyFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportAlterTableCharsetFunction(AlterTableCharsetFunction function) {
+        alterTableCharsetFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportDropFieldFunction(DropFieldFunction function) {
+        dropFieldFunction = function;
+        return this;
+    }
+    public ConnectorFunctions supportNewFieldFunction(NewFieldFunction function) {
+        newFieldFunction = function;
+        return this;
+    }
 
     public List<String> getCapabilities() {
         Field[] fields = ConnectorFunctions.class.getDeclaredFields();
@@ -222,5 +283,53 @@ public class ConnectorFunctions extends CommonFunctions<ConnectorFunctions> {
 
     public ReleaseExternalFunction getReleaseExternalFunction() {
         return releaseExternalFunction;
+    }
+
+    public AlterDatabaseTimeZoneFunction getAlterDatabaseTimeZoneFunction() {
+        return alterDatabaseTimeZoneFunction;
+    }
+
+    public AlterFieldCheckFunction getAlterFieldCheckFunction() {
+        return alterFieldCheckFunction;
+    }
+
+    public AlterFieldCommentFunction getAlterFieldCommentFunction() {
+        return alterFieldCommentFunction;
+    }
+
+    public AlterFieldConstraintFunction getAlterFieldConstraintFunction() {
+        return alterFieldConstraintFunction;
+    }
+
+    public AlterFieldDataTypeFunction getAlterFieldDataTypeFunction() {
+        return alterFieldDataTypeFunction;
+    }
+
+    public AlterFieldDefaultFunction getAlterFieldDefaultFunction() {
+        return alterFieldDefaultFunction;
+    }
+
+    public AlterFieldNameFunction getAlterFieldNameFunction() {
+        return alterFieldNameFunction;
+    }
+
+    public AlterFieldNotNullFunction getAlterFieldNotNullFunction() {
+        return alterFieldNotNullFunction;
+    }
+
+    public AlterFieldPrimaryKeyFunction getAlterFieldPrimaryKeyFunction() {
+        return alterFieldPrimaryKeyFunction;
+    }
+
+    public AlterTableCharsetFunction getAlterTableCharsetFunction() {
+        return alterTableCharsetFunction;
+    }
+
+    public DropFieldFunction getDropFieldFunction() {
+        return dropFieldFunction;
+    }
+
+    public NewFieldFunction getNewFieldFunction() {
+        return newFieldFunction;
     }
 }
