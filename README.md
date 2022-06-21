@@ -45,7 +45,7 @@ public class SampleConnector extends ConnectorBase implements TapConnector {
         consumer.accept(list(
                 //Define first table
                 table("empty-table1")
-                        //Define a field named "id", origin field type, whether is primary key and primary key position
+                        //Define a field named "id", origin field type, whether is primary key and primary key position.
                         .add(field("id", "VARCHAR").isPrimaryKey(true).partitionKeyPos(1))
                         .add(field("description", "TEXT"))
                         .add(field("name", "VARCHAR"))
