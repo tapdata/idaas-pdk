@@ -123,7 +123,6 @@ public class TDDTargetConnector extends ConnectorBase {
 //        connectorFunctions.supportStreamOffset(this::streamOffset);
         connectorFunctions.supportCreateTable(this::createTable);
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
-        connectorFunctions.supportAlterTable(this::alterTable);
         connectorFunctions.supportDropTable(this::dropTable);
         connectorFunctions.supportClearTable(this::clearTable);
         connectorFunctions.supportControl(this::control);
@@ -183,10 +182,6 @@ public class TDDTargetConnector extends ConnectorBase {
 
     private void dropTable(TapConnectorContext connectorContext, TapDropTableEvent dropTableEvent) {
         primaryKeyRecordMap.clear();
-    }
-
-    private void alterTable(TapConnectorContext connectorContext, TapAlterTableEvent alterTableEvent) {
-
     }
 
     private void queryByFilter(TapConnectorContext connectorContext, List<TapFilter> filters, TapTable table, Consumer<List<FilterResult>> listConsumer) {
