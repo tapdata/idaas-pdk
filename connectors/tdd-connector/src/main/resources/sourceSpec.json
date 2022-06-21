@@ -7,8 +7,8 @@
   "configOptions": {
   },
   "dataTypes" : {
-    "tapString[($byte)][fixed]": {"byte" : "16m", "fixed" : "fixed", "to" : "TapString"},
-    "tapNumber[($precision, $scale)]": {"precision" : [1, 40], "precisionDefault" : 4, "scale" : [0, 10], "scaleDefault" : 1, "to": "TapNumber"},
+    "tapString[($byte)][fixed]": {"byte" : "16m", "preferByte": 100, "fixed" : "fixed", "to" : "TapString"},
+    "tapNumber[($precision, $scale)]": {"precision" : [1, 40], "fixed" : true, "precisionDefault" : 4, "scale" : [0, 10], "scaleDefault" : 1, "to": "TapNumber"},
     "int[($bit)][unsigned][zerofill]": {"bit": 32, "bitDefault" : 32, "unsigned": "unsigned", "zerofill" :  "zerofill", "to": "TapNumber"},
     "tapBoolean" : {"to": "TapBoolean"},
     "tapDate" : {"to": "TapDate"},

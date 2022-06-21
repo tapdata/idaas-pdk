@@ -139,9 +139,12 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                     //force to handle DML before handle DDL.
                     handleRecordEvents(recordEvents);
                     handleControlEvent(controlEvents);
-                    //handle ddl events
+                    //handle ddl events immediately
                     handleDDLEvent((TapDDLEvent) event);
                 } else if(event instanceof TapRecordEvent) {
+                    //force to handle control events before DML
+                    handleControlEvent(controlEvents);
+
                     recordEvents.add(filterEvent((TapRecordEvent) event));
                 } else if(event instanceof ControlEvent) {
                     if(event instanceof PatrolEvent) {

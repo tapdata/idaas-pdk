@@ -7,14 +7,13 @@ import io.tapdata.pdk.core.executor.ExecutorsManager;
 import io.tapdata.pdk.core.utils.CommonUtils;
 import io.tapdata.pdk.core.workflow.engine.DataFlowEngine;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -25,6 +24,7 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
     private static final String TAG = SingleThreadBlockingQueue.class.getSimpleName();
     private ExecutorService threadPoolExecutor;
     private int maxSize = 20;
+    private int maxWaitMilliSeconds = 100;
     private final Object lock = new Object();
     private volatile AtomicBoolean isFull = new AtomicBoolean(false);
     private LinkedBlockingQueue<T> queue;
@@ -94,6 +94,11 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
         this.maxSize = maxSize;
         return this;
     }
+
+    public SingleThreadBlockingQueue<T> withMaxWaitMilliSeconds(int maxWaitMilliSeconds) {
+        this.maxWaitMilliSeconds = maxWaitMilliSeconds;
+        return this;
+    }
     private void startPrivate(){
         if(isStopping.get())
             throw new CoreException(PDKRunnerErrorCodes.COMMON_SINGLE_THREAD_QUEUE_STOPPED, "SingleThreadBlockingQueue is stopped");
@@ -116,30 +121,26 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
     }
     @Override
     public void run() {
-        boolean end = false;
-        while (!end && !isStopping.get()) {
+        while (!isStopping.get()) {
             if(queue.isEmpty()) {
                 synchronized (lock) {
                     if(queue.isEmpty()) {
                         isRunning.compareAndSet(true, false);
-                        end = true;
+                        break;
                     }
                 }
             } else {
                 try {
                     List<T> handleList = new ArrayList<>();
-                    synchronized (this) {
-                        T t = queue.poll();
-                        while(t != null) {
+//                    synchronized (this) {
+                        T t = null;
+                        while((t = queue.poll(maxWaitMilliSeconds, TimeUnit.MILLISECONDS)) != null) {
                             handleList.add(t);
                             consumed(t);
                             if(handleList.size() >= handleSize)
                                 break;
-                            t = queue.poll();
-                            if(t == null)
-                                break;
                         }
-                    }
+//                    }
                     if(!isStopping.get() && !handleList.isEmpty()) {
                         execute(handleList);
                     }
@@ -179,7 +180,7 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
         } catch(IllegalStateException e) {
             if(e.getMessage().contains("full")) {
                 isFull.set(true);
-//                logger.debug("{} queue is full, wait polling to add more {}", name, queue.size());
+//                TapLogger.info(TAG, "{} queue is full, wait polling to add more {}", name, queue.size());
                 while(isFull.get()) {
                     try {
                         this.wait(120000);
@@ -188,10 +189,13 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
                         TapLogger.error(TAG, "{} is interrupted, {}", name, interruptedException.getMessage());
                         Thread.currentThread().interrupt();
                     }
+//                    synchronized (this) {
+//
+//                    }
                 }
-//                    logger.debug("wake up to add {}", t);
+//                    TapLogger.info(TAG, "wake up to add {}", t);
                 offer(t);
-//                    logger.debug("wake up to added {}", t);
+//                    TapLogger.info(TAG, "wake up to added {}", t);
             }
         }
     }
@@ -233,14 +237,16 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
         return name;
     }
 
-    protected void consumed(T t) {
+    protected synchronized void consumed(T t) {
 //        logger.info("queue size {}", getQueue().size());
         if(isFull.get()) {
             notifyCounter.increment();
             if(notifyCounter.longValue() > notifySize || queue.isEmpty()) {
 //                logger.info("123 queue size {} notifyCounter {} notifySize {}", getQueue().size(), notifyCounter.longValue(), notifySize);
                 if(isFull.compareAndSet(true, false)) {
-                    this.notifyAll();
+//                    synchronized (this) {
+                        this.notifyAll();
+//                    }
                     notifyCounter.reset();
                 }
 //                logger.info("notifyAll queue size {} notifyCounter {} notifySize {}", getQueue().size(), notifyCounter.longValue(), notifySize);
@@ -267,31 +273,34 @@ public class SingleThreadBlockingQueue<T> implements Runnable {
 //        if(true)
 //            return;
         DataFlowEngine.getInstance().start();
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
 //        Logger logger = LoggerFactory.getLogger("aaa");
+        AtomicLong now = new AtomicLong(System.currentTimeMillis());
         SingleThreadBlockingQueue<String> queue = new SingleThreadBlockingQueue<String>("aaa")
-                .withMaxSize(20)
+                .withMaxSize(50)
                 .withHandleSize(5)
+                .withMaxWaitMilliSeconds(100)
                 .withExecutorService(ExecutorsManager.getInstance().getExecutorService())
                 .withHandler(o -> {
 //                    Thread.sleep(10);
-                    TapLogger.info(TAG, Arrays.toString(o.toArray()));
+                    TapLogger.info(TAG, "handle " + Arrays.toString(o.toArray()));
                 })
                 .withErrorHandler((o, throwable) -> {
-                    TapLogger.error(TAG, Arrays.toString(o.toArray()));
+                    TapLogger.error(TAG, "error handle " + Arrays.toString(o.toArray()));
                 }).start();
                 long time = System.currentTimeMillis();
-        for(int i = 0; i < 4000; i++) {
+        for(int i = 0; i < 1000000; i++) {
             final int value = i;
-            executorService.submit(() -> {
-                queue.offer("hello " + value);
+            queue.offer("hello " + value);
+//            executorService.submit(() -> {
 //                try {
 //                    Thread.sleep(10);
 //                } catch (InterruptedException interruptedException) {
 //                    interruptedException.printStackTrace();
 //                }
-            });
+//            });
         }
+        System.out.println("done " + CommonUtils.dateString(new Date(now.get())));
     }
 
     public long counter() {
