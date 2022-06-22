@@ -1,7 +1,11 @@
 import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.oracle.OracleJdbcContext;
+import io.tapdata.connector.oracle.cdc.logminer.RedoLogMiner;
 import io.tapdata.connector.oracle.config.OracleConfig;
 import io.tapdata.entity.utils.DataMap;
+
+import java.util.Collections;
+import java.util.UUID;
 
 public class Main {
     public static void main(String[] args) throws Throwable {
@@ -21,18 +25,25 @@ public class Main {
 //        postgresConfig.setExtParams("");
 //        postgresConfig.setUser("postgres");
 //        postgresConfig.setPassword("gj0628");
-        OracleJdbcContext oracleJdbcContext = (OracleJdbcContext) DataSourcePool.getJdbcContext(oracleConfig, OracleJdbcContext.class);
+        String uuid = UUID.randomUUID().toString();
+        OracleJdbcContext oracleJdbcContext = (OracleJdbcContext) DataSourcePool.getJdbcContext(oracleConfig, OracleJdbcContext.class, uuid);
 //        Connection connection = oracleJdbcContext.getConnection();
 //        ResultSet rs = connection.createStatement().executeQuery("select * from \"A\"");
-        oracleJdbcContext.queryAllColumns(null).forEach(v -> {
-            v.forEach((key, value) -> {
-                System.out.println(key + ": " + value);
-            });
-        });
+        RedoLogMiner redoLogMiner = new RedoLogMiner(oracleJdbcContext);
+        redoLogMiner.init(Collections.singletonList("Jarad_test"), null, 2, null);
+        new Thread(() -> {
+            try {
+                redoLogMiner.startMiner();
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+        Thread.sleep(500000);
+        redoLogMiner.stopMiner();
 //        while (rs.next()) {
 //            System.out.println(rs.getString("NAME"));
 //        }
-        oracleJdbcContext.finish();
+        oracleJdbcContext.finish(uuid);
 
 //        postgresJdbcContext.query("select * from \"Student\"", rs -> {
 //            rs.last();

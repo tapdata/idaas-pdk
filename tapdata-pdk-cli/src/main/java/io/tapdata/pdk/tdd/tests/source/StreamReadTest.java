@@ -161,7 +161,7 @@ public class StreamReadTest extends PDKTestBase {
                 initConnectorFunctions();
                 checkFunctions(sourceNode.getConnectorFunctions(), StreamReadTest.testFunctions());
 
-                final long maxWaitSeconds = 60;
+                final long maxWaitSeconds = 600;
                 long startTime = System.currentTimeMillis();
                 final ScheduledFuture future = ExecutorsManager.getInstance().getScheduledExecutorService().scheduleAtFixedRate(() -> {
                     if(System.currentTimeMillis() - startTime > TimeUnit.SECONDS.toMillis(maxWaitSeconds)) {

@@ -23,9 +23,9 @@ public class RegisterMain {
 
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/empty-connector-v1.1-SNAPSHOT.jar",
 //				basePath + "dist/mysql-connector-v1.0-SNAPSHOT.jar",
-				basePath + "dist/postgres-connector-v1.0-SNAPSHOT.jar",
+//				basePath + "dist/postgres-connector-v1.0-SNAPSHOT.jar",
 //				basePath + "dist/mongodb-connector-v1.0-SNAPSHOT.jar",
-//				basePath + "dist/oracle-connector-v1.0-SNAPSHOT.jar",
+				basePath + "dist/oracle-connector-v1.0-SNAPSHOT.jar",
 		};
 
 		Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);

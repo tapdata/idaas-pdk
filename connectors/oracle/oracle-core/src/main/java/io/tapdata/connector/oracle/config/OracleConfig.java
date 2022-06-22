@@ -4,7 +4,9 @@ import io.tapdata.common.CommonDbConfig;
 import io.tapdata.kit.EmptyKit;
 
 import java.io.Serializable;
+import java.time.ZoneId;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Oracle database config
@@ -15,6 +17,9 @@ import java.util.Map;
 public class OracleConfig extends CommonDbConfig implements Serializable {
 
     private String logPluginName = "";
+    private String pdb = "";
+    private Integer fetchSize = 100;
+    private ZoneId sysZoneId = TimeZone.getDefault().toZoneId();
 
     public OracleConfig() {
         //customize oracle config
@@ -42,6 +47,30 @@ public class OracleConfig extends CommonDbConfig implements Serializable {
 
     public void setLogPluginName(String logPluginName) {
         this.logPluginName = logPluginName;
+    }
+
+    public String getPdb() {
+        return pdb;
+    }
+
+    public void setPdb(String pdb) {
+        this.pdb = pdb;
+    }
+
+    public Integer getFetchSize() {
+        return fetchSize;
+    }
+
+    public void setFetchSize(Integer fetchSize) {
+        this.fetchSize = fetchSize;
+    }
+
+    public ZoneId getSysZoneId() {
+        return sysZoneId;
+    }
+
+    public void setSysZoneId(ZoneId sysZoneId) {
+        this.sysZoneId = sysZoneId;
     }
 }
 

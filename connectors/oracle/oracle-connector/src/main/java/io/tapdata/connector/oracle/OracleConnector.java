@@ -5,6 +5,7 @@ import io.tapdata.base.ConnectorBase;
 import io.tapdata.common.CommonSqlMaker;
 import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.oracle.bean.OracleColumn;
+import io.tapdata.connector.oracle.cdc.OracleCdcRunner;
 import io.tapdata.connector.oracle.cdc.offset.OracleOffset;
 import io.tapdata.connector.oracle.config.OracleConfig;
 import io.tapdata.entity.codec.TapCodecsRegistry;
@@ -23,6 +24,7 @@ import io.tapdata.entity.utils.DataMap;
 import io.tapdata.kit.DbKit;
 import io.tapdata.kit.EmptyKit;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
+import io.tapdata.pdk.apis.consumer.StreamReadConsumer;
 import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
@@ -30,7 +32,10 @@ import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
 import java.math.BigDecimal;
 import oracle.sql.BLOB;
+import oracle.sql.TIMESTAMP;
+
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,6 +48,7 @@ public class OracleConnector extends ConnectorBase {
 
     private OracleConfig oracleConfig;
     private OracleJdbcContext oracleJdbcContext;
+    private OracleCdcRunner cdcRunner;
     private String oracleVersion;
     private static final int BATCH_READ_SIZE = 5000;
     private static final int BATCH_ADVANCE_READ_LIMIT = 1000;
@@ -57,7 +63,7 @@ public class OracleConnector extends ConnectorBase {
     }
 
     @Override
-    public void onStart(TapConnectionContext connectionContext) throws Throwable {
+    public void onStart(TapConnectionContext connectionContext) {
         initConnection(connectionContext);
     }
 
@@ -66,9 +72,13 @@ public class OracleConnector extends ConnectorBase {
         if (EmptyKit.isNotNull(oracleJdbcContext)) {
             oracleJdbcContext.finish(connectionContext.getId());
         }
+        if (EmptyKit.isNotNull(cdcRunner)) {
+            cdcRunner.closeCdcRunner();
+            cdcRunner = null;
+        }
     }
 
-    private void onDestroy(TapConnectionContext connectionContext) throws Throwable {
+    private void onDestroy(TapConnectionContext connectionContext) {
 
     }
 
@@ -85,8 +95,8 @@ public class OracleConnector extends ConnectorBase {
 //        //source
         connectorFunctions.supportBatchCount(this::batchCount);
         connectorFunctions.supportBatchRead(this::batchRead);
-//        connectorFunctions.supportStreamRead(this::streamRead);
-//        connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
+        connectorFunctions.supportStreamRead(this::streamRead);
+        connectorFunctions.supportTimestampToStreamOffset(this::timestampToStreamOffset);
 //        //query
         connectorFunctions.supportQueryByFilter(this::queryByFilter);
         connectorFunctions.supportQueryByAdvanceFilter(this::queryByAdvanceFilter);
@@ -108,6 +118,13 @@ public class OracleConnector extends ConnectorBase {
             return 0;
         });
 
+        codecRegistry.registerToTapValue(TIMESTAMP.class, (value, tapType) -> {
+            try {
+                return new TapDateTimeValue(new DateTime(((TIMESTAMP)value).timestampValue()));
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
         codecRegistry.registerToTapValue(BLOB.class, (value, tapType) -> new TapBinaryValue(DbKit.BlobToBytes((BLOB) value)));
         //TapTimeValue, TapDateTimeValue and TapDateValue's value is DateTime, need convert into Date object.
         codecRegistry.registerFromTapValue(TapTimeValue.class, "CHAR(8)", tapTimeValue -> formatTapDateTime(tapTimeValue.getValue(), "HH:mm:ss"));
@@ -252,7 +269,7 @@ public class OracleConnector extends ConnectorBase {
     }
 
     @Override
-    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) throws Throwable {
+    public void discoverSchema(TapConnectionContext connectionContext, List<String> tables, int tableSize, Consumer<List<TapTable>> consumer) {
         //get table info
         List<DataMap> tableList = oracleJdbcContext.queryAllTables(tables);
         List<List<DataMap>> tableLists = Lists.partition(tableList, tableSize);
@@ -307,7 +324,7 @@ public class OracleConnector extends ConnectorBase {
     }
 
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) throws Throwable {
+    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         oracleConfig = new OracleConfig().load(connectionContext.getConnectionConfig());
         OracleTest oracleTest = new OracleTest(oracleConfig);
         TestItem testHostPort = oracleTest.testHostPort();
@@ -324,7 +341,24 @@ public class OracleConnector extends ConnectorBase {
     }
 
     @Override
-    public int tableCount(TapConnectionContext connectionContext) throws Throwable {
+    public int tableCount(TapConnectionContext connectionContext) {
         return oracleJdbcContext.queryAllTables(null).size();
+    }
+
+    private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
+        if (EmptyKit.isNull(cdcRunner)) {
+            cdcRunner = new OracleCdcRunner().useConfig(oracleConfig)
+                    .init(
+                            tableList,
+                            offsetState,
+                            recordSize,
+                            consumer
+                    );
+        }
+        cdcRunner.startCdcRunner();
+    }
+
+    private Object timestampToStreamOffset(TapConnectorContext connectorContext, Long offsetStartTime) {
+        return new OracleOffset();
     }
 }

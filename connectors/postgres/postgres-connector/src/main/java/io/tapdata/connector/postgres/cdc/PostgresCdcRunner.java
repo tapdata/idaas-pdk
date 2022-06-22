@@ -46,7 +46,7 @@ public class PostgresCdcRunner extends DebeziumCdcRunner {
 
     }
 
-    public PostgresCdcRunner use(PostgresConfig postgresConfig) {
+    public PostgresCdcRunner useConfig(PostgresConfig postgresConfig) {
         this.postgresConfig = postgresConfig;
         return this;
     }

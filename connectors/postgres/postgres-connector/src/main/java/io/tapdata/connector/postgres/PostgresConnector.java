@@ -393,7 +393,7 @@ public class PostgresConnector extends ConnectorBase {
 
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
         if (EmptyKit.isNull(cdcRunner)) {
-            cdcRunner = new PostgresCdcRunner().use(postgresConfig);
+            cdcRunner = new PostgresCdcRunner().useConfig(postgresConfig);
             if (EmptyKit.isNull(slotName)) {
                 cdcRunner.watch(tableList).offset(offsetState).registerConsumer(consumer, recordSize);
                 nodeContext.getStateMap().put("tapdata_pg_slot", cdcRunner.getRunnerName());

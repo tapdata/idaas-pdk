@@ -6,6 +6,8 @@ public class OracleOffset implements Serializable {
 
     private String sortString;
     private Long offsetValue;
+    private Long lastScn;
+    private Long pendingScn;
 
     public OracleOffset() {
 
@@ -30,5 +32,21 @@ public class OracleOffset implements Serializable {
 
     public void setOffsetValue(Long offsetValue) {
         this.offsetValue = offsetValue;
+    }
+
+    public Long getLastScn() {
+        return lastScn;
+    }
+
+    public void setLastScn(Long lastScn) {
+        this.lastScn = lastScn;
+    }
+
+    public Long getPendingScn() {
+        return pendingScn;
+    }
+
+    public void setPendingScn(Long pendingScn) {
+        this.pendingScn = pendingScn;
     }
 }

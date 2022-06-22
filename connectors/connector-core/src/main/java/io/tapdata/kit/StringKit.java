@@ -1,6 +1,7 @@
 package io.tapdata.kit;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class StringKit {
      * @param splitter ","
      * @return "'a','b','c'"
      */
-    public static String joinString(List<String> list, String around, String splitter) {
+    public static String joinString(Collection<String> list, String around, String splitter) {
         if (EmptyKit.isEmpty(list)) {
             return "";
         }
@@ -72,4 +73,95 @@ public class StringKit {
         }
     }
 
+    public static String subStringBetweenTwoString(String sql, String start, String end) {
+        String sub = "";
+
+        if (EmptyKit.isBlank(sql)) {
+            return "";
+        }
+
+        int startIndex = indexOfIgnoreCase(sql, start);
+        if (startIndex <= 0) {
+            return "";
+        }
+        int endIndex = indexOfIgnoreCase(sql, end);
+        if (endIndex <= 0) {
+            return "";
+        }
+
+        startIndex = startIndex + start.length();
+        if (startIndex >= endIndex) {
+            throw new RuntimeException(String.format("Invalid sql: %s, start: %s, end: %s", sql, start, end));
+        } else {
+            sub = sql.substring(startIndex + start.length(), endIndex);
+        }
+
+        return sub;
+    }
+
+    public static int indexOfIgnoreCase(CharSequence str, CharSequence searchStr) {
+        return indexOfIgnoreCase(str, searchStr, 0);
+    }
+
+    public static int indexOfIgnoreCase(CharSequence str, CharSequence searchStr, int startPos) {
+        if (str != null && searchStr != null) {
+            if (startPos < 0) {
+                startPos = 0;
+            }
+
+            int endLimit = str.length() - searchStr.length() + 1;
+            if (startPos > endLimit) {
+                return -1;
+            } else if (searchStr.length() == 0) {
+                return startPos;
+            } else {
+                for (int i = startPos; i < endLimit; ++i) {
+                    if (regionMatches(str, true, i, searchStr, 0, searchStr.length())) {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+        } else {
+            return -1;
+        }
+    }
+
+    static boolean regionMatches(CharSequence cs, boolean ignoreCase, int thisStart, CharSequence substring, int start, int length) {
+        if (cs instanceof String && substring instanceof String) {
+            return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);
+        } else {
+            int index1 = thisStart;
+            int index2 = start;
+            int tmpLen = length;
+            int srcLen = cs.length() - thisStart;
+            int otherLen = substring.length() - start;
+            if (thisStart >= 0 && start >= 0 && length >= 0) {
+                if (srcLen >= length && otherLen >= length) {
+                    while (tmpLen-- > 0) {
+                        char c1 = cs.charAt(index1++);
+                        char c2 = substring.charAt(index2++);
+                        if (c1 != c2) {
+                            if (!ignoreCase) {
+                                return false;
+                            }
+
+                            char u1 = Character.toUpperCase(c1);
+                            char u2 = Character.toUpperCase(c2);
+                            if (u1 != u2 && Character.toLowerCase(u1) != Character.toLowerCase(u2)) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
 }
