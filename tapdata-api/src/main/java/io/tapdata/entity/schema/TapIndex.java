@@ -52,6 +52,14 @@ public class TapIndex implements Serializable {
         this.unique = unique;
     }
 
+    public boolean isUnique() {
+        return unique != null && unique;
+    }
+
+    public boolean isPrimary() {
+        return primary != null && primary;
+    }
+
     public Boolean getPrimary() {
         return primary;
     }

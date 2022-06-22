@@ -1,6 +1,7 @@
 {
   "connection": {
-    "uri": "mongodb://localhost:27017/sample_training"
+    "uri": "mongodb://localhost:27017/sample_training",
+    "uri_temp": "mongodb://192.168.1.182:59017/sample_training"
   },
   "node": {
   }

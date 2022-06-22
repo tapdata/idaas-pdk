@@ -42,6 +42,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.tapdata.entity.simplify.TapSimplify.index;
+import static io.tapdata.entity.simplify.TapSimplify.indexField;
+
 /**
  * PDK for Postgresql
  *
@@ -89,18 +92,10 @@ public class PostgresConnector extends ConnectorBase {
                     if (value.stream().anyMatch(v -> (boolean) v.get("is_primary"))) {
                         primaryKey.addAll(value.stream().map(v -> v.getString("column_name")).collect(Collectors.toList()));
                     }
-                    TapIndex index = new TapIndex();
-                    index.setName(key);
-                    List<TapIndexField> fieldList = TapSimplify.list();
-                    value.forEach(v -> {
-                        TapIndexField field = new TapIndexField();
-                        field.setFieldAsc("A".equals(v.getString("asc_or_desc")));
-                        field.setName(v.getString("column_name"));
-                        fieldList.add(field);
-                    });
+                    TapIndex index = index(key);
+                    value.forEach(v -> index.indexField(indexField(v.getString("column_name")).fieldAsc("A".equals(v.getString("asc_or_desc")))));
                     index.setUnique(value.stream().anyMatch(v -> (boolean) v.get("is_unique")));
                     index.setPrimary(value.stream().anyMatch(v -> (boolean) v.get("is_primary")));
-                    index.setIndexFields(fieldList);
                     tapIndexList.add(index);
                 });
                 //3、table columns info
