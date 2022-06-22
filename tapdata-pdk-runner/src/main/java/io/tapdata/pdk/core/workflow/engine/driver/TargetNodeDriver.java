@@ -375,7 +375,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                 taskManager.init(targetNode.getTasks());
             }
             //
-            tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class);
+            tableKVMap = InstanceFactory.instance(KVMapFactory.class).getCacheMap("tableMap_" + targetNode.getAssociateId(), TapTable.class);
 
             PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
             pdkInvocationMonitor.invokePDKMethod(targetNode, PDKMethod.INIT, () -> {

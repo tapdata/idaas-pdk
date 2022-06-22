@@ -6,6 +6,8 @@ public class SortOn {
     private String key;
     private int sort;
 
+    public SortOn() {}
+    
     public SortOn(String key, int sort) {
         this.key = key;
         this.sort = sort;

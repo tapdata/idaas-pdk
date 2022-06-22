@@ -484,7 +484,26 @@ public class MongodbConnector extends ConnectorBase {
 		else
 			query = and(bsonList.toArray(new Bson[0]));
 
-		FindIterable<Document> iterable = collection.find(query).limit(limit);
+		Projection projection = tapAdvanceFilter.getProjection();
+		Document projectionDoc = null;
+		if(projection != null) {
+			if(projection.getIncludeFields() != null && !projection.getIncludeFields().isEmpty()) {
+				if(projectionDoc == null)
+					projectionDoc = new Document();
+				for(String includeField : projection.getIncludeFields()) {
+					projectionDoc.put(includeField, 1);
+				}
+			}
+			if(projection.getExcludeFields() != null && !projection.getExcludeFields().isEmpty()) {
+				if(projectionDoc == null)
+					projectionDoc = new Document();
+				for(String excludeField : projection.getExcludeFields()) {
+					projectionDoc.put(excludeField, -1);
+				}
+			}
+		}
+
+		FindIterable<Document> iterable = collection.find(query).limit(limit).projection(projectionDoc);
 
 		Integer skip = tapAdvanceFilter.getSkip();
 		if (skip != null) {

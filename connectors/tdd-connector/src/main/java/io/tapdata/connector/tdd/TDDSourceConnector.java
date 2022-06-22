@@ -194,12 +194,12 @@ public class TDDSourceConnector extends ConnectorBase {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 1; i++) {
                 TapInsertRecordEvent recordEvent = insertRecordEvent(map(
-                        entry("id", "id_1"),
+                        entry("id", "full_1"),
                         entry("tapString", "123"),
                         entry("tddUser", new TDDUser("uid_" + counter.get(), "name_" + counter.get(), "desp_" + counter.get(), (int) counter.get(), TDDUser.GENDER_FEMALE)),
                         entry("tapString10", "1234567890"),
                         entry("tapString10Fixed", "1"),
-                        entry("tapInt", 123123),
+                        entry("tapInt", 1023123),
                         entry("tapBoolean", true),
                         entry("tapDate", date),
 
@@ -209,7 +209,7 @@ public class TDDSourceConnector extends ConnectorBase {
                         entry("tapRawTDDUser", new TDDUser("a1", "n1", "d1", 11, TDDUser.GENDER_MALE)),
                         entry("tapNumber", 123.0),
 //                        entry("tapNumber(8)", 1111),
-                        entry("tapNumber52", 343.22),
+                        entry("tapNumber52", 1343.22),
                         entry("tapBinary", new byte[]{123, 21, 3, 2}),
                         entry("tapTime", date),
                         entry("tapMapStringString", map(entry("a", "a"), entry("b", "b"))),
