@@ -29,7 +29,7 @@ public class TapTable extends TapItem<TapField> {
 	private LinkedHashMap<String, TapField> nameFieldMap;
 
 	/**
-	 * For the database which don't need create table before insert records.
+	 * For the database which don't need to create table before insert records.
 	 * <p>
 	 * Given the default primary keys, if user don't give the specific primary key, will use defaultPrimaryKeys as primary keys.
 	 */
@@ -150,7 +150,7 @@ public class TapTable extends TapItem<TapField> {
 			if (indexList != null) {
 				List<String> primaryKeys = new ArrayList<>();
 				for (TapIndex tapIndex : indexList) {
-					if ((tapIndex.isUnique() || tapIndex.isPrimary()) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
+					if (((tapIndex.getUnique() != null && tapIndex.getUnique()) || (tapIndex.getPrimary() != null && tapIndex.getPrimary())) && tapIndex.getIndexFields() != null && !tapIndex.getIndexFields().isEmpty()) {
 						for (TapIndexField indexField : tapIndex.getIndexFields()) {
 							primaryKeys.add(indexField.getName());
 						}

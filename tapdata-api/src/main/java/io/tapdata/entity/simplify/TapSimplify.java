@@ -13,6 +13,7 @@ import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.type.*;
 import io.tapdata.entity.schema.value.DateTime;
@@ -274,6 +275,14 @@ public class TapSimplify {
 
 	public static HeartbeatEvent heartbeatEvent(Long referenceTime) {
 		return new HeartbeatEvent().init().referenceTime(referenceTime);
+	}
+
+	public static TapIndex index(String name) {
+		return new TapIndex().name(name);
+	}
+
+	public static TapIndexField indexField(String name) {
+		return new TapIndexField().name(name);
 	}
 
 	public static void sleep(long milliseconds) {

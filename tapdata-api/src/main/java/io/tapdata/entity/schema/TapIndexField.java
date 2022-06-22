@@ -8,10 +8,18 @@ public class TapIndexField implements Serializable {
      * Index name
      */
     private String name;
+    public TapIndexField name(String name) {
+        this.name = name;
+        return this;
+    }
     /**
      * Field is asc or not.
      */
     private Boolean fieldAsc;
+    public TapIndexField fieldAsc(Boolean fieldAsc) {
+        this.fieldAsc = fieldAsc;
+        return this;
+    }
 
     public Boolean getFieldAsc() {
         return fieldAsc;

@@ -7,6 +7,7 @@ import io.tapdata.entity.event.control.ControlEvent;
 import io.tapdata.entity.event.control.PatrolEvent;
 import io.tapdata.entity.event.control.TapForerunnerEvent;
 import io.tapdata.entity.event.ddl.TapDDLEvent;
+import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.table.*;
 import io.tapdata.entity.event.dml.*;
 import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
@@ -14,6 +15,8 @@ import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.result.ResultItem;
 import io.tapdata.entity.result.TapResult;
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.utils.ClassFactory;
 import io.tapdata.entity.utils.InstanceFactory;
@@ -24,7 +27,6 @@ import io.tapdata.pdk.apis.functions.connector.target.*;
 import io.tapdata.entity.logger.TapLogger;
 import io.tapdata.entity.simplify.pretty.ClassHandlers;
 import io.tapdata.pdk.core.api.ConnectorNode;
-import io.tapdata.pdk.core.api.TargetNode;
 import io.tapdata.entity.error.CoreException;
 import io.tapdata.pdk.core.error.PDKRunnerErrorCodes;
 import io.tapdata.pdk.core.monitor.PDKInvocationMonitor;
@@ -34,12 +36,13 @@ import io.tapdata.pdk.core.utils.LoggerUtils;
 import io.tapdata.pdk.core.utils.queue.ListHandler;
 import io.tapdata.pdk.core.workflow.engine.JobOptions;
 import io.tapdata.pdk.core.workflow.engine.driver.task.TaskManager;
+import net.sf.cglib.core.CollectionUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static io.tapdata.entity.simplify.TapSimplify.table;
+import static io.tapdata.entity.simplify.TapSimplify.*;
 
 public class TargetNodeDriver extends Driver implements ListHandler<List<TapEvent>> {
     private static final String TAG = TargetNodeDriver.class.getSimpleName();
@@ -230,6 +233,7 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
                         }
                         break;
                     case JobOptions.ACTION_INDEX_PRIMARY:
+                        indexPrimary(targetTable, targetNode);
                         break;
                     default:
                         TapLogger.error(TAG, "Action {} is unknown before start, {}", action, LoggerUtils.targetNodeMessage(targetNode));
@@ -238,6 +242,21 @@ public class TargetNodeDriver extends Driver implements ListHandler<List<TapEven
             }
         }
         return targetTable;
+    }
+
+    private void indexPrimary(TapTable targetTable, ConnectorNode targetNode) {
+        CreateIndexFunction createIndexFunction = targetNode.getConnectorFunctions().getCreateIndexFunction();
+        if (null != createIndexFunction) {
+            List<TapIndex> tapIndices = list();
+            TapIndex tapIndex = index("tapdata_primary_index");
+            List<String> updateConditionFields = new ArrayList<>(targetTable.primaryKeys(true));
+            if (!updateConditionFields.isEmpty()) {
+                updateConditionFields.forEach(field -> tapIndex.indexField(indexField(field).fieldAsc(true)));
+                tapIndices.add(tapIndex);
+                TapCreateIndexEvent indexEvent = createIndexEvent(targetTable.getId(), tapIndices);
+                PDKInvocationMonitor.invoke(targetNode, PDKMethod.TARGET_CREATE_INDEX, () -> createIndexFunction.createIndex(targetNode.getConnectorContext(), targetTable, indexEvent), TAG);
+            }
+        }
     }
 
     private TapTable configTable(TapTable sourceTable) {

@@ -48,7 +48,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
                 table("tdd-table")
                         //Define a field named "id", origin field type, whether is primary key and primary key position
                         .add(field("id", "tapString").isPrimaryKey(true).primaryKeyPos(1))
-                        .add(field("tapString", "tapString").isPrimaryKey(true).primaryKeyPos(2))
+                        .add(field("tapString", "tapString"))
                         .add(field("tddUser", "tapString"))
                         .add(field("tapString10", "tapString(10)"))
                         .add(field("tapString10Fixed", "tapString(10) fixed"))
@@ -191,6 +191,7 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
             List<TapEvent> tapEvents = list();
             for (int i = 0; i < 1000; i++) {
                 Map<String, Object> map = new HashMap<>();
+                map.put("id", String.valueOf((j * 1000 + i)));
                 for(int m = 0; m < 10; m++) {
                     String key = String.valueOf(m);
                     map.put(key, key);

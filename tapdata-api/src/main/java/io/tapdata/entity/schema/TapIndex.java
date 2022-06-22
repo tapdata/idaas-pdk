@@ -1,6 +1,7 @@
 package io.tapdata.entity.schema;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TapIndex implements Serializable {
@@ -8,14 +9,32 @@ public class TapIndex implements Serializable {
      * Index name
      */
     private String name;
+    public TapIndex name(String name) {
+        this.name = name;
+        return this;
+    }
     /**
      * Index fields
      */
     private List<TapIndexField> indexFields;
+    public TapIndex indexField(TapIndexField indexField) {
+        if(indexFields == null)
+            indexFields = new ArrayList<>();
+        indexFields.add(indexField);
+        return this;
+    }
 
-    private boolean unique;
+    private Boolean unique;
+    public TapIndex unique(boolean unique) {
+        this.unique = unique;
+        return this;
+    }
 
-    private boolean primary;
+    private Boolean primary;
+    public TapIndex primary(boolean primary) {
+        this.primary = primary;
+        return this;
+    }
 
     public List<TapIndexField> getIndexFields() {
         return indexFields;
@@ -25,19 +44,19 @@ public class TapIndex implements Serializable {
         this.indexFields = indexFields;
     }
 
-    public boolean isUnique() {
+    public Boolean getUnique() {
         return unique;
     }
 
-    public void setUnique(boolean unique) {
+    public void setUnique(Boolean unique) {
         this.unique = unique;
     }
 
-    public boolean isPrimary() {
+    public Boolean getPrimary() {
         return primary;
     }
 
-    public void setPrimary(boolean primary) {
+    public void setPrimary(Boolean primary) {
         this.primary = primary;
     }
 
