@@ -13,6 +13,7 @@ import io.tapdata.pdk.tdd.core.PDKTestBase;
 import io.tapdata.pdk.tdd.core.SupportFunction;
 import io.tapdata.pdk.tdd.tests.basic.BasicTest;
 import io.tapdata.pdk.tdd.tests.source.BatchReadTest;
+import io.tapdata.pdk.tdd.tests.source.QueryByAdvanceFilterTest;
 import io.tapdata.pdk.tdd.tests.source.StreamReadTest;
 import io.tapdata.pdk.tdd.tests.target.DMLTest;
 import io.tapdata.pdk.tdd.tests.target.CreateTableTest;
@@ -298,7 +299,8 @@ public class TDDCli extends CommonCli {
                 DMLTest.class,
                 CreateTableTest.class,
                 BatchReadTest.class,
-                StreamReadTest.class
+                StreamReadTest.class,
+                QueryByAdvanceFilterTest.class
         );
 
 //        builder.append("\n-------------PDK connector idAndGroupAndVersion " + tapNodeInfo.getTapNodeSpecification().idAndGroup() + "-------------").append("\n");

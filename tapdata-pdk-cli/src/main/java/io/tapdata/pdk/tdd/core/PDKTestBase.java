@@ -535,7 +535,7 @@ public class PDKTestBase {
         TapFilter filter = new TapFilter();
         filter.setMatch(before);
 //        filter.setTableId(targetNode.getTable());
-        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
+        TapTable targetTable = targetNode.getConnectorContext().getTableMap().get(targetNode.getTable());
 
         FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(before) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
@@ -586,7 +586,7 @@ public class PDKTestBase {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
 //        filter.setTableId(targetNode.getTable());
-        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
+        TapTable targetTable = targetNode.getConnectorContext().getTableMap().get(targetNode.getTable());
 
         FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
@@ -602,7 +602,7 @@ public class PDKTestBase {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
 //        filter.setTableId(targetNode.getTable());
-        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
+        TapTable targetTable = targetNode.getConnectorContext().getTableMap().get(targetNode.getTable());
 
         FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));
@@ -617,8 +617,8 @@ public class PDKTestBase {
     protected void verifyBatchRecordExists(ConnectorNode sourceNode, ConnectorNode targetNode, DataMap filterMap) {
         TapFilter filter = new TapFilter();
         filter.setMatch(filterMap);
-        TapTable sourceTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(sourceNode.getAssociateId(), TapTable.class).get(sourceNode.getTable());
-        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetNode.getTable());
+        TapTable sourceTable = sourceNode.getConnectorContext().getTableMap().get(sourceNode.getTable());
+        TapTable targetTable = targetNode.getConnectorContext().getTableMap().get(targetNode.getTable());
 
         FilterResult filterResult = filterResults(targetNode, filter, targetTable);
         $(() -> assertNotNull(filterResult, "The filter " + InstanceFactory.instance(JsonParser.class).toJson(filterMap) + " can not get any result. Please make sure writeRecord method update record correctly and queryByFilter/queryByAdvanceFilter can query it out for verification. "));

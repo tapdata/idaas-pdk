@@ -99,7 +99,7 @@ public class SourceNodeDriver extends Driver {
         PDKInvocationMonitor pdkInvocationMonitor = PDKInvocationMonitor.getInstance();
 
         KVMapFactory mapFactory = InstanceFactory.instance(KVMapFactory.class);
-        tableKVMap = mapFactory.getCacheMap(sourceNode.getAssociateId(), TapTable.class);
+        tableKVMap = mapFactory.getCacheMap("tableMap_" + sourceNode.getAssociateId(), TapTable.class);
 
         pdkInvocationMonitor.invokePDKMethod(sourceNode, PDKMethod.INIT, () -> {
             sourceNode.connectorInit();

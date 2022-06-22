@@ -101,7 +101,7 @@ public class CreateTableTest extends PDKTestBase {
     }
 
     private void verifyTableFields() {
-        TapTable table = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetTableId);
+        TapTable table = targetNode.getConnectorContext().getTableMap().get(targetTableId);
 //        TapTable table = targetNode.getConnectorContext().getTable();
         LinkedHashMap<String, TapField> nameFieldMap = table.getNameFieldMap();
         $(() -> Assertions.assertNotNull(nameFieldMap, "Table name fields is null, please check whether you provide \"dataTypes\" in spec json file or define from TapValue codec in registerCapabilities method"));
@@ -131,7 +131,7 @@ public class CreateTableTest extends PDKTestBase {
                         verifyRecordNotExists(targetNode, filterMap);
                         verifyTableNotExists(targetNode, filterMap);
 
-                        TapTable targetTable = InstanceFactory.instance(KVMapFactory.class).getCacheMap(targetNode.getAssociateId(), TapTable.class).get(targetTableId);
+                        TapTable targetTable = targetNode.getConnectorContext().getTableMap().get(targetTableId);
                         sendCreateTableEvent(dataFlowEngine, dag, targetTable, new PatrolEvent().patrolListener((innerNodeId1, innerState1) -> {
                             if (innerNodeId1.equals(targetNodeId) && innerState1 == PatrolEvent.STATE_LEAVE) {
                                 processDML(dataFlowEngine, dag, new PatrolEvent().patrolListener((innerNodeId2, innerState2) -> {
