@@ -22,6 +22,6 @@ public class TapConnectionContext extends TapContext {
     }
 
     public String toString() {
-        return "TapConnectionContext connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " spec: " + specification;
+        return "TapConnectionContext connectionConfig: " + (connectionConfig != null ? InstanceFactory.instance(JsonParser.class).toJson(connectionConfig) : "") + " spec: " + specification + " id: " + id;
     }
 }

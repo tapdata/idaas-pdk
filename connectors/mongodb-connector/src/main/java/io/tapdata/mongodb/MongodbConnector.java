@@ -111,6 +111,10 @@ public class MongodbConnector extends ConnectorBase {
 
 		try (Closeable ignored = executor::shutdown) {
 			List<String> collectionNameList = StreamSupport.stream(collectionNames.spliterator(), false).collect(Collectors.toList());
+
+			if(tables != null && !tables.isEmpty()) {
+				collectionNameList = ListUtils.retainAll(collectionNameList, tables);
+			}
 			ListUtils.partition(collectionNameList, tableSize).forEach(nameList -> {
 				CountDownLatch countDownLatch = new CountDownLatch(nameList.size());
 
