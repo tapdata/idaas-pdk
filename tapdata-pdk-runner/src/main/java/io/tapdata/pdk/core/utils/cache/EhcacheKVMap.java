@@ -40,15 +40,8 @@ public class EhcacheKVMap<T> implements KVMap<T> {
                     PersistentCacheManager persistentCacheManager = CacheManagerBuilder.newCacheManagerBuilder()
                             .with(CacheManagerBuilder.persistence(new File(getStoragePath(), cacheFolder)))
                             .withSerializer(Object.class, ObjectSerializer.class)
-//                            .withCache(mapKey,
-//                                    CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, (Class<?>) valueClass,
-//                                            ResourcePoolsBuilder.newResourcePoolsBuilder()
-//                                                    .heap(maxHeapEntries, EntryUnit.ENTRIES)
-////                                                  .offheap(20, MemoryUnit.MB)
-//                                                    .disk(maxDiskSize, MemoryUnit.MB, true)
-//                                    )
-//                            )
                             .build(true);
+
                     this.persistentCacheManager = persistentCacheManager;
                 }
             }
@@ -58,7 +51,7 @@ public class EhcacheKVMap<T> implements KVMap<T> {
             synchronized (this) {
                 if(cache == null) {
                     cacheKey = mapKey;
-                    int maxHeapEntries = CommonUtils.getPropertyInt("tapcache_ehcache_heap_max_entries", 10);
+                    int maxHeapEntries = CommonUtils.getPropertyInt("tapcache_ehcache_heap_max_entries", 1000);
                     int maxDiskSize = CommonUtils.getPropertyInt("tapcache_ehcache_disk_max_mb", 512);
 
                     CommonUtils.ignoreAnyError(() -> persistentCacheManager.destroyCache(mapKey), TAG);
@@ -67,8 +60,8 @@ public class EhcacheKVMap<T> implements KVMap<T> {
                                 CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, (Class<?>) valueClass,
                                         ResourcePoolsBuilder.newResourcePoolsBuilder()
                                                 .heap(maxHeapEntries, EntryUnit.ENTRIES)
-//                                                  .offheap(20, MemoryUnit.MB)
-                                                .disk(maxDiskSize, MemoryUnit.MB, true)));
+//                                                .disk(maxDiskSize, MemoryUnit.MB, true)
+                                ));
                     }
                 }
             }
