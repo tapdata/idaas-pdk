@@ -4,6 +4,7 @@ import io.tapdata.base.ConnectorBase;
 import io.tapdata.entity.codec.TapCodecsRegistry;
 import io.tapdata.entity.event.TapEvent;
 import io.tapdata.entity.event.dml.TapInsertRecordEvent;
+import io.tapdata.entity.event.dml.TapRecordEvent;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.entity.schema.value.TapStringValue;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -11,17 +12,20 @@ import io.tapdata.pdk.apis.context.TapConnectionContext;
 import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.ConnectionOptions;
 import io.tapdata.pdk.apis.entity.TestItem;
+import io.tapdata.pdk.apis.entity.WriteListResult;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @TapConnectorClass("sourceBenchmarkNoTableSpec.json")
-public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
-    public static final String TAG = TDDBenchmarkNoTableSourceConnector.class.getSimpleName();
+public class TDDBenchmarkNoTableTargetConnector extends ConnectorBase {
+    public static final String TAG = TDDBenchmarkNoTableTargetConnector.class.getSimpleName();
     private final AtomicLong counter = new AtomicLong();
     private final AtomicBoolean isShutDown = new AtomicBoolean(false);
 
@@ -117,12 +121,12 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
      */
     @Override
     public void registerCapabilities(ConnectorFunctions connectorFunctions, TapCodecsRegistry codecRegistry) {
-        connectorFunctions.supportBatchRead(this::batchRead);
+//        connectorFunctions.supportBatchRead(this::batchRead);
 //        connectorFunctions.supportStreamRead(this::streamRead);
-        connectorFunctions.supportBatchCount(this::batchCount);
-//        connectorFunctions.supportWriteRecord(this::writeRecord);
+//        connectorFunctions.supportBatchCount(this::batchCount);
+        connectorFunctions.supportWriteRecord(this::writeRecord);
 
-        codecRegistry.registerToTapValue(TDDUser.class, (value, tapType) -> new TapStringValue(toJson(value)));
+//        codecRegistry.registerToTapValue(TDDUser.class, (value, tapType) -> new TapStringValue(toJson(value)));
 
         //Below capabilities, developer can decide to implement or not.
 //        connectorFunctions.supportBatchOffset(this::batchOffset);
@@ -135,89 +139,14 @@ public class TDDBenchmarkNoTableSourceConnector extends ConnectorBase {
 //        connectorFunctions.supportClearTable(this::clearTable);
     }
 
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @return
-     */
-    private long batchCount(TapConnectorContext connectorContext, TapTable table) {
-        //TODO Count the batch size.
-        return 1000000L;
-    }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated ->
-     *  if(batchEnabled)
-     *      batchCount -> batchRead
-     *  if(streamEnabled)
-     *      streamRead
-     * -> destroy -> ended
-     *
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     *
-     * @param connectorContext
-     * @param table
-     * @param offsetState
-     * @param eventsOffsetConsumer
-     */
-    private void batchRead(TapConnectorContext connectorContext, TapTable table, Object offsetState, int eventBatchSize, BiConsumer<List<TapEvent>, Object> eventsOffsetConsumer) {
-        //TODO batch read all records from database, use consumer#accept to send to flow engine.
-        //Below is sample code to generate records directly.
-        List<TapEvent> tapEvents = list();
-        for (int j = 0; j < 1000; j++) {
-            for (int i = 0; i < 1000; i++) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("id", String.valueOf((j * 1000 + i)));
-                for(int m = 0; m < 4; m++) {
-                    String key = String.valueOf(m);
-                    map.put(key, key);
-                }
-                TapInsertRecordEvent recordEvent = insertRecordEvent(map, table.getId());
-                counter.incrementAndGet();
-                tapEvents.add(recordEvent);
-                if(tapEvents.size() >= eventBatchSize) {
-                    eventsOffsetConsumer.accept(tapEvents, null);
-                    tapEvents = list();
-                }
-            }
-        }
-        if(!tapEvents.isEmpty())
-            eventsOffsetConsumer.accept(tapEvents, null);
-        counter.set(counter.get() + 1000);
+    private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable table, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) {
+        
     }
 
     @Override
     public void onStart(TapConnectionContext connectionContext) throws Throwable {
 
     }
-
-    /**
-     * The method invocation life circle is below,
-     * initiated -> sourceFunctions/targetFunctions -> destroy -> ended
-     * <p>
-     * In connectorContext,
-     * you can get the connection/node config which is the user input for your connection/node application, described in your json file.
-     * current instance is serving for the table from connectorContext.
-     */
-//    @Override
-//    public void onDestroy(TapConnectionContext connectionContext) {
-//        //TODO release resources
-//        isShutDown.set(true);
-//    }
 
     @Override
     public void onStop(TapConnectionContext connectionContext) throws Throwable {

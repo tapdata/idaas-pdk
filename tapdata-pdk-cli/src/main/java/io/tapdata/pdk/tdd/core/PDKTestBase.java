@@ -12,6 +12,7 @@ import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.entity.utils.TypeHolder;
 import io.tapdata.entity.utils.cache.KVMapFactory;
+import io.tapdata.entity.verification.ValueVerification;
 import io.tapdata.pdk.apis.entity.FilterResult;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 import io.tapdata.pdk.apis.entity.TapFilter;
@@ -355,6 +356,7 @@ public class PDKTestBase {
     }
 
     protected boolean mapEquals(Map<String, Object> firstRecord, Map<String, Object> result, StringBuilder builder) {
+//        return InstanceFactory.instance(ValueVerification.class).mapEquals(firstRecord, result, ValueVerification.EQUALS_TYPE_FUZZY);
         MapDifference<String, Object> difference = Maps.difference(firstRecord, result);
         Map<String, MapDifference.ValueDifference<Object>> differenceMap = difference.entriesDiffering();
         builder.append("Differences: \n");

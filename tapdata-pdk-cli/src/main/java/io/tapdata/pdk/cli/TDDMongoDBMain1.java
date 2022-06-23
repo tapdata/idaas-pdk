@@ -19,7 +19,7 @@ public class TDDMongoDBMain1 {
 //                "-i", "tapdata-api",
 //                "-i", "tapdata-pdk-api",
 //                "-i", "connectors/connector-core",
-//                "-m", "/usr/local/Cellar/maven/3.6.2/libexec",
+//                "-t", "io.tapdata.pdk.tdd.tests.source.QueryByAdvanceFilterTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.target.CreateTableTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.basic.BasicTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.target.DMLTest",,
