@@ -9,12 +9,12 @@
     <!--<dependencyManagement>-->
     <dependencies>
       <dependency>
-        <groupId>io.tapdata.pdk</groupId>
+        <groupId>io.tapdata</groupId>
         <artifactId>tapdata-pdk-api</artifactId>
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>io.tapdata.pdk</groupId>
+        <groupId>io.tapdata</groupId>
         <artifactId>connector-core</artifactId>
       </dependency>
     </dependencies>

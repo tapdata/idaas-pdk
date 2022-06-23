@@ -4,10 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>connectors</artifactId>
-        <groupId>io.tapdata.pdk</groupId>
+        <groupId>io.tapdata</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.tapdata</groupId>
     <artifactId>mongodb-connector</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>mongodb-connector</name>
@@ -15,12 +14,12 @@
     <!--<dependencyManagement>-->
     <dependencies>
         <dependency>
-            <groupId>io.tapdata.pdk</groupId>
+            <groupId>io.tapdata</groupId>
             <artifactId>tapdata-pdk-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.tapdata.pdk</groupId>
+            <groupId>io.tapdata</groupId>
             <artifactId>connector-core</artifactId>
         </dependency>
         <dependency>

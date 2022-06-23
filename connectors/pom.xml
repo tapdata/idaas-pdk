@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.tapdata.pdk</groupId>
+        <groupId>io.tapdata</groupId>
         <artifactId>idaas-pdk</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
@@ -11,17 +11,20 @@
     <name>connectors</name>
     <packaging>pom</packaging>
     <modules>
-        <module>connector-core</module>
-        <module>empty-connector</module>
-<!--        <module>file-connector</module>-->
+<!--        <module>empty-connector</module>-->
+        <!--        <module>file-connector</module>-->
+        <!--        <module>aerospike-connector</module>-->
+        <!--        <module>doris-connector</module>-->
+        <module>../connectors-common/connector-core</module>
         <module>tdd-connector</module>
-<!--        <module>aerospike-connector</module>-->
-<!--        <module>doris-connector</module>-->
         <module>mongodb-connector</module>
-        <module>mysql</module>
-        <module>postgres</module>
-        <module>oracle</module>
-        <module>sql-core</module>
+        <module>mysql-connector</module>
+        <module>../connectors-common/mysql-core</module>
+        <module>postgres-connector</module>
+        <module>../connectors-common/postgres-core</module>
+        <module>oracle-connector</module>
+        <module>../connectors-common/oracle-core</module>
+        <module>../connectors-common/sql-core</module>
     </modules>
 
     <properties>
