@@ -16,6 +16,11 @@ public class PostgresWriteRecorder extends WriteRecorder {
         super(connection, tapTable, schema);
     }
 
+    public PostgresWriteRecorder(Connection connection, TapTable tapTable, String schema, boolean hasUnique) {
+        super(connection, tapTable, schema);
+        uniqueConditionIsIndex = uniqueConditionIsIndex && hasUnique;
+    }
+
     @Override
     public void addInsertBatch(Map<String, Object> after) throws SQLException {
         //after is empty will be skipped
