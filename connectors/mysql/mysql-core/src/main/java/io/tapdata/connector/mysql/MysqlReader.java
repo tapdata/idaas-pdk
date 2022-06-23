@@ -134,7 +134,7 @@ public class MysqlReader implements Closeable {
 	public void readBinlog(TapConnectorContext tapConnectorContext, List<String> tables,
 						   Object offset, int batchSize, StreamReadConsumer consumer) throws Throwable {
 		try {
-				batchSize = batchSize < MIN_BATCH_SIZE ? MIN_BATCH_SIZE : batchSize;
+			batchSize = Math.max(batchSize, MIN_BATCH_SIZE);
 			initDebeziumServerName(tapConnectorContext);
 			this.tapTableMap = tapConnectorContext.getTableMap();
 			String offsetStr = "";
@@ -180,8 +180,8 @@ public class MysqlReader implements Closeable {
 			List<String> dbTableNames = tables.stream().map(t -> database + "." + t).collect(Collectors.toList());
 			builder.with(MySqlConnectorConfig.DATABASE_INCLUDE_LIST, database);
 			builder.with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, String.join(",", dbTableNames));
-//			builder.with("snapshot.mode", "schema_only");
-			builder.with("snapshot.mode", "schema_only_recovery");
+			builder.with("snapshot.mode", "schema_only");
+//			builder.with("snapshot.mode", "schema_only_recovery");
 			builder.with("database.history", "io.tapdata.connector.mysql.StateMapHistoryBackingStore");
 			builder.with(EmbeddedEngine.OFFSET_STORAGE, "io.tapdata.connector.mysql.PdkPersistenceOffsetBackingStore");
 			if (StringUtils.isNotBlank(offsetStr)) {
