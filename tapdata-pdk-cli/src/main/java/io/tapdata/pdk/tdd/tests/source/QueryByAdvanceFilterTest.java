@@ -92,7 +92,7 @@ public class QueryByAdvanceFilterTest extends PDKTestBase {
                             table(testTableId).connectionConfig(connectionOptions)
             ));
             dataFlowDescriber.setDag(Collections.singletonList(Arrays.asList(originNodeId, testTargetNodeId)));
-            dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)));
+            dataFlowDescriber.setJobOptions(new JobOptions().actionsBeforeStart(Arrays.asList(JobOptions.ACTION_DROP_TABLE, JobOptions.ACTION_CREATE_TABLE)).enableStreamRead(false));
 
             dag = dataFlowDescriber.toDag();
             if(dag != null) {

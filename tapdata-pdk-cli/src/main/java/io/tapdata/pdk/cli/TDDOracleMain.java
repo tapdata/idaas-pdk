@@ -9,7 +9,7 @@ public class TDDOracleMain {
 //                "test", "-c", "B:\\code\\tapdata\\idaas-pdk\\tapdata-pdk-cli\\src\\main\\resources\\config\\doris.json",
 //                "test", "-c", "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/tapdata-pdk-cli/src/main/resources/config/doris.json",
                 "test", "-c", "tapdata-pdk-cli/src/main/resources/config/oracle.json",
-                "-t", "io.tapdata.pdk.tdd.tests.source.StreamReadTest",
+//                "-t", "io.tapdata.pdk.tdd.tests.source.StreamReadTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.source.BatchReadTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.target.CreateTableTest",
 //                "-t", "io.tapdata.pdk.tdd.tests.target.DMLTest",
@@ -18,7 +18,7 @@ public class TDDOracleMain {
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/empty-connector-v1.1-SNAPSHOT.jar",
 //                "/Users/aplomb/dev/tapdata/GithubProjects/idaas-pdk/dist/file-connector-v1.0-SNAPSHOT.jar",
 
-                "connectors/oracle/oracle-connector",};
+                "connectors/oracle-connector",};
 
         Main.registerCommands().parseWithHandler(new CommandLine.RunLast(), args);
     }
