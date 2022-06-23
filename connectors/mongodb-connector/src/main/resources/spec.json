@@ -7,7 +7,7 @@
     "id": "mongodb"
   },
   "configOptions": {
-    "pdkExpansion": [
+    "capabilities": [
       "master-slave-merge"
     ],
     "connection": {

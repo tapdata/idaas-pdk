@@ -3,6 +3,7 @@ package io.tapdata.pdk.cli.commands;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import io.tapdata.entity.codec.TapCodecsRegistry;
+import io.tapdata.entity.utils.DataMap;
 import io.tapdata.entity.utils.InstanceFactory;
 import io.tapdata.entity.utils.JsonParser;
 import io.tapdata.pdk.apis.annotations.TapConnectorClass;
@@ -150,6 +151,15 @@ public class RegisterCli extends CommonCli {
 
                     //TODO JiaXin, please upload capabilities to TM.
                     List<String> capabilities = connectorFunctions.getCapabilities();
+                    DataMap dataMap = nodeContainer.getConfigOptions();
+                    if(dataMap != null) {
+                        List<String> capabilityList = (List<String>) dataMap.get("capabilities");
+                        if(capabilityList == null) {
+                            dataMap.put("capabilities", capabilities);
+                        } else {
+                            capabilityList.addAll(capabilities);
+                        }
+                    }
 
                     Map<Class<?>, String> tapTypeDataTypeMap = codecRegistry.getTapTypeDataTypeMap();
                     o.put("tapTypeDataTypeMap", JSON.toJSONString(tapTypeDataTypeMap));
