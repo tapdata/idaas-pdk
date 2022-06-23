@@ -138,7 +138,7 @@ public class RedoLogMiner {
             oracleJdbcContext.execute(SWITCH_TO_CDB_ROOT);
         }
         //7、start logMiner
-        statement = oracleJdbcContext.getConnection().createStatement();
+        setSession();
         TapLogger.info(TAG, "Redo Log Miner is starting...");
         statement.execute(String.format(START_LOG_MINOR_CONTINUOUS_MINER_SQL, lastScn));
         logQueue = new LinkedBlockingQueue<>(LOG_QUEUE_SIZE);
@@ -201,6 +201,14 @@ public class RedoLogMiner {
         analyzeThread.start();
         //8、begin to analyze logs
         analyzeResultSet(lastScn, isMax);
+    }
+
+    public void setSession() throws SQLException {
+        statement = oracleJdbcContext.getConnection().createStatement();
+        statement.execute(NLS_DATE_FORMAT);
+        statement.execute(NLS_TIMESTAMP_FORMAT);
+        statement.execute(NLS_TIMESTAMP_TZ_FORMAT);
+        statement.execute(NLS_NUMERIC_FORMAT);
     }
 
     public void stopMiner() throws Throwable {
@@ -930,4 +938,11 @@ public class RedoLogMiner {
             }
         }
     }
+
+    private static final String NLS_DATE_FORMAT = "ALTER SESSION SET NLS_DATE_FORMAT = " + "'DD-MM-YYYY HH24:MI:SS'";
+    private static final String NLS_NUMERIC_FORMAT = "ALTER SESSION SET NLS_NUMERIC_CHARACTERS = \'.,\'";
+    private static final String NLS_TIMESTAMP_FORMAT =
+            "ALTER SESSION SET NLS_TIMESTAMP_FORMAT = " + "'YYYY-MM-DD HH24:MI:SS.FF'";
+    private static final String NLS_TIMESTAMP_TZ_FORMAT =
+            "ALTER SESSION SET NLS_TIMESTAMP_TZ_FORMAT = " + "'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM'";
 }

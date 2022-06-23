@@ -18,6 +18,9 @@ package io.tapdata.connector.oracle.cdc.logminer;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -118,13 +121,18 @@ public class DateTimeColumnHandler {
             Optional<String> dt = matchDateTimeString(toDatePattern.matcher(columnValue));
 
             return dt.map(dateString -> {
-                if (DATE.equals(actualType)) {
-                    // if type is DATE, dont convert time zone, just return string
-                    return dateString;
-                }
                 String dateFormat = DateUtil.determineDateFormat(dateString);
                 if (StringUtils.isNotBlank(dateFormat)) {
                     DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern(dateFormat);
+                    if (DATE.equals(actualType)) {
+                        // if type is DATE, dont convert time zone, just return string
+                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
+                        try {
+                            return simpleDateFormat.parse(dateString).getTime();
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
                     return Date.from(getDate(dateString, DT_FORMATTER).atZone(zoneId).toInstant());
                 } else {
                     return null;
