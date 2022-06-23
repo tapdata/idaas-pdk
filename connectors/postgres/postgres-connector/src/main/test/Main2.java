@@ -17,7 +17,7 @@ public class Main2 {
         PostgresOffset postgresOffset = new PostgresOffset();
         postgresOffset.setSourceOffset("{\"lsn_proc\":186212648,\"lsn\":186212648,\"txId\":7526,\"ts_usec\":1653308485609993}");
         PostgresCdcRunner cdcRunner = new PostgresCdcRunner()
-                .use(postgresConfig)
+                .useConfig(postgresConfig)
                 .watch(Collections.singletonList("Student"))
                 .offset(null)
                 .registerConsumer(null, 10);

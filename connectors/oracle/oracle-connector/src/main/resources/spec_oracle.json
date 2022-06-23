@@ -1,0 +1,325 @@
+{
+  "properties": {
+    "name": "Oracle",
+    "icon": "icons/oracle.png",
+    "doc" : "${doc}",
+    "id": "oracle"
+  },
+  "configOptions": {
+    "connection": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "required": true,
+          "type": "string",
+          "title": "${host}",
+          "x-decorator": "FormItem",
+          "x-component": "Input",
+          "apiServerKey": "database_host",
+          "x-index": 1
+        },
+        "port": {
+          "required": true,
+          "type": "string",
+          "title": "${port}",
+          "x-decorator": "FormItem",
+          "x-component": "InputNumber",
+          "apiServerKey": "database_port",
+          "x-index": 2
+        },
+        "database": {
+          "required": true,
+          "type": "string",
+          "title": "${database}",
+          "x-decorator": "FormItem",
+          "x-component": "Input",
+          "apiServerKey": "database_name",
+          "x-index": 3
+        },
+        "schema": {
+          "required": true,
+          "type": "string",
+          "title": "${schema}",
+          "x-decorator": "FormItem",
+          "x-component": "Input",
+          "apiServerKey": "database_owner",
+          "x-index": 4
+        },
+        "extParams": {
+          "type": "string",
+          "title": "${extParams}",
+          "x-decorator": "FormItem",
+          "x-component": "Input",
+          "apiServerKey": "additionalString",
+          "x-index": 5
+        },
+        "user": {
+          "type": "string",
+          "title": "${user}",
+          "x-decorator": "FormItem",
+          "x-component": "Input",
+          "apiServerKey": "database_username",
+          "x-index": 6
+        },
+        "password": {
+          "type": "string",
+          "title": "${password}",
+          "x-decorator": "FormItem",
+          "x-component": "Password",
+          "apiServerKey": "database_password",
+          "x-index": 7
+        },
+        "logPluginName": {
+          "required": true,
+          "type": "string",
+          "title": "${logPluginName}",
+          "default": "logMiner",
+          "x-decorator": "FormItem",
+          "x-component": "Select",
+          "apiServerKey": "logPlugin",
+          "x-index": 8,
+          "enum": [
+            {
+              "label": "logMiner",
+              "value": "logMiner"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "messages": {
+    "default": "en_US",
+    "en_US": {
+      "doc": "docs/oracle_zh_CN.md",
+      "host": "Host",
+      "port": "Port",
+      "database" : "SID",
+      "schema" : "schema",
+      "extParams" : "extParams",
+      "user" : "user",
+      "password" : "password",
+      "logPluginName" : "logPluginName"
+    },
+    "zh_CN": {
+      "doc": "docs/oracle_zh_CN.md",
+      "host": "地址",
+      "port": "端口",
+      "database" : "SID",
+      "schema" : "模型",
+      "extParams" : "额外参数",
+      "user" : "账号",
+      "password" : "密码",
+      "logPluginName" : "日志插件"
+    },
+    "zh_TW": {
+      "doc": "docs/oracle_zh_CN.md",
+      "host": "地址",
+      "port": "端口",
+      "database" : "SID",
+      "schema" : "模型",
+      "extParams" : "額外參數",
+      "user" : "賬號",
+      "password" : "密碼",
+      "logPluginName" : "日誌插件"
+    }
+  },
+  "dataTypes": {
+    "CHAR[($byte)]": {
+      "byte": 2000,
+      "priority": 1,
+      "defaultByte": 1,
+      "fixed": true,
+      "to": "TapString"
+    },
+    "NCHAR[($byte)]": {
+      "byte": 1000,
+      "priority": 2,
+      "defaultByte": 1,
+      "bitRatio": 3,
+      "queryOnly": true,
+      "fixed": true,
+      "to": "TapString"
+    },
+    "VARCHAR2[($byte)]": {
+      "byte": 4000,
+      "priority": 1,
+      "preferByte": 2000,
+      "to": "TapString"
+    },
+    "NVARCHAR2[($byte)]": {
+      "byte": 2000,
+      "priority": 2,
+      "queryOnly": true,
+      "bitRatio": 3,
+      "to": "TapString"
+    },
+    "INTEGER": {
+      "defaultPrecision": 38,
+      "priority": 1,
+      "to": "TapNumber"
+    },
+    "NUMBER(*,$scale)": {
+      "scale": [
+        -84,
+        127
+      ],
+      "precision": [
+        1,
+        38
+      ],
+      "fixed": true,
+      "preferPrecision": 20,
+      "defaultPrecision": 38,
+      "preferScale": 8,
+      "defaultScale": 0,
+      "priority": 1,
+      "to": "TapNumber"
+    },
+    "NUMBER[($precision,$scale)]": {
+      "precision": [
+        1,
+        38
+      ],
+      "scale": [
+        -84,
+        127
+      ],
+      "fixed": true,
+      "preferPrecision": 20,
+      "defaultPrecision": 38,
+      "preferScale": 8,
+      "defaultScale": 0,
+      "priority": 1,
+      "to": "TapNumber"
+    },
+    "FLOAT[($precision)]": {
+      "precision": [
+        1,
+        126
+      ],
+      "scale": 125,
+      "preferScale": 8,
+      "fixed": false,
+      "defaultPrecision": 126,
+      "priority": 2,
+      "to": "TapNumber"
+    },
+    "BINARY_FLOAT": {
+      "value": [
+        "-3.402823466E+38",
+        "3.402823466E+38"
+      ],
+      "scale": 37,
+      "preferScale": 8,
+      "preferPrecision": 12,
+      "priority": 3,
+      "queryOnly": true,
+      "to": "TapNumber"
+    },
+    "BINARY_DOUBLE": {
+      "value": [
+        "-1.7976931348623157E+308",
+        "1.7976931348623157E+308"
+      ],
+      "preferPrecision": 20,
+      "preferScale": 8,
+      "scale": 307,
+      "priority": 3,
+      "to": "TapNumber"
+    },
+    "DATE": {
+      "range": [
+        "1000-01-01 00:00:00",
+        "9999-12-31 23:59:59"
+      ],
+      "pattern": "yyyy-MM-dd HH:mm:ss",
+      "priority": 1,
+      "to": "TapDateTime"
+    },
+    "TIMESTAMP[($fraction)]": {
+      "range": [
+        "1000-01-01 00:00:00.000000000",
+        "9999-12-31 23:59:59.999999999"
+      ],
+      "pattern": "yyyy-MM-dd HH:mm:ss.SSSSSSSSS",
+      "fraction": [
+        0,
+        9
+      ],
+      "defaultFraction": 6,
+      "withTimeZone": false,
+      "priority": 2,
+      "to": "TapDateTime"
+    },
+    "TIMESTAMP[($fraction)] WITH TIME ZONE": {
+      "range": [
+        "1000-01-01 00:00:00.000000000",
+        "9999-12-31 23:59:59.999999999"
+      ],
+      "pattern": "yyyy-MM-dd HH:mm:ss.SSSSSSSSS",
+      "fraction": [
+        0,
+        9
+      ],
+      "defaultFraction": 6,
+      "priority": 2,
+      "withTimeZone": true,
+      "to": "TapDateTime"
+    },
+    "TIMESTAMP[($fraction)] WITH LOCAL TIME ZONE": {
+      "range": [
+        "1000-01-01 00:00:00.000000000",
+        "9999-12-31 23:59:59.999999999"
+      ],
+      "pattern": "yyyy-MM-dd HH:mm:ss.SSSSSSSSS",
+      "fraction": [
+        0,
+        9
+      ],
+      "withTimeZone": true,
+      "defaultFraction": 6,
+      "priority": 2,
+      "to": "TapDateTime"
+    },
+    "INTERVAL YEAR[($num)] TO MONTH": {
+      "queryOnly": true,
+      "to": "TapDateTime"
+    },
+    "INTERVAL DAY[($num)] TO SECOND(6)": {
+      "queryOnly": true,
+      "to": "TapDateTime"
+    },
+    "CLOB": {
+      "byte": "4g",
+      "pkEnablement": false,
+      "priority": 2,
+      "to": "TapString"
+    },
+    "NCLOB": {
+      "byte": "4g",
+      "queryOnly": true,
+      "priority": 3,
+      "to": "TapString"
+    },
+    "BLOB": {
+      "byte": "4g",
+      "pkEnablement": false,
+      "priority": 2,
+      "to": "TapBinary"
+    },
+    "BFILE": {
+      "queryOnly": true,
+      "pkEnablement": false,
+      "to": "TapBinary"
+    },
+    "RAW($byte)": {
+      "queryOnly": true,
+      "to": "TapBinary"
+    },
+    "LONG RAW": {
+      "queryOnly": true,
+      "to": "TapBinary"
+    }
+  }
+}

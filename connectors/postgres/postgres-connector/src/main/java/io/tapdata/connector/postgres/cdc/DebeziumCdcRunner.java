@@ -2,10 +2,10 @@ package io.tapdata.connector.postgres.cdc;
 
 import io.debezium.embedded.EmbeddedEngine;
 import io.debezium.engine.DebeziumEngine;
+import io.tapdata.common.CdcRunner;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -14,7 +14,7 @@ import java.util.List;
  * @author Jarad
  * @date 2022/5/13
  */
-public abstract class DebeziumCdcRunner implements Runnable {
+public abstract class DebeziumCdcRunner implements CdcRunner {
 
     protected EmbeddedEngine engine;
     protected String runnerName;
@@ -37,6 +37,7 @@ public abstract class DebeziumCdcRunner implements Runnable {
     /**
      * start cdc sync
      */
+    @Override
     public void startCdcRunner() {
         engine.run();
     }
@@ -47,6 +48,7 @@ public abstract class DebeziumCdcRunner implements Runnable {
         }
     }
 
+    @Override
     public boolean isRunning() {
         return null != engine && engine.isRunning();
     }
@@ -54,10 +56,12 @@ public abstract class DebeziumCdcRunner implements Runnable {
     /**
      * close cdc sync
      */
-    public void closeCdcRunner() throws IOException, SQLException {
+    @Override
+    public void closeCdcRunner() throws IOException {
         engine.close();
     }
 
+    @Override
     public void run() {
         startCdcRunner();
     }

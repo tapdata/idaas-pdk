@@ -1,12 +1,15 @@
-package io.tapdata.connector.postgres;
+package io.tapdata.common;
 
 import io.tapdata.entity.schema.TapField;
+import io.tapdata.entity.schema.TapIndex;
+import io.tapdata.entity.schema.TapIndexField;
 import io.tapdata.entity.schema.TapTable;
 import io.tapdata.kit.EmptyKit;
 import io.tapdata.pdk.apis.entity.TapAdvanceFilter;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -16,7 +19,7 @@ import java.util.stream.Collectors;
  * @author Jarad
  * @date 2022/4/29
  */
-public class PostgresSqlMaker {
+public class CommonSqlMaker {
 
     /**
      * combine column definition for creating table
@@ -67,7 +70,7 @@ public class PostgresSqlMaker {
         StringBuilder builder = new StringBuilder();
         if (EmptyKit.isNotEmpty(filter.getMatch()) || EmptyKit.isNotEmpty(filter.getOperators())) {
             builder.append("WHERE ");
-            builder.append(PostgresSqlMaker.buildKeyAndValue(filter.getMatch(), "AND", "="));
+            builder.append(CommonSqlMaker.buildKeyAndValue(filter.getMatch(), "AND", "="));
         }
         if (EmptyKit.isNotEmpty(filter.getOperators())) {
             if (EmptyKit.isNotEmpty(filter.getMatch())) {
@@ -112,6 +115,36 @@ public class PostgresSqlMaker {
             builder.delete(builder.length() - splitSymbol.length() - 1, builder.length());
         }
         return builder.toString();
+    }
+
+    public static String getOrderByUniqueKey(TapTable tapTable) {
+        StringBuilder orderBy = new StringBuilder();
+        orderBy.append(" ORDER BY ");
+        List<TapIndex> indexList = tapTable.getIndexList();
+        //has no indexes, need each field
+        if (EmptyKit.isEmpty(indexList)) {
+            orderBy.append(tapTable.getNameFieldMap().keySet().stream().map(field -> "\"" + field + "\"")
+                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
+        }
+        //has indexes but no unique
+        else if (indexList.stream().noneMatch(TapIndex::isUnique)) {
+            TapIndex index = indexList.stream().findFirst().orElseGet(TapIndex::new);
+            orderBy.append(index.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
+                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
+            List<String> indexFields = index.getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
+            if (tapTable.getNameFieldMap().size() > indexFields.size()) {
+                orderBy.append(',');
+                orderBy.append(tapTable.getNameFieldMap().keySet().stream().filter(key -> !indexFields.contains(key)).map(field -> "\"" + field + "\"")
+                        .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
+            }
+        }
+        //has unique indexes
+        else {
+            TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
+            orderBy.append(uniqueIndex.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
+                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
+        }
+        return orderBy.toString();
     }
 
 }

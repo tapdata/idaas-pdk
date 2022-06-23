@@ -3,6 +3,9 @@ package io.tapdata.kit;
 import io.tapdata.entity.simplify.TapSimplify;
 import io.tapdata.entity.utils.DataMap;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -81,5 +84,31 @@ public class DbKit {
             e.printStackTrace();
         }
         return columnNames;
+    }
+
+    public static byte[] BlobToBytes(Blob blob) {
+        BufferedInputStream bis = null;
+        try {
+            bis = new BufferedInputStream(blob.getBinaryStream());
+            byte[] bytes = new byte[(int) blob.length()];
+            int len = bytes.length;
+            int offset = 0;
+            int read;
+            while (offset < len && (read = bis.read(bytes, offset, len - offset)) > 0) {
+                offset += read;
+            }
+            return bytes;
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (bis != null) {
+                try {
+                    bis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

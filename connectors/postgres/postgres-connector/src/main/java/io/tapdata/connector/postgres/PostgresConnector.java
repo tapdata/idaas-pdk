@@ -2,6 +2,7 @@ package io.tapdata.connector.postgres;
 
 import com.google.common.collect.Lists;
 import io.tapdata.base.ConnectorBase;
+import io.tapdata.common.CommonSqlMaker;
 import io.tapdata.common.DataSourcePool;
 import io.tapdata.connector.postgres.bean.PostgresColumn;
 import io.tapdata.connector.postgres.cdc.PostgresCdcRunner;
@@ -13,10 +14,7 @@ import io.tapdata.entity.event.ddl.index.TapCreateIndexEvent;
 import io.tapdata.entity.event.ddl.table.TapClearTableEvent;
 import io.tapdata.entity.event.ddl.table.TapCreateTableEvent;
 import io.tapdata.entity.event.ddl.table.TapDropTableEvent;
-import io.tapdata.entity.event.dml.TapDeleteRecordEvent;
-import io.tapdata.entity.event.dml.TapInsertRecordEvent;
 import io.tapdata.entity.event.dml.TapRecordEvent;
-import io.tapdata.entity.event.dml.TapUpdateRecordEvent;
 import io.tapdata.entity.schema.TapField;
 import io.tapdata.entity.schema.TapIndex;
 import io.tapdata.entity.schema.TapIndexField;
@@ -33,7 +31,6 @@ import io.tapdata.pdk.apis.context.TapConnectorContext;
 import io.tapdata.pdk.apis.entity.*;
 import io.tapdata.pdk.apis.functions.ConnectorFunctions;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -231,7 +228,7 @@ public class PostgresConnector extends ConnectorBase {
         Set<String> columnNames = tapTable.getNameFieldMap().keySet();
         List<FilterResult> filterResults = new LinkedList<>();
         for (TapFilter filter : filters) {
-            String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\" WHERE " + PostgresSqlMaker.buildKeyAndValue(filter.getMatch(), "AND", "=");
+            String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\" WHERE " + CommonSqlMaker.buildKeyAndValue(filter.getMatch(), "AND", "=");
             FilterResult filterResult = new FilterResult();
             try {
                 postgresJdbcContext.query(sql, resultSet -> filterResult.setResult(DbKit.getRowFromResultSet(resultSet, columnNames)));
@@ -245,7 +242,7 @@ public class PostgresConnector extends ConnectorBase {
     }
 
     private void queryByAdvanceFilter(TapConnectorContext connectorContext, TapAdvanceFilter filter, TapTable table, Consumer<FilterResults> consumer) throws Throwable {
-        String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + table.getId() + "\" " + PostgresSqlMaker.buildSqlByAdvanceFilter(filter);
+        String sql = "SELECT * FROM \"" + postgresConfig.getSchema() + "\".\"" + table.getId() + "\" " + CommonSqlMaker.buildSqlByAdvanceFilter(filter);
         postgresJdbcContext.query(sql, resultSet -> {
             FilterResults filterResults = new FilterResults();
             while (!resultSet.isAfterLast() && resultSet.getRow() > 0) {
@@ -267,7 +264,7 @@ public class PostgresConnector extends ConnectorBase {
         TapTable tapTable = tapCreateTableEvent.getTable();
         Collection<String> primaryKeys = tapTable.primaryKeys();
         //pgsql UNIQUE INDEX use 'UNIQUE' not 'UNIQUE KEY' but here use 'PRIMARY KEY'
-        String sql = "CREATE TABLE IF NOT EXISTS \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" + PostgresSqlMaker.buildColumnDefinition(tapTable);
+        String sql = "CREATE TABLE IF NOT EXISTS \"" + postgresConfig.getSchema() + "\".\"" + tapTable.getId() + "\"(" + CommonSqlMaker.buildColumnDefinition(tapTable);
         if (EmptyKit.isNotEmpty(tapTable.primaryKeys())) {
             sql += "," + " PRIMARY KEY (\"" + String.join("\",\"", primaryKeys) + "\" )";
         }
@@ -347,52 +344,7 @@ public class PostgresConnector extends ConnectorBase {
 
     //write records as all events, prepared
     private void writeRecord(TapConnectorContext connectorContext, List<TapRecordEvent> tapRecordEvents, TapTable tapTable, Consumer<WriteListResult<TapRecordEvent>> writeListResultConsumer) throws SQLException {
-        Connection connection = postgresJdbcContext.getConnection();
-        //three types of record
-        PostgresWriteRecorder insertRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
-        PostgresWriteRecorder updateRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
-        PostgresWriteRecorder deleteRecorder = new PostgresWriteRecorder(connection, tapTable, postgresConfig.getSchema());
-
-        if (Integer.parseInt(postgresVersion) <= 90500) {
-            insertRecorder.setPostgresVersion(postgresVersion);
-            updateRecorder.setPostgresVersion(postgresVersion);
-            deleteRecorder.setPostgresVersion(postgresVersion);
-        }
-        //result of these events
-        WriteListResult<TapRecordEvent> listResult = writeListResult();
-        for (TapRecordEvent recordEvent : tapRecordEvents) {
-            if (recordEvent instanceof TapInsertRecordEvent) {
-                updateRecorder.executeBatch(listResult);
-                deleteRecorder.executeBatch(listResult);
-                TapInsertRecordEvent insertRecordEvent = (TapInsertRecordEvent) recordEvent;
-                insertRecorder.addInsertBatch(insertRecordEvent.getAfter());
-                insertRecorder.addAndCheckCommit(recordEvent, listResult);
-            } else if (recordEvent instanceof TapUpdateRecordEvent) {
-                insertRecorder.executeBatch(listResult);
-                deleteRecorder.executeBatch(listResult);
-                TapUpdateRecordEvent updateRecordEvent = (TapUpdateRecordEvent) recordEvent;
-                updateRecorder.addUpdateBatch(updateRecordEvent.getAfter());
-                updateRecorder.addAndCheckCommit(recordEvent, listResult);
-            } else if (recordEvent instanceof TapDeleteRecordEvent) {
-                insertRecorder.executeBatch(listResult);
-                updateRecorder.executeBatch(listResult);
-                TapDeleteRecordEvent deleteRecordEvent = (TapDeleteRecordEvent) recordEvent;
-                deleteRecorder.addDeleteBatch(deleteRecordEvent.getBefore());
-                deleteRecorder.addAndCheckCommit(recordEvent, listResult);
-            }
-        }
-        insertRecorder.executeBatch(listResult);
-        updateRecorder.executeBatch(listResult);
-        deleteRecorder.executeBatch(listResult);
-        connection.commit();
-        insertRecorder.releaseResource();
-        updateRecorder.releaseResource();
-        deleteRecorder.releaseResource();
-        connection.close();
-        writeListResultConsumer.accept(listResult
-                .insertedCount(insertRecorder.getAtomicLong().get())
-                .modifiedCount(updateRecorder.getAtomicLong().get())
-                .removedCount(deleteRecorder.getAtomicLong().get()));
+        new PostgresRecordWriter(postgresJdbcContext, tapTable).setVersion(postgresVersion).write(tapRecordEvents, writeListResultConsumer);
     }
 
     private long batchCount(TapConnectorContext tapConnectorContext, TapTable tapTable) throws Throwable {
@@ -406,7 +358,7 @@ public class PostgresConnector extends ConnectorBase {
         PostgresOffset postgresOffset;
         //beginning
         if (null == offsetState) {
-            postgresOffset = new PostgresOffset(getOrderByUniqueKey(tapTable), 0L);
+            postgresOffset = new PostgresOffset(CommonSqlMaker.getOrderByUniqueKey(tapTable), 0L);
         }
         //with offset
         else {
@@ -435,39 +387,9 @@ public class PostgresConnector extends ConnectorBase {
 
     }
 
-    private String getOrderByUniqueKey(TapTable tapTable) {
-        StringBuilder orderBy = new StringBuilder();
-        orderBy.append(" ORDER BY ");
-        List<TapIndex> indexList = tapTable.getIndexList();
-        //has no indexes, need each field
-        if (EmptyKit.isEmpty(indexList)) {
-            orderBy.append(tapTable.getNameFieldMap().keySet().stream().map(field -> "\"" + field + "\"")
-                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-        }
-        //has indexes but no unique
-        else if (indexList.stream().noneMatch(TapIndex::isUnique)) {
-            TapIndex index = indexList.stream().findFirst().orElseGet(TapIndex::new);
-            orderBy.append(index.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
-                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-            List<String> indexFields = index.getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList());
-            if (tapTable.getNameFieldMap().size() > indexFields.size()) {
-                orderBy.append(',');
-                orderBy.append(tapTable.getNameFieldMap().keySet().stream().filter(key -> !indexFields.contains(key)).map(field -> "\"" + field + "\"")
-                        .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-            }
-        }
-        //has unique indexes
-        else {
-            TapIndex uniqueIndex = indexList.stream().filter(TapIndex::isUnique).findFirst().orElseGet(TapIndex::new);
-            orderBy.append(uniqueIndex.getIndexFields().stream().map(field -> "\"" + field.getName() + "\" " + (field.getFieldAsc() ? "ASC" : "DESC"))
-                    .reduce((v1, v2) -> v1 + ", " + v2).orElseGet(String::new));
-        }
-        return orderBy.toString();
-    }
-
     private void streamRead(TapConnectorContext nodeContext, List<String> tableList, Object offsetState, int recordSize, StreamReadConsumer consumer) throws Throwable {
         if (EmptyKit.isNull(cdcRunner)) {
-            cdcRunner = new PostgresCdcRunner().use(postgresConfig);
+            cdcRunner = new PostgresCdcRunner().useConfig(postgresConfig);
             if (EmptyKit.isNull(slotName)) {
                 cdcRunner.watch(tableList).offset(offsetState).registerConsumer(consumer, recordSize);
                 nodeContext.getStateMap().put("tapdata_pg_slot", cdcRunner.getRunnerName());
