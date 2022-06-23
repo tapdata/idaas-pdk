@@ -47,10 +47,10 @@ public abstract class WriteRecorder {
         }
         //2、second priority: analyze table with its indexes
         else {
+            uniqueCondition = new ArrayList<>(tapTable.primaryKeys(true));
             uniqueConditionIsIndex = EmptyKit.isNotEmpty(tapTable.getIndexList()) && tapTable.getIndexList().stream().filter(TapIndex::isUnique).anyMatch(in ->
                     (in.getIndexFields().size() == uniqueCondition.size()) && new HashSet<>(uniqueCondition)
                             .containsAll(in.getIndexFields().stream().map(TapIndexField::getName).collect(Collectors.toList())));
-            uniqueCondition = new ArrayList<>(tapTable.primaryKeys(true));
         }
     }
 
