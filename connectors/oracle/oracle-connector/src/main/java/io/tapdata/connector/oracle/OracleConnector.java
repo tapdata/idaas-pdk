@@ -324,20 +324,21 @@ public class OracleConnector extends ConnectorBase {
     }
 
     @Override
-    public void connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
+    public ConnectionOptions connectionTest(TapConnectionContext connectionContext, Consumer<TestItem> consumer) {
         oracleConfig = new OracleConfig().load(connectionContext.getConnectionConfig());
         OracleTest oracleTest = new OracleTest(oracleConfig);
         TestItem testHostPort = oracleTest.testHostPort();
         consumer.accept(testHostPort);
         if (testHostPort.getResult() == TestItem.RESULT_FAILED) {
-            return;
+            return null;
         }
         TestItem testConnect = oracleTest.testConnect();
         consumer.accept(testConnect);
         if (testConnect.getResult() == TestItem.RESULT_FAILED) {
-            return;
+            return null;
         }
         oracleTest.close();
+        return null;
     }
 
     @Override
